@@ -1,0 +1,55 @@
+#ifndef _CRYOIDL
+#define _CRYOIDL
+
+#include "carma/antenna/common/SwitchState.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+
+  module antenna {
+
+    module common {
+
+      /**
+       * CryoControl nameserver name.
+       */
+      const string CRYO_NAME = "Cryo";
+
+      /**
+       * %Antenna Cryogenics control
+       * @todo There are probably other control functions - hw guys??
+       */
+      interface CryoControl {
+	/**
+	 * Switch the compressor on or off.
+	 * @param state
+	 * @see SwitchState
+	 */
+	void turnCompressor(in SwitchState state)
+        raises (carma::util::UserException);
+
+	/**
+	 * Reset the compressor
+	 */
+	void resetCompressor() raises (carma::util::UserException);
+
+	/**
+	 * Fill the compressor with helium
+	 */
+	void fillCompressor() raises (carma::util::UserException);
+
+	/**
+	 * Purge helium from the compressor
+	 */
+	void purgeCompressor() raises (carma::util::UserException);
+
+      }; // End CryoControl interface
+
+    }; // End module common
+
+  }; // End module antenna
+
+}; // End module carma
+
+#endif  // _CRYOIDL
+

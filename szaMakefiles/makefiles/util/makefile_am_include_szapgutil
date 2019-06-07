@@ -1,0 +1,16 @@
+lib_libcarmaSzapgutil_la = lib/libcarmaSzapgutil.la
+
+lib_LTLIBRARIES += $(lib_libcarmaSzapgutil_la)
+
+lib_libcarmaSzapgutil_la_SOURCES = \
+	carma/szapgutil/ConfigPlotter.cc \
+	carma/szapgutil/PgUtil.cc
+
+lib_libcarmaSzapgutil_la_CXXFLAGS = -fPIC
+
+lib_libcarmaSzapgutil_la_CPPFLAGS = $(AM_CPPFLAGS) -DTOP="\"$(TOP)"\" -D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 -DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 -DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0 -DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated
+
+lib_libcarmaSzapgutil_la_LIBADD = \
+	lib/libcarmaSzautil.la \
+	-lcpgplot \
+	-lpgplot

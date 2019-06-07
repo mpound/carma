@@ -1,0 +1,34 @@
+#-----------------------------------------------------------------------
+# The default LL configuration maps each antenna to all band of its corresponding
+# block downconverter
+#-----------------------------------------------------------------------
+
+# The hybrid configuration maps the 3.5m ants as usual for the LL
+# configuration, except that C10 is substituted as input 3 and 11 of
+# each corr band
+
+C16L:A WBCOR[1-8]:1
+C16L:A WBCOR[1-8]:9
+
+C2L:C WBCOR[1-8]:2
+C2L:C WBCOR[1-8]:10
+
+C10L:B WBCOR[1-8]:3
+C10L:B WBCOR[1-8]:11
+
+C11L:B WBCOR[1-8]:4
+C11L:B WBCOR[1-8]:12
+
+C12L:B WBCOR[1-8]:5
+C12L:B WBCOR[1-8]:13
+
+C21L:A WBCOR[1-8]:6
+C21L:A WBCOR[1-8]:14
+
+C14L:B WBCOR[1-8]:7
+C14L:B WBCOR[1-8]:15
+
+C23L:A WBCOR[1-8]:8
+C23L:A WBCOR[1-8]:16
+
+

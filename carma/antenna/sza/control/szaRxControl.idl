@@ -1,0 +1,32 @@
+/**
+ * @author Erik Leitch
+ */
+#ifndef CARMA_ANTENNA_SZA_CONTROL_SZARXCONTROL_IDL
+#define CARMA_ANTENNA_SZA_CONTROL_SZARXCONTROL_IDL
+
+#include "carma/antenna/common/RxControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+  module antenna {
+    module sza {
+      module control {
+
+	/**
+	 * SZA antenna-specific rx control interface.
+	 */
+	interface RxControl : carma::antenna::common::RxControl {
+
+	  void resetCanModule(in string moduleName)
+	    raises (carma::util::UserException);
+
+	  void resetCanBus()
+	    raises (carma::util::UserException);
+
+	}; // End RxControl interface
+      };
+    };
+  };
+}; // End carma::antenna::sza::control module
+
+#endif

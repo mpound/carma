@@ -1,0 +1,64 @@
+/** @file
+ * Ovro carma::antenna::ovro::CryoControl interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.4 $
+ * $Date: 2011/05/17 16:27:33 $
+ * $Id: ovroCryoControl.idl,v 1.4 2011/05/17 16:27:33 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_CRYOCONTROL_IDL
+#define CARMA_ANTENNA_OVRO_CRYOCONTROL_IDL
+
+#include "carma/antenna/common/CryoControl.idl"
+#include "carma/antenna/common/SwitchState.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+/**
+ * OVRO antenna-specific polarization control interface.
+ * The Ovro Antenna Cryo Compressor Monitor and Control CAN module
+ * has additional functionality which is not general enough to be
+ * included in the Common Antenna API.  That additional functionality
+ * is included here.
+ */
+interface CryoControl : carma::antenna::common::CryoControl {
+
+    /**
+     * Enable or disable the temperature servo loop.
+     * @param state Switch state ON (normal operation) or OFF (engineering).
+     */
+    void turnTempServoLoop(in carma::antenna::common::SwitchState state)
+        raises (carma::util::UserException);
+
+    /**
+     * Set the inlet louver position.
+     * If the temperature servo is on, the temperature control loop will
+     * override this setting.
+     * @param volts Command voltage for inlet louver position.
+     */
+    void setInletLouverPosition(in float volts)
+        raises (carma::util::UserException);
+
+    /**
+     * Set the outlet louver position.
+     * If the temperature servo is on, the temperature control loop will
+     * override this setting.
+     * @param volts Command voltage for outlet louver position.
+     */
+    void setOutletLouverPosition(in float volts)
+        raises (carma::util::UserException);
+
+    /**
+     * Reset the CAN module.
+     */
+    void reset()
+        raises (carma::util::UserException);
+
+}; // End CryoControl interface
+};};}; // End carma::antenna::ovro module
+#endif

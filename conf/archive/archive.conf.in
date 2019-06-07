@@ -1,0 +1,52 @@
+# This on-site configuration file specifies parameter needed by
+# the data transfer component of archive.
+
+# 0 - Destination host name
+host = carma-server.astro.illinois.edu
+
+# 1 - Destination root directories for transferred files
+mpDesRoot = /export/scr1/incoming/mp_workdir/
+qrDesRoot = /export/scr1/incoming/sdp/quality/
+sdpDesRoot = /export/scr1/incoming/sdp/astroheader/
+szaDesRoot = /export/scr1/incoming/sdp/sza/
+vbDesRoot = /export/scr1/incoming/vb/visbrick/
+
+# 2 - Proxy certificate used for authenticating to the GridFTP server
+proxyCert = /home/control/.globus/gc2008-5-11.xp 
+
+# 3 - File name for data transfer (dt) report
+reportFile = /opt/sdp/dt/dt_report
+
+# 4 - File name for output bandwidth limits (in MB/sec)
+# The format of the file can be one of the three:
+#
+# (1) All hh:mm:ss-hh:mm:ss <bandwidth>
+#
+# (2) Weekday hh:mm:ss-hh:mm:ss <bandwidth>
+#     Weekend hh:mm:ss-hh:mm:ss <bandwidth>
+#
+# (3) Sunday hh:mm:ss-hh:mm:ss <bandwidth>
+#     Monday hh:mm:ss-hh:mm:ss <bandwidth>
+#     Tuesday hh:mm:ss-hh:mm:ss <bandwidth>
+#     Wednesday hh:mm:ss-hh:mm:ss <bandwidth>
+#          ... ... ...
+#     Saturday hh:mm:ss-hh:mm:ss <bandwidth>
+#
+bwFile = @prefix@/conf/archive/bandwidth.conf
+
+# 5 - Maximum bandwidth - it is used in place of bandwidth limits defined in
+# the file above if its value is greater than zero.
+maxBW = -1
+
+# Polling time interval (minutes)
+pollingTime = 2
+
+# Transfer log to save the list of files that have been transferred
+transferLog = /opt/sdp/transfer-timestamp.log
+
+# The lock file
+transferLockFile = /tmp/transfer.lock
+
+# Transfer database file
+transferDBFile = /opt/sdp/transfer.db
+

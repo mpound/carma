@@ -1,0 +1,29 @@
+# dereg4.tab
+# dewar temperature regulation parameters; program dereg
+#	reads this file each time it is invoked
+#
+# NOTE: temperature setpoints for antenna j are given by
+#	common variables TREGMXR-j and TREGAMP-j; these
+#	can be changed using the "alter" command; if
+#	setpoints are 0, all heaters will be turned off
+#
+# inputs on each line:
+#	ant = antenna number (1-9)
+#	stage = 2 for HEMT (or HEMT/Schottky), 3 for SIS
+#	sensmpx	= sensor mpx value for atod, to read temperature
+#		  (1107,1108 for v/f2, v/f3; 1083,1085 for a/d2, a/d3)
+#	htraddr	= heater address
+#		  (0x62 for stage 2, 0x54 for stage 3)
+#	navg	= number of samples in running avg of temp
+#		  (navg * 0.32 should be an integral number of
+#		  refrigerator cycles; keep navg < 25)
+#	gainp	= proportional gain
+#	gaini	= integral gain
+#	gaind   = derivative gain
+#	active	= 0 to monitor only, 1 to control heater
+# 
+# ant  stage  sensmpx  htraddr  navg  gainp  gaini  gaind  active
+
+# ant 2: SIS, heaters on both stages
+#   2     3     1085     0x54     1     50.    2.    -100.	1 
+	2	 2		1086	 0x62	  5	   100.	   5      -1000.     1

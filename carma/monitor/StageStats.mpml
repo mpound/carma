@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+<Common scope="global">
+
+
+    <Container name="StageStats" priority="useful" persistent="true"> 
+
+        <description>Contains generic stage statistics.</description>
+
+        <MonitorPoint name="state" type="bool">
+           <shortName>Active</shortName>
+           <units></units>
+           <description>
+                Indicates if this stage is active or not.
+           </description>
+           <warnLo>false</warnLo>
+           <warnHi>false</warnHi>
+         </MonitorPoint>
+
+        <MonitorPoint name="procTime" type="float" priority="useful">
+           <shortName>Proc Time</shortName>
+           <longName>Processing Time</longName>
+           <units>ms</units>
+           <description>
+              The amount of time used to process data in this stage. 
+           </description>
+            <warnHi>170.0</warnHi>
+            <errHi>250.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="maxProcTime" type="float" priority="useful">
+           <shortName>Max Proc Time</shortName>
+           <longName>Maximum Processing Time</longName>
+           <units>ms</units>
+           <description>
+              The maximum amount of time used to process data in this stage. 
+           </description>
+            <warnHi>500.0</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="dataFrameCount" type="int">
+            <shortName>Data Frame</shortName>
+            <longName>Data Frame Count</longName>
+            <description>
+               Frame count of correlator data.
+            </description>
+            <width>12</width>
+        </MonitorPoint>
+
+        <MonitorPoint name="procStat" type="enum">
+            <shortName>Proc Stat</shortName>
+            <longName>Stage Processing Status</longName>
+            <description>
+                Indicates the success or failure of stage processing.
+            </description>
+            <enum name="GOOD"/>
+            <enum name="BAD"/>
+            <enum name="INPROGRESS"/>
+            <enum name="PENDING"/>
+            <warnHi>INPROGRESS</warnHi>
+            <errHi>BAD</errHi>
+        </MonitorPoint>
+
+    </Container>
+</Common>

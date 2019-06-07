@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!-- $Id: justTest.xml,v 1.4 2013/04/09 22:48:04 abeard Exp $ -->
+
+<!-- Include the domain dtd definition. -->
+<!-- Set up to run from BUILD directory!!! -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "/home/mpound/rt/bin">
+        <!ENTITY DEFAULT_DIR "/home/mpound/rt">
+        <!ENTITY EMULATE "true">
+        <!ENTITY LOG "traceFile=syslog traceLevel=0">
+        <!ENTITY USE_DB "useDBMS=false">
+]>
+
+
+<!-- 
+        Configuration to just run frame collator and test fsp.
+ -->
+
+<!-- @version -->
+<domain>
+ 
+    
+    <oad hostname="localhost">
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; " />
+        <server name="testFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=test" />
+        <server name="TestSimulator" path="&BIN_DIR;/testMPwriterReader"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  writeOnly=true iterations=0" />
+
+       </oad>  
+       
+</domain>
+    

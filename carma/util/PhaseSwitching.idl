@@ -1,0 +1,73 @@
+
+#ifndef CARMA_UTIL_PHASESWITCHING_IDL
+#define CARMA_UTIL_PHASESWITCHING_IDL
+
+/**
+ * @file
+ *
+ * Subsystem phaseswitching interface
+ *
+ * @author: Steve Scott
+ *
+ * $Id: PhaseSwitching.idl,v 1.9 2011/05/17 16:28:11 iws Exp $
+ * $CarmaCopyright$
+ *
+ */
+
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module util {
+
+
+typedef sequence<octet> PhaseTable;
+
+/**
+ * Phaseswitching interface for passing a phaseswitching table into a subsystem.
+ * The rows represent temporal phase states while the columns are a
+ * particular sequence, e.g. for a given input or antenna.
+ * Inherit from this interface (in idl) to pick up the PhaseSwitching
+ * interface and add "public carma::util::PhaseSwitchingImpl"
+ * to the constructor inheritance list in the derived class definition (.h)
+ * to get the common implementation.
+ */
+interface PhaseSwitching {
+
+    /**
+     * Phass phaseswitch table.
+     * A phase state is represented by a single bit, representing
+     * a phase states. These in turn directly map to first LO phases of
+     * either 0/180 or 0/90 degrees.
+     * The phase states are packed into a byte stream, with a byte containing
+     * 8 phase states. The bytes are loaded by row, starting with the first
+     * row. The bit order of the columns goes from least significant bits to
+     * most significant, and then on to the next byte. Bytes are padded so that
+     * a new row always begin at the start of a byte.
+     *
+     *  BYTE0: bit7  bit6  bit5  bit4  bit3  bit2  bit1  bit0
+     *  DATA : r0c7  r0c6  r0c5  r0c4  r0c3  r0c2  r0c1  r0c0
+     *  BYTE1: bit7  bit6  bit5  bit4  bit3  bit2  bit1  bit0
+     *  DATA :r0c15 r0c14 r0c13 r0c12 r0c11 r0c10  r0c9  r0c8
+     *
+     * The implementation will call any registered Observers to allow for
+     * further processing on the tables @see Observable @see Observer.
+     * @param numColumns number of columns in the table
+     * @param numRows90 number of rows in the 90 degree table
+     * @param phaseTable90 data stream containing 90 degree phase states
+     * @param numRows180 number of rows in the 180 degree table
+     * @param phaseTable180 data stream containing 180 degree phase states
+     * @throws UserExecption if amount of data is inconsistent with the
+     * number of rows and columns.
+     */
+    void loadPhaseSwitchTable(in long numColumns,
+            in long numRows90,  in PhaseTable phaseTable90,
+            in long numRows180, in PhaseTable phaseTable180
+        )  raises (carma::util::UserException);
+
+};
+
+}; // util::
+}; // carma::
+
+#endif

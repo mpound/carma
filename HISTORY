@@ -1,0 +1,8 @@
+0.0.1   5-dec-2002 initial configure and build system, Erik's DAZI system
+                   still using a not finalized dir.str.
+
+0.0.2  27-feb-2003 src renamed to carma, the start of our namespace
+0.0.3     dec-2003 branched (Teuben_2) to work on new template Makefile's
+0.0.4  27-jan-2004 merged with new Makefiles
+...
+0.5.5   4-jul-2012 rebel day. Noting that this is not maintained

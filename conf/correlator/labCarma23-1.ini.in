@@ -1,0 +1,1191 @@
+###################################################################
+# Correlator System Configuration
+###################################################################
+# $Id: labCarma23-1.ini.in,v 1.1 2011/01/14 23:24:00 abeard Exp $
+###################################################################
+# CARMA board 15-antenna 4GHz correlator
+###################################################################
+
+[CARMA]
+"hardware"="CARMA"
+
+[CARMA\Time]
+"timeReferenceRate"="1"
+"fastDataRate"="64"
+"phaseSwitchRate"="1024"
+"phaseSwitchIntegrationTime"="950e-6"
+"phaseSwitchSettlingTime"="21e-6"
+"referenceFrequency"="31.25e6"
+"numberOfPhaseSwitchesIntegrated"="512"
+
+[CARMA\Band]
+"numberOfBands"="8"
+
+[CARMA\Band\Number]
+"0"="1"
+"1"="1"
+"2"="2"
+"3"="2"
+"4"="3"
+"5"="3"
+"6"="4"
+"7"="4"
+
+[CARMA\Band\Server]
+# Band servers
+"0"="labslcor1.correlator.pvt 19001"
+"1"="labslcor2.correlator.pvt 19002"
+"2"="labslcor3.correlator.pvt 19003"
+"3"="labslcor4.correlator.pvt 19004"
+"4"="labslcor5.correlator.pvt 19005"
+"5"="labslcor6.correlator.pvt 19006"
+"6"="labslcor7.correlator.pvt 19007"
+"7"="labslcor8.correlator.pvt 19008"
+
+# Downconverter setup (for lobe rotation correction)
+[CARMA\Band\DownconverterFrequency]
+"0"="2.0e9"
+"1"="2.5e9"
+"2"="3.0e9"
+"3"="3.5e9"
+"4"="4.0e9"
+"5"="4.5e9"
+"6"="5.0e9"
+"7"="5.5e9"
+
+[CARMA\Band\BlockDownconverterEnabled]
+"default"="false"
+
+[CARMA\Band\DownconverterSideband]
+"default"="lsb"
+
+[CARMA\Board]
+"numberOfBoards"="15"
+
+# Physical slot numbers of the boards in each band.
+[CARMA\Board\Slot]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+"7"="9"
+"8"="10"
+"9"="11"
+"10"="12"
+"11"="14"
+"12"="15"
+"13"="16"
+"14"="17"
+
+[CARMA\Board\Type]
+"default"="digitizer"
+# "8"="correlator"
+# "9"="correlator"
+# "10"="correlator"
+# "11"="correlator"
+# "12"="correlator"
+# "13"="correlator"
+# "14"="correlator"
+
+# Bandwidth-independent FPGA settings.
+# Bandwidth-specific sections/values can be given.
+[CARMA\Board\FPGA]
+"numberOfFpgaConfigurations"="7"
+"numberOfAutoLags"="385"
+"numberOfCrossLags"="768"
+"path"="/home/control/correlator/bitfiles"
+
+# FPGA configuration number used on each board.
+[CARMA\Board\FPGA\Configuration]
+"default"="0"
+"8"="2"
+"9"="1"
+"10"="1"
+"11"="2"
+"12"="1"
+"13"="2"
+"14"="1"
+
+# FPGA operating mode (REG_CORL_MODE) used on each board.
+[CARMA\Board\FPGA\CorlMode]
+"default"="0"
+"8"="4"
+"11"="4"
+"13"="4"
+
+# FPGA front panel delay offset for each board,
+# encoded one byte per FPGA: 0x{#0}{#1}{#2}{#3}.
+[CARMA\Board\FPGA\PanelDelay]
+"default"="0x00000000"
+
+# ---------------------
+# FPGA Configuration #0.
+# ---------------------
+[CARMA\Board\FPGA\0]
+"board"="digitizer"
+"numberOfCorrelations"="3"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA\Board\FPGA\0\CorrelationMap\Type]
+"default"="auto"
+"1"="cross"
+[CARMA\Board\FPGA\0\CorrelationMap\Inputs]
+"0"="0"
+"1"="0 1"
+"2"="1"
+
+# Not needed for CARMA boards.
+[CARMA\Board\FPGA\0\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #1 (corl_mode 0)
+# ---------------------
+[CARMA\Board\FPGA\1]
+"board"="correlator"
+"numberOfCorrelations"="16"
+
+[CARMA\Board\FPGA\1\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA\Board\FPGA\1\CorrelationMap\Inputs]
+"0"="0 2"
+"1"="1 2"
+"2"="0 3"
+"3"="1 3"
+"4"="4 2"
+"5"="5 2"
+"6"="4 3"
+"7"="5 3"
+"8"="0 6"
+"9"="1 6"
+"10"="0 7"
+"11"="1 7"
+"12"="4 6"
+"13"="5 6"
+"14"="4 7"
+"15"="5 7"
+
+# Not needed for CARMA boards.
+[CARMA\Board\FPGA\1\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #2 (corl_mode 4)
+# ---------------------
+[CARMA\Board\FPGA\2]
+"board"="correlator"
+"numberOfCorrelations"="16"
+
+[CARMA\Board\FPGA\2\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA\Board\FPGA\2\CorrelationMap\Inputs]
+"0"="0 4"
+"1"="1 4"
+"2"="0 5"
+"3"="1 5"
+"4"="0 2"
+"5"="1 2"
+"6"="4 2"
+"7"="5 2"
+"8"="0 6"
+"9"="1 6"
+"10"="0 7"
+"11"="1 7"
+"12"="4 6"
+"13"="5 6"
+"14"="4 7"
+"15"="5 7"
+
+# Not needed for CARMA boards.
+[CARMA\Board\FPGA\2\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #3
+# (digitizer stress test, bus configuration E)
+# ---------------------
+[CARMA\Board\FPGA\3]
+"board"="digitizer"
+"numberOfCorrelations"="16"
+
+[CARMA\Board\FPGA\3\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA\Board\FPGA\3\CorrelationMap\Inputs]
+"0"="0 0"
+"1"="1 0"
+"2"="0 1"
+"3"="1 1"
+"4"="0 0"
+"5"="1 0"
+"6"="0 1"
+"7"="1 1"
+"8"="0 0"
+"9"="1 0"
+"10"="0 1"
+"11"="1 1"
+"12"="0 0"
+"13"="1 0"
+"14"="0 1"
+"15"="1 1"
+
+# Not needed for CARMA boards.
+[CARMA\Board\FPGA\3\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #4
+# (digitizer torture test, bus configuration F)
+# ---------------------
+[CARMA\Board\FPGA\4]
+"board"="digitizer"
+"numberOfCorrelations"="16"
+
+[CARMA\Board\FPGA\4\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA\Board\FPGA\4\CorrelationMap\Inputs]
+"0"="0 0"
+"1"="1 0"
+"2"="0 1"
+"3"="1 1"
+"4"="0 0"
+"5"="1 0"
+"6"="0 1"
+"7"="1 1"
+"8"="0 0"
+"9"="1 0"
+"10"="0 1"
+"11"="1 1"
+"12"="0 0"
+"13"="1 0"
+"14"="0 1"
+"15"="1 1"
+
+# Not needed for CARMA boards.
+[CARMA\Board\FPGA\4\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #5
+# (correlator torture test, bus configuration E)
+# ---------------------
+[CARMA\Board\FPGA\5]
+"board"="correlator"
+"numberOfCorrelations"="16"
+
+[CARMA\Board\FPGA\5\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA\Board\FPGA\5\CorrelationMap\Inputs]
+"0"="0 0"
+"1"="1 0"
+"2"="0 1"
+"3"="1 1"
+"4"="0 0"
+"5"="1 0"
+"6"="0 1"
+"7"="1 1"
+"8"="0 0"
+"9"="1 0"
+"10"="0 1"
+"11"="1 1"
+"12"="0 0"
+"13"="1 0"
+"14"="0 1"
+"15"="1 1"
+
+# Not needed for CARMA boards.
+[CARMA\Board\FPGA\5\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #6
+# (correlator torture test, bus configuration F)
+# ---------------------
+[CARMA\Board\FPGA\6]
+"board"="correlator"
+"numberOfCorrelations"="16"
+
+[CARMA\Board\FPGA\6\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA\Board\FPGA\6\CorrelationMap\Inputs]
+"0"="0 0"
+"1"="1 0"
+"2"="0 1"
+"3"="1 1"
+"4"="0 0"
+"5"="1 0"
+"6"="0 1"
+"7"="1 1"
+"8"="0 0"
+"9"="1 0"
+"10"="0 1"
+"11"="1 1"
+"12"="0 0"
+"13"="1 0"
+"14"="0 1"
+"15"="1 1"
+
+# Not needed for CARMA boards.
+[CARMA\Board\FPGA\6\LagsParameters]
+
+
+[CARMA\Antenna]
+# The number of inputs is twice the number of digitizer boards
+# The number of antennas can be equal or less than this.
+"numberOfAntennas"="23"
+"lobeResidualFrequency"="0.0"
+"lobeTrackUSB"="false"
+"path"="/opt/rt/etc/cobra"
+"walshFilename"="carma_phase_states.txt"
+
+#
+# Walsh hardware demodulation (180-degree states) and 
+# Walsh nesting can be used in three different combinations:
+#
+# - No nesting, no hardware demodulation (eg. 160pps system)
+# - No nesting, hardware demodulation (eg. 160pps system)
+# - Nesting, and hardware demodulation (eg. 1024pps system)
+#
+"walshNestingEnabled"="1"
+"walshHardwareDemodulationEnabled"="1"
+
+[CARMA\Antenna\Number]
+"0"="1"
+"1"="2"
+"2"="3"
+"3"="4"
+"4"="5"
+"5"="6"
+"6"="7"
+"7"="8"
+"8"="9"
+"9"="10"
+"10"="11"
+"11"="12"
+"12"="13"
+"13"="14"
+"14"="15"
+"15"="16"
+"16"="17"
+"17"="18"
+"18"="19"
+"19"="20"
+"20"="21"
+"21"="22"
+"22"="23"
+[CARMA\Antenna\Walsh]
+"0"="0"
+"1"="1"
+"2"="2"
+"3"="3"
+"4"="4"
+"5"="5"
+"6"="6"
+"7"="7"
+"8"="8"
+"9"="9"
+"10"="10"
+"11"="11"
+"12"="12"
+"13"="13"
+"14"="14"
+"15"="15"
+"16"="16"
+"17"="17"
+"18"="18"
+"19"="19"
+"20"="20"
+"21"="21"
+"22"="22"
+
+# There are 26 LVDS cables, each with 2-buses per cable.
+# There are four LVDS connectors per board, so there
+# are 8 buses per board.
+#
+[CARMA\Bus]
+"numberOfBuses"="52"
+"numberOfBusesPerBoard"="8"
+
+[CARMA\Bus\Source]
+"0"="0"
+"1"="1"
+"2"="2"
+"3"="3"
+"4"="4"
+"5"="5"
+"6"="8"
+"7"="9"
+"8"="10"
+"9"="11"
+"10"="12"
+"11"="13"
+"12"="16"
+"13"="17"
+"14"="18"
+"15"="19"
+"16"="20"
+"17"="21"
+"18"="24"
+"19"="25"
+"20"="26"
+"21"="27"
+"22"="28"
+"23"="29"
+"24"="32"
+"25"="33"
+"26"="34"
+"27"="35"
+"28"="36"
+"29"="37"
+"30"="40"
+"31"="41"
+"32"="42"
+"33"="43"
+"34"="44"
+"35"="45"
+"36"="48"
+"37"="49"
+"38"="50"
+"39"="51"
+"40"="52"
+"41"="53"
+"42"="54"
+"43"="55"
+"44"="56"
+"45"="57"
+"46"="58"
+"47"="59"
+"48"="60"
+"49"="61"
+"50"="62"
+"51"="63"
+[CARMA\Bus\Destination]
+"0"="64"
+"1"="65"
+"2"="72"
+"3"="73"
+"4"="80"
+"5"="81"
+"6"="68"
+"7"="69"
+"8"="76"
+"9"="77"
+"10"="84"
+"11"="85"
+"12"="70"
+"13"="71"
+"14"="88"
+"15"="89"
+"16"="96"
+"17"="97"
+"18"="74"
+"19"="75"
+"20"="92"
+"21"="93"
+"22"="100"
+"23"="101"
+"24"="78"
+"25"="79"
+"26"="94"
+"27"="95"
+"28"="104"
+"29"="105"
+"30"="82"
+"31"="83"
+"32"="98"
+"33"="99"
+"34"="108"
+"35"="109"
+"36"="86"
+"37"="87"
+"38"="102"
+"39"="103"
+"40"="110"
+"41"="111"
+"42"="112"
+"43"="113"
+"44"="66"
+"45"="67"
+"46"="90"
+"47"="91"
+"48"="106"
+"49"="107"
+"50"="114"
+"51"="115"
+[CARMA\Bus\Antenna]
+"0"="0"
+"1"="1"
+"2"="0"
+"3"="1"
+"4"="0"
+"5"="1"
+"6"="2"
+"7"="3"
+"8"="2"
+"9"="3"
+"10"="2"
+"11"="3"
+"12"="4"
+"13"="5"
+"14"="4"
+"15"="5"
+"16"="4"
+"17"="5"
+"18"="6"
+"19"="7"
+"20"="6"
+"21"="7"
+"22"="6"
+"23"="7"
+"24"="8"
+"25"="9"
+"26"="8"
+"27"="9"
+"28"="8"
+"29"="9"
+"30"="10"
+"31"="11"
+"32"="10"
+"33"="11"
+"34"="10"
+"35"="11"
+"36"="12"
+"37"="13"
+"38"="12"
+"39"="13"
+"40"="12"
+"41"="13"
+"42"="12"
+"43"="13"
+"44"="14"
+"45"="15"
+"46"="14"
+"47"="15"
+"48"="14"
+"49"="15"
+"50"="14"
+"51"="15"
+
+#------------------------------------------------------------------
+# CARMA 500MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\500MHz]
+"bandwidth"="500e6"
+
+[CARMA\500MHz\FPGA]
+"numberOfFpgaConfigurations"="7"
+"numberOfAutoLags"="129"
+"numberOfCrossLags"="256"
+
+# FPGA Configuration #0
+[CARMA\500MHz\FPGA\0]
+"version"="0x01D21100"
+"filename"="carma_v1D21100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\500MHz\FPGA\1]
+"version"="0x01C21100"
+"filename"="carma_v1C21100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\500MHz\FPGA\2]
+"version"="0x01C21100"
+"filename"="carma_v1C21100.bin"
+
+# FPGA Configuration #3
+# (digitizer stress test, bus configuration E)
+[CARMA\500MHz\FPGA\3]
+"version"="0x01D21E00"
+"filename"="carma_v1D21E00.bin"
+
+# FPGA Configuration #4
+# (digitizer stress test, bus configuration F)
+[CARMA\500MHz\FPGA\4]
+"version"="0x01D21F00"
+"filename"="carma_v1D21F00.bin"
+
+# FPGA Configuration #5
+# (correlator stress test, bus configuration E)
+[CARMA\500MHz\FPGA\5]
+"version"="0x01C21E00"
+"filename"="carma_v1C21E00.bin"
+
+# FPGA Configuration #6
+# (correlator stress test, bus configuration F)
+[CARMA\500MHz\FPGA\6]
+"version"="0x01C21F00"
+"filename"="carma_v1C21F00.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 250MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\250MHz]
+"bandwidth"="250e6"
+
+[CARMA\250MHz\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="193"
+"numberOfCrossLags"="384"
+
+# FPGA Configuration #0
+[CARMA\250MHz\FPGA\0]
+"version"="0x01D22100"
+"filename"="carma_v1D22100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\250MHz\FPGA\1]
+"version"="0x01C22100"
+"filename"="carma_v1C22100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\250MHz\FPGA\2]
+"version"="0x01C22100"
+"filename"="carma_v1C22100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 125MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\125MHz]
+"bandwidth"="125e6"
+
+[CARMA\125MHz\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="289"
+"numberOfCrossLags"="576"
+
+# FPGA Configuration #0
+[CARMA\125MHz\FPGA\0]
+"version"="0x01D23100"
+"filename"="carma_v1D23100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\125MHz\FPGA\1]
+"version"="0x01C23100"
+"filename"="carma_v1C23100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\125MHz\FPGA\2]
+"version"="0x01C23100"
+"filename"="carma_v1C23100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 62MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\62MHz]
+"bandwidth"="62.5e6"
+
+[CARMA\62MHz\FPGA]
+"numberOfFpgaConfigurations"="3"
+
+# FPGA Configuration #0
+[CARMA\62MHz\FPGA\0]
+"version"="0x01D24100"
+"filename"="carma_v1D24100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\62MHz\FPGA\1]
+"version"="0x01C24100"
+"filename"="carma_v1C24100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\62MHz\FPGA\2]
+"version"="0x01C24100"
+"filename"="carma_v1C24100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 31MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\31MHz]
+"bandwidth"="31.25e6"
+
+[CARMA\31MHz\FPGA]
+"numberOfFpgaConfigurations"="3"
+
+# FPGA Configuration #0
+[CARMA\31MHz\FPGA\0]
+"version"="0x01D25100"
+"filename"="carma_v1D25100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\31MHz\FPGA\1]
+"version"="0x01C25100"
+"filename"="carma_v1C25100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\31MHz\FPGA\2]
+"version"="0x01C25100"
+"filename"="carma_v1C25100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 8MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\8MHz]
+"bandwidth"="7.8125e6"
+
+[CARMA\8MHz\FPGA]
+"numberOfFpgaConfigurations"="3"
+
+# FPGA Configuration #0
+[CARMA\8MHz\FPGA\0]
+"version"="0x01D27100"
+"filename"="carma_v1D27100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\8MHz\FPGA\1]
+"version"="0x01C27100"
+"filename"="carma_v1C27100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\8MHz\FPGA\2]
+"version"="0x01C27100"
+"filename"="carma_v1C27100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 2MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\2MHz]
+"bandwidth"="1.953125e6"
+
+[CARMA\2MHz\FPGA]
+"numberOfFpgaConfigurations"="3"
+
+# FPGA Configuration #0
+[CARMA\2MHz\FPGA\0]
+"version"="0x01D29100"
+"filename"="carma_v1D29100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\2MHz\FPGA\1]
+"version"="0x01C29100"
+"filename"="carma_v1C29100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\2MHz\FPGA\2]
+"version"="0x01C29100"
+"filename"="carma_v1C29100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 500MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\500MHz_3BIT]
+"bandwidth"="500e6"
+
+[CARMA\500MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="81"
+"numberOfCrossLags"="160"
+
+# FPGA Configuration #0
+[CARMA\500MHz_3BIT\FPGA\0]
+"version"="0x01D31100"
+"filename"="carma_v1D31100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\500MHz_3BIT\FPGA\1]
+"version"="0x01C31100"
+"filename"="carma_v1C31100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\500MHz_3BIT\FPGA\2]
+"version"="0x01C31100"
+"filename"="carma_v1C31100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 250MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\250MHz_3BIT]
+"bandwidth"="250e6"
+
+[CARMA\250MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="129"
+"numberOfCrossLags"="256"
+
+# FPGA Configuration #0
+[CARMA\250MHz_3BIT\FPGA\0]
+"version"="0x01D32100"
+"filename"="carma_v1D32100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\250MHz_3BIT\FPGA\1]
+"version"="0x01C32100"
+"filename"="carma_v1C32100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\250MHz_3BIT\FPGA\2]
+"version"="0x01C32100"
+"filename"="carma_v1C32100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 125MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\125MHz_3BIT]
+"bandwidth"="125e6"
+
+[CARMA\125MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="225"
+"numberOfCrossLags"="448"
+
+# FPGA Configuration #0
+[CARMA\125MHz_3BIT\FPGA\0]
+"version"="0x01D33100"
+"filename"="carma_v1D33100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\125MHz_3BIT\FPGA\1]
+"version"="0x01C33100"
+"filename"="carma_v1C33100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\125MHz_3BIT\FPGA\2]
+"version"="0x01C33100"
+"filename"="carma_v1C33100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 62MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\62MHz_3BIT]
+"bandwidth"="62.5e6"
+
+[CARMA\62MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="321"
+"numberOfCrossLags"="640"
+
+# FPGA Configuration #0
+[CARMA\62MHz_3BIT\FPGA\0]
+"version"="0x01D34100"
+"filename"="carma_v1D34100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\62MHz_3BIT\FPGA\1]
+"version"="0x01C34100"
+"filename"="carma_v1C34100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\62MHz_3BIT\FPGA\2]
+"version"="0x01C34100"
+"filename"="carma_v1C34100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 31MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\31MHz_3BIT]
+"bandwidth"="31.25e6"
+
+[CARMA\31MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="321"
+"numberOfCrossLags"="640"
+
+# FPGA Configuration #0
+[CARMA\31MHz_3BIT\FPGA\0]
+"version"="0x01D35100"
+"filename"="carma_v1D35100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\31MHz_3BIT\FPGA\1]
+"version"="0x01C35100"
+"filename"="carma_v1C35100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\31MHz_3BIT\FPGA\2]
+"version"="0x01C35100"
+"filename"="carma_v1C35100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 8MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\8MHz_3BIT]
+"bandwidth"="7.8125e6"
+
+[CARMA\8MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="321"
+"numberOfCrossLags"="640"
+
+# FPGA Configuration #0
+[CARMA\8MHz_3BIT\FPGA\0]
+"version"="0x01D37100"
+"filename"="carma_v1D37100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\8MHz_3BIT\FPGA\1]
+"version"="0x01C37100"
+"filename"="carma_v1C37100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\8MHz_3BIT\FPGA\2]
+"version"="0x01C37100"
+"filename"="carma_v1C37100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 2MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\2MHz_3BIT]
+"bandwidth"="1.953125e6"
+
+[CARMA\2MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="321"
+"numberOfCrossLags"="640"
+
+# FPGA Configuration #0
+[CARMA\2MHz_3BIT\FPGA\0]
+"version"="0x01D39100"
+"filename"="carma_v1D39100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\2MHz_3BIT\FPGA\1]
+"version"="0x01C39100"
+"filename"="carma_v1C39100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\2MHz_3BIT\FPGA\2]
+"version"="0x01C39100"
+"filename"="carma_v1C39100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 500MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\500MHz_4BIT]
+"bandwidth"="500e6"
+
+[CARMA\500MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="33"
+"numberOfCrossLags"="64"
+
+# FPGA Configuration #0
+[CARMA\500MHz_4BIT\FPGA\0]
+"version"="0x01D41100"
+"filename"="carma_v1D41100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\500MHz_4BIT\FPGA\1]
+"version"="0x01C41100"
+"filename"="carma_v1C41100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\500MHz_4BIT\FPGA\2]
+"version"="0x01C41100"
+"filename"="carma_v1C41100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 250MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\250MHz_4BIT]
+"bandwidth"="250e6"
+
+[CARMA\250MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="49"
+"numberOfCrossLags"="96"
+
+# FPGA Configuration #0
+[CARMA\250MHz_4BIT\FPGA\0]
+"version"="0x01D42100"
+"filename"="carma_v1D42100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\250MHz_4BIT\FPGA\1]
+"version"="0x01C42100"
+"filename"="carma_v1C42100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\250MHz_4BIT\FPGA\2]
+"version"="0x01C42100"
+"filename"="carma_v1C42100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 125MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\125MHz_4BIT]
+"bandwidth"="125e6"
+
+[CARMA\125MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="97"
+"numberOfCrossLags"="192"
+
+# FPGA Configuration #0
+[CARMA\125MHz_4BIT\FPGA\0]
+"version"="0x01D43100"
+"filename"="carma_v1D43100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\125MHz_4BIT\FPGA\1]
+"version"="0x01C43100"
+"filename"="carma_v1C43100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\125MHz_4BIT\FPGA\2]
+"version"="0x01C43100"
+"filename"="carma_v1C43100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 62MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\62MHz_4BIT]
+"bandwidth"="62.5e6"
+
+[CARMA\62MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="161"
+"numberOfCrossLags"="320"
+
+# FPGA Configuration #0
+[CARMA\62MHz_4BIT\FPGA\0]
+"version"="0x01D44100"
+"filename"="carma_v1D44100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\62MHz_4BIT\FPGA\1]
+"version"="0x01C44100"
+"filename"="carma_v1C44100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\62MHz_4BIT\FPGA\2]
+"version"="0x01C44100"
+"filename"="carma_v1C44100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 31MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\31MHz_4BIT]
+"bandwidth"="31.25e6"
+
+[CARMA\31MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="161"
+"numberOfCrossLags"="320"
+
+# FPGA Configuration #0
+[CARMA\31MHz_4BIT\FPGA\0]
+"version"="0x01D45100"
+"filename"="carma_v1D45100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\31MHz_4BIT\FPGA\1]
+"version"="0x01C45100"
+"filename"="carma_v1C45100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\31MHz_4BIT\FPGA\2]
+"version"="0x01C45100"
+"filename"="carma_v1C45100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 8MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\8MHz_4BIT]
+"bandwidth"="7.8125e6"
+
+[CARMA\8MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="161"
+"numberOfCrossLags"="320"
+
+# FPGA Configuration #0
+[CARMA\8MHz_4BIT\FPGA\0]
+"version"="0x01D47100"
+"filename"="carma_v1D47100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\8MHz_4BIT\FPGA\1]
+"version"="0x01C47100"
+"filename"="carma_v1C47100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\8MHz_4BIT\FPGA\2]
+"version"="0x01C47100"
+"filename"="carma_v1C47100.bin"
+
+
+#------------------------------------------------------------------
+# CARMA 2MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA\2MHz_4BIT]
+"bandwidth"="1.953125e6"
+
+[CARMA\2MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="3"
+"numberOfAutoLags"="161"
+"numberOfCrossLags"="320"
+
+# FPGA Configuration #0
+[CARMA\2MHz_4BIT\FPGA\0]
+"version"="0x01D49100"
+"filename"="carma_v1D49100.bin"
+
+# FPGA Configuration #1 (corl_mode 0)
+[CARMA\2MHz_4BIT\FPGA\1]
+"version"="0x01C49100"
+"filename"="carma_v1C49100.bin"
+
+# FPGA Configuration #2 (corl_mode 4)
+[CARMA\2MHz_4BIT\FPGA\2]
+"version"="0x01C49100"
+"filename"="carma_v1C49100.bin"

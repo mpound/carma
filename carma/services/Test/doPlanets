@@ -1,0 +1,16 @@
+#!/bin/csh -fe
+#---------------------------------------------------------------
+# Script to generate interpolated planetary brightness temperature 
+# data and plot it.
+#
+# $Id: doPlanets,v 1.1 2013/07/15 21:29:02 mpound Exp $ 
+#---------------------------------------------------------------
+
+foreach planet ( venus mars jupiter neptune uranus )
+  carma/services/Test/tPlanet source=$planet testdata=true > $planet.interpdata
+end
+
+wip planetTb.wip
+
+echo "New plot files:"
+ls *.gif

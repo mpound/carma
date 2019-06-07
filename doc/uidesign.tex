@@ -1,0 +1,766 @@
+\documentclass[preprint]{aastex}
+
+%
+% Greater than or approximately equal to and less than or
+% approximately equal to signs, using macros defined in PLAIN.TEX
+%
+\catcode`\@=11 \def\gapprox{\mathrel{\mathpalette\@versim>}}
+\def\lapprox{\mathrel{\mathpalette\@versim<}}
+\def\@versim#1#2{\lower2.9truept\vbox{\baselineskip0pt\lineskip0.5truept
+    \ialign{$\m@th#1\hfil##\hfil$\crcr#2\crcr\sim\crcr}}}
+\catcode`\@=12
+
+\begin{document}
+\title{CARMA First Light User Interface}
+\author{Marc Pound, Chul Gwon, Steve Scott}
+\slugcomment{Version \today}
+
+%Conceptual Design (CoDR)
+%Scope of the work is clearly defined
+%The person doing the work is clearly defined
+%Basic functionality is clearly delineated
+%Inputs and outputs are identified in text, but perhaps not in detail
+%Hardware resources are identified, including target host for implementation
+
+\section{Functionality and Scope}
+The purpose of the user interface is two-fold: {\it 1)}
+to monitor the status and
+overall health of the array and {\it 2)} to control all aspects of an antenna
+or subarray.  Alhtough both monitoring and control functions are required to
+operate the array, in general, these should be kept
+as separate in the UI, as they are in the high-level code.
+Since the UI will be used by astronomers and engineers,
+it should be intuitive to both.
+Section 2.5 of {\sl High Level Computing
+Requirements and Specifications} is devoted to the UI, therein called
+the Observer and Engineering Interface.   Readers are encouraged
+to review that section.
+
+The scope of a user interface, particularly a graphical one, is often
+unbounded,  due to enhancement requests as users become more experienced
+with the UI, and ceaseless developer tinkering.  CARMA's UI is certain to
+be modified over the life of the array, particularly as new functionality
+such as graphical scheduling is implemented and as new observer tools become
+available.  We clearly don't have the personnel resources to develop the
+``final'' UI in the near future, so we have to concentrate on what we need
+to do astronomy.  Therefore, this document describes only that functionality
+that we expect will be needed for R5 and early operations thereafter.
+
+We break the discussion up into two parts: graphical and non-graphical UI.
+
+\section{Non-Graphical User Interface}
+\subsection{Command Line Programs}
+
+There are currently two programs to probe the monitor data that we expect
+will be used often: {\tt dumpMonitor} and {\tt getMpFromDb}
+(which should perhaps be renamed to something shorter!).
+
+\subsubsection{dumpMonitor}
+
+{\tt dumpMonitor} is a command line utility that prints out the values from the
+CARMA monitor system to the screen.  Using command line options, it can
+display information for the monitor points of the entire system as well as
+hierarchical pieces of the system.  The information is retrieved from
+shared memory and printed every half-second for a specified number of
+iterations.  Three basic modes exist for outputting information:  acc,
+subsystem, and statistics.
+
+The ACC mode is the default mode, and should be used if the user is
+running dumpMonitor on the ACC machine.  To specify hierarchical pieces of
+the CARMA system (such as an entire subsystem, or a single monitor point),
+use the {\tt component} keyword.  For example, to print out the offset of the
+NTP clock in the MasterClock subsystem, a user would use the following
+command:
+\begin{verbatim}
+bin/dumpMonitor component=MasterClock.MasterClock.ntpOffset
+\end{verbatim}
+
+\noindent where the component keyword is case-sensitive (i.e.
+component=masterclock.masterclock.ntpoffset will not work).
+
+In {\tt subsystem} mode, the user
+must be running dumpMonitor on the subsystem's host machine.  Information
+is displayed for only the monitor points of the subsystem.  The component
+keyword is used for specifying hierarchical pieces of the subsystem.  
+Using the same example above for the NTP clock, if you are on the host
+running the MasterClock process, then you would use the following command:
+
+\begin{verbatim}
+bin/dumpMonitor subsystem=masterclock component=MasterClock.ntpOffset
+\end{verbatim}
+
+\noindent where the component keyword 
+is case-sensitive, but the subsystem keyword is case-insensitive.
+
+For the above modes, monitor point information is printed in a format
+consisting of the monitor point name, its value, and a validity flag (the
+flag is represented by a single character: 'g' for good and 'b' for bad).  
+However, in statistics mode (triggered by setting ``stats=yes"), the
+subsystem name and time values describing the transport of the monitor
+points for each subsystem are displayed instead.  Time values are given in 
+milliseconds.
+
+
+\include{getMpFromDb}
+
+\subsection{Python Control Interface}
+For first light, {\it all} control funtionality will be through the
+command line via the Python control interface.  In this interface,
+Python has been bound directly to CARMA's distributed objects via
+their CORBA interfaces.  Because the binding is direct, all public
+method of all DOs are exposed at the command line.  This is an enormous
+number of methods, most of which will not be called by the typical 
+user.  They will, however, be heavily used during testing and integration,
+and are considered the Engineering interface.
+Since the typical observer is not expected to master the full set of
+commands, a small set ($\lapprox$ 20) Python routines that encapsulate
+functionality required for basic observing need to be created.  Some of
+these will likely be predecessors/prototypes for Atomic Commands.
+A subarray DO ('s') has been created to command individual subarrays
+(see example below).
+
+Subarray control ({\tt scripts/sac}) has implemented several shortcuts
+for returning references to high-level DOs,
+e.g., getNoiseSource(), getOvroDrive(4).  In addition, there is full
+support for python command line history via the readline library and
+command completion is enabled to list the available methods for any DO.
+An example session is as follows:
+\begin{verbatim}
+$ scripts/sac --imr corba
+[ lots of help output]
+>>> loref=getObj('carma.loref.LOReferenceControl')
+>>> loref.setFreqency(1,2,34.5)
+\end{verbatim}
+\noindent Most DOs are predefined by sac as variables with short names 
+and methods
+can be called on them with out calling getObj() first.  There are
+two available help methods.  The first is {\tt helpme('objectName')},
+to give help on a particular object. The second is to use CTRL-space
+as command completion to list available commands.
+\begin{verbatim}
+>>> lr.enableDDS()                  ! The lobe rotator
+>>> helpme('lr')                    ! List lobe rotator help
+lr
+ disableDDS
+ enableDDS
+ enableDDSPhaseSwitching
+ loadPhaseSwitchColumn
+ resetDDS
+ setDDSClock
+ setDDSFreq
+ setDDSPhase
+ setDDSRegister
+ setInputDelay
+ setInputFrequency
+ setInputLOFreq
+ setOffsetControl
+ setOffsetPhase
+ setOffsetRate
+ setOutputRegs
+>>> lr.(CTRL-space)                 ! Show all lr methods available
+lr._NP_RepositoryId         lr._non_existent
+lr._Object__release         lr._release
+lr.__class__                lr.disableDDS
+lr.__del__                  lr.enableDDS
+lr.__doc__                  lr.enableDDSPhaseSwitching
+lr.__getstate__             lr.loadPhaseSwitchColumn
+lr.__init__                 lr.resetDDS
+lr.__methods__              lr.setDDSClock
+lr.__module__               lr.setDDSFreq
+lr.__omni_obj               lr.setDDSPhase
+lr.__setstate__             lr.setDDSRegister
+lr._duplicate               lr.setInputDelay
+lr._get_interface           lr.setInputFrequency
+lr._hash                    lr.setInputLOFreq
+lr._is_a                    lr.setOffsetControl
+lr._is_equivalent           lr.setOffsetPhase
+lr._narrow                  lr.setOffsetRate
+lr._nil                     lr.setOutputRegs
+
+>>> clock.alignOffset()             ! The master clock 
+>>> s.track("3c273")                ! Tell Subarray 1 to track 3c273
+>>> CTRL-D                          ! exit
+\end{verbatim}
+
+\section{Graphical User Interface}
+\subsection{Design Goals}
+
+The primary design goal of the GUI is to provide a rich graphical interface
+that makes it easy to control, monitor, and maintain the array.
+This includes the appropriate use of background color, time series
+graphical representation, time series file dumps and audio alarms.
+Screen space is important so information density must be high.
+
+The secondary design goal is universal parallel access.  It is desirable to
+be able to monitor and control the array from as many potential locations
+as possible.  This implies access from different machine architectures
+and operating systems.  Simultaneous monitoring from different locations
+is also a requirement.  The ability to control the array is restricted to
+those with a valid username and password, while monitoring is in principle
+available to anyone.
+
+The third design goal is to limit resource use for both server and
+client.  The CPU usage on the ACC with 50 clients windows running should 
+be less than 25\%.  Similarly, the CPU usage load on a common end-user
+computer (2~GHz CPU) with 5 subsystem windows running should be
+less than 15\%. 
+
+\subsection{Real Time Display}
+
+Real Time Display windows (RTD) were initially developed for operation
+of the OVRO array (Scott \& Finch 1998; Scott 1999; Shukla, Scott \&
+Weaver 1999).  The Java portion code was later merged with the JStatus
+codebase developed independently for BIMA by Pound, in order to eliminate
+duplicated effort while preserving the best aspects of both.  RTD has been
+called out several times, in the Requirements and subsequent documents,
+as an instance of major code reuse for CARMA.
+
+The design utilizes a client server architecture with a Java client
+providing the user interface on an arbitrary computer on the Internet. The
+Linux machine that runs the array is the host for the server programs which
+are written in C++. A user initially sees a menu of different monitoring
+windows that can be launched onto their screen. Each of these windows is
+independent, and several of them are typically run simultaneously on the
+user's screen. The local window manager is used to resize and place
+the windows to customize the layout (See Figure \ref{fig:winarray}).
+Scrollbars are automatically added for large windows.
+
+To eliminate the need for synchronized programming in the client
+and the server, the server programs send the client complete
+configuration information on startup and the client then configures
+itself accordingly. The result is clients with significantly different
+appearances even though they are running copies of the same Java code.
+
+The life cycle of a new window begins when the client opens a TCP/IP
+socket connection to a pre-assigned port on the array control computer
+with a request for a specific type of realtime window. The Linux system
+then runs an xinetd program attached to this port that forks a copy
+of the specific server program for the type of window requested. This
+establishes a one-to-one mapping between the client and a window specific
+server program. The client now requests its layout from the server, and
+after reacting to the reply it makes itself visible. It then begins a loop
+of requesting an update of the live data from the server, displaying the
+data, and then sleeping for the update interval. The multi-threaded nature
+of the Java environment allows reaction to user initiated events, such as
+plotting, while in this loop. Driving the update cycle from the client is
+appropriate for monitoring data as it is then very robust to unforeseen
+delays. These delays only cause a gradual degradation of response rather
+than total failure.
+A pulldown menu allows other windows to be launched separately or 
+replace the existing window (''Morph''). 
+
+RTD also provides control functionality necessary for remote operation
+of the array.  Any remote access request to control the array has to be
+authenticated at the server end. The authentication is made against the
+UNIX username/password pair in the OVRO server, thereby requiring the
+user to have a UNIX account on the server beforehand. To avoid password
+sniffing over the net, the username/password pair is encrypted. Only the
+monitoring of the array (browsing) is allowed for the non-authenticated
+users. The modular nature of the authentication function makes it easier
+to implement other restriction/permission rules based upon machine address
+or domain name if desired.
+
+
+\subsubsection{Real Time Cells}
+The realtime data cell (rectangle containing text) is the fundamental
+building block of the realtime monitoring windows.  These are
+often arrange in a table format, but can be placed singularly anywhere
+on the window. It is the inherent
+capabilities of these cells that make it easy to build RTDs with a high
+level of functionality.  The values within the cells are updated on a
+user selectable time scale that can be set from half a second to thirty
+minutes using the choice menu at the bottom of the window.  A realtime
+cell can optionally have the cell background color change as a function
+of the value in the cell.  Typical color assignments are yellow for
+warning and red for alert.  An audio chime can also be associated with
+the cell by the user to call attention to the alert.  When the window
+is initiated, each cell begins to cache a history that contains the most
+recent 200 samples.  This history is then available for display by other
+parts of the program (plot or list).  The cells are also a component of
+a compact menu for selecting the advanced cell functions.  When a cell
+is clicked with the mouse, its border is enhanced and it becomes the
+``selected'' cell.
+
+The plot and list features coupled with the history are an important part of
+the user interface for the cells and are shown in Figure \ref{fig:family}.
+When a plot or list window is initiated it is seeded with the values in
+the cell history.  This allows the user to see an event occur in the main
+window and then to initiate a plot to look back in time before the event.
+Both plot and list contain print options.  Additionally, the contents
+of the list window can be written to disk in a two column ASCII format.
+The plotting is intentionally simple.  The ordinate is auto scaled but
+the abscissa simply uses one pixel per sample to allow a maximal number
+of samples to be plotted and avoid unnecessary rescaling.  The ability
+of the list window to write to disk allows more complex analysis using a
+spread sheet or other tools.  Because the histories for all of the cells
+within a window are synchronized, plots and listings are time aligned for
+cross comparison of cells.  This allows, for instance, antenna-to-antenna
+comparisons of a given quantity. Each plot or listing contains an extension
+of the history buffer that can contain 1000 points.
+
+\subsubsection{Communication Protocol}
+Most of the cell data are integers or doubles but some are straight text.
+When an update is sent by the server, all of the numerical data are
+transformed to ASCII text.  This relieves the less efficient Java client
+from having to format the output.  It also allows numerical data to be
+replaced with text strings.  For example, if the shared memory is not
+being updated, the cells are filled with question marks rather than the
+stale erroneous data.  If a numerical value overflows its field width,
+it is replaced by a string of asterisks.  These transformations could be
+done in the client by sending more status information but then the amount
+of transmitted data is increased.  The background color of each cell is
+sent as a single character code following the cell text data.
+
+To improve throughput on the data update, the data stream is compressed
+at the server by transmitting only changes to the existing screen and
+escape codes that encode the number of unchanged characters to skip.
+This algorithm matches the data quite well, where often the screen
+appearance shows just the twinkling of the least significant digits,
+and is another reason that ASCII encoding is used.  Typical compression
+rates range from 5 to 10.
+
+\subsubsection{RTD Usage}
+
+RTD windows are started up via a jar file with possible additional 
+command line parameters which may be used for individual 
+customization (e.g. window selection and placement, fontsize, startup
+window)
+Example:
+
+\begin{verbatim}
+$  java -jar /home/control/carma/carma/ui/jrtd/jars/rtd.jar help
+
+Usage: param1=value1 param2=value2 ...
+Parameter names:
+  upd*ateRate    in milliseconds
+  loc*ation      ascii code, such as OVRO or BIMA
+  serv*erName    internet name of data server
+  port*Number    ip port number on data server
+  user*name
+  dev*elopment   runs developmental system; yes or no
+  gue*st         login as guest; yes or no
+  qui*cklogin    login as guest, no prompt; yes or no
+  but*tonbar     display buttonbar; yes or no
+  time*bar       display timebar;   yes or no
+  font*Size      font size for cell data
+  labRelFontSize font size for labels, relative to the cell font size
+  win*dowName    name of realtime window
+  geo*metry      size and/or location as WidthxHeight+Xoff+Yoff
+  dow*nload      download latest JAR file to specified location 
+                  - default is C:\ovrojava\jar\cmartd.jar
+\end{verbatim}
+
+\noindent where * indicates the short name for the parameter. 
+The currently available windows are shown in Table \ref{t-windowNames}.
+\begin{deluxetable}{ll}
+\tablewidth{3.5 truein}
+\tablecaption{Available RTD Windows 
+\label{t-windowNames}
+}
+\tablehead{
+\colhead{Name} &
+\colhead{Description} 
+}
+\startdata
+ bimadrive     & BIMA Antenna Drives \\
+ bimatelemetry & BIMA Antenna Telemetry \\
+ controlants   & Subarray Control \\
+ controlreachability  &  Control DO State \\
+ default     & ??  \\
+ delay       & Delay Engine \\
+ demo        & Demo \\ 
+ error       & Errors, blanking, paging \\
+ linelength  & Line Length System \\
+ loberotator & Lobe Rotator Boards \\
+ loref       & LO Reference \\
+ masterclock & Master Clock \\
+ ovrodrive   & OVRO Antenna Drives \\
+ ovrocryo    & OVRO Antenna Cryostat \\
+ ovroif      & OVRO Antenna IF\\
+ ovrooptics  & OVRO Antenna Optics\\
+ ovroenviro  & OVRO Antenna Environmental Monitor\\
+ ovroxx      & OVRO Antenna LO Reference Monitor     \\
+ ovrotiltmeter & OVRO Antenna Tiltmeter \\
+ ovrosecondary & OVRO Antenna Secondary Reflector \\
+ ovroyigpll & OVRO Antenna Yig Phase Lock Loop \\
+ test     & Test Subsystem \\
+\enddata
+\end{deluxetable}
+
+\noindent Multiple windows can be started simply by appending them to the
+command line, e.g. windowName=linelength geometry=400x300 win=bimadrive
+win=loref geo=500x250.  Storing such a command in a script provides very
+basic customization.
+
+\subsubsection{RTD Performance}
+Users have long been able to access the OVRO array with a modest PC (both
+Windows and Unix) over a modem (common hardware in the late 1990s).
+Specifically, a session with 6 windows, each containing 50 items of
+information updated every two seconds, used less than 5\% of the CPU of
+a 150~MHz Pentium, about 18MB of memory (including the Java 1.1 JVM),
+and less than 25\% of the bandwidth of a 28.8kbps modem.  The central
+server was an UltraSparc~1/170 that expended 0.3\% of its CPU and 0.9MB
+of memory per server instance.   Thus the loads on the ACC and clients
+are expected to be quite small, but should still be benchmarked for PDR.
+
+
+\subsection{CARMA Monitor Viewer}
+
+Written in a combination of Java and C++, CARMA Monitor Viewer (CMV)
+is designed to minimize the amount of C++ to just that required to
+retrieve information about the available monitor points and provide
+them to a server that answers requests from clients.  CMV is a regular
+client/server arrangement, with the client written entirely in Java and
+utilizing Swing components.
+
+The server, CMVServer, uses Java Native Interface (JNI) to wrap the CARMA C++
+monitor system libraries.  This server obtains information about
+the monitor stream by directly calling the libraries' C++ methods.
+It creates a list of all monitor points with their canonical names.
+Connections to this server are handled by the Remote Method Invocation
+registry (similar to CORBA/RPC but very light weight).
+This takes approximately 3 seconds on Berkeley's lab acc computer.
+It is launched and left running only once during regular CARMA 
+startup.
+
+The client, CMV, utilizes standard Model-View-Control algorithms that
+are part of the Swing components for display of data in tabular form.
+When started, the client attempts to make a connection to a host
+specified on the command-line (e.g. {\tt java CMV acc.berkeley.edu}).
+This is done after the CMVServer 
+and rmiregistry have been started on the server.
+
+The client then queries the server for information about which monitor
+points are available to show.  The entire canonical list of monitor
+points is downloaded to the client (this is approximately 350K of text
+at the time of this writing).  Over local ethernet links, this download
+takes less than one second.  This query happens once each time the client
+is started.  Optimizations in the future could include having the client
+save an image of the current list of canonical names and cache it, then
+consulting the server the next time the client is run to ensure the cache
+is up-to-date with the current list of monitor points.
+
+No monitor data is passed back to the client until a user selects
+a subsystem using the tree list of monitor points displayed on the
+client.  Without any developer input by subsystem authors, the
+tree provides a first pass view, with the ability to dig down into
+individual subsystems to view monitor data in raw form.
+When a user of the client selects a particular subsystem to view,
+a tab is created on the right hand side of the client display area
+with a tabular list of monitor points and values.
+(somewhat outdated screen shot in Figure \ref{f-cmv}; the
+current CMV version shows the actual monitor points).
+
+When a user selects a subsystsem, the client iterates through the monitor
+points for that subsystem and makes a pipelined request to the CMV server
+to keep those points up-to-date on a 2Hz interval.  The server receives this
+request and starts a bookkeeping list of these points and internally updates
+the information.  It is now up to the client to request the information
+from the server every 0.5 seconds to transport the data back to the client.
+This bookkeeping on the part of the server keeps its load on the host
+system to a minimum by ensuring that only data date necessary to
+view on a client is kept up-to-date within the CMV server itself.
+
+\subsubsection{CMV Performance}
+
+Performance of CMV has not yet been fully benchmarked and will need
+to be completed for PDR.  Initial tests indicated the load on the ACC
+was negligible while sending back all monitor points associated with 6
+loberotator boards.  Since the client pipelines requests for the data
+associated with the monitor points, this means that there is a single
+RMI executed per view tab, instead of per monitor point.
+
+Monitoring raw network traffic has shown that while viewing all monitor
+points associated with 6 loberotator boards (generating data in emulate
+mode) approximately 1 KB/s of network traffic was generated.  This would
+increase with the extra monitor information passed that includes status
+information to about 2 KB/s.
+
+\subsubsection{Potential Future Work}
+Display of monitor data is removed from its generation and
+can be left either to the developer to improve its layout in the 
+future or to anyone proficient in UI design and consultation with
+developers of subsystems.
+
+The raw form of the current tabular data view is useful for initial
+development and testing and is not intended for a fully usable system
+for day-to-day operations.  However, with the MVC model, it is easy to
+recast the data into a more visually usable form.  A single developer,
+proficient in the use of Swing components can accomplish creating more
+sophisticated displays quickly.  This is key to UI development as it allows
+for flexibility in creating a display that fits the problem well by trying
+out many different solutions in a short amount of time.  This means that
+the viewer is scalable without requiring arduous developer effort.
+
+\subsection{Log Interface}
+
+In order for users to understand system behavior,
+a view into messages logged must be provedied (2.5.2-R5). 
+At minimum the log interface should provide 
+\begin{itemize}
+\item simple streaming of new log messages 
+\item ability to search for specific patterns (simple pattern match, 
+  not full regexp, e.g. carma::util::StringUtils)
+\item time range selection 
+\item filtering based on any log table field.
+\item capability for observer to insert messages into the log.
+(Nested Diagnostic Context could be ``observer's comment'').
+\end{itemize}
+
+Since there will be a lag between when log messages are written by syslog
+and when they are processed by syslog2Db and ingested to the
+dbms, the log UI will need to access both /var/carma/log and the DBMS.
+depending on time search range.  Access to /var/carma/log can be
+provided by carma::util::LogProcessor which is used by syslog2Db for
+this very purpose.  The DBMS can be accessed by JDBC.
+%just use syslog(2). NDC == "Observer's comment"
+
+\subsection{CARMA Data Viewer}
+
+The CARMA Data Viewer (CDV) was developed as a common tool for displaying
+visibility data in real-time from both the OVRO and BIMA arrays (Pound,
+Hobbs \& Scott 2001), looking forward to the day when the arrays would
+be merged.  It is a server-client protocol with the server in C++ and the
+client in Java.  (For BIMA, the server was JNI wrapper
+around MIRIAD I/O and Hat Creek common block libraries).  The data format
+developed for CDV, the ObsRecord,  was intended to be the simplest possible
+that was still capable of representing both BIMA and OVRO visibilities. It
+is the predecessor to CARMA's VisBrick.  CDV version 1 used the CORBA
+Event Service to pass the ObsRecord from server to client.  For CARMA,
+this is being upgraded to use Notification Service.  Much of the rest
+of the code will be reused.  
+
+CDV is a workspace application, with individual data viewers running as
+windows inside the workspace. Multiple data sources (i.e., observatories or
+subarrays)
+may be monitored simultaneously, and a variety of representations of
+the data are possible.  CDV can display for each baseline continuum
+amplitude and phase a function of time in a stripchart fashion (Figure
+\ref{f-cdvstripchart}) or display spectral windows showing amplitude and
+phase simultaneously.  Antenna based
+views are also possible (see figure). CDV can also list
+data values as text.  Each plot and data list window is refreshed with
+every new integration.
+
+As with monitoring UI, Screen real estate will be at a premium. The
+``double triangle'' layout is efficient in terms of space usage, but with
+105 baselines (253 when SZA is merged) the area is still quite large.
+We will need options to select a certain subarray, individual antennas, or
+baselines, to shrink plotting windows, etc.  CDV currently
+has a home-grown plotter which does strip chart or spectral mode as
+described above.  However, we plan to migrate to more fully functional
+external plotting package.  This allows us to devote resources to solve layout
+and performance issues, without spending time recreating functionality
+that already exists in well-supported packages (see below).
+
+\subsubsection{CDV Performance}
+
+CDV resource usage will need to be benchmarked for PDR.
+The memory footprint in the initial version was large, partly
+because of a memory leak in Java. 
+The data size alone for a 45 baseline BIMA continuum-only ObsRecord is about
+13.5 KB. For 4 spectral windows with 512 channels, the size increases to
+200 KB. With 15 baselines, the OVRO data scales to one third the size of
+the BIMA data.  For the CARMA first light correlator 
+(15-stations, 105 baselines, 512 channels; Beasley et al. 2003), 
+the size is 120KB.  For the ``maximal resolution'' correlator (Rauch \&
+Hawkins 2004), the size is 600KB.
+
+\subsection{Fault System Display}
+Display of faults is already partially handled by RTD cells which will
+turn red and beep when a fault occurs. A separate window is needed to
+list the actual faults and suggested action for the observer.  A display
+showing the root fault and the baselines and bands affected is needed.
+Display of the entire DAG would be useful too.
+
+\subsection{Required Plotting Functionality}
+
+A user must be able to view both real-time and short term historic data
+generated by any monitor point of the array (2.5.1-R10) and to view in
+real time continuum and spectral line data collected by the array (2.5.2-R11).
+The former is provided by RTD and the latter by CDV.  However, both
+have somewhat primitive plotting functionality.   There are several
+well-developed external packages, both open source and licensed, that
+can provide us with more sophisticated plots (e.g., scatter plot of
+one cell against another, interactivity, 
+better labelling and use of color, ``oscilloscope mode'' 
+for plotting of Fast Monitor Packets).  Some possible packages are 
+JFreeChart (jfree.org),
+JOpenChart (jopenchart.sourceforge.net),
+Chart2D (chart2d.sourceforge.net), and 
+PtPlot (http://ptolemy.eecs.berkeley.edu/java/ptplot).
+These will be evaluated for CARMA-wide use, as other packages may benefit
+from them as well.
+
+\section{Outstanding Issues}
+
+\begin{itemize}
+
+\item The sheer number of CARMA subsystems, monitor points, and antennas
+present a complication for displaying monitoring information.  
+While RTD
+windows currently exist for most subsystems, the layout/presentation of many
+of them is not optimal, and there is not uniformity of table configuration
+(e.g. antenna number on rows versus columns).  
+The recent addition of automatic scrollbars ameliorates this somewhat,
+but all windows should be examined individually for improvements to the
+layout.  In some cases this may be solved by reorganization of the MPML
+containers.  In this case, the subsystem author {\it must} be consulted to
+ensure integrity of the data and to assess any impact on existing code.
+The susbsystem author has final approval for any MPML change initialized
+for RTD.  Currently all RTD windows are for a single subsystem.  
+A window compositing information from several subsystems will be required
+as the main observers console which would be the default windows on startup.
+Another composite window to show the total power as it flows through
+various subsystems would also be useful.
+(All of the above is also true for CMV.)
+
+\item What is the appropriate role for CMV in the UI?  The alternate view
+of the monitor system is useful, but resources should probably not be
+allocated to reproduce in CMV functionality that already exists in RTD
+(and vice versa).  One idea is a unified RTD/CMV/CDV interface where you
+could launch the other two apps from the one you are currently running.
+
+\item Program.cc has been modified in such a way as to prevent
+running CMV in its present form (dynamic loading of CARMA shared object  
+library no longer possible).
+%A days worth of effort
+%  should be enough to solve this.
+% The changes involve file scoped variables for handling argument 
+% handling within Program.cc (specifically, gArg0, gArgc, gArgv)
+% When I had this working before, I was instantiating my own copy of 
+% Program (the class) and calling out run on my own.  Now that's not 
+% immediately possible without causing a segfault.
+% (actually, it's not even possible to get it to run at all, since 
+% I have to munge Program in a few ways just to have the dynamic 
+% carmautil library load at runtime (such as making one program method 
+% public instead of private.
+% This is kindof a heavy detail, but the only reason why these changes are
+%needed is the architecture of Program.cc, not the CMV stuff.  Because it's
+%a matter of linking into and then making calls into carma libraries that
+%are dependent on things that Program.cc does.
+
+\item What are the respective roles of C++ and Java in the GUI?  This is
+essentially a ``brains in the server'' versus ``brains in the client''
+question.  Layout of RTD windows in C++ is more constrictive/cumbersome
+as Java affords substantially more flexibility in layout/presentation,
+especially for a dynamic system in which the number of antennas in any
+subarray is not fixed.  However, the advantage of RTD/C++ is that clients
+do not need to update their code when the layout has changed.
+
+\item Dynamic tables are needed, especially for subarray windows.
+The merging with JStatus gave RT Tables the capability to hide
+individual rows and columns. This needs to be made automatic
+when subarray membership is changed.
+
+\item We need a formalized help system for Python. Doxygenize
+like N Chapman did for C2d.
+\end{itemize}
+
+
+\section{Administrative Summary}
+
+\begin{tabular}{lrl}
+\hline
+Stage & Responsible & Release (Completion Date) \\
+\hline
+Work Package Analysis     & Pound, Rauch& 06/27/2002\\
+Conceptual Design Review  & Pound, Gwon, Scott& 02/10/2005 \\
+Preliminary Design Review & Pound, Gwon, Scott& \\
+Critical Design Review    & Pound, Gwon, Scott& \\
+\hline
+Design  & all & R2 \\
+Implementation: &&\\
+dumpMonitor & Scott & R1\\
+carmaMonitorDataExtractor & Gwon & R2 \\
+Logging UI & Gwon/Pound  & R3 \\
+Evaluate plotting packages& Pound & R3 \\
+CDV & Hobbs/Gwon & R3 \\
+Window Layout Improvement & Gwon & R3+ \\
+Integrate new plotting package & Pound & R4 \\
+Cell Scatter Plot & Pound/Gwon & R4 \\
+Fast Data Plotter & Hobbs?/Pound & R4 \\
+Composite RTD windows & Pound/Scott & R4 \\
+Fault System display & Gwon & R4 \\
+CMV ? & Kraybill ? & R4 \\
+Testing & all & R4 \\
+Integration & all & R4 \\
+\hline
+\end{tabular}
+
+%-------------
+   \begin{figure}
+%   \centerline{\epsfig{figure=winarray.ps, width=.8\textwidth} }
+   \epsscale{0.8}
+   \plotone{winarray.eps}
+   \caption[example]
+   { \label{fig:winarray}
+      The general OVRO array status monitor window
+      illustrates the flexibility of the layouts available.
+   }
+   \end{figure}
+%-------------
+
+
+\begin{figure}
+   %\centerline{\epsfig{figure=famPortrait.ps,width=.8\textwidth}} 
+   \epsscale{0.8}
+   \plotone{famPortrait.eps}
+   \caption  
+   { \label{fig:family}
+      A realtime monitor window surrounded by its children, all 
+      selected for a single cell.
+      Clockwise from the monitor window are
+      statistics, list, and plot. 
+      A control widget is in the center.          
+   }
+   \end{figure}
+%-------------
+
+\begin{figure}
+%\epsscale{0.85}
+\plotone{CDVstripchart.eps}
+\label{f-cdvstripchart}
+\caption{
+View of the CDV workspace showing different data representations for
+sideband averages (LSB \& USB), which are selected using the Options
+Menu.  Upper window shows baseline-based amplitudes (red trace) and
+phases (blue dots) vs. time from BIMA. Lower window contains
+antenna-based plots of amplitude and phase vs. time from OVRO.
+}
+\end{figure}
+
+%\begin{figure}
+%\epsscale{0.85}
+%\plotone{CVSspectrum.eps}
+%\label{f-cdvspectrum}
+%\caption{
+%CDV screenshot showing spectral channel plots.
+%}
+%\end{figure}
+
+\begin{figure}
+\label{f-cmv}
+\plotone{CMVscreenshotRot.ps}
+\caption{
+CMV screenshot showing available subsystems in tree view on left 
+and fake LR board monitor points (current version has actual points).
+Individual LR boards are selected with the tabs at top.
+}
+\end{figure}
+
+\begin{thebibliography}{}
+\bibitem[]{} Beasley, A.J., Hawkins, D.W., Rauch, K.P. \& Woody, D. etal 2003, CARMA Memo \#11
+\bibitem[]{} Rauch, K.P. \& Hawkins, D.W. 2004, CARMA Memo \#28
+\bibitem[]{} Scott, S. 1999, SPIE Proceedings.
+\bibitem[]{} 
+Scott, S. \& Finch, R. 1998, in ASP Conf. Ser., Vol. 145, Astronomical Data Analysis Software and Systems VII, ed. R. Albrecht, R. N. Hook, \& H. A. Bushouse (San Francisco: ASP), 49
+\bibitem[]{}
+Shukla, H., Scott, S., \& Weaver, S. 1999, in ASP Conf. Ser., Vol. 172, Astronomical Data Analysis Software and Systems VIII, eds. D. M. Mehringer, R. L. Plante, \& D. A. Roberts (San Francisco: ASP), 95
+\bibitem[]{} Pound, M.W., Hobbs R., \& Scott, S. 2001, Vol. 238, Astronomical Data Analysis Software and Systems X, eds. F. R. Harnden, Jr., F. A. Primini, \& H. E. Payne (San Francisco: ASP), 82
+\end{thebibliography}
+\appendix
+\clearpage
+
+
+\end{document}

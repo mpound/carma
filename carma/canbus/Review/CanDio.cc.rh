@@ -1,0 +1,162 @@
+/**
+ * $Id: CanDio.cc.rh,v 1.1 2003/07/16 20:02:23 rick Exp $
+ *
+ * Class to perform Input and Output to CARMA custom CAN DIO Janz 
+ * carrier board.
+ *
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/16 20:02:23 $
+ *
+ */
+
+// System includes
+#include <unistd.h>
+
+// Carma includes
+#include "carma/canbus/CanDio.h"
+#include "carma/canbus/Error.h"
+
+// Device maps.  This class was designed exclusively for use with
+// the specialized CARMA Janz CanDio cPCI card.  The device names
+// of the individual components are limited to the following.  They
+// are included here to minimize the number of command line arguments
+// needed by the Master class.  The Master class has one input parameter,
+// namely the Janz Modulbus number (indicated by either a hex switch or 
+// a Rom chip on the Janz cPCI carrier board).  From the device names
+// can be deduced from below.
+
+/*** REVIEW
+ * Reviewer: rh
+ * Comments: Not sure if these devices change much. If so, maybe
+ *           they should be read in from somewhere. XML perhaps.
+ *           If they are set in stone, then this is just fine.
+ */
+// Device map for mttl boards. 
+char *mttlDevMap[16][2] = {
+	{"/dev/mttla_03", "/dev/mttlb_03"},
+	{"/dev/mttla_13", "/dev/mttlb_13"},
+	{"/dev/mttla_23", "/dev/mttlb_23"},
+	{"/dev/mttla_33", "/dev/mttlb_33"},
+	{"/dev/mttla_43", "/dev/mttlb_43"},
+	{"/dev/mttla_53", "/dev/mttlb_53"},
+	{"/dev/mttla_63", "/dev/mttlb_63"},
+	{"/dev/mttla_73", "/dev/mttlb_73"},
+	{"/dev/mttla_83", "/dev/mttlb_83"},
+	{"/dev/mttla_93", "/dev/mttlb_93"},
+	{"/dev/mttla_a3", "/dev/mttlb_a3"},
+	{"/dev/mttla_b3", "/dev/mttlb_b3"},
+	{"/dev/mttla_c3", "/dev/mttlb_c3"},
+	{"/dev/mttla_d3", "/dev/mttlb_d3"},
+	{"/dev/mttla_e3", "/dev/mttlb_e3"},
+	{"/dev/mttla_f3", "/dev/mttlb_f3"}
+};
+
+// Device map for dpm can modules.
+char *dpmDevMap[16][2] = {
+	{"/dev/dpm_00", "/dev/dpm_01"},
+	{"/dev/dpm_10", "/dev/dpm_11"},
+	{"/dev/dpm_20", "/dev/dpm_21"},
+	{"/dev/dpm_30", "/dev/dpm_31"},
+	{"/dev/dpm_40", "/dev/dpm_41"},
+	{"/dev/dpm_50", "/dev/dpm_51"},
+	{"/dev/dpm_60", "/dev/dpm_61"},
+	{"/dev/dpm_70", "/dev/dpm_71"},
+	{"/dev/dpm_80", "/dev/dpm_81"},
+	{"/dev/dpm_90", "/dev/dpm_91"},
+	{"/dev/dpm_a0", "/dev/dpm_a1"},
+	{"/dev/dpm_b0", "/dev/dpm_b1"},
+	{"/dev/dpm_c0", "/dev/dpm_c1"},
+	{"/dev/dpm_d0", "/dev/dpm_d1"},
+	{"/dev/dpm_e0", "/dev/dpm_e1"},
+	{"/dev/dpm_f0", "/dev/dpm_f1"}
+};
+
+using namespace carma::canbus;
+
+const long MS_PER_S = 1000;          // Milliseconds per second.
+const long NS_PER_MS = 1000000;      // Nanoseconds per millisecond
+const long DEFAULT_PULSEWIDTH = 250; // Default pulsewidth in ms.
+
+// -----------------------------------------------------------------------------
+CanDio::CanDio() 
+{
+    pulseWidth_ = DEFAULT_PULSEWIDTH; 
+}
+    
+// -----------------------------------------------------------------------------
+CanDio::CanDio(int modboard) : 
+	Dio(mttlDevMap[modboard][0], mttlDevMap[modboard][1], true),
+    CanIo(dpmDevMap[modboard][0], true, dpmDevMap[modboard][1], true)
+{
+    try {
+
+        pulseWidth_ = DEFAULT_PULSEWIDTH;
+        
+        // At this stage their are two possibilities.
+        // a) Dio initializes and places the busses in resetHi state
+        //    which prevents any CAN communication from modules.
+        // b) CanIo initializes and is ready to begin collecting CAN msgs and 
+        //    accepting requests.
+        // or 
+        // a) CanIo initializes 
+        // b) Dio initializes and place the busses in resetHi.
+        //
+        // To be safe, we need to clear the read queue to make sure
+        // that no CAN messages from non reset modules are processed.
+        clearReadQueue();
+
+        // When the user is ready to begin accepting CAN messages he 
+        // needs to turn the reset off by issuing a resetLo command.
+    } catch (...) {
+        cerr << "CanDio::CanDio() - Unknown exception caught - exiting."
+            << endl;
+        exit(EXIT_FAILURE);
+    }
+}
+	
+// -----------------------------------------------------------------------------
+CanDio::CanDio(int modboard, int port) :
+	Dio(mttlDevMap[modboard][port], true),  
+	CanIo(dpmDevMap[modboard][port], true)
+{
+    try {
+        
+        pulseWidth_ = DEFAULT_PULSEWIDTH;
+        
+        // At this stage their are two possibilities.
+        // a) Dio initializes and places the busses in resetHi state
+        //    which prevents any CAN communication from modules.
+        // b) CanIo initializes and is ready to begin collecting CAN msgs and 
+        //    accepting requests.
+        // or 
+        // a) CanIo initializes 
+        // b) Dio initializes and place the busses in resetHi.
+        //
+        // To be safe, we need to clear the read queue to make sure
+        // that no CAN messages from non reset modules are processed.
+        clearReadQueue();
+
+        // When the user is ready to begin accepting CAN messages he 
+        // needs to turn the reset off by issuing a resetLo command.
+    } catch (...) {
+        cerr << "CanDio::CanDio() - Unknown exception caught - exiting."
+            << endl;
+        exit(EXIT_FAILURE);
+    }
+}
+	  	
+// -----------------------------------------------------------------------------
+void CanDio::reset() 
+{	
+    timespec pw, rem;  // Timespec for pulsewidth and remainder.
+
+    pw.tv_sec = (time_t) (pulseWidth_ / MS_PER_S);
+    pw.tv_nsec = (long) ((pulseWidth_ % MS_PER_S) * NS_PER_MS);
+    
+    // Set reset hi, sleep for pulsewidth, clear read queue and set reset lo.
+	resetHi();
+    nanosleep(&pw, &rem);
+	clearReadQueue();
+	resetLo();
+}

@@ -1,0 +1,337 @@
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=latex 2012.2.17)  14 AUG 2012 16:09
+entering extended mode
+ %&-line parsing enabled.
+**auxservices.tex
+(./auxservices.tex
+LaTeX2e <2005/12/01>
+Babel <v3.8h> and hyphenation patterns for english, usenglishmax, dumylang, noh
+yphenation, arabic, basque, bulgarian, coptic, welsh, czech, slovak, german, ng
+erman, danish, esperanto, spanish, catalan, galician, estonian, farsi, finnish,
+ french, greek, monogreek, ancientgreek, croatian, hungarian, interlingua, ibyc
+us, indonesian, icelandic, italian, latin, mongolian, dutch, norsk, polish, por
+tuguese, pinyin, romanian, russian, slovenian, uppersorbian, serbian, swedish, 
+turkish, ukenglish, ukrainian, loaded.
+(./aastex.cls
+Document Class: aastex 1999/11/30 5.0b9/CB/AO AAS markup document class
+Class aastex Info: Original \LaTeX2.09 style by Chris Biemesderfer (chris@seago
+at.com). Adapted to \LaTeXe by A. Ogawa (ogawa@teleport.com) on input line 73.
+(/usr/share/texmf/tex/latex/base/article.cls
+Document Class: article 2005/09/16 v1.4f Standard LaTeX document class
+(/usr/share/texmf/tex/latex/base/size11.clo
+File: size11.clo 2005/09/16 v1.4f Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf/tex/latex/base/latexsym.sty
+Package: latexsym 1998/08/17 v2.2e Standard LaTeX package (lasy symbols)
+\symlasy=\mathgroup4
+LaTeX Font Info:    Overwriting symbol font `lasy' in version `bold'
+(Font)                  U/lasy/m/n --> U/lasy/b/n on input line 47.
+)
+(/usr/share/texmf/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/share/texmf/tex/latex/graphics/graphics.sty
+Package: graphics 2006/02/20 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/share/texmf/tex/latex/config/graphics.cfg
+File: graphics.cfg 2007/01/18 v1.5 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: dvips.def on input line 90.
+
+(/usr/share/texmf/tex/latex/graphics/dvips.def
+File: dvips.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+))
+\Gin@req@height=\dimen103
+\Gin@req@width=\dimen104
+)
+(/usr/share/texmf/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2002/01/22 v2.2d
+
+(/usr/share/texmf/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2001/10/25 v2.2f
+\@emptytoks=\toks15
+\symAMSa=\mathgroup5
+\symAMSb=\mathgroup6
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 132.
+))
+(/usr/share/texmf/tex/latex/natbib/natbib.sty
+Package: natbib 2007/02/05 8.0 (PWD)
+\bibhang=\skip43
+\bibsep=\skip44
+LaTeX Info: Redefining \cite on input line 602.
+\c@NAT@ctr=\count87
+)
+(/usr/share/texmf/tex/latex/tools/verbatim.sty
+Package: verbatim 2003/08/22 v1.5q LaTeX2e package for verbatim enhancements
+\every@verbatim=\toks16
+\verbatim@line=\toks17
+\verbatim@in@stream=\read1
+)
+\@slugcmmntwidth=\dimen105
+\abstract@box=\box26
+\c@editornote=\count88
+\c@cureqno=\count89
+\pt@box=\box27
+\pt@width=\dimen106
+\pt@line=\count90
+\pt@column=\count91
+\pt@nlines=\count92
+\pt@ncol=\count93
+\pt@page=\count94
+\pt@tmpcapwidth=\dimen107
+\c@plate=\count95
+)
+(/usr/share/texmf/tex/latex/jknapltx/mathrsfs.sty
+Package: mathrsfs 1996/01/01 Math RSFS package v1.0 (jk)
+\symrsfs=\mathgroup7
+)
+(/usr/share/texmf/tex/generic/epsf/epsf.sty
+This is `epsf.tex' v2.7.3 <23 July 2005>
+\epsffilein=\read2
+\epsfframemargin=\dimen108
+\epsfframethickness=\dimen109
+\epsfrsize=\dimen110
+\epsftmp=\dimen111
+\epsftsize=\dimen112
+\epsfxsize=\dimen113
+\epsfysize=\dimen114
+\pspoints=\dimen115
+) (./auxservices.aux
+
+Package natbib Warning: Citation `' multiply defined.
+
+
+Package natbib Warning: Citation `' multiply defined.
+
+
+Package natbib Warning: Citation `' multiply defined.
+
+
+Package natbib Warning: Citation `' multiply defined.
+
+
+Package natbib Warning: Citation `' multiply defined.
+
+
+Package natbib Warning: Citation `' multiply defined.
+
+
+Package natbib Warning: Citation `' multiply defined.
+
+
+Package natbib Warning: Citation `' multiply defined.
+
+
+Package natbib Warning: Citation `' multiply defined.
+
+)
+\openout1 = `auxservices.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 62.
+LaTeX Font Info:    ... okay on input line 62.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 62.
+LaTeX Font Info:    ... okay on input line 62.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 62.
+LaTeX Font Info:    ... okay on input line 62.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 62.
+LaTeX Font Info:    ... okay on input line 62.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 62.
+LaTeX Font Info:    ... okay on input line 62.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 62.
+LaTeX Font Info:    ... okay on input line 62.
+
+AAS preprint substyle, v5.0 <25 Sep 98>.
+LaTeX Font Info:    Try loading font information for U+lasy on input line 120.
+(/usr/share/texmf/tex/latex/base/ulasy.fd
+File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
+)
+LaTeX Font Info:    Try loading font information for U+msa on input line 120.
+
+(/usr/share/texmf/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2002/01/19 v2.2g AMS font definitions
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 120.
+
+(/usr/share/texmf/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2002/01/19 v2.2g AMS font definitions
+)
+LaTeX Font Info:    Try loading font information for U+rsfs on input line 120.
+
+(/usr/share/texmf/tex/latex/jknapltx/ursfs.fd
+File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
+) [1
+
+] [2] [3] [4]
+Missing character: There is no ° in font cmr10!
+
+Overfull \hbox (50.99599pt too wide) in paragraph at lines 308--318
+[][] 
+ []
+
+[5] [6] [7]
+
+LaTeX Warning: Characters dropped after `\end{verbatim}' on input line 475.
+
+[8]
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 501.
+
+ (/usr/share/texmf/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 501.
+
+Overfull \hbox (63.1892pt too wide) in paragraph at lines 523--523
+ []\OT1/cmtt/m/n/9 #| Source|   RA       |   DEC      | Parallax| Velocity | Ve
+lFrame | VelDef |  PMRA | PMDEC | ID |Comments|[] 
+ []
+
+
+Overfull \hbox (63.1892pt too wide) in paragraph at lines 524--524
+ []\OT1/cmtt/m/n/9 #|  s    |   hms      |   dms      |    r    |    r     |   
+ r     |   r    |   r   |   r   |  i |   s    |[] 
+ []
+
+
+Overfull \hbox (63.1892pt too wide) in paragraph at lines 525--525
+ []\OT1/cmtt/m/n/9 #|       |            |            |         |          |   
+       |        |       |       |    |        |[] 
+ []
+
+
+Overfull \hbox (49.01436pt too wide) in paragraph at lines 526--526
+ []\OT1/cmtt/m/n/9 0005+544  00:05:04.363 54:28:24.938    0.0       0.0        
+ LSR      RADIO    0.000  0.000   1     -rla[] 
+ []
+
+[9] [10] [11]
+Overfull \hbox (16.2594pt too wide) in paragraph at lines 731--734
+\OT1/cmr/m/n/10.95 tems. The class \OT1/cmtt/m/n/10.95 sza::util::Coordinates \
+OT1/cmr/m/n/10.95 was mi-grated to \OT1/cmtt/m/n/10.95 carma::services::Antenna
+Coordinates\OT1/cmr/m/n/10.95 . 
+ []
+
+[12] [13]
+Overfull \hbox (9.21521pt too wide) in paragraph at lines 873--879
+\OT1/cmr/m/n/10.95 An al-ter-na-tive con-struc-tor sub-sti-tutes the Con-formab
+le Quan-tity \OT1/cmtt/m/n/10.95 carma::services::Parallax
+ []
+
+[14]
+Overfull \hbox (72.74548pt too wide) in paragraph at lines 912--915
+[]\OT1/cmr/m/n/10.95 Here we briefly list the pro-grams that Aux-il-liary Ser-v
+ices pro-vides. Some of the \OT1/cmtt/m/n/10.95 CARMA/carma/services/Test/
+ []
+
+[15] [16]
+Overfull \hbox (27.64938pt too wide) in paragraph at lines 995--1000
+[]\OT1/cmr/m/n/10.95 In this sec-tion we show some ex-am-ple ta-bles that have 
+al-ready been in use within BIMA/OVRO/SZA.
+ []
+
+
+Overfull \hbox (35.81413pt too wide) in paragraph at lines 1028--1028
+[] \OT1/cmtt/m/n/9 Frequency   Unc. Formula      Quantum                      T
+r(K)  Source          Telescope    Astr.  Lab.[] 
+ []
+
+
+Overfull \hbox (35.81413pt too wide) in paragraph at lines 1029--1029
+[] \OT1/cmtt/m/n/9 (MHz)                                                      /
+Ta(K)                              ref.   ref.[] 
+ []
+
+
+Overfull \hbox (7.46446pt too wide) in paragraph at lines 1032--1032
+[]  \OT1/cmtt/m/n/9 200809.32 *( 3) SO2          16(1,15)-16(0,16)             
+4.87  OriMC-1         NRAO     12m Jew89[] 
+ []
+
+
+Overfull \hbox (7.46446pt too wide) in paragraph at lines 1033--1033
+[]  \OT1/cmtt/m/n/9 200888.30 *(10) SO2          13(5,9)-14(4,10) v2=1         
+0.28  OriMC-1         NRAO     12m Jew89[] 
+ []
+
+
+Overfull \hbox (7.46446pt too wide) in paragraph at lines 1034--1034
+[]  \OT1/cmtt/m/n/9 200913.79 *( 4) HC3N         22-21 v7=1 l= 1f              
+0.73  OriMC-1         NRAO     12m Jew89[] 
+ []
+
+
+Overfull \hbox (7.46446pt too wide) in paragraph at lines 1035--1035
+[]\OT1/cmtt/m/n/9 U 200936.         unidentified    (U204070?)                 
+0.50  OriMC-1         NRAO     12m Jew89[] 
+ []
+
+
+Overfull \hbox (7.46446pt too wide) in paragraph at lines 1037--1037
+[]   \OT1/cmtt/m/n/9 68972.154*( 4) SO2          6(1,5)-6(0,6)                 
+0.8   OriMC-1         NRAO     11m Joh76[] 
+ []
+
+
+Overfull \hbox (7.46446pt too wide) in paragraph at lines 1038--1038
+[]\OT1/cmtt/m/n/9 U  69460.         unidentified                               
+0.18  OriMC-1         NRAO     11m Tur89[] 
+ []
+
+
+Overfull \hbox (7.46446pt too wide) in paragraph at lines 1039--1039
+[]   \OT1/cmtt/m/n/9 69464.094*( 9) SO2          14(4,10)-15(3,13)             
+0.70  OriMC-1         OSO      20m Sch83[] 
+ []
+
+
+Overfull \hbox (24.14941pt too wide) in paragraph at lines 1044--1050
+[]\OT1/cmr/m/n/10.95 The ta-ble has been re-for-m-mat-ted slightly and made ava
+il-able as \OT1/cmtt/m/n/10.95 conf/catalogs/SpectralLine.cat
+ []
+
+
+Overfull \hbox (51.36996pt too wide) in paragraph at lines 1044--1050
+\OT1/cmr/m/n/10.95 for au-to-mated ac-cess us-ing \OT1/cmtt/m/n/10.95 carma::se
+rvices::SpectralLine \OT1/cmr/m/n/10.95 and \OT1/cmtt/m/n/10.95 carma::services
+:SpectralLineCatalog\OT1/cmr/m/n/10.95 . 
+ []
+
+[17] [18] [19]
+Overfull \hbox (71.3765pt too wide) in paragraph at lines 1208--1240
+[][] 
+ []
+
+[20]
+
+Package natbib Warning: There were multiply defined citations.
+
+[21] (./auxservices.aux) ) 
+Here is how much of TeX's memory you used:
+ 1797 strings out of 256217
+ 20201 string characters out of 1917095
+ 71692 words of memory out of 1500000
+ 5070 multiletter control sequences out of 10000+200000
+ 13796 words of font info for 58 fonts, out of 1200000 for 2000
+ 645 hyphenation exceptions out of 8191
+ 32i,9n,26p,235b,347s stack positions out of 5000i,500n,6000p,200000b,15000s
+
+Output written on auxservices.dvi (21 pages, 57408 bytes).

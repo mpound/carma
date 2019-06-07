@@ -1,0 +1,293 @@
+#!/bin/bash
+
+# $Id: sac.in,v 1.41 2012/11/14 19:08:06 scott Exp $
+# Simple script to setup the python and corba environment
+# and then launch the python subarray control interface interactively
+# The current working directory is added to the PYTHONPATH.
+# Author: Steve Scott
+
+# Setumask so that by default open creates files which are group readable.
+umask 002
+
+# Increase max corba message size
+export ORBgiopMaxMsgSize=50000000
+
+# Define directory location of this script
+# Fixes case where a relative path is given
+INPUT_PATH=$(/usr/bin/dirname "$0")
+ABSPATH=$(/usr/bin/readlink -f "${INPUT_PATH}")
+PYSCRIPTS=${ABSPATH}/python:${ABSPATH}/python/observer
+PYSCRIPTS=${PYSCRIPTS}:${ABSPATH}/python/observer/arrayHealth
+PYSCRIPTS=${PYSCRIPTS}:${ABSPATH}/python/observer/arrayHealth/flux
+SACPATH=${ABSPATH}/python
+PYCORBA=${ABSPATH}/../lib/python
+
+export TOOLSLIB=@carma_tools@/lib
+export LD_LIBRARY_PATH=${TOOLSLIB}:@cxx_stdlib_dir@
+export PYTHONPATH=${PYSCRIPTS}:${PYCORBA}:.
+# Must pick up the carmaTools python rather than the system python...
+PYTHON=@carma_tools@/bin/python
+IPYTHON=@carma_tools@/bin/ipython
+
+# miriad environment
+export MIRHOST=linux
+export MIR=@miriad_home@
+# The miriad path must be placed in front of carmaTools
+export LD_LIBRARY_PATH=$MIR/lib/${MIRHOST}:${TOOLSLIB}:@cxx_stdlib_dir@
+export PATH=${PATH}:@miriad_home@/bin/${MIRHOST}
+export MIRXINC="/usr/include/X11"
+export MIRXLIB="/usr/X11R6/lib"
+export AIPSTV="XASIN"
+export MIRBIN=$MIR/bin/$MIRHOST
+export MIRCAT=$MIR/cat
+export MIRDEF=.
+export MIRDOC=$MIR/doc
+export MIRINC=$MIR/src/inc
+export MIRLIB=$MIR/lib/$MIRHOST
+export MIRNEWS=$MIR/news
+export MIRPAGER="doc"
+export MIRPDOC=$MIR/doc/prog
+export MIRPROG=$MIR/src/prog
+export MIRSDOC=$MIR/doc/subs
+export MIRSRC=$MIR/src
+export MIRSUBS=$MIR/src/subs
+
+#echo pythonpath:$PYTHONPATH
+
+function outputVariables {
+    echo SACPATH: $SACPATH
+    echo LD_LIBRARY_PATH: $LD_LIBRARY_PATH
+    echo PYTHONPATH: $PYTHONPATH
+}
+
+function outputDescription {
+    echo "Script to run the interactive subarray control."
+    echo "By default, ipython is used."
+    echo 'The imr host name MUST be specified with "--imr HOSTNAME"'
+    echo "(unless invoked as sci, sci1, sci2, eng1, eng2, or sciall)."
+    echo "The subarray number defaults to ${DEFAULT_SUBARRAY_NUMBER}"
+    echo "when invoked as '$(basename $0)'."
+    echo " "
+    echo "Python begins by sourcing the file subarrayControl.py."
+    echo "The default location for this file is the python directory"
+    echo "below the one where this script is located, but can be"
+    echo "overridden with the --sac option. The files that are"
+    echo "imported by subarrayControl.py are also found using the"
+    echo "same path, and the subdirectory observer."
+    echo "Consequently, the --sac option should be used"
+    echo "to specify an alternate location for any and all of the"
+    echo "core files that are used by sac."
+    echo " "
+    echo "The --source option allows for additional paths to be"
+    echo "prepended to the search path for python files, but does not"
+    echo "apply to the subarrayControl.py file and any that it imports."
+    echo "This option is useful for adding new files to the system."
+    echo "The current working directory is placed at the end of the search path."
+    echo " "
+    echo "The --noipython flag inhibits use of ipython"
+    echo "Your ipython must be version 0.7.2 or greater."
+}
+
+function outputVersion {
+    echo "Version:$Id: sac.in,v 1.41 2012/11/14 19:08:06 scott Exp $"
+}
+
+OPTIONS="[--imr host] [--num subarrayNumber]\
+ [--source pythonSourceDirectory] \
+ [--sac subarrayControlDirectory] \
+ [--noipython] \
+ [--noinit]"
+function outputUsage {
+    echo "sac [--help] [--version] [--description] ${OPTIONS}"
+}
+
+function outputHelp {
+    outputVersion
+    outputUsage
+    echo " "
+    outputDescription
+    echo " "
+    outputVariables
+}
+
+# Initialize variables
+INIT=1
+IMRHOST=notset
+IMRPORT=20000
+# -1 implies not yet set
+SUBARRAY_NUMBER=-1
+DEFAULT_SUBARRAY_NUMBER="one"
+NUMBERS=(zero one two three four five six)
+USE_IPYTHON=1
+USE_RUN=0
+
+#FUNCTION: decode option and set appropriate variables
+function processOption {
+    case "$1" in
+        --imr)
+            IMRHOST="${2%:*}"
+            if [[ "$2" =~ ':' ]]; then
+                IMRPORT="${2#*:}"
+            fi
+            ;;
+        --num)
+            SUBARRAY_NUMBER=$2
+           ;;
+        --noinit)
+            INIT=0
+           ;;
+        --ipython)
+            USE_IPYTHON=1
+           ;;
+        --noipython)
+            USE_IPYTHON=0
+           ;;
+        --run)
+            USE_RUN=1
+           ;;
+        --source)
+            PREPEND_PY=$2
+            export PYTHONPATH=${PREPEND_PY}:${PYTHONPATH}
+           ;;
+        --sac)
+            SACPATH=$2
+            PREPEND_PY=$2:$2/observer
+            export PYTHONPATH=${PREPEND_PY}:${PYTHONPATH}
+           ;;
+    esac
+
+    #echo "Arg1:$1  Arg2:$2"
+}
+
+
+#FUNCTION: Look for commands and execute
+function processCommand {
+    case "$1" in
+        --description | -d)
+            outputDescription
+            exit 0
+            ;;
+        --usage | -u)
+            outputUsage
+            exit 0
+            ;;
+        --version | -v)
+            outputVersion
+            exit 0
+            ;;
+        help | --help | -h)
+            outputHelp
+            exit 0
+            ;;
+    esac
+}
+
+
+# Process all the command line options and set variables...
+# arg1: number of arguments in argList to process
+function getOptions {
+
+    # run through arguments to check for options
+    for (( i=$1-1; i+1; i=i-1 )); do
+        processOption "${argList[$i]}" "${argList[$i+1]}"
+    done
+}
+
+# Do any commands included as arguments
+# arg1: number of arguments in argList to process
+function doCommands {
+
+    # run through arguments to check for options
+    for (( i=$1+1; i+1; i=i-1 )); do
+        #echo cmdloop: n=$1, i=$i arg="${argList[$i]}"
+        processCommand "${argList[$i]}"
+    done
+}
+
+# Set SUBARRAY_NUMBER and warn if overriding explicit --num option
+function setSubarrayNumberAndImr {
+    local arg0=$(basename $0)
+    local sn=$SUBARRAY_NUMBER
+    if [[ $sn -ne -1 && $sn -ne $1 ]] ; then
+        echo "Warning: $arg0 overriding '--num $sn' with '--num $1'"
+    fi
+    SUBARRAY_NUMBER=$1
+    DEFAULT_SUBARRAY_NUMBER="${NUMBERS[$1]:-one}"
+    # Only set IMRHOST if not already set
+    if [[ "${IMRHOST}" = "notset" ]] ; then
+        IMRHOST=$2
+    else
+        echo "Warning: $arg0 NOT overriding '--imr $IMRHOST:$IMRPORT'"
+    fi
+}
+
+# ===============================================================
+# Executable part of the script
+
+# get list of arguments
+argList=($*)
+
+getOptions $#
+
+# Set SUBARRAY_NUMBER based on arg0
+case $(basename $0) in
+    # For sac, default SUBARRAY_NUMBER to 1 if unspecified
+    sac)   if [[ $SUBARRAY_NUMBER -eq -1 ]]; then SUBARRAY_NUMBER=1; fi ;;
+    sci)   setSubarrayNumberAndImr 1 acc ;;
+    sci1)  setSubarrayNumberAndImr 1 acc ;;
+    sci2)  setSubarrayNumberAndImr 2 acc ;;
+    eng1)  setSubarrayNumberAndImr 3 acc ;;
+    eng2)  setSubarrayNumberAndImr 4 acc ;;
+    sciall)  setSubarrayNumberAndImr 6 acc ;;
+    *)  echo "Sorry, I don't know what to do when invoked as $(basename $0)."
+        exit 1
+        ;;
+esac
+
+doCommands $#
+
+IMRREF="-ORBDefaultInitRef corbaloc::${IMRHOST}:${IMRPORT}"
+SUBARRAY="--subarrayNumber ${SUBARRAY_NUMBER}"
+INITIALIZE="--init ${INIT}"
+ALLOPTS="${IMRREF} ${SUBARRAY} ${INITIALIZE}"
+ case $SUBARRAY_NUMBER in
+   1)
+     SUBARRAY_NAME="Sci#1"
+     ;;
+   2)
+     SUBARRAY_NAME="Sci#2"
+     ;;
+   3)
+     SUBARRAY_NAME="Eng#1"
+     ;;
+   4)
+     SUBARRAY_NAME="Eng#2"
+     ;;
+   5)
+     SUBARRAY_NAME="Maint"
+     ;;
+   6)
+     SUBARRAY_NAME="Sciall"
+     ;;
+ esac
+#echo $SUBARRAY_NAME
+IFLAGS="-nobanner -autocall 2 -prompt_in1 ${SUBARRAY_NAME}[\#]: -p pysh --"
+
+#$PYTHON -V
+#echo "Options:" $ALLOPTS
+#outputVariables
+if [[ $IMRHOST = "notset" ]]; then
+    echo "The imr must be input, for example --imr acc or --imr labacc"
+    exit
+fi
+
+if [[ $USE_IPYTHON -eq 1 ]]; then
+    # The -p pysh is essential, otherwise script options with a - would
+    #    be 'promoted' to ipython flags!!! this is an ipython bug.
+    #echo "You better be running the new ipython 0.7.2 now!...."
+    #echo $IPYTHON ${IFLAGS} ${SACPATH}/subarrayControl.py ${ALLOPTS}
+    $IPYTHON ${IFLAGS} ${SACPATH}/subarrayControl.py ${ALLOPTS}
+else
+    $PYTHON -i ${SACPATH}/subarrayControl.py ${ALLOPTS}
+fi
+

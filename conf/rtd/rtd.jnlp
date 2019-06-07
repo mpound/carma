@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jnlp spec="1.0+"
+  codebase="http://cedarflat.mmarray.org/observing/tools"
+>
+<information>
+	<title>CARMA RTD</title>
+	<vendor>UMD</vendor>
+	<homepage href="http://cedarflat.mmarray.org/observing/tools" />
+	<description>CARMA Real Time Display</description>
+</information>
+<offline-allowed/>
+<security>
+	<j2ee-application-client-permissions/>
+</security>
+<resources>
+	<j2se version="1.5+" href="http://java.sun.com/products/autodl/j2se" />
+	<jar href="jrtd.jar"/>
+</resources>
+<application-desc/>
+</jnlp>

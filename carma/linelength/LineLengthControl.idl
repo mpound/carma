@@ -1,0 +1,91 @@
+#ifndef CARMA_LINELENGTH_IDL
+#define CARMA_LINELENGTH_IDL
+
+#include "carma/util/UserException.idl"
+
+/**
+ * @file LineLength.idl
+ *
+ * This is the IDL file for the Line Length subsystem.
+ *
+ * @author David MacMahon
+ *
+ * @version $Id: LineLengthControl.idl,v 1.10 2013/01/07 21:34:06 iws Exp $
+ *
+ * This describes the DO interface for the Line Length subsystem
+ *
+ * @see http://www.mmarray.org/project/WP/LOreference/sw/LOreferencePDR.pdf
+ */
+
+module carma {
+module linelength {
+
+    /**
+     * The CARMA canonical name for this Distributed Object
+     */
+    const string LINELENGTH_NAME = "carma.linelength.lineLengthControl";
+
+    /**
+     * %LineLengthControl interface
+     */
+    interface LineLengthControl {
+
+        /**
+         * Set the offset phase for this antenna
+         *
+         * @param ant antenna number [1-23]
+         * @param cycles phase offset in cycles
+         */
+        void setOffsetPhase(in unsigned short ant, in double cycles)
+            raises(carma::util::UserException);
+
+        /**
+         * Set the nominal line length for this antenna
+         *
+         * @param ant antenna number [1-23]
+         * @param length_ns nominal line length in nanoseconds
+         */
+        void setNominalLineLength(in unsigned short ant, in double length_ns)
+            raises(carma::util::UserException);
+
+        /**
+         * Set the LO Reference Synthesizer number to which an antenna is attached
+         *
+         * @param ant antenna number [1-23]
+         * @param synth synthesizer number [1-3]
+         */
+        void setAntennaLORef(in unsigned short ant, in unsigned short synth)
+            raises(carma::util::UserException);
+
+        /**
+         * Set the LO Reference Synthesizer frequency for a single synthesizer
+         *
+         * @param synth synthesizer number [1-3]
+         * @param freq_hz synthesizer frequency in Hz
+         */
+        void setLORefFreq(in unsigned short synth, in double freq_hz)
+            raises(carma::util::UserException);
+
+        /**
+         * Write one buffer worth of raw data from Board0 to the given file
+         *
+         * @param fullpath where to write the data
+         */
+        void takeBoard0Snapshot(in string fullpath)
+            raises(carma::util::UserException);
+
+        /**
+         * Write one buffer worth of raw data from Board1 to the given file
+         *
+         * @param fullpath where to write the data
+         */
+        void takeBoard1Snapshot(in string fullpath)
+            raises(carma::util::UserException);
+    };
+
+}; // namespace carma::linelength
+}; // namespace carma
+
+#endif /* CARMA_LINELENGTH_IDL */
+
+// vim: set expandtab ts=4 sts=4 sw=4:

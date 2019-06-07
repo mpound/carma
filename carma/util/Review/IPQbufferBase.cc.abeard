@@ -1,0 +1,538 @@
+
+/* 
+ * IPQbufferBase.cc
+ *
+ * Implementation of interprocess communication queue buffer (storage)
+ * base class.
+ * 
+ * $Id: IPQbufferBase.cc.abeard,v 1.1 2003/07/16 18:46:07 abeard Exp $
+ */
+
+// Solaris
+#include <strings.h>
+
+// gcc 2.*
+#include <algorithm>
+#include <cerrno>
+
+
+#include <iostream>
+#include <sstream>
+#include "carma/util/IPQbufferBase.h"
+
+
+
+
+// If this include is placed after the POSIX define the ftruncate 
+// signature is not defined on Linux using gcc 2.96
+#include <unistd.h>
+#define _POSIX_C_SOURCE 199506L
+
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sys/uio.h>
+#include <fcntl.h>
+
+
+
+using namespace std;
+using namespace carma::util;
+using namespace carma::services;
+using namespace log4cpp;
+
+
+IPQbufferBase::IPQbufferBase( 
+        char*         localElement, 
+        int           elementSize, 
+        const string& filename, 
+        bool          isCreator,
+        int           nElements) throw(exception)   : 
+            localElement_(localElement),
+            elementSize_(elementSize),
+            filename_(filename),
+            isCreator_(isCreator),
+            nElements_(nElements),
+            openMask_(O_RDWR),
+            protectionMask_(0664),
+            // Temporary until we can get from Program
+            log_(Logger::getSyslogger("IPQbufferBase", "tioga")) 
+ 
+{
+}
+
+
+void IPQbufferBase::init() throw(exception) {
+    string errorMessage;
+    debug_ = false;
+    if(debug_) cout<<"IPQbufferBase: filename="<<filename_;
+    if(debug_) cout<<"  openMask="<<openMask_<<endl;
+
+    // Initialize filenames
+    trimmedFilename_ = filename_;
+    displayFilename_ = filename_;
+    isNewFile_ = false;
+    
+    // The control block size must be a factor of 8 so that
+    // the data that follows will start on an 8 byte boundary.
+    // Doubles (at least in Sparc/Solaris) must start on 8 byte
+    // boundaries, so all structures are multiples of this size.
+    controlBlockSize_ = 8*((sizeof(ControlBlock) + 7)/8);
+
+
+    // Try to open an existing buffer
+    if (!openBuffer()) {
+        // No luck on open...      
+        if (!isCreator_) {
+            errorMessage = "Couldn't open existing file:" + displayFilename_;
+            throw Error(errorMessage);
+       }
+        // Couldn't open existing file, try to create a new one
+        else if (createBuffer()) {
+            isNewFile_ = true;
+        }
+        else {
+            errorMessage = "Couldn't create file:" + displayFilename_;
+            throw Error(errorMessage);
+        }
+    }
+    
+    log_ << log4cpp::Priority::INFO 
+         << "Successfully opened " 
+         << displayFilename_ ;
+    
+    clientSize_ = elementSize_ * nElements_ + controlBlockSize_;
+      
+    /* Must have at least one element */
+    if ((isCreator_) && (nElements_ < 1)) {
+        if (debug_)cout<<"creator with less than 1 element"<<endl;
+        throw Error("IPQbufferBase: must have at least 1 element");
+    }
+
+    if (false && debug_) cout << "Ready for header..."<<endl;
+
+    // Check or create header and size the file
+    if (isCreator_) {
+        if (!isNewFile_) {
+            readHeader();
+            if (hasQueueChanged()) isNewFile_ = true;
+        }
+        writeHeader();
+    }
+    else {
+        readHeader();
+        doesElementSizeMatch();  // throws exception if doesn't
+    }
+    elementSize_ = header_.elementSize;
+    nElements_   = header_.nElements;
+    clientSize_  = header_.clientSize;
+
+    if (debug_)cout<< "pageSize="<<header_.pageSize 
+                   <<" clientSize="<<clientSize_<<endl;
+
+    // Map the file into memory
+    if (debug_)cout<< "mapping memory..."<<endl;        
+    MapfileHeader* h;
+    h = reinterpret_cast <MapfileHeader*>
+            (mmap(0,	                         // arbitrary placement
+	         header_.pageSize + clientSize_, // total length to map
+	         PROT_READ | PROT_WRITE,         // protection
+	         MAP_SHARED,                     // shared between processes  
+	         fileDescriptor_,                // file descriptor
+	         0));                             // map file from the start      
+    if (h == MAP_FAILED) {    
+        errorMessage = "IPQbufferBase, filename=" + displayFilename_ +
+                            " mmap failed";	
+        throw Error(errorMessage);    
+    }
+    if (debug_) cout << "finished mmap" << endl;
+     
+    clientArea_ = reinterpret_cast<caddr_t> (h) + header_.pageSize; 
+    if (debug_) cout << "clientArea= " << clientArea_ 
+                     << "  clientSize=" << clientSize_ 
+                     << "  pageSize=" << header_.pageSize << endl;
+
+    // If a new file is being used, clear the client area
+    if (isNewFile_) {
+        if (debug_)cout << "starting bzero " 
+                        << " client_size= " << clientSize_ << endl;
+        bzero (clientArea_, clientSize_);
+        if (debug_)cout << "bzero finished" << endl;
+    }
+    
+    /* 
+    ** The control block sits directly in front of the circular array
+    ** that forms the data queue 
+    */
+    control = reinterpret_cast<ControlBlock*> (getClientArea());
+    
+    /* 
+    ** Start at the bottom of the queue.
+    */
+    if (control->putOffset <= nElements_) {
+        getOffset_ = 0;
+    }
+    else {
+        getOffset_ = control->putOffset - nElements_;       
+    }
+    
+    /* Element queue will point to the first element in the circular 
+    ** array which is located immediately following the control block 
+    ** in the client area of the memory mapped region 
+    */
+    elementQueue_ = reinterpret_cast<char*> 
+            ((caddr_t)(getClientArea()) + controlBlockSize_);
+            
+    if(debug_)cerr<<"init(end): clientSize= "<< clientSize_ 
+                 <<" elementSize="<<elementSize_
+                 <<" nElements="<<nElements_<< endl;
+
+}
+
+
+void IPQbufferBase::trimShmemFilename() 
+{
+    string output = filename_;
+
+    // Shmem filenames must start with '/', so find last one
+    string::size_type index = output.rfind("/");
+    if (index != string::npos) {
+        output = output.substr((int)index, output.size() - (int)index);
+    }
+    else {
+        output = "/" + output;
+    }
+   // Truncate name to 14 characters for max portability...
+    output = output.substr(0, 14);
+    if (debug_) cout << "Shmem filename orig:" << filename_ 
+                     << "   used:" << output << endl;
+    trimmedFilename_ = output;
+    displayFilename_ = trimmedFilename_ + "(" + filename_ + ")";
+}
+
+string IPQbufferBase::getTrimmedFilename()
+{
+    return trimmedFilename_;
+}
+
+bool IPQbufferBase::readHeader() throw(exception)
+{
+    ssize_t size;
+
+    size = ::read(fileDescriptor_, (void*)&header_, sizeof(MapfileHeader));
+    if (size != sizeof(MapfileHeader)) {
+        string err = "IPQbuffer:Couldn't read header from"+filename_;	
+        close (fileDescriptor_);
+        throw Error(err);
+    }
+
+    // the file must be recognized as a previously mapped file
+    if (header_.magic != MEMORYMAPPEDFILE_MAGIC) {
+        close (fileDescriptor_);
+        ostringstream err;
+        err << "IPQbufferBase:Magic number error" 	
+            << displayFilename_ 
+            << ": got " + header_.magic << ", should have been "
+            << MEMORYMAPPEDFILE_MAGIC;
+        throw Error(err);
+    }
+
+    return true;
+}
+ 
+bool IPQbufferBase::doesElementSizeMatch() throw(exception)
+{
+
+    // Element size must match
+    if (header_.elementSize != elementSize_) {
+        close (fileDescriptor_);
+        ostringstream err;
+        err << "IPQbufferBase, filename:" << displayFilename_ 	
+            << "/ has elemSize " << header_.elementSize 
+            << ", but buffer wants " << elementSize_;
+        throw Error(err);
+    }
+    return true;
+}
+
+// Records changes of new/old return true if changes
+bool IPQbufferBase::hasQueueChanged()
+{
+    ostringstream s;
+
+    if ((header_.elementSize == elementSize_) &&
+        (header_.nElements == nElements_)) return false; 
+    s << "filename:" 
+         << displayFilename_ << " has changed size: old/new ";
+         
+    // Element size 
+    if (header_.elementSize != elementSize_) {
+        s  << "elementSize(" << header_.elementSize 
+            << "/" <<  elementSize_ << ") ";
+    }
+    if (header_.nElements != nElements_) {
+        s << "nElements(" << header_.nElements 
+             << "/" <<  nElements_ << ")";
+    }
+    log_ << Priority::INFO << s.str();
+    return true;
+}
+
+/**** REVIEW
+ * Reviewer: abeard
+ * Comments:  Consider comment in .h review about changing exception 
+ * specification to throw(Error) since nothing in this class is capable 
+ * of generating a strict 'exception' exception, but only Error exceptions.  
+ * Most calls are c-lib calls which can't generate C++ exceptions.
+ * However the string class can be made to trigger exceptions.  
+ * For info on causing the string class to throw exceptions on 
+ * an error condition see Josuttis pg 602. By default they are not
+ * thrown.
+ * The reviewer notes that an 'Error' exception will still be 
+ * caught by an 'exception' exception handler.  However, if it is
+ * caught by value, rather than reference it will be 'sliced' and
+ * lose any of the Error derived class information.
+ */
+bool IPQbufferBase::writeHeader() throw(exception)
+{
+    ssize_t size;
+
+    header_.magic       = MEMORYMAPPEDFILE_MAGIC;
+    header_.pageSize    = sysconf (_SC_PAGESIZE);
+    header_.clientSize  = clientSize_;
+    header_.elementSize = elementSize_;
+    header_.nElements   = nElements_;
+
+    // write the new header to the file
+    lseek(fileDescriptor_, 0, SEEK_SET);
+    size = ::write (fileDescriptor_, (void*)&header_, sizeof(MapfileHeader)); 	  
+    if (size != sizeof(MapfileHeader)) {	  
+        close(fileDescriptor_);
+        string err = "IPQbufferBase filename = " + displayFilename_
+            + ", Header write failed" ; 
+        throw Error(err);
+    } 
+
+    // truncate the file to the correct length
+    size = header_.pageSize + header_.clientSize;
+    int rtn = ftruncate(fileDescriptor_, (off_t)size);
+    if (debug_) cout << "ftruncate rtn=" << rtn << "  size=" << size << endl;
+    if(rtn < 0) { 
+        close(fileDescriptor_);
+        string err = "IPQbufferBase filename = " + displayFilename_
+            + ",  ftruncate() failed" ; 
+        throw Error(err);
+    }
+    return true;
+}
+
+
+IPQbufferBase::~IPQbufferBase() 
+{
+    if (clientArea_) {
+        size_t size = header_.pageSize + header_.clientSize;
+
+        if (munmap (reinterpret_cast<caddr_t> (clientArea_), size) < 0) {      
+                cerr << "IPQbuffer destructor munmap failed" << endl;
+        }
+   }
+   if (debug_) cout << "Base destructor" << endl;
+   close(fileDescriptor_);
+ 
+}
+
+// ***This will fail if the memory mapped file is NFS mounted on Solaris***
+bool IPQbufferBase::lockRead () {
+    struct flock lock_command = {F_RDLCK, 0, 0 , 0};
+
+    while (fcntl(fileDescriptor_, F_SETLKW, &lock_command) == -1) {
+        if (errno != EINTR) {
+            throw Error("IPQ: lockRead failed (NFS on Solaris will fail)");
+        }
+    }
+    return true;
+}
+
+bool IPQbufferBase::lockWrite () {
+    struct flock lock_command = {F_WRLCK, 0, 0, 0};
+
+    while (fcntl(fileDescriptor_, F_SETLKW, &lock_command) == -1) {
+        if (errno != EINTR) {
+            throw Error("IPQ: lockWrite failed");
+        }
+    }
+    return true;
+}
+
+bool IPQbufferBase::unlock() {
+
+    struct flock lock_command = {F_UNLCK, 0, 0 , 0};
+
+    while (fcntl(fileDescriptor_, F_SETLKW, &lock_command) == -1) {
+        if (errno != EINTR) {
+            throw Error("IPQ: unlock failed");
+        }
+    }
+    return true;
+}
+
+void* IPQbufferBase::getClientArea() const {
+    return clientArea_;
+}
+
+const string IPQbufferBase::getFileName() const {
+    return filename_;
+}
+
+const int IPQbufferBase::getFileDescriptor() const {
+    return fileDescriptor_;
+}
+    
+/// Useful only for debugging
+unsigned int IPQbufferBase::getPutOffset() const { 
+    return control->putOffset; 
+}
+/// Useful only for debugging
+unsigned int IPQbufferBase::getGetOffset() const { 
+    return getOffset_; 
+}
+unsigned int IPQbufferBase::getLostElementCount() const { 
+    return nLostElements_; 
+}
+
+unsigned int IPQbufferBase::read(){
+    read(true);
+}
+
+unsigned int IPQbufferBase::readNoLock() {
+    read(false);
+}
+	
+bool IPQbufferBase::readTop() {
+    return readTop(true);
+}
+
+bool IPQbufferBase::readTopNoLock() {
+    return readTop(false);
+}
+
+int IPQbufferBase::getQueueSize() const { 
+    return nElements_; 
+}
+    
+int IPQbufferBase::getNumAvailable() const { 
+    unsigned int avail;
+    avail = min(control->putOffset-getOffset_,( unsigned)(nElements_));
+    return max(avail, (unsigned)0); 
+}
+bool IPQbufferBase::isEmpty() const { 
+    return  (control->putOffset == 0);
+}
+bool IPQbufferBase::isDataAvailable() const { 
+    return  (control->putOffset > getOffset_ );
+}
+    
+void IPQbufferBase::setNoneAvailable() { 
+    getOffset_ = control->putOffset; 
+}
+
+void IPQbufferBase::write() throw(exception) {  
+
+/**** REVIEW
+ * Reviewer: abeard
+ * Comments: I believe that volatile is not being used appropriately in 
+ * the below case. Since tempOffset is neither static or shared in any way,
+ * and since it is local and isn't modified between it's declaration 
+ * and it's use it doesn't matter if the value is optimized since it 
+ * can't be modified outside the knowledge of the compiler.
+ *
+ * I believe the intent here is to make sure that putOffset is never
+ * optimized.  This can be done by declaring putOffset as volatile
+ * in the control struct definition.
+ */
+
+    /* The volatile declaration is a attempt to ensure that the shared
+     * pointer 'control->putOffset' is not corrupted by a process
+     * unexpectedly exiting during an update.  The idea here is that a
+     * memory location is loaded with the value of putOffset before an
+     * update.  The volatile keyword guarantees that all accesses of the
+     * value will be made from memory and will not be optimized.  If a
+     * modifying process exits unexpectedly leaving garbage data in the
+     * element buffer, putOffset will not have been modified and no
+     * other process will see the bad element.  
+     */
+    int volatile tempOffset = (control->putOffset)%nElements_;
+
+    lockWrite();  
+    memcpy(elementQueue_+tempOffset*elementSize_, 
+           localElement_, elementSize_);
+    control->putOffset++;
+    if (control->putOffset > 4294000000UL)control->putOffset = 0;
+    unlock();
+}
+
+/***** REVIEW
+ * Reviewer: abeard
+ * Comments: Recommend changing exception specification to throw (Error) for
+ * same reasons as above.
+ */
+// >>>>>>>>>>>>>
+unsigned int IPQbufferBase::read(bool lock)  throw(exception) {
+    timespec sleeptime;
+    timespec slepttime;
+    int      initialGetOffset = getOffset_;
+
+    if(lock)lockRead ();
+    if (debug_)cout << "Read" << control->putOffset << "  "
+                    << getOffset_ <<"  "<<nElements_<< endl;        
+    // If the getOffset is more than nElements behind, move it up
+    if ((control->putOffset - getOffset_) > nElements_) {
+        lock = true; // Always lock if get/put pointers will be adjacent
+        getOffset_ = max(control->putOffset - nElements_, (unsigned)0);
+    }
+    while (getOffset_ == control->putOffset) {  
+        //cout<<"IPQread:"<<nElements_<<"/"<<getOffset_<<"/"<<control->putOffset<<endl;    
+        if(lock)unlock ();
+        sleeptime.tv_sec = 0;
+        sleeptime.tv_nsec = 50*1000000; // 50 milliseconds
+        nanosleep (&sleeptime, &slepttime);
+        if(lock)lockRead ();
+    }
+    unsigned int tempIndex = getOffset_%nElements_;
+    memcpy(localElement_, elementQueue_ + tempIndex*elementSize_, elementSize_);    
+    getOffset_++;
+    nLostElements_ = getOffset_ - initialGetOffset - 1;
+    if(lock)unlock ();
+    return nLostElements_;
+}
+    
+bool IPQbufferBase::readTop(bool lock)  throw(exception) {
+    // Check to see if queue is empty
+    if (control->putOffset == 0) return false;
+
+    // Check to see if anything unread is available in queue
+    bool unread = (getNumAvailable() != 0);
+    
+    if(lock)lockRead();
+    int putOffset = control->putOffset;
+    int byteOffset = ((putOffset-1)%nElements_)*elementSize_;
+    memcpy(localElement_, elementQueue_+byteOffset, elementSize_); 
+    if(lock)unlock();
+    // Set get pointer to match data just read   
+    getOffset_ = putOffset;
+        
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

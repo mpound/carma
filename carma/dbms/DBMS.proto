@@ -1,0 +1,10 @@
+package dbmsproto;
+
+// Both the id and name MUST have exactly the same number of elements.
+//
+// This binary format was designed to reduce the encoding overhead to be as
+// minimal as possible, as well as being as fast as possible to decode.
+message NameTagidMap {
+	repeated fixed32 id = 1 [packed = true];
+	repeated string name = 2;
+}

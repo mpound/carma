@@ -1,0 +1,102 @@
+#!/bin/sh
+
+# test mysql database
+
+# this script should be run from the top of the build tree
+
+usage() {
+    echo "$0 [-c] [-h]"
+    echo "   -c cleanup at end (deletes test database)"
+    echo "   -h print this message and exit"
+    echo "   -v run using valgrind"
+}
+
+cleanup() {
+    if [ $cleanup -eq 1 ] ; then
+        mysql -u $user -p -e "DROP DATABASE $testdb"
+    fi
+}
+
+fail() {
+    cleanup
+    echo CARMA-TEST: FAIL carma/dbms mysqlTest
+    exit 1
+}
+echo "**** MYSQL TEST ****"
+export ODBCINI=`pwd`/conf/dbms/odbc.ini
+
+cleanup=0
+use_valgrind=0
+
+for x in $* ; do
+  if [ "X$x" = "X-h" ] ; then
+      usage
+      exit 0
+  elif [ "X$x" = "X-c" ] ; then
+      cleanup=0
+  elif [ "X$x" = "X-v" ] ; then
+      use_valgrind=1
+  else
+     echo "$0: Unknown command line argument $x"
+     usage
+     fail
+  fi
+done
+
+dbmsTest="carma/dbms/Test/dbmsTest"
+if [ ! -f ${dbmsTest} ] ; then
+   echo "${dbmsTest} does not exist, you need to make it"
+   fail
+fi
+
+echo "$0: Remove old test database. If this command fails its probably OK - it just means the database doesn't exist"
+
+testdb=carma_test
+user=carmauser
+
+mysql -u $user -p -e "DROP DATABASE $testdb" 
+
+echo "$0: Create test database $testdb"
+
+mysql -u $user -p -e "CREATE DATABASE $testdb" 
+
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+echo "$0: Define the tables in $testdb"
+
+mysql -u $user -p -e "source conf/dbms/permanentTablesSchema.sql" $testdb
+
+if [ $? -ne 0 ] ; then
+    echo "$0 Error creating tables in $testdb"
+    fail
+fi
+# this command inserts a row which is necessary to test exception throwing
+# in dbmsTest
+mysql -u $user -p -e "INSERT INTO MonitorConfig (frameCount, tagID, subsysID, \
+    name, shortName, longName, units, updateInterval, description, datatype, \
+    monitorPointType, persistent) VALUES (275420235, 524287, 7, \
+    'my.favorite.monitor.point', 'mp5', \
+    'this is a test point inserted directly from $0', 'm/s', 1,\
+    'this is a test description for a monitor point', 5, 1, 1)" $testdb
+
+if [ $? -ne 0 ] ; then
+    echo "$0 Error executing insert statement necessary for exception testing"
+    fail
+fi
+
+if [ $use_valgrind -eq 1 ] ; then 
+    valgrind --leak-check=yes carma/dbms/Test/dbmsTest
+else
+    carma/dbms/Test/dbmsTest
+fi
+
+if [ $? -ne 0 ] ; then
+    fail
+else
+    cleanup
+    echo "CARMA-TEST: PASS carma/dbms mysqlTest"
+    exit 0
+fi
+

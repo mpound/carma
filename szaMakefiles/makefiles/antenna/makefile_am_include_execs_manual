@@ -1,0 +1,356 @@
+#######################################################################
+# List of all programs
+#######################################################################
+
+antenna_sza_bins = bin/szaAntennaControl bin/szaMpmlGenerator bin/szaTestRemoteSensors bin/tRrdCollector bin/systemStatus bin/tRxProxy bin/tCal bin/tCmss bin/tCcss bin/tCmsr bin/tCmsa bin/tCarmaConfig bin/tReadArc bin/tPgplotTest bin/tAntProxy bin/tViewerTest bin/fluxcalLst bin/tRtdTest bin/tRtdClient bin/tRtdClientTask bin/tRtdServerTask bin/tPdb bin/tSort bin/tFastPdb bin/tCarmaArchiveFetcher bin/tTable bin/tVideoCapture bin/tFastPdbServer bin/tFastPdbClient
+
+bin_PROGRAMS   += $(antenna_sza_bins)
+
+#######################################################################
+# Generic defines for all SZA executables
+#######################################################################
+
+antenna_sza_bins_ldadd = \
+	$(lib_libcarmaSzaarrayutils_la) \
+	$(lib_libcarmaSzautil_la) \
+	$(lib_libcarmaSzaslalib_la) \
+	$(lib_libcarmaSzaCfitsio_la) \
+	$(lib_libcarmaSzaAntennaCanbus_la) \
+	$(lib_libcarmaSzaAntennaControl_la) \
+	$(lib_libcarmaSzaAntennaCorba_la) \
+	$(antenna_common_la) \
+	$(antenna_sza_la) \
+	$(dbms_la) \
+	$(monitor_la) \
+	$(services_la) \
+	$(environment_la) \
+	$(correlator_la) \
+	$(pipeline_la) \
+	$(signalpath_la) \
+	$(util_la) \
+	-llog4cpp \
+	-ljanz \
+	-lmir \
+	-lmysqlclient \
+	-lodbc \
+	-lxerces-c \
+	-lnovas \
+	-lgslcblas \
+	-lgsl \
+	-lunits \
+	-lfftw3 \
+	-lACE \
+	-lTAO \
+	-lTAO_AnyTypeCode \
+	-lTAO_AnyTypeCode \
+	-lTAO_CosNaming \
+	-lTAO_CosNotification \
+	-lTAO_ObjRefTemplate \
+	-lTAO_PortableServer \
+	-lTAO_CosNotification_Serv \
+	-lTAO_CosNotification_MC \
+	-lTAO_Utils \
+	-ldl \
+	-lreadline \
+	-lcurl \
+	-lrt \
+	-lX11
+
+antenna_sza_bins_cppflags = $(AM_CPPFLAGS) -DTOP="\"$(TOP)"\" -DCARMA=$(CARMA) -D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 -DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 -DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0  -DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated
+
+antenna_sza_bins_cxxflags = $(AM_CXXFLAGS) -fPIC
+
+#######################################################################
+# szaAntennaControl
+#######################################################################
+
+bin_szaAntennaControl_SOURCES = \
+	carma/antenna/sza/executables/szaAntennaControl.cc
+bin_szaAntennaControl_LDADD    = $(antenna_sza_bins_ldadd)
+bin_szaAntennaControl_CPPFLAGS = $(antenna_sza_bins_cppflags)
+bin_szaAntennaControl_CXXFLAGS = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# mpml generator for SZA monitor points
+#######################################################################
+
+bin_szaMpmlGenerator_SOURCES = \
+	carma/antenna/sza/executables/szaMpmlGenerator.cc
+bin_szaMpmlGenerator_LDADD     = $(antenna_sza_bins_ldadd)
+bin_szaMpmlGenerator_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_szaMpmlGenerator_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Read remote sensors
+#######################################################################
+
+bin_szaTestRemoteSensors_SOURCES = \
+	carma/antenna/sza/executables/szaTestRemoteSensors.cc
+bin_szaTestRemoteSensors_LDADD     = $(antenna_sza_bins_ldadd)
+bin_szaTestRemoteSensors_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_szaTestRemoteSensors_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+
+#######################################################################
+# Test RrdCollector class
+#######################################################################
+
+bin_tRrdCollector_SOURCES = \
+	carma/antenna/sza/executables/tRrdCollector.cc
+bin_tRrdCollector_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tRrdCollector_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tRrdCollector_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# System status executable
+#######################################################################
+
+bin_systemStatus_SOURCES = \
+	carma/antenna/sza/executables/systemStatus.cc
+bin_systemStatus_LDADD     = $(antenna_sza_bins_ldadd)
+bin_systemStatus_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_systemStatus_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# RxProxy
+#######################################################################
+
+bin_tRxProxy_SOURCES = \
+	carma/antenna/sza/executables/tRxProxy.cc
+bin_tRxProxy_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tRxProxy_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tRxProxy_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Cal
+#######################################################################
+
+bin_tCal_SOURCES = \
+	carma/antenna/sza/executables/tCal.cc
+bin_tCal_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tCal_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tCal_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Cmss
+#######################################################################
+
+bin_tCmss_SOURCES = \
+	carma/antenna/sza/executables/tCmss.cc
+bin_tCmss_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tCmss_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tCmss_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Ccss
+#######################################################################
+
+bin_tCcss_SOURCES = \
+	carma/antenna/sza/executables/tCcss.cc
+bin_tCcss_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tCcss_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tCcss_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Cmsr
+#######################################################################
+
+bin_tCmsr_SOURCES = \
+	carma/antenna/sza/executables/tCmsr.cc
+bin_tCmsr_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tCmsr_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tCmsr_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Cmsa
+#######################################################################
+
+bin_tCmsa_SOURCES = \
+	carma/antenna/sza/executables/tCmsa.cc
+bin_tCmsa_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tCmsa_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tCmsa_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# CarmaConfig
+#######################################################################
+
+bin_tCarmaConfig_SOURCES = \
+	carma/antenna/sza/executables/tCarmaConfig.cc
+bin_tCarmaConfig_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tCarmaConfig_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tCarmaConfig_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# ReadArc
+#######################################################################
+
+bin_tReadArc_SOURCES = \
+	carma/antenna/sza/executables/tReadArc.cc
+bin_tReadArc_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tReadArc_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tReadArc_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# PgplotTest
+#######################################################################
+
+bin_tPgplotTest_SOURCES = \
+	carma/antenna/sza/executables/tPgplotTest.cc
+bin_tPgplotTest_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -lpgplot -lcpgplot
+bin_tPgplotTest_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tPgplotTest_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# AntProxy
+#######################################################################
+
+bin_tAntProxy_SOURCES = \
+	carma/antenna/sza/executables/tAntProxy.cc
+bin_tAntProxy_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tAntProxy_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tAntProxy_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# ViewerTest
+#######################################################################
+
+bin_tViewerTest_SOURCES = \
+	carma/antenna/sza/executables/tViewerTest.cc
+bin_tViewerTest_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tViewerTest_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tViewerTest_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# fluxcalLst
+#######################################################################
+
+bin_fluxcalLst_SOURCES = \
+	carma/antenna/sza/executables/fluxcalLst.cc
+bin_fluxcalLst_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng
+bin_fluxcalLst_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_fluxcalLst_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# RtdTest
+#######################################################################
+
+bin_tRtdTest_SOURCES = \
+	carma/antenna/sza/executables/tRtdTest.cc
+bin_tRtdTest_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma
+bin_tRtdTest_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tRtdTest_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# RtdClient
+#######################################################################
+
+bin_tRtdClient_SOURCES = \
+	carma/antenna/sza/executables/tRtdClient.cc
+bin_tRtdClient_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma
+bin_tRtdClient_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tRtdClient_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# RtdClientTask
+#######################################################################
+
+bin_tRtdClientTask_SOURCES = \
+	carma/antenna/sza/executables/tRtdClientTask.cc
+bin_tRtdClientTask_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma
+bin_tRtdClientTask_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tRtdClientTask_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# RtdServerTask
+#######################################################################
+
+bin_tRtdServerTask_SOURCES = \
+	carma/antenna/sza/executables/tRtdServerTask.cc
+bin_tRtdServerTask_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma
+bin_tRtdServerTask_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tRtdServerTask_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Pdb
+#######################################################################
+
+bin_tPdb_SOURCES = \
+	carma/antenna/sza/executables/tPdb.cc
+bin_tPdb_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma $(observertools_la)
+bin_tPdb_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tPdb_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# FastPdb
+#######################################################################
+
+bin_tFastPdb_SOURCES = \
+	carma/antenna/sza/executables/tFastPdb.cc
+bin_tFastPdb_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma $(observertools_la)
+bin_tFastPdb_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tFastPdb_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# FastPdbServer
+#######################################################################
+
+bin_tFastPdbServer_SOURCES = \
+	carma/antenna/sza/executables/tFastPdbServer.cc
+bin_tFastPdbServer_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma $(observertools_la)
+bin_tFastPdbServer_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tFastPdbServer_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# FastPdbClient
+#######################################################################
+
+bin_tFastPdbClient_SOURCES = \
+	carma/antenna/sza/executables/tFastPdbClient.cc
+bin_tFastPdbClient_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma $(observertools_la)
+bin_tFastPdbClient_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tFastPdbClient_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Sort
+#######################################################################
+
+bin_tSort_SOURCES = \
+	carma/antenna/sza/executables/tSort.cc
+bin_tSort_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma
+bin_tSort_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tSort_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# CarmaArchiveFetcher
+#######################################################################
+
+bin_tCarmaArchiveFetcher_SOURCES = \
+	carma/antenna/sza/executables/tCarmaArchiveFetcher.cc
+bin_tCarmaArchiveFetcher_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma
+bin_tCarmaArchiveFetcher_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tCarmaArchiveFetcher_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Table
+#######################################################################
+
+bin_tTable_SOURCES = \
+	carma/antenna/sza/executables/tTable.cc
+bin_tTable_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma
+bin_tTable_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tTable_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# VideoCapture
+#######################################################################
+
+bin_tVideoCapture_SOURCES = \
+	carma/antenna/sza/executables/tVideoCapture.cc
+bin_tVideoCapture_LDADD     = $(antenna_sza_bins_ldadd) $(lib_libcarmaSzapgutil_la) -lgfortran -lpng -llzma
+bin_tVideoCapture_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tVideoCapture_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+
+
+

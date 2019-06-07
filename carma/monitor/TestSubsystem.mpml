@@ -1,0 +1,402 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+<!-- vim: set ts=4 sts=4 sw=4 noet: -->
+
+<!--
+  -  $Id: TestSubsystem.mpml,v 1.41 2012/10/29 21:35:13 iws Exp $
+  -
+  -  an MPML file that defines a subsystem starts with a Subsystem tag.
+  -  Attributes:
+  -   name         subsystem name; class name will be {name}Subsystem
+  -   count        set this to a value greater than 1 if there is an "array"
+  -                  of identical subsystems (e.g. Ovro antenna subsystem).
+  -   priority     the default archiving priority for the whole subsystem.
+  -                  This can be overridden on a container or monitor point
+  -                  basis.  Supported values, from highest to lowest priority:
+  -                  vital, useful, normal, verbose, debug.  That is, a point
+  -                  with priority verbose will only be archived if the
+  -                  archiver has priority set to verbose or debug.
+  -   author       your name!
+  -->
+<Subsystem name="Test" priority="debug" author="Ira W. Snyder">
+  
+	<!-- 
+	-  All subsystems must should MonitorStats so that we can calculate
+	-  end-to-end transfer time statistics.
+	-->
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <!--
+    -  You can optionally provide some documentation markup for your
+    -  subsystem using <shortName>, <longName>, and <description>
+    -->
+
+    <!-- a short name for display purposes -->
+    <shortName>Test</shortName>
+
+    <!-- some tool tip text -->
+    <longName>Test Subsystem: used to test the monitoring system</longName>
+
+    <!--
+    -  a longer explanation, one or a few sentences.  Don't worry about
+    -  spaces or carriage returns.  Make the first "sentence" read like
+    -  a definition.
+    -->
+    <description>
+        a dummy subsystem used to test the monitor system.  It includes
+        examples of all types of points and containers.  It also exercises
+        the extension mechanism as well as 'common', reusable components.
+    </description>
+
+    <!--
+    -  This is a special directive for creating "common" reusable classes.
+    -  Consult the MPML Users Guide for more information on this advanced
+    -  feature.  Also, consult the below definition of local common classes.
+    -->
+    <?common CanbusCommon.mpml ?>
+
+    <!--
+    -  You can use a MonitorPoint from another file by including the
+    -  file, and then using one of the <CommonMonitorPoint> variants.
+    -->
+    <?common TimestampCommon.mpml?>
+
+    <!--
+    -  Include the monitor point as if it had been defined locally,
+    -  except that it comes from another file, and has carma::monitor
+    -  scope.
+    -->
+    <CommonMonitorPoint ref="timestamp" />
+
+    <!--
+    -  Include the monitor point as if it had been defined locally,
+    -  except that it uses a different name. This allows multiple
+    -  instances of the same type in the same subsystem/container.
+    -->
+    <CommonMonitorPoint ref="timestamp" name="timestampA" />
+    <CommonMonitorPoint ref="timestamp" name="timestampB" />
+
+    <!--
+    -  Include the monitor point as if it had been defined locally,
+    -  except that it uses both a different name and has a count.
+    -
+    -  Note that you do NOT need name= to use count=. In this case,
+    -  you will only override the count, and not the name.
+    -->
+    <CommonMonitorPoint ref="timestamp" name="countedTimestamp" count="5" />
+
+    <!--
+    -  This is a software monitor point that with five values per
+    -  frame.  This may be because the value is sampled every 0.1
+    -  seconds or because this point has five simultaneous
+    -  (e.g. spectral) components to it.
+    -
+    -  Attributes:
+    -    name       the name of the monitor point.  Its canonical name
+    -                 is "Test.loadfactor"; its accessor method
+    -                 within the subsystem class will be loadfactor().
+    -    type       the monitor point type (see Test Container below
+    -                 for a list of all possible types)
+    -    sampling   the number of values per frame.
+    -->
+    <MonitorPoint name="loadfactor" type="float" sampling="5" >
+
+        <!-- a short name for display purposes -->
+        <shortName>load</shortName>
+
+        <!-- some tool tip text -->
+        <longName>activity level</longName>
+
+        <!--
+        -  a longer explanation, one or a few sentences.  Don't worry about
+        -  spaces or carriage returns.  Make the first "sentence" read like
+        -  a definition.
+        -->
+        <description>
+            a measure of the level of activity within this subsystem.  Normally,
+            this value is less than one.
+        </description>
+
+        <!-- okay, this unit doesn't make sense, but you get the picture -->
+        <units>V</units>
+
+        <!--  width of string to use for UI -->
+        <width>8</width>
+        <!-- # of places to right of decimal place -->
+        <precision>3</precision>
+
+        <!--
+        -  a function for integrating the value over time.  If not specified,
+        -  a default based on the type will be chosen.  Recognized values have
+        -  not been defined yet.
+        -->
+        <integrate>average</integrate>
+
+        <!--
+        -  default thresholds.  These will be overridden by the control
+        -  system.
+        -  Note that the below thresholds assume a nominal value of 1.0.
+        -  Thresholds below that value are the 'Lo' thresholds, above 'Hi'.
+        -->
+        <warnLo>0.01</warnLo>
+        <warnHi>2.0</warnHi>
+        <errLo>0.0</errLo>
+        <errHi>5.0</errHi>
+
+    </MonitorPoint>
+
+    <!--
+    -  a container is a logical aggregation of monitor points,
+    -  devices, and other containers.  Many times it corresponds to
+    -  a hardware box, containing control monitor points and devices
+    -  containing sense points. This container shows all the
+    -  different types supported.  The monitor point definitions,
+    -  however, fail to describe themselves.  Developers are
+    -  discouraged from being this lazy ;-)
+    -
+    -  Notice that the priority set for this container overrides the
+    -  priority set for the subsystem as whole.  Notice also that the
+    -  priority set for "mpbool" overrides the container priority.
+    -->
+    <Container name="Box" priority="vital">
+        <!--
+        -  All the different types of monitor points.
+        -  These could be last control point values in a real system.
+        -->
+        <MonitorPoint name="mpchar"     type="char" persistent="true"/>
+        <MonitorPoint name="mpbyte"     type="byte" persistent="true"/>
+        <MonitorPoint name="mpshort"    type="short" persistent="true"/>
+        <MonitorPoint name="mpint"      type="int" persistent="true"/>
+        <MonitorPoint name="mpbool"     type="bool" priority="verbose" persistent="true"/>
+        <MonitorPoint name="mpfloat"    type="float" persistent="true"/>
+        <MonitorPoint name="mpdouble"   type="double" persistent="true"/>
+        <MonitorPoint name="mpcomplex"  type="complex" persistent="true"/>
+        <MonitorPoint name="mpmjd"      type="absTime" persistent="true"/>
+        <MonitorPoint name="mpstring"   type="string" persistent="true"/>
+        <MonitorPoint name="mpserialno" type="serialNo" persistent="true"/>
+
+        <!--
+        - The "enum" type supports a bitmask mode. The code generator will
+        - automatically ensure that each enumeration value takes up a single
+        - bit. This means that it can carry many values simultaneously.
+        -->
+        <MonitorPoint name="mpbitmask" type="enum" bitmask="true">
+            <description>
+                A bitmask monitor point used for testing
+            </description>
+
+            <enum name="BIT1" />
+            <enum name="BIT2" />
+            <enum name="BIT3" />
+
+            <!-- set an error threshold on BIT3 only -->
+            <errHi>BIT3</errHi>
+        </MonitorPoint>
+
+        <!--
+        -  The "enum" type supports named integer values.  Use the
+        -  <enum> tag to define and document the value names.
+        -->
+        <MonitorPoint name="color" type="enum" persistent="true">
+            <longName>hardware paint color</longName>
+            <description>
+                the color the hardware was painted last.  This is not
+                updated too often.
+            </description>
+            <integrate>last</integrate>
+
+            <enum name="RED">
+                <description>
+                    the color of a ripe tomato
+                </description>
+            </enum>
+            <enum name="BLUE">
+                <description>
+                    the color of a clear sky
+                </description>
+            </enum>
+            <!--
+            -  documentation is optional, which is handy when your
+            -  users are clarivoyant.
+            -->
+            <enum name="GREEN"/>
+
+        </MonitorPoint>
+
+        <!--
+        -  This hardware box contains 4 Canbus devices,
+        -  each of which contains the full set of monitor points.
+        -  Note the inclusion of the Xac CommonContainer
+        -  as a sub-container. Canbus XAC-3 nodes almost always implement
+        -  these monitor points, so they are included here, pre-packaged.
+        -->
+        <Container name="CanDevice" count="4">
+            <MonitorPoint name="spchar"       type="char"/>
+            <MonitorPoint name="spbyte"       type="byte"/>
+            <MonitorPoint name="spshort"      type="short"/>
+            <MonitorPoint name="spint"        type="int"/>
+            <MonitorPoint name="spbool"       type="bool"/>
+            <MonitorPoint name="spfloat"      type="float"/>
+            <MonitorPoint name="spdouble"     type="double">
+                <width>8</width>
+                <precision>4</precision>
+            </MonitorPoint>
+            <MonitorPoint name="spcomplex"    type="complex"/>
+            <MonitorPoint name="spmjd"        type="absTime"/>
+            <MonitorPoint name="spstring"     type="string"/>
+            <MonitorPoint name="spserialno"   type="serialNo"/>
+
+            <!--
+            -  The XAC common device monitor points. Note that the
+            -  file containing this device was included at the start
+            -  of this file with the ?common tag.
+            -->
+            <CommonContainer ref="Xac" />
+         </Container>
+    </Container>
+
+    <!-- this container contains another container -->
+    <Container name="Fake">
+
+        <!--
+        -  A container is a collection of MonitorPoints and other Containers.
+        -
+        -  In addition, this class illustrates two other properties:
+        -
+        -  Container Array:
+        -    With count="4", an array of 4 "Digitizer" devices will be
+        -    instantiated.  You access these from the subsystem via a method
+        -    that takes an index, e.g. "Digitizer& digitizer(int digitizerNo)".
+        -    Notes on related attributes:
+        -      indexName     an optional name for the index variable taken
+        -                      by the accessor.  This simply makes the
+        -                      generated code more readable; it does not affect
+        -                      implementation.  The default is simply "index".
+        -  Developer Extensions:
+        -    This is a mechanism for extending the generated classes to add
+        -    functionality or override the default behavior.  With
+        -    extendFrom="Base", this will cause a base class to be defined
+        -    called "DigitizerBase"; the developer would then subclass to
+        -    define a class called "Digitizer".  If you run "mpmlgen -e"
+        -    on your file, it will create "stubs" for the subclass in files
+        -    called "TestSubsystemExt.{h,cc}".  You would then edit these
+        -    to manually add new functionality and explicitly check them
+        -    into the system.  (The make system would continue to auto-generate
+        -    TestSubsystem.{h,cc} with each new build.)
+        -->
+        <Container name="Digitizer" count="4" indexName="digitizerNo" extendFrom="Base">
+
+            <!--
+            -  persistent="true" means that this is not expected to be
+            -  updated every frame
+            -->
+            <MonitorPoint name="clockSpeed" type="float" persistent="true">
+                <shortName>clock</shortName>
+                <longName>clock speed in MHz</longName>
+                <description>
+                    the speed of the clock associated with this digitizer.  This
+                    changes only when commanded to via the control system.
+                </description>
+                <units>MHz</units>
+
+                <!--
+                -  this function says take the last valid value in the
+                -  integration period.
+                -->
+                <integrate>last</integrate>
+
+                <warnLo>1000.0</warnLo>
+                <warnHi>3500.0</warnHi>
+                <errLo>500.0</errLo>
+                <errHi>3501.0</errHi>
+
+            </MonitorPoint>
+
+            <!--
+            -  this monitor point opens uses the update attribute to indicate
+            -  the number of frames between updates to its value.  Typically,
+            -  if update is greater than 1, persistent should be set to "true"
+            -->
+            <MonitorPoint name="state" type="string" update="120" persistent="true">
+                <shortName>state</shortName>
+                <longName>digitizer state</longName>
+                <description>
+                    a word indicative of the device's state
+                </description>
+                <integrate>last</integrate>
+            </MonitorPoint>
+
+            <!--
+            -  Array monitor points declared using the sampling attribute
+            -  can either be a time-series (the default) or a spectrum.
+            -  The spectrum attribute below shows how to specifically note
+            -  that the array is a spectrum.
+            -->
+            <MonitorPoint name="response" type="float" sampling="8" spectrum="true">
+                <shortName>response</shortName>
+                <longName>spectral response</longName>
+                <description>
+                    the spectral response of this device to a flat-spectrum source.
+                </description>
+            </MonitorPoint>
+
+            <!--
+            -  this sense point illustrates another way to do arrays of
+            -  monitor points (besides with the sampling attribute).
+            -  With count="3", this device will create an array of 3
+            -  points
+            -->
+            <MonitorPoint name="noise" type="int" count="3">
+                <shortName>noise</shortName>
+                <longName>random noise value</longName>
+                <description>
+                    a random number distributed between 0 and 100 according to
+                    a gaussian distribution.
+                </description>
+
+                <errHi>90</errHi>
+                <warnHi>67</warnHi>
+                <warnLo>33</warnLo>
+                <errLo>10</errLo>
+            </MonitorPoint>
+        </Container>
+    </Container>
+
+    <!--
+    -  Common directives are also allowed to be locally scoped.  This
+    -  causes the generated containers and monitor points to be common to
+    -  the subsystem only (e.g. generates a class which is accessible only
+    -  from within the subsystem). Note, there is a subtle difference between
+    -  this and a normal embedded container - common container elements generate
+    -  a class which is reuseable anywhere in the subsystem. Normal embedded
+    -  containers are generated into a class with only a single instance.
+    -  Globally scoped common elements (scope="global") are generated into
+    -  the carma::monitor namespace and are thus reuseable among multiple
+    -  subsystems.
+    -->
+    <Common scope="local" author="Andrew Beard">
+
+        <Container name="FileHeader" priority="verbose" >
+            <MonitorPoint name="Filename" type="string" />
+            <MonitorPoint name="Format" type="enum" >
+                <enum name="ELF"/>
+                <enum name="A_OUT"/>
+            </MonitorPoint>
+        </Container>
+
+        <Container name="FileCollection" priority="useful" >
+            <CommonContainer ref="FileHeader" />
+            <CommonContainer ref="FileHeader" name="fileA" />
+            <CommonContainer ref="FileHeader" name="fileB" />
+        </Container>
+
+    </Common>
+
+    <!-- Another FileHeader example OUTSIDE of the common definition -->
+    <Container name="FileWithPermissions" priority="debug">
+        <CommonContainer ref="FileHeader" />
+        <MonitorPoint name="Permissions" type="int" />
+    </Container>
+
+</Subsystem>

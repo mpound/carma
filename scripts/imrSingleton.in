@@ -1,0 +1,134 @@
+#!/bin/bash 
+#
+# Usage: imrSingleton [OPTION] COMMAND_LINE
+# Run an imr application after terminating any existing instance
+# of the application and optionally emailing a gdb bactrace to RTS.
+#  
+# Params: 
+#  -c Dump core if application crashes.  
+#  -p Production: Collect gdb backtrace and email rts on shutdown failure.
+# 
+# Return: 
+#   1 if server running, the exit status of the wrapped application otherwise.
+#
+
+# Global state
+orbServerPid=
+
+# Parse ORBServerId option from input arguments
+# Modifies no global state.
+# Params:
+#   args - Arguments to parse.
+# Return:
+#   nothing
+parseOrbServerId () 
+{
+    local args=("$@")
+    local idx=0
+    for arg in ${args[@]}; do 
+        (( ++idx ))
+        if [[ "$arg" == "-ORBServerId" ]]; then
+            echo "${args[idx++]}"
+            break
+        fi
+    done
+}
+
+# Echo server PID if running.
+# Modifies:
+#   orbServerPid global variable
+# Params:
+#   serverId - ORBServerId (e.g. WbdcFSP)
+# Return:
+#   0 if a server is running, 1 otherwise 
+getServerPid() 
+{
+    local serverId=$1
+    if [[ -n "$serverId" ]]; then
+        local pids="$(pgrep -d ' ' -f "\-ORBServerId $serverId\>")"
+        for pid in $pids; do
+            if [[ "$pid" -ne "$$" ]] && [[ "$pid" -ne "$PPID" ]]; then
+                orbServerPid=$pid
+                return 0 
+            fi
+        done
+    fi
+    return 1 
+}
+
+# Collect GDB backtrace from a running application
+# Parms:
+#   serverPid - PID of application
+# Return:
+#   nothing
+collectGdbBacktrace()
+{
+    local serverPid=$1 
+    local serverName=$2
+    local mailto="rts@mmarray.org"
+    local mailmsg="RTS Unclean Shutdown GDB Backtrace for $serverName"
+    gdb -q -p $serverPid <<- EOF | mutt -F /dev/null -s "$mailmsg" -- $mailto
+    info threads
+    backtrace
+    thread apply all backtrace
+    kill
+    quit
+EOF
+}
+
+dumpcore=""
+nomail=1
+while getopts ":cph" opt; do
+  case $opt in
+    c)
+        dumpcore=1
+        ;;
+    p) 
+        nomail=""
+        ;;
+    h|*)
+        echo "Usage: $0 [OPTION] COMMAND_LINE"
+        echo "Run an imr application after terminating any existing instance"
+        echo "of the application and optionally emailing a gdb bactrace to RTS."
+        echo ""
+        echo "  -c Dump core if application crashes."
+        echo "  -p Production: Run gdb backtrace & email rts on shutdown failure."
+        echo ""
+        exit 1
+        ;;
+  esac
+
+done
+
+shift $((OPTIND - 1))
+
+orbServerId="$(parseOrbServerId "$@")"
+getServerPid $orbServerId
+
+if [[ -n $orbServerPid ]]; then
+    echo "$orbServerId ($orbServerPid) is running!"
+    if [[ -z $nomail ]]; then
+        collectGdbBacktrace $orbServerPid $orbServerId
+    fi
+    for (( attempt=0; attempt < 3; attempt++ )); do
+        if getServerPid $orbServerId; then 
+            echo "$orbServerId is still alive (kill attempt $((attempt + 1)))"
+            kill -9 $orbServerPid
+            sleep 1 
+        else
+            echo "$orbServerId has exited"
+            break;
+        fi
+    done
+fi
+
+if getServerPid $orbServerId; then 
+    echo "Unable to kill $orbServerId ($orbServerPid) - exiting."
+    exit 1
+fi
+        
+if [[ -n $dumpcore ]]; then
+    ulimit -c unlimited
+fi
+
+exec "$@"

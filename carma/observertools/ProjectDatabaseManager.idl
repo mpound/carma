@@ -1,0 +1,505 @@
+#ifndef CARMA_OBSERVERTOOLS_PROJECTDATABASEMANAGER_IDL
+#define CARMA_OBSERVERTOOLS_PROJECTDATABASEMANAGER_IDL
+
+/**
+ * @file
+ *
+ * Interface and data structure definitions for the CARMA
+ * Project Database Manager
+ *
+ * @author: Douglas N. Friedel
+ * @author: Ira W. Snyder
+ */
+
+#include "carma/util/UserException.idl"
+#include "carma/observertools/ItemValue.idl"
+
+module carma {
+module observertools {
+
+	const string PROJECT_DATABASE_MANAGER_NAME =
+		"carma.projectDatabaseManager.projectDatabaseManagerControl";
+
+	/**
+	 * An exception for an error in the database
+	 * Usage example:
+	 * @code
+	 * ostringstream o;
+	 * o << "Nobody knows the trouble I've been through..." << moreMessage;
+	 * throw CARMA_EXCEPTION(observertools::ProjectDatabaseException, o.str().c_str());
+	 * @endcode
+	 */
+	exception ProjectDatabaseException {
+		string errorMsg;
+		string filename;
+		short lineNo;
+	};
+
+	/**
+	 * Sequence of strings
+	 */
+	typedef sequence<string> StringSequence;
+
+	/**
+	 * Various enumeration constants.
+	 */
+
+	/**
+	 *  Enum for editor
+	 */
+	enum EditStatus {
+		ESTATUS_EDIT,         /**< edit the item(s) */
+		ESTATUS_ADD,          /**< add the item(s) */
+		ESTATUS_DELETE,       /**< delete the item(s) */
+		ESTATUS_REPLICATE,    /**< copy the item */
+		ESTATUS_RENAME,       /**< rename the item */
+		ESTATUS_APPEND,       /**< for observer comments only */
+		ESTATUS_REPLACE       /**< replace */
+	};
+
+	/**
+	 *  Enum for project status
+	 */
+	enum ProjectStatus {
+		PSTATUS_COMPLETE,     /**< Project/obsblock/trial is done */
+		PSTATUS_INCOMPLETE,   /**< Project/obsblock/trial still has observable time */
+		PSTATUS_RUNNING,      /**< trial has been run/is running */
+		PSTATUS_OTHER
+	};
+
+	/**
+	 * Enum for observation category
+	 */
+	enum ObsCategory {
+		CATEGORY_GALACTIC,           /**< source is in the Galaxy */
+		CATEGORY_COMET,              /**< source is a comet */
+		CATEGORY_PLANET,             /**< source is a planet */
+		CATEGORY_SOLAR,              /**< source is the sun */
+		CATEGORY_EXTRAGALACTIC,      /**< source is extragalactic */
+		CATEGORY_OTHER,              /**< misc source */
+		CATEGORY_STELLAR,            /**< source is a star */
+		CATEGORY_HIGH_MASS_STAR_FORM,/**< source is high mass star forming region */
+		CATEGORY_LOW_MASS_STAR_FORM, /**< source is low mass star forming region */
+		CATEGORY_CHEMISTRY_ISM,      /**< source is chemistry related */
+		CATEGORY_GALAXY_DETECTION,   /**< source is a galaxy to be detected */
+		CATEGORY_GALAXY_MAPPING,     /**< source is a galaxy for mapping */
+		CATEGORY_COSMOLOGY,          /**< source is cosmological */
+		CATEGORY_OTHER_GALACTIC,     /**< source is misc galactic */
+		CATEGORY_OTHER_EXTRAGALACTIC /**< source is misc extragalactic */
+	};
+
+	/**
+	 * Enum for observation type
+	 */ 
+	enum ObsType {
+		TYPE_SINGLEPOL,         /**< Single polarization observations */
+		TYPE_CARMA23,           /**< CARMA 23 observations */
+		TYPE_DUALPOL,           /**< dual polarization observations */
+		TYPE_FULLPOL,           /**< full polarization observations */
+		TYPE_CARMA15,           /**< CARMA 15 observations */
+		TYPE_CARMA8,            /**< CARMA 8 observations */
+		TYPE_PACS,              /**< PACS observations */
+		TYPE_MAXSENS_DUALPOL,   /**< maximum sinsitivity observations */
+		TYPE_MAXSENS_CARMA23,   /**< maximum sinsitivity observations */
+		TYPE_MAXSENS_LL,        /**< maximum sinsitivity observations */
+		TYPE_NONE,
+		TYPE_PACS_DUALPOL,
+		TYPE_PACS_FULLPOL
+	};
+
+	/**
+	 * Enum for observation likelihood
+	 */
+	enum ObsLikelihood {
+		LIKELIHOOD_A,      /**< highest likelihood */
+		LIKELIHOOD_B,      /**< observations possible */
+		LIKELIHOOD_C,      /**< observations not likely  */
+		LIKELIHOOD_NONE    /**< unknown */
+	};
+
+	/**
+	 * @brief Sequence of shorts
+	 */
+	typedef sequence<short> shortSequence;
+
+	/**
+	 * @brief Sequence of doubles
+	 */
+	typedef sequence<double> doubleSequence;
+
+	/**
+	 * Source data structure
+	 */
+	struct Source {
+		string sourceName;             /**< source name */
+		boolean ephemeris;             /**< does the source have an ephemeris */
+		double ra;                     /**< ra in radians */
+		double dec;                    /**< dec in radians */
+		string dataFile;               /**< name of the miriad data file */
+		float velocity;                /**< velocity of the source in km/s */
+		string veltype;                /**< type of velocity for velocity */
+		boolean isSelfcalibratable;    /**< is the source self calabratable */
+		float observationLength;       /**< length of observation in hours */
+		shortSequence correlatorSetup; /**< number of the assocaited correlator setup */
+	};
+
+	/**
+	 * @brief Sequence of sources
+	 */
+	typedef sequence<Source> SourceSequence;
+
+	/**
+	 * Calibrator data
+	 */
+	struct Calibrator {
+		string calibratorName;         /**< name of calibrator (i.e. 3c273) */
+		string calType;                /**< type of calibrator (FBGPOR) */
+		double ra;                     /**< right ascension */
+		double dec;                    /**< declination */
+		string dataFile;               /**< name of miriad file containing the data */
+		float observationLength;
+		shortSequence correlatorSetup; /**< number of the assocaited correlator setup */
+	};
+
+	/**
+	 * @brief Sequence of calibrators
+	 */
+	typedef sequence<Calibrator> CalibratorSequence;
+
+	/**
+	 * Investigator data
+	 */
+	struct Investigator {
+		string name;            /**< full name of investigator */
+		string email;           /**< email of investigator (may be blank) */
+		string affiliation;     /**< investigator affiliation (e.g. U of I) */
+		boolean isUsAffil;      /**< is the affiliation in the US */
+	};
+
+	/**
+	 * @brief Sequence of investigators
+	 */
+	typedef sequence<Investigator> InvestigatorSequence;
+
+	/**
+	 * Correlator Spectral Window Data
+	 */
+	struct Window {
+		short windowNumber;           /**< the window number */
+		double bandwidth;             /**< bandwidth of window in MHz */
+		double frequencyResolution;   /**< channel resolution in MHz */
+		short numberOfChannels;       /**< number of channels in window */
+		double minFrequency;          /**< lowest frequency in window in GHz */
+		double maxFrequency;          /**< highest frequency in window in GHz */
+	};
+
+	/**
+	 * @brief Sequence of windows
+	 */
+	typedef sequence<Window> WindowSequence;
+
+	/**
+	 * Correlator setup
+	 */
+	struct Correlator {
+		short setupNumber;          /**< number of the correlator setup */
+		short numberOfWindows;      /**< how many windows are in the correlator setup */
+		WindowSequence window;      /**< data on the windows in the setup */
+	};
+
+	/**
+	 * @brief Sequence of Correalator setups
+	 */
+	typedef sequence<Correlator> CorrelatorSequence;
+
+	/**
+	 * Target Molecule Data
+	 */
+	struct Target {
+		string molecule;    /**< name of molecule, continuum or polarization */
+		string transition;  /**< transition of molecule (blank if continuum or polarization) */
+	};
+
+	/**
+	 * @brief Sequence of targets
+	 */
+	typedef sequence<Target> TargetSequence;
+
+	/**
+	 * Trial data
+	 */
+	struct Trial {
+		string parentProject;                   /**< parent project */
+		string parentObsblock;                  /**< parent obsblock */
+		string parentSubObsblock;               /**< parent subObsblock */
+		string documentName;
+		short trialID;                          /**< trial number */
+		ProjectStatus status;                   /**< has the trial been observed */
+		float trialObservationLength;           /**< total observation time of trial in hrs */
+		string trialObservationDateStart;       /**< date of observation */
+		string trialObservationDateEnd;
+		double observedLSTstart;                /**< lst range of observation */
+		double observedLSTend;
+		boolean fastSwitch;                     /**< was fast switching done */
+		float averagePhase;                     /**< average RMS phase from track */
+		float averageOpacity;                   /**< average opacity from track */
+		float dqaOverallGrade;                  /**< overall grade from DQA */
+		float obsGrade;                         /**< overall grade from observer */
+		string obsComments;                     /**< comments from observer */
+		short numberOfPointings;                /**< number of mosaic pointings */
+		doubleSequence offsets;                 /**< offsets of mosaic pointings */
+		short numberOfAntennas;                 /**< largest number of antennas used */
+		TargetSequence target;                  /**< listing of observed molecules */
+		SourceSequence source;                  /**< lising of sources observed */
+		CalibratorSequence calibrator;          /**< listing of calibrators observed */
+		CorrelatorSequence correlator;          /**< listing of all correlator setups */
+		/**
+		 * The following are observing constraints set by the PI to aid in scheduling
+		 * the observations. Generally these will contain the default values.
+		 */
+		string imgVsSnr;                        /**< Image or SNR preference */
+		float maxGaincalTime;                   /**< maximum time to spend on gain cal */
+		float maxGaincalRms;                    /**< maximum gain cal rms */
+		short maxTsys;                          /**< maximum systemp temperature */
+		short minNumberOfAntennas;              /**< minimum number of antennas */
+		float maxOpacity;                       /**< maximum opacity */
+		float maxRmsPathLength;                 /**< max rms pathlength */
+		float maxDecorrelationRatio;            /**< maximum decorrelation ratio */
+		float requiredSourceRms;                /**< required source rms */
+		// End of observing constraints
+		string script;                          /**< the observing script */
+		string catalog;                         /**< the observing catalog */
+		string systemScripts;
+		string scriptParameterization;
+	};
+
+	/**
+	 * @brief Sequence of trials
+	 */
+	typedef sequence<Trial> TrialSequence;
+
+	/**
+	 * Sub-obsblock data
+	 */
+	struct SubObsblock {
+		string parentProject;                   /**< parent project */
+		string parentObsblock;                  /**< parent obsblock */
+		string documentName;
+		string subObsblockID;                   /**< name of the sub-obsblock */
+		ProjectStatus status;                   /**< status of the sub-obsblock */
+		float subObsblockObservationTime;       /**< how long has this subObsblock been observed */
+		StringSequence parentSubObsblock;       /**< related parent projects */
+		StringSequence childSubObsblock;        /**< related child projects */
+		short lastTrial;                        /**< last trial number */
+		TrialSequence trial;                    /**< sequence of trials in the sub-obsblock */
+	};
+
+	/**
+	 * @brief Sequence of subobsblocks
+	 */
+	typedef sequence<SubObsblock> SubObsblockSequence;
+
+	/**
+	 * Obsblock data
+	 */
+	struct Obsblock {
+		string parentProject;            /**< parent project */
+		string documentName;
+		string obsblockID;               /**< name of the obsblock */
+		ProjectStatus status;            /**< obsblock status */
+		boolean exceedTAC;               /**< can/cannot exceed TAC allocation */
+		float minAllocatedTime;          /**< min time alloc. for observations (hrs) */
+		float maxAllocatedTime;          /**< max time alloc. for observations (hrs) */
+		float priority;                  /**< priority of observations */
+		ObsLikelihood likelihood;        /**< Observation likelihood */
+		float totalObsTime;              /**< total time this obsblock has been obs. */
+		float remainingTime;             /**< how much time is remaining (min - obs) */
+		float reqLowHourAngleCoverage;   /**< requested hour angle coverage */
+		float reqHiHourAngleCoverage;    /**< requested hour angle coverage */
+		double lowRa;                    /**< RA that corresponds to reqLowHourAngleCoverage */
+		double highRa;                   /**< RA that corresponds to reqHighHourAngleCoverage */
+		string actualHourAngleCoverage;  /**< actual hour angles observed */
+		ObsType observationType;         /**< observation type */
+		string receiverBand;             /**< 1mm, 3mm ,1cm ... */
+		float restFrequency;             /**< rest frequency */
+		string arrayConfiguration;       /**< array configuration (A-E) */
+		boolean isFlex;                  /**< is the scheduling flexible */
+		StringSequence parentObsblock;   /**< related parent projects */
+		StringSequence childObsblock;    /**< related child projects */
+		SubObsblockSequence subObsblock; /**< sequence of sub-obsblocks */
+	};
+
+	/**
+	 * @brief Sequence of obsblocks
+	 */
+	typedef sequence<Obsblock> ObsblockSequence;
+
+	/**
+	 * Project data
+	 */
+	struct Project {
+		string projectID;                      /**< project id code */
+		ProjectStatus status;                  /**< project status */
+		string proposalTerm;                   /**< term for call for proposals */
+		float totalTime;                       /**< total time project has been obs. */
+		string title;                          /**< title of project */
+		short numberOfInvestigators;           /**< number of investigators */
+		Investigator primaryInvestigator;      /**< PI of project */
+		InvestigatorSequence coInvestigator;   /**< sequence of CoI's */
+		boolean isTargetOfOpportunity;         /**< is this a target of opportunity? */
+		boolean isKeyProject;                  /**< is this a key project */
+		boolean isFastTrack;                   /**< is this fast track proj */
+		boolean isCommissioning;               /**< is this a commissioning project */
+		ObsCategory category;                  /**< category of observations */
+		string projectAbstract;                /**< project abstract */
+		StringSequence parentProject;          /**< related parent projects */
+		StringSequence childProject;           /**< related child projects */
+		ObsblockSequence obsblock;             /**< sequence of obsblocks */
+	};
+
+	/**
+	 * @brief Sequence of projects
+	 */
+	typedef sequence<Project> ProjectSequence;
+
+	/**
+	 * The interface to the CARMA Project Database Manager
+	 */
+	interface ProjectDatabaseManager {
+
+		// Check the database for consistency.
+		void checkDatabase() raises(carma::util::UserException);
+
+		// Query the database.
+		ProjectSequence projectQuery(in ItemValueSequence theQuery)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Query the database.
+		// Same as projectQuery(), but uses an out parameter to return the results
+		void projectQueryInOut(
+				in ItemValueSequence theQuery,
+				out ProjectSequence pSeq)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Find and return the observing script for a project. It is returned as a
+		// sequence of strings, one element for each line in the original script file.
+		// The observing script from the last trial is returned, previous trials are
+		// ignored.
+		//
+		// Various characters are replaced with escape sequences.
+		// See ProjectDatabaseManagerUtils.cc replaceForbidden() for the exact list.
+		StringSequence projectOscriptFind(
+				in string projectID,
+				in string obsblock,
+				in string subObsblock)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Add an observing script and source catalog to the database.
+		void projectOscriptAdd(
+				in string projectID,
+				in string obsblock,
+				in string subObsblock,
+				in string scriptFile,
+				in string catalogFile)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Edit items in a project.
+		boolean projectEdit(
+				in string projectID,
+				in string obsblock,
+				in string subObsblock,
+				in short trial,
+				in ItemValueSequence itemValueSeq,
+				in EditStatus action)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Edit items in a project.
+		// Same as projectEdit(), but uses an out parameter to return the status.
+		void projectEditInOut(
+				in string projectID,
+				in string obsblock,
+				in string subObsblock,
+				in short trial,
+				in ItemValueSequence itemValueSeq,
+				in EditStatus action,
+				out boolean success)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Add a project to the database, taking input from a file.
+		void projectAdd(in string fileName)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Add a project to the database, taking input from a string.
+		boolean projectAddAsString(in string xmlString)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Convert a numeric grade [0-100] into a letter grade.
+		// See ProjectDatabaseManagerUtils.cc.
+		string gradeToLetter(in float grade)
+			raises(carma::util::UserException);
+
+		// Convert a letter grade (A+, A, A-, etc.) into a numeric grade [0-100].
+		// See ProjectDatabaseManagerUtils.cc.
+		float letterToGrade(in string letter)
+			raises(carma::util::UserException);
+
+		// Run a trial of a project. This creates a new trial structure in the
+		// database. The return value is the trial number.
+		short runProject(
+				in string projectID,
+				in string obsblock,
+				in string subObsblock,
+				in boolean isCommissioning,
+				in boolean isDualCorr,
+				in string arrayConfig1,
+				in string arrayConfig2,
+				in string scriptFile,
+				in string catalogFile)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Run a trial of a project.
+		// Same as runProject(), but uses an out parameter to return the trial number.
+		void runProjectInOut(
+				in string projectID,
+				in string obsblock,
+				in string subObsblock,
+				in boolean isCommissioning,
+				in boolean isDualCorr,
+				in string arrayConfig1,
+				in string arrayConfig2,
+				in string scriptFile,
+				in string catalogFile,
+				out short trialNumber)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Returns true if and only if the project id is part of the
+		// hardcoded list of commissioning projects in the source code.
+		//
+		// See ProjectDatabaseManagerUtils.cc for the list.
+		boolean isCommissioning(in string pid)
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+
+		// Check if the database is alive and responding to commands.
+		// Returns the hardcoded value 4.
+		short isUp()
+			raises(carma::util::UserException,
+					carma::observertools::ProjectDatabaseException);
+	};
+
+}; // module carma::observertools
+}; // module carma
+
+#endif // CARMA_OBSERVERTOOLS_PROJECTDATABASEMANAGER_IDL
+
+/* vim: set ts=4 sts=4 sw=4 noet: */

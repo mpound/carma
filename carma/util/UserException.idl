@@ -1,0 +1,96 @@
+/** @file
+ * CORBA User Exception for carma::util.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.9 $
+ * $Date: 2011/09/30 21:27:57 $
+ * $Id: UserException.idl,v 1.9 2011/09/30 21:27:57 abeard Exp $
+ */
+
+#ifndef CARMA_UTIL_USEREXCEPTION_IDL
+#define CARMA_UTIL_USEREXCEPTION_IDL
+
+module carma {
+module util {
+
+/**
+ * Generic Carma variant of CORBA::UserException.  This exception can be thrown
+ * over-the-wire from a CORBA server to a CORBA client. For the most part,
+ * it is useful for repackaging and rethrowing exceptions caught in
+ * CORBA server implementation methods.  It allows one to communicate a
+ * server-side error back to the client.
+ *
+ * To use you must first indicate that methods in your IDL interface can
+ * throw this exception:
+ * @code
+ * // IDL
+ * #include "carma/util/UserException.idl"
+ * interface MyInterface {
+ *  void doSomething() raises (carma::util::UserException);
+ * };
+ * @endcode
+ * After this is done, you can throw a UserException from your implementation:
+ * @code
+ * // Implementation of MyInterface
+ * class MyInterfaceImpl : public POA_MyInterface {
+ *  void doSomething() throw (carma::util::UserException) {
+ *      try {
+ *          // Something which can throw...
+ *      } catch (const std::exception &ex) {
+ *          // Rethrow as a carma::util::UserException over-the-wire.
+ *          throw CARMA_EXCEPTION(carma::util::UserException(), ex.what());
+ *      } catch (...) {
+ *          // Rethrow as a carma::util::UserException over-the-wire.
+ *          throw CARMA_EXCEPTION(carma::util::UserException(), "Unknown ex.");
+ *      }
+ *   };
+ *  };
+ * @endcode
+ *
+ * Additional notes:
+ * As demonstrated above, this exception conforms to CARMA_EXCEPTION()
+ * semantics. Furthermore, the CORBA to C++ mapping for the strings in this
+ * exception <i>guarantee that a deep copy of the string message and filename
+ * will be made</i>.  Thus the user need not worry about a string literal,
+ * ostringstream string, or std::string being destructed when the
+ * stack unwinding occurs from rethrowing a UserException. This is due to the
+ * fact that the generated exception structure uses a const char * mapping
+ * which in turn is used to construct String_var member variables.  The
+ * String_var(const char *) constructor <i>always makes a deep copy</i>.
+ *
+ * However, for the same reasons, there is only a single UserException
+ * constructor which requires strings to be input as const char *.  Thus you
+ * cannot use UserException as flexibly as say carma::util::ErrorException
+ * which provides alternative constructors for std::string and
+ * std::ostringstream objects.  You can however, always use the str() and
+ * c_str() methods from these classes to copy the internal contents.
+ * For example:
+ * @code
+ * ostringstream os;
+ * os << "No way to delay that trouble coming everyday." << endl;
+ * // throw CARMA_EXCEPTION(UserException, os); // No UserException constructor
+ * throw CARMA_EXCEPTION(UserException, os.str().c_str()); // No problem.
+ * @endcode
+ */
+exception UserException {
+    string errorMsg;
+    string fileName;
+    short lineNo;
+};
+
+/** 
+ * Variant used specificaly for cancelling. 
+ * This allows python (or whoever) to specifically catch a cancellation
+ * rather than the generic UserException above. The exception contains
+ * member variables only so that it too will conform to CARMA_EXCEPTION 
+ * semantics as well.
+ */
+exception CancelException {
+    string errorMsg;
+    string fileName;
+    short lineNo;
+};
+
+}; // End util module
+}; // End carma module
+#endif

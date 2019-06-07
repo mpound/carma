@@ -1,0 +1,5 @@
+This alarm is triggered when the downconverter IF output power is not set
+or is set incorrectly for the spectral line correlator.
+
+To fix this, look here:
+http://cedarflat.mmarray.org/wiki/Alarms#Sldc.BandX.InputN.ifOutPower

@@ -1,0 +1,298 @@
+"""
+Flux calibration script
+
+Options in default:
+run('fluxcal', list='weekly', fullstartover=False, band='both', pnt=True, endtrack=None, startprimary=True, alarm=True)
+
+Options:
+list = weekly, monthly, full
+fullstartover = True/False    
+    # To start over the full list of flux calibrators 
+    # It works only with list=full
+band = both, 1mm, 3mm
+pnt = True/False
+endtrack 
+    # In the same way for science scripts 
+    # It can be issued in other sac windows while running.  However,
+    note that it does NOT work in the null form.  I.e., endtrack()
+    is not working.  Instead, use the current LST time when you intend
+    to end it as soon as possible.
+startprimary = True/False
+alarm = True/False
+    # to turn on/off alarm at the end of the track
+
+2008 Oct.  7, Woojin Kwon: Start using this new script
+2008 Oct. 15, WK: Correction for observing the noise source at 3mm
+2008 Oct. 27, WK: imply 'import obsdefUtils'
+2008 Oct. 31, WK: resolve the source number issue limited 32
+2008 Oct. 31, WK: resolve *done.list issue (when the file is empty, it's not working)
+2008 Nov.  4, WK: modify to have primary observations in each trial track in the full list runs
+2008 Dec. 30, WK: modify the endtrack conditions
+2009 Apr.  7, WK: employ the new option reading syntax
+2011 Apr. 15, WK: modified for obsdef3
+"""
+
+import subarrayCommands as sac
+import fluxcal_obsdef3 as od
+import obsdefUtils as odutil
+import fluxcalinput3 as fxinput
+import fluxcalutil as fxutil
+import os
+import runCommand as rc 
+
+# #################################################
+# Read options and set initial variables
+# #################################################
+# Clear all script variables
+sac.controlVariablesClear()
+
+p = rc.Params()
+p.add("list",          type=str,  default='weekly', description="Calibrator list? weekly, monthly, full")
+p.add("fullstartover", type=bool, default=False,    description="Start over the full list? False/True")
+p.add("band",          type=str,  default='both',   description="Tune wavelengths? both, 1mm, 3mm")
+p.add("pnt",           type=bool, default=True, description="Pointing? True/False")
+p.add("startprimary",  type=bool, default=True, description="Start with the primary observation? True/False")
+p.add("alarm",         type=bool, default=True, description="Alarm on when it finishes? True/False")
+p.add("endtrack",      type=str,  default=None, description="What LST time the track ends?")
+p.add("lowcoh",        type=str,  default=None, description="List of antennas in which to ignore max coherence alarm")
+
+p.processInputParameters()
+
+projectCode  = 'flux'
+whichList    = p.list
+fullstartover= p.fullstartover
+whichBand    = p.band
+dopointing   = p.pnt
+startPrimary = p.startprimary
+endAlarm     = p.alarm
+lowcoh       = p.lowcoh
+
+
+# Coherence alarm
+odutil.disableCoherenceAlarm()
+if lowcoh != None: sac.s.setScriptString(odutil.INDX_STR_LOWCOH, lowcoh)
+odutil.enableCoherenceAlarm()
+
+sac.setLstEndTrack(p.endtrack)
+obsblockName = whichList+'_'+whichBand
+
+print "list =", whichList
+print "fullstartover =", fullstartover
+print "band =", whichBand
+print "pointing =", dopointing
+print "startPrimary =", startPrimary
+print "alarm =", endAlarm
+print "endtrack =", p.endtrack
+
+if whichList == 'full' and whichBand == 'both' :
+    raise Exception, "The full list run should be with either 1mm or 3mm of the band option, not both.  Please run with a desired band paramenter again."
+
+# project information
+projectInfo = {
+   'emailAddress'  : 'rjharris@illinois.edu,obs@ovro.caltech.edu',
+   'code'          : projectCode,
+   'obsblock'      : obsblockName,
+   'subobsblock'   : sac.yearMonthDay(),
+   'sourceCatalog' : None,
+  }
+
+# Integration variables
+if whichList == 'weekly' or whichList == 'abstest':
+    tint   = 5.  # in min
+    record = 10. # in sec
+    nreps  = odutil.getNreps(tint, record)
+else:
+    tint   = 3.  # in min
+    record = 20. # in sec
+    nreps  = odutil.getNreps(tint, record)
+
+# #################################################
+# Main script
+# #################################################
+
+# Initialize the fluxcaldone list to start over
+#--------------------------------------------------
+if whichList == 'full' and fullstartover :
+    filename='/home/obs/scripts/arrayHealth/fluxcaldone'+whichBand+'.list'    
+    if os.system('ls %s' % filename) == 0 :
+        os.system("mv -f %s %s" % (filename, filename+sac.yearMonthDay()))
+    fxutil.addtofiledone(sac.yearMonthDay(),whichBand)
+    sac.trackMessage("fluxcaldone%s.list initialized" % whichBand, indent=1)
+
+# Check primary and possible calibrators
+#--------------------------------------------------
+primary = fxutil.selectPrimary(whichList)
+if primary == None and startPrimary :
+    raise Exception, "No primary calibrators are available. Please run later or use 'startprimary=False'"
+primaryDone = False
+
+calList     = []
+calibrators = fxutil.possibleCals(whichList,whichBand)
+for cal in calibrators:
+    if cal == primary : continue
+    calList.append(cal)
+if calList == [] and startPrimary:
+    raise Exception, "No calibrators are available. Please run later or try other lists.'"
+
+# Initialize system
+#--------------------------------------------------
+#print "### Check: before call od.initializeTrack()" 
+od.initializeTrack(fxinput.sources, fxinput.mosaic, projectInfo, fxinput.limits, 
+                   fxinput.pointing, fxinput.passband, fxinput.fluxcal, fxinput.noise,
+                   restart=False, scriptName=fullScriptName, scriptOptions=None)
+#fxinput.correlator['configCal'] = None
+#print "### Check: after call od.initializeTrack()" 
+
+# Send email indicating the script run
+#--------------------------------------------------
+if odutil.emailScriptLog():
+    odutil.sendEmail(projectInfo['code'], projectInfo['emailAddress'], fullScriptName, 
+                     None, start=True, msg=odutil.getTrackHistory(), restart=False)
+
+# Tune
+#--------------------------------------------------
+if whichBand == '1mm' : fxutil.tune1mm()
+else : fxutil.tune3mm()
+
+startLst = sac.lst()
+
+# First primary observation 
+#--------------------------------------------------
+#primary = fxutil.selectPrimary(whichList)
+#if primary == None and startPrimary :
+#    raise Exception, "No primary calibrators are available. Run later or use 'startprimary=False'"
+if primary <> None and startPrimary :
+    odutil.observeNoise(fxinput.noise['tint'], fxinput.noise['record'], indent=1)
+    if dopointing: 
+        sac.trackMessage("Checking pointing", indent=1)
+        od.doPoint(fxinput.pointing, ref=primary, indent=2) 
+    fxutil.observeSource(primary,'F',tint,record,nreps)     # 'F' flux cal (primary), 'G' gain cal
+    if whichBand == 'both' :
+        fxutil.tune1mm()
+        odutil.observeNoise(fxinput.noise['tint'], fxinput.noise['record'], indent=1)
+        fxutil.observeSource(primary,'F',tint,record,nreps) 
+    primaryDone = True
+    sac.trackMessage("Primary calibrator's done.", indent=1)
+    
+# Calibrator observation
+#--------------------------------------------------
+calListDone = []
+ncalDone = 0
+
+while 'woojin' <> 'kwon' : 
+    calList = []
+    endLst  = odutil.getLstEndTrack()
+    if endLst <> None : 
+        timeSet  = endLst - startLst
+        if timeSet < 0. : timeSet += 24.
+        timeRun  = sac.lst() - startLst
+        if timeRun < 0. : timeRun += 24.
+        timeLeft = timeSet - timeRun
+        if timeLeft < 0.1 : break
+
+    if ncalDone <> 0 and ncalDone%20 == 0 : 
+        #sac.resetProject()
+        t = sac.newProject('flux',projectInfo['obsblock'],sac.yearMonthDay())
+        sac.s.setScriptString(od.INDX_STR_OBSBLOCK_ID, t)
+        #var['resetObsblock'] = True
+        #od.initializeTrack(fxinput.sources, fxinput.mosaic, projectInfo, 
+        #   fxinput.limits, fxinput.pointing, fxinput.passband, fxinput.fluxcal, 
+        #   fxinput.noise, restart=True, scriptName=fullScriptName, scriptOptions=None)
+
+        primaryDone = False
+        primary = fxutil.selectPrimary(whichList)
+        if primary <> None :
+            odutil.observeNoise(fxinput.noise['tint'], fxinput.noise['record'], indent=1)
+            if dopointing: 
+                sac.trackMessage("Checking pointing", indent=1)
+                od.doPoint(fxinput.pointing, ref=primary, indent=2) 
+            fxutil.observeSource(primary,'F',tint,record,nreps)     # 'F' flux cal (primary), 'G' gain cal
+            primaryDone = True
+            sac.trackMessage("Primary calibrator's done.", indent=1)
+
+    calibrators = fxutil.possibleCals(whichList,whichBand)
+    for cal in calibrators:
+        if cal == primary : continue
+        if cal in calListDone : continue
+        calList.append(cal)
+
+    if calList == [] : break
+    if primary <> None and not primaryDone : 
+        sourceData = fxutil.sortSources([primary]+calList)
+    else:
+        sourceData = fxutil.sortSources(calList)
+
+    print "  i name     az(deg) el(deg)      Time-Up Time-Transit"
+    print "------------------------------------------------------"
+    i = 0
+    for s in sourceData:
+        i=i+1
+        print "%3d %8s %7.1f %7.1f %12.1f %12.1f" % (i,s[0],s[1],s[2],s[3],s[4])
+        if i==3: break
+    print "------------------------------------------------------"
+
+    if whichBand == 'both' : fxutil.tune3mm()
+    odutil.observeNoise(fxinput.noise['tint'], fxinput.noise['record'], indent=1)
+    currentTarget = sourceData[0][0]
+    if dopointing: 
+        od.doPoint(fxinput.pointing,ref=currentTarget,indent=2)
+    if currentTarget == primary :
+        fxutil.observeSource(currentTarget,'F',tint,record,nreps)
+        if whichBand == 'both' :
+            fxutil.tune1mm()
+            odutil.observeNoise(fxinput.noise['tint'], fxinput.noise['record'], indent=1)
+            fxutil.observeSource(currentTarget,'F',tint,record,nreps) 
+        primaryDone = True
+        sac.trackMessage("Primary calibrator's done.", indent=1)
+    else :
+        fxutil.observeSource(currentTarget,'G',tint,record,nreps)
+        if whichBand == 'both' :
+            fxutil.tune1mm()
+            odutil.observeNoise(fxinput.noise['tint'], fxinput.noise['record'], indent=1)
+            fxutil.observeSource(currentTarget,'G',tint,record,nreps) 
+        sac.trackMessage("%s is done." % currentTarget, indent=1)
+        calListDone.append(currentTarget)
+        if whichList == 'full' : fxutil.addtofiledone(currentTarget, whichBand)
+        ncalDone += 1
+
+# Last primary observation
+#--------------------------------------------------
+primary = fxutil.selectPrimary(whichList)
+if primary <> None and not primaryDone :
+    if whichBand == 'both' : fxutil.tune3mm()
+    odutil.observeNoise(fxinput.noise['tint'], fxinput.noise['record'], indent=1)
+    if dopointing: 
+        sac.trackMessage("Checking pointing", indent=1)
+        od.doPoint(fxinput.pointing, ref=primary, indent=2) 
+    fxutil.observeSource(primary,'F',tint,record,nreps)     # 'F' flux cal (primary), 'G' gain cal
+    if whichBand == 'both' :
+        fxutil.tune1mm()
+        odutil.observeNoise(fxinput.noise['tint'], fxinput.noise['record'], indent=1)
+        fxutil.observeSource(primary,'F',tint,record,nreps) 
+    primaryDone = True
+    sac.trackMessage("Primary calibrator's done.", indent=1)
+
+# Print track summary
+#--------------------------------------------------
+sac.trackMessage("Primary flux cal : %s" % str(primaryDone), indent=1)
+sac.trackMessage("Number of cal    : %i" % ncalDone, indent=1)
+totaltime =  sac.lst() - startLst
+if totaltime < 0. : totaltime += 24.
+sac.trackMessage("Track total time : %4.1f" % totaltime, indent=1)
+
+# Send email indicating track is finished
+#--------------------------------------------------
+if odutil.emailScriptLog():
+    odutil.sendEmail(projectInfo['code'], projectInfo['emailAddress'], fullScriptName, 
+                     None, start=False, msg=odutil.getTrackHistory())
+
+# Done
+#--------------------------------------------------
+if whichList == "weekly":
+    sac.rtFLUXWEEKLYcompleted()
+    m = "Flux weekly completed; marking completion status in repetitive tasks"
+    print m
+    
+sac.resetProject()
+if endAlarm: sac.alarmon()
+

@@ -1,0 +1,155 @@
+/** @file
+ * $Id: Dio.h.rh,v 1.1 2003/07/16 20:02:24 rick Exp $
+ *
+ * Class to control digital Input and Output access to Janz TTL cards.
+ * 
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/16 20:02:24 $
+ */
+
+/*** REVIEW
+ * Reviewer: rh
+ * Comments: clean
+ */
+#ifndef CARMA_CANBUS_DIO_H
+#define CARMA_CANBUS_DIO_H
+
+#include <string>
+#include <vector>
+
+namespace carma {
+namespace canbus {
+    using namespace std;
+
+    /**
+     * Dio class.
+     * Dio provides digital input and output control for Janz Dio cards.
+     * The Dio class is tailored for use with Janz CAN cards and the
+     * CARMA RJ45 breakout board all contained on a Janz Compact PCI
+     * carrier board.  As a result the methods available below represent
+     * the uses of the dio pins in conjunction with those boards
+     * rather than routines to write and read generic data to/from
+     * the Dio card.
+     * @see carma::canbus::CanDio
+     */
+    class Dio {
+        public:    
+
+            /**
+             * Default constructor for hardware emulation.
+             * This constructor opens /dev/null as the 'Dio'
+             * device.  It is included to allow writes to the Dio 
+             * class when Janz hardware does not exist on the target
+             * system.
+             */
+            Dio();
+
+            /**
+             * Single device/port contructor for Dio.
+             * This constructor is for use with a single port on 
+             * the Janz TTL card.  
+             * @param dev Device name (e.g /dev/mttla_02 for port a
+             * on a TTL card residing on modulbus 0 slot 2).
+             * @param resetOnStart will write a resetHi to Dio immediately
+             * following startup.  This is  useful for placing devices in
+             * a known state until the user is ready to start them.
+             */	
+            Dio(char *dev, bool resetOnStart = false);
+
+            /**
+             * Multiple port constructor for Dio.
+             * In practice this should be used to control different ports
+             * on the same device although this constraint is not
+             * necessary.
+             * @param dev0 First device (e.g. /dev/mttla_02)
+             * @param dev1 Second device (e.g. /dev/mttlb_02)
+             * @param resetOnStart will write a resetHi to Dio immediately
+             * following startup.  This is useful for placing devices
+             * in a known state until the user is ready to start them.
+             */
+            Dio(char *dev0, char *dev1, bool resetOnStart = false);
+
+            /**
+             * Destructor
+             */
+            ~Dio();
+
+            /**
+             * Power on bus.  
+             * This method controls a pin which is meant to trigger an
+             * external power supply.
+             */	
+            void powerOn();
+
+            /**
+             * Power off bus.
+             * This method controls a pin which is meant to trigger an
+             * external power supply.
+             */
+            void powerOff();
+
+            /**
+             * Start a reset.
+             * This routine is intended to give a user full control of
+             * resets.  A common use would be to insert commands between 
+             * resetHi() and resetLo() in order to make them atomic 
+             * with respect to a reset.
+             */
+            void resetHi();
+
+            /**
+             * Stop a reset.
+             * See resetHi().  
+             */
+            void resetLo();
+
+            /**
+             * Write reserved line hi.
+             */
+            void reservedHi();
+
+            /**
+             * Write reserved line low.
+             */
+            void reservedLo();
+
+            /**
+             * Clear all lines.
+             */
+            void clear();
+
+        private:
+
+            // Function to pin mapping.
+            enum writeFunctions {
+                RESERVED	= ~0x01,
+                RESET 	    = ~0x02,
+                POWER		= ~0x04,
+                CLEAR		= ~0x00,
+            };
+
+            typedef struct dioStruct {
+                int fd;			 	 // File descriptor.
+                string name;			 // Name of ttl device.
+                pthread_mutex_t mutex; // Mutex to control dev access.
+                unsigned char state;   // Bit state.
+            } ioType;	
+
+            // mttlWrite wrapper. 
+            // This wrapper checks to see if we are emulating the 
+            // Janz hardware and writes to write rather than 
+            // mttl_write if this is the case.
+            int mttlWrite(int fd, int data);
+
+/*** REVIEW
+ * Reviewer: rh
+ * Comments: maybe a bit on what this is being used for.
+ */
+            // Member data
+            vector<ioType> devs_;
+            const bool emulate_;  // Emulate Janz Dio card?
+    }; // End class Dio
+};  // End canbus namespace
+};  // End carma namespace
+#endif // CARMA_CANBUS_DIO_H

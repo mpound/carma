@@ -1,0 +1,49 @@
+# Switchyard configuration file for the default subarrays
+# IFsplitter value is a,b,c,d or x if right polarization
+#
+#  Q:  Should L/R be POL1/POL2 instead?
+#
+# The next line is the SubarrayController mode (15 or 23 ants)
+# [enable virtual when CARMA Table supports it]
+#  virtual SubarrayControllerMode int none 23
+#
+#| switchNo | label | switchPos | antNo | polarization | IFsplitter
+#| i        | s     | i         | i     | s            | s
+   1          SL1L     1           1        L            a
+   2          SL1R     4           1        R            x
+   3          SL2L     1           2        L            a
+   4          SL2R     4           2        R            x
+   5          SL3L     1           3        L            a
+   6          SL3R     4           3        R            x
+   7          SL4L     1           4        L            a
+   8          SL4R     4           4        R            x
+   9          SL5L     1           5        L            a
+  10          SL5R     4           5        R            x
+  11          SL6L     1           6        L            a
+  12          SL6R     4           6        R            x
+  13          SL7L     1           7        L            a
+  14          SL7R     4           7        R            x
+  15          SL8L     1           8        L            a
+  16          SL8R     4           8        R            x
+  17          SL9L     1           9        L            a
+  18          SL9R     4           9        R            x
+  19          SL10L    1          10        L            a
+  20          SL10R    4          10        R            x
+  21          SL11L    1          11        L            a
+  22          SL11R    4          11        R            x
+  23          SL12L    1          12        L            a
+  24          SL12R    4          12        R            x
+  25          SL13L    1          13        L            a
+  26          SL13R    4          13        R            x
+  27          SL14L    1          14        L            a
+  28          SL14R    4          14        R            x
+  29          SL15L    1          15        L            a
+  30          SL15R    4          15        R            x
+  31          WB1      1          16        L            a
+  32          WB2      1          17        L            a
+  33          WB3      1          18        L            a
+  34          WB4      1          19        L            a
+  35          WB5      1          20        L            a
+  36          WB6      1          21        L            a
+  37          WB7      1          22        L            a
+  38          WB8      1          23        L            a

@@ -1,0 +1,29 @@
+
+$Id: README,v 1.4 2005/05/06 19:29:21 teuben Exp $
+Author: Steve Scott
+
+NOTE: building and using rtd.jar is changing (eventually the build
+system will do it) to using ant from the $CARMA_BUILD root, viz.:
+	cd $CARMA_BUILD			(if you have one)
+	ant
+	scripts/rtd server=acc.ovro.caltech.edu
+	
+
+The jar files checked into the "jars" directory below are temporary until 
+we have a standard method of handling java for carma. These could be viewed
+as static foreign packages. The Makefile will build
+the file "rtd.jar" in the jars subdirectory. This jar file has a manifest
+that calls out the other jar files in this directory. To run the rtd program,
+just enter
+
+   java $(JAR_DIREDCTORY)/rtd.jar
+
+The server defaults to the labacc, but if you want to use another server, do
+
+   java $(JAR_DIREDCTORY)/rtd.jar server=myOwnServer.myNetwork.edu
+   
+e.g., to use the ovro cma server,    
+
+   java $(JAR_DIREDCTORY)/rtd.jar server=inyo.ovro.caltech.edu
+
+

@@ -1,0 +1,79 @@
+
+/**
+ *
+ * Implementation for the IPQbuffer class.
+ *
+ * Original author: Steve Scott
+ *                  24 Apr, 2003
+ *
+ * $Id: IPQbuffer.cc.abeard,v 1.1 2003/07/16 18:46:06 abeard Exp $
+ *
+ */
+
+// Solaris needs this POSIX defn for sys/mman
+#define _POSIX_C_SOURCE 199506L
+
+#include <sys/mman.h>
+
+#include <fcntl.h>
+#include <iostream>
+#include <iomanip>
+
+#include "carma/util/IPQbuffer.h"
+
+using namespace std;
+
+namespace carma {
+    namespace util {
+
+/**** REVIEW
+ * Reviewer: abeard
+ * Comments: Again consider changing exception specification.
+ */
+IPQbuffer::IPQbuffer(
+    char*         localElement, 
+    int           elementSize, 
+    const string& filename, 
+    bool          isCreator,
+    int           nElements) throw(exception) :
+        IPQbufferBase(localElement, elementSize, filename,
+            isCreator, nElements)
+{
+}
+
+
+IPQbuffer::~IPQbuffer() 
+{
+    shm_unlink(getTrimmedFilename().c_str());
+}
+
+bool IPQbuffer::openBuffer() 
+{
+    trimShmemFilename();
+    const char* trimmedFilename = getTrimmedFilename().c_str();
+    fileDescriptor_ = shm_open(trimmedFilename, openMask_, 
+        protectionMask_);
+    if (debug_) cout << "openBuffer:" << trimmedFilename
+                     << " fd:" << fileDescriptor_ << endl;
+    if (fileDescriptor_ == -1) return false; 
+    return true;
+}
+
+bool IPQbuffer::createBuffer() 
+{
+    trimShmemFilename();
+    fileDescriptor_ = shm_open(getTrimmedFilename().c_str(), 
+        openMask_ | O_CREAT, protectionMask_);
+    if (fileDescriptor_ == -1) return false; 
+    return true;
+}
+  
+
+} }  // End namespace carma::util  
+
+
+
+
+
+
+

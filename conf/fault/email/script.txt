@@ -1,0 +1,4 @@
+A script error has occurred.
+
+Please see the following webpage for ideas about how to solve this problem:
+http://cedarflat.mmarray.org/faq#script

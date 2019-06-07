@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# nameservice id
+nsid=0
+# notserv id
+notid=0
+# server id
+srvid=0
+# client id
+clientid=0
+
+${CARMA_TOOLS}/bin/nameserv -OAport 50006 &
+nsid=$!
+
+sleep 3
+
+# start host
+bin/carmaClockHost imr=`hostname` emulate=true traceLevel=7 -- -ORBInitRef NameService=corbaloc::`hostname`:50006/NameService >& testHost.log &
+srvid=$!
+
+sleep 3
+
+# start client
+carma/clock/Test/testClient -- -ORBInitRef NameService=corbaloc::`hostname`:50006/NameService >& testClient.log
+
+sleep 3
+
+if test $srvid -ne 0
+then
+    kill -9 $srvid
+fi
+
+if test $nsid -ne 0
+then
+    kill $nsid
+fi
+
+if test $notid -ne 0
+then
+    kill $notid
+fi
+
+# if testHost has DEBUG lines, then PASS
+grep DEBUG testHost.log > clockTest.log
+if test -s clockTest.log
+then
+    echo "CARMA Clock: PASS"
+#    rm -f clockTest.log testClient.log testHost.log
+#    rm -rf notserv.log
+    exit 0
+fi 
+
+echo "CARMA Clock: FAIL"
+
+#rm -f clockTest.log testClient.log testHost.log
+#rm -rf notserv.log
+exit 1

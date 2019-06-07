@@ -1,0 +1,313 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Sis Receiver monitor point definitions.  The 1MM and 3MM SIS Receiver   -->
+<!-- modules share the same API and hence monitor points.                    -->
+<!-- Author: Andrew Beard                                                    -->
+<!-- $Id: SisReceiver.mpml,v 1.10 2011/09/26 17:48:22 iws Exp $                                                                  -->
+<Common scope="global" author="Andrew Beard">
+
+
+    <Container name="SisReceiver">
+        <description>
+            The OVRO receier modules contain SIS mixers followed by HEMT
+            amplifiers.
+        </description>
+
+        <MonitorPoint name="rxType" type="enum">
+            <shortName>Rx Type</shortName>
+            <longName>Rx Type</longName>
+            <description>Type of receiver being controlled</description>
+            <enum name="UNDEFINED" />
+            <enum name="OVRO"/>
+            <enum name="HIA_WBA13"/>
+        </MonitorPoint>
+        <MonitorPoint name="requestedVj" type="float" >
+            <shortName>Rqstd Vj</shortName>
+            <longName>Requested Junction Voltage</longName>
+            <description>
+                Junction voltage requested by user or from tuning table.
+            </description>
+            <units>mV</units>
+        </MonitorPoint>
+        <MonitorPoint name="actualVj" type="float" >
+            <shortName>Actual Vj</shortName>
+            <longName>Actual Junction Voltage</longName>
+            <description>
+                Actual junction voltage.
+            </description>
+            <units>mV</units>
+        </MonitorPoint>
+        <MonitorPoint name="requestedIj" type="float" >
+            <shortName>Rqstd Ij</shortName>
+            <longName>Requested Junction Current</longName>
+            <description>
+                Junction current requested by user or from tuning table.
+            </description>
+            <units>uA</units>
+        </MonitorPoint>
+        <MonitorPoint name="actualIj" type="float" >
+            <shortName>Actual Ij</shortName>
+            <longName>Actual Junction Current</longName>
+            <description>
+                Actual junction current
+            </description>
+            <units>uA</units>
+        </MonitorPoint>
+        <MonitorPoint name="attenuation" type="float" >
+            <shortName>Atten</shortName>
+            <longName>Attenuation</longName>
+            <description>
+                LO attenuator value.
+            </description>
+            <units>%</units>
+        </MonitorPoint>
+        <MonitorPoint name="vjSource" type="enum" >
+            <shortName>Vj Source</shortName>
+            <longName>Source of set Vj value</longName>
+            <description>
+                Source of set Vj value.
+            </description>
+            <enum name="DEFAULT" />    <!-- 0x00 -->
+            <enum name="USER" />       <!-- 0x01 -->
+            <enum name="TUNE_TABLE" /> <!-- 0x02 -->
+        </MonitorPoint>
+        <MonitorPoint name="ijSource" type="enum" >
+            <shortName>Ij Source</shortName>
+            <longName>Source of set Ij value</longName>
+            <description>
+                Source of set Ij value
+            </description>
+            <enum name="DEFAULT" />    <!-- 0x00 -->
+            <enum name="USER" />       <!-- 0x01 -->
+            <enum name="TUNE_TABLE" /> <!-- 0x02 -->
+        </MonitorPoint>
+        <MonitorPoint name="vjLoopMode" type="enum" >
+            <shortName>Vj Loop</shortName>
+            <longName>Vj Loop Mode</longName>
+            <description>
+                Method for controlling the mixer current.
+            </description>
+            <enum name="CLOSED"/>    <!-- 0x00 -->
+            <enum name="OPEN" />     <!-- 0x01 -->
+            <enum name="FINITE"/>    <!-- 0x02 -->
+        </MonitorPoint>
+        <MonitorPoint name="ijLoopMode" type="enum" >
+            <shortName>Ij Loop</shortName>
+            <longName>Ij Loop Mode</longName>
+            <description>
+                Method for controlling mixer current.
+            </description>
+            <enum name="CLOSED" />      <!-- 0x00 -->
+            <enum name="FINITE" />      <!-- 0x01 -->
+        </MonitorPoint>
+        <MonitorPoint name="gapCurrent" type="float" >
+            <shortName>Igap</shortName>
+            <longName>Gap Current</longName>
+            <description>
+                Current that Vgap is measured at.
+            </description>
+            <units>uA</units>
+        </MonitorPoint>
+        <MonitorPoint name="calGapVoltage" type="float" >
+            <shortName>Cal Vgap</shortName>
+            <longName>Calibration Vgap</longName>
+            <description>
+                Junction gap voltage at which the tuning table was made.
+            </description>
+            <units>mV</units>
+        </MonitorPoint>
+        <MonitorPoint name="gapVoltage" type="float" >
+            <shortName>Vgap</shortName>
+            <longName>Gap Voltage</longName>
+            <description>
+                Last measured gap voltage.
+            </description>
+            <units>mV</units>
+        </MonitorPoint>
+        <MonitorPoint name="tuneTableId" type="short" >
+            <shortName>Table Id</shortName>
+            <longName>Tune Table Id</longName>
+            <description>
+                Identifier for the tuning table currently in memory.  If this
+                is zero the table is invalid.  A negative value indicates an
+                experimental of unverified table.
+            </description>
+        </MonitorPoint>
+        <MonitorPoint name="calDate" type="string" >
+            <shortName>Cal Date</shortName>
+            <longName>Calibration Date</longName>
+            <description>
+                Month day and year calibration table was made.
+            </description>
+            <width>9</width>
+        </MonitorPoint>
+        <MonitorPoint name="tuneState" type="enum" priority="useful" >
+            <shortName>Tune State</shortName>
+            <longName>State of Tuning</longName>
+            <description>State of the bias tuning algorithm</description>
+            <enum name="IDLE" />       <!-- 0x00 -->
+            <enum name="GET_BIAS" />   <!-- 0x01 -->
+            <enum name="LO_OFF" />     <!-- 0x02 -->
+            <enum name="GET_VG" />     <!-- 0x03 -->
+            <enum name="SET_VJ" />     <!-- 0x04 -->
+            <enum name="SET_IJ" />     <!-- 0x05 -->
+            <enum name="TUNED" />      <!-- 0x06 -->
+            <enum name="FAIL_VJ" />    <!-- 0x07 -->
+            <enum name="FAIL_IJ" />    <!-- 0x08 -->
+            <enum name="BAD_TABLE" />  <!-- 0x09 -->
+            <errHi>BAD_TABLE</errHi>
+            <errHi>FAIL_IJ</errHi>
+            <errHi>FAIL_VJ</errHi>
+            <errHi>LO_OFF</errHi>
+            <warnHi>IDLE</warnHi>
+            <warnHi>GET_BIAS</warnHi>
+            <warnHi>GET_VG</warnHi>
+            <warnHi>SET_VJ</warnHi>
+            <warnHi>SET_IJ</warnHi>
+        </MonitorPoint>
+        <MonitorPoint name="rSeries" type="float" >
+            <shortName>R Series</shortName>
+            <longName>R Series Resistance</longName>
+            <description>DC resistance in series with junctions</description>
+            <units>ohm</units>
+        </MonitorPoint>
+        <MonitorPoint name="rSense" type="float" >
+            <shortName>R Sense</shortName>
+            <longName>R Sense</longName>
+            <description>
+                Resistance used to sense current through junctions
+            </description>
+            <units>ohm</units>
+        </MonitorPoint>
+        <MonitorPoint name="vjDacMultiplier" type="float">
+            <shortName>Vj DAC Mult</shortName>
+            <longName>Vj DAC Multiplier</longName>
+            <description>
+                Multiplication factor used to scale Vj DAC to correct for
+                dividers in the bias circuit.
+            </description>
+            <units>%</units>
+        </MonitorPoint>
+        <MonitorPoint name="vjDacOut" type="int">
+            <shortName>Vj DAC Out</shortName>
+            <longName>Vj DAC Output</longName>
+            <description>Raw DAC output</description>
+        </MonitorPoint>
+        <MonitorPoint name="ivCurveState" type="enum" >
+            <shortName>IV-Curve</shortName>
+            <longName>IV-Curve State</longName>
+            <description>
+                State of the IV-curbe measurement algorithm.
+            </description>
+            <enum name="IDLE" />      <!-- 0x00 -->
+            <enum name="STARTING" />  <!-- 0x01 -->
+            <enum name="STEPPING" />  <!-- 0x02 -->
+            <enum name="RUNNING" />   <!-- 0x03 -->
+        </MonitorPoint>
+        <MonitorPoint name="drainVoltage1" type="float" >
+            <shortName>Vd1</shortName>
+            <longName>Drain Voltage 1</longName>
+            <description>
+                HEMT 1 drain voltage.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+        <MonitorPoint name="drainCurrent1" type="float" >
+            <shortName>Id1</shortName>
+            <longName>Drain Current 1</longName>
+            <description>
+                HEMT 1 drain current.
+            </description>
+            <units>mA</units>
+        </MonitorPoint>
+        <MonitorPoint name="gateVoltage1" type="float" >
+            <shortName>Vg1</shortName>
+            <longName>Gate Voltage 1</longName>
+            <description>
+               HEMT 1 gate voltage.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+        <MonitorPoint name="drainVoltage2" type="float" >
+            <shortName>Vd2</shortName>
+            <longName>Drain Voltage 2</longName>
+            <description>
+                HEMT 2 drain voltage.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+        <MonitorPoint name="drainCurrent2" type="float" >
+            <shortName>Id2</shortName>
+            <longName>Drain Current 2</longName>
+            <description>
+                HEMT 2 drain current.
+            </description>
+            <units>mA</units>
+        </MonitorPoint>
+        <MonitorPoint name="gateVoltage2" type="float" >
+            <shortName>Vg2</shortName>
+            <longName>Gate Voltage 2</longName>
+            <description>
+               HEMT 2 gate voltage.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+        <MonitorPoint name="temp" type="float" >
+            <shortName>Temp</shortName>
+            <longName>Temperature</longName>
+            <description>
+                Module temperature.
+            </description>
+            <units>C</units>
+        </MonitorPoint>
+        <MonitorPoint name="ps24v" type="float" >
+            <shortName>+24V</shortName>
+            <longName>24V Power Supply Voltage</longName>
+            <description>
+                +24 V supply voltage.
+            </description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps5vDigital" type="float" >
+            <shortName>+5V Dig</shortName>
+            <longName>5V Digital Power Supply Voltage</longName>
+            <description>
+                +5V digital supply voltage.
+            </description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps12v" type="float" >
+            <shortName>+12V</shortName>
+            <longName>12V Power Supply Voltage</longName>
+            <description>
+                +12V analog supply voltage.
+            </description>
+            <units>V</units>
+            <warnLo>11.5</warnLo>
+            <warnHi>12.5</warnHi>
+            <errLo>11.0</errLo>
+            <errHi>13.0</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps12vNeg" type="float" >
+            <shortName>-12V</shortName>
+            <longName>-12V Power Supply Voltage</longName>
+            <description>
+                -12V Analog Supply Voltage.
+            </description>
+            <units>V</units>
+            <warnLo>-12.5</warnLo>
+            <warnHi>-11.5</warnHi>
+            <errLo>-13.0</errLo>
+            <errHi>-11.0</errHi>
+        </MonitorPoint>
+    </Container>
+</Common>

@@ -1,0 +1,49 @@
+#!/bin/false
+#
+# $Id: imrfuncs.in,v 1.1 2005/01/27 21:07:42 davidm Exp $
+#
+# Functions for CARMA IMR startup scripts.
+
+# Usage: skel_to_conf SKEL_FILE CONF_FILE
+#
+# stdin : nothing
+# sdtout: nothing
+# sdterr: sed errors
+# variables set: none
+# variables read: IMRHOST IMRPORT IMRDIR OADDIR
+#
+# Copies SKEL_FILE to CONF_FILE making various substitutions.  See the
+# embedded sed script below for a full list of possible substitutions.
+
+function skel_to_conf () {
+    sed -f - "${1:-/dev/null}" > "${2:-/dev/null}" <<EOF
+        s|IMRDIR|${IMRDIR:-/var/carma/imr}|g
+        s|OADDIR|${OADDIR:-/var/carma/imr}|g
+
+        s|IMRHOST|${IMRHOST:-localhost}|g
+        s|OADHOST|${OADHOST:-localhost}|g
+
+        s|IMRPORT|${IMRPORT:-20000}|g
+        s|FWDPORT|$((${IMRPORT:-20000}+1))|g
+        s|SLVPORT|$((${IMRPORT:-20000}+2))|g
+        s|LOCPORT|$((${IMRPORT:-2806}+3))|g
+        s|NAMPORT|$((${IMRPORT:-8997}+4))|g
+        s|NOTPORT|$((${IMRPORT:-9996}+5))|g
+EOF
+}
+
+# Usage: parse_imr_host_port HOST[:PORT]
+#
+# stdin : nothing
+# sdtout: nothing
+# sdterr: misc errors
+# variables set: IMRHOST IMRPORT
+# variables read: none
+#
+# Parses a HOST or HOST:PORT string and sets IMRHOST and IMRPORT.
+
+function parse_imr_host_port () {
+    local -a imrhostport=(${1//:/ })
+    IMRHOST=${imrhostport[0]}
+    IMRPORT=${imrhostport[1]}
+}

@@ -1,0 +1,81 @@
+#! /bin/csh -f
+#
+#  this script should be run by its full path name in a crontab
+#  from the path it  figures out where to go and how to update
+#  the IERS table and stuff any updates back into CVS.
+# 
+#  It will also update the two supporting script, this crontab
+#  file itself and the AWK script to process the ser7.dat from
+#  the USNO web to the format we use in CARMA
+
+set script=$0
+set dir=$script:h
+set site="ftp://maia.usno.navy.mil/ser7/ser7.dat"
+
+cd $dir/../conf/catalogs
+
+if (! -e IERS.tab) then
+  echo Confused, there should be an IERS.tab here
+  echo script=$script
+  exit 1
+endif
+
+curl --connection-timeout 30 -s $site > ser7.dat
+
+if ( $status != 0 ) then 
+   echo "IERS can't update: problem connecting to $site."
+   exit 1
+endif
+
+# do a few checks on the retrieved file
+set w=`cat ser7.dat|wc -l`
+if ( $w < 400 ) then
+  echo "Truncated USNO `pwd`/ser7.dat file?"
+  exit 1
+endif
+
+grep -q  "These predictions are based" ser7.dat
+if ( $? != 0 ) then
+  echo "Malformed USNO `pwd`/ser7.dat file?"
+  exit 1
+endif
+
+$dir/mk-iers.awk ser7.dat > /tmp/IERS.tab$$
+
+# now do a final check on the output file.
+set w=`cat /tmp/IERS.tab$$ |wc -l`
+if ( $w < 365 ) then
+  echo "Truncated /tmp/IERS.tab file (bad awk)?"
+  exit 1
+endif
+
+# only copy and check in if the file has actually changed.
+tail -n +3 /tmp/IERS.tab$$ > /tmp/iersdiff1$$
+tail -n +3 ./IERS.tab > /tmp/iersdiff2$$
+cmp -s /tmp/iersdiff1$$ /tmp/iersdiff2$$
+
+
+if ( $? == 0 ) then
+  /bin/rm -rf /tmp/iersdiff[12]$$
+  echo "IERS table has not changed. Nothing more to do."
+  exit 0
+endif
+
+/bin/rm -rf /tmp/iersdiff[12]$$
+
+# Copy the file to conf/catalogs and check it in
+echo "Updating IERS.tab and cvs checking in"
+cp -p /tmp/IERS.tab$$  IERS.tab
+cvs ci -m "crontab update" IERS.tab
+
+exit 0
+
+#  dangerous: update this script itself for the next crontab
+
+# disable for use in buildInstall script
+if ( 0 )  then
+    cd ../scripts
+    cvs up mk-iers.awk
+    cvs up iers.cron
+endif
+

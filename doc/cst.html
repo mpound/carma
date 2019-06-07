@@ -1,0 +1,414 @@
+<HTML>
+<TITLE> CARMA Software Toolkit </TITLE>
+<BODY>
+<!--  This file lives (under CVS control) as $CARMA/doc/cst.html  -->
+<!--  $Id: cst.html,v 1.21 2007/03/19 15:30:27 teuben Exp $ -->
+<hr>
+
+<CENTER>
+<H2> Carma Software Toolkit :</H2>
+</CENTER>
+
+Here is a list of components that we casually refer to as the
+CARMA Software Toolkit (CST). Some of the links are old
+components which we decided not to use, but still useful, others
+we actually use.
+
+(See also <A HREF=carma_pkg>carma_pkg</A> [restricted access]).
+
+<UL>
+<LI> <A HREF=install.html>Some installation guidelines</A>
+<LI> <A HREF=http://www.cvshome.org>CVS</A> , source code management
+	(see also <A HREF=http://www.astro.umd.edu/~teuben/miriad/cvs.html>
+	CVS for BIMA</A> for a tutorial and many links)  
+     <UL>
+     <LI> other SCM links: <A HREF=http://www.cmcrossroads.com/bradapp/acme/>
+			A.C.M.E.</A>, or
+	<A HREF=http://www.enteract.com/~bradapp/acme/>A.C.M.E.</A>
+    <LI> <A HREF=http://www.polstra.com/projects/freeware/CVSup/>CVSup</A>
+	(ideal for binary data, or only to sync a (sub)tree, not provide
+	write-back access)
+    <LI> For CARMA cvs access you need environment variables <br>
+	<B>CVSROOT = :ext:$USER@cvs.ovro.caltech.edu:/sw/cvscarma</B> <br>
+	and probably <br>
+	<B> CVS_RSH = ssh</B>.
+     <LI> <A HREF=http://subversion.tigris.org/>subversion</A> seems a nice
+	replacement for CVS, it also comes with a new O'Reilly
+		<A HREF=http://svnbook.red-bean.com/>book</A>.
+     <LI> <A HREF=http://www.taniwha.org/bitkeeper.html>bitkeeper</A> may
+	not be such a good idea....
+     </UL>
+<LI> Compilers:
+    <UL>
+    <LI> <A HREF=http://gcc.gnu.org/>GNU compiler</A> (gcc, g++, g77; some packages have requirements on the version),
+	and the <A HREF=http://gcc.gnu.org/onlinedocs/libstdc++/documentation.html>GNU C++ Library</A>.
+	(<A HREF=http://gcc.gnu.org/onlinedocs/libstdc++/latest-doxygen/>latest-doxygen</A>)
+    <LI> <A HREF=http://www.intel.com/software/products/compilers/>intel compiler</A>
+    <LI> <A HREF=http://www.gnu.org/directory/Software_development/Compilers/ccache.html>
+        ccache</A>, compiler cache
+    <LI> <A HREF=http://root.cern.ch/root/Cint.html>CINT</A>, a C/C++ interpreter
+    <LI> <A HREF=http://www.stlport.org/>STLport</A>
+    </UL>
+<LI> Coding/Style:
+    <UL>
+    <LI> <A HREF=http://www.mmarray.org/workinggroups/computing/cppstyle.html>
+	CARMA C++ Programming Style Guidelines</A>, with links to:
+        <UL>
+        <LI> <A HREF=http://www.chris-lott.org/resources/cstyle/>
+                C and C++ Style Guides</A> (a large compiled list)
+        <LI> <A HREF=http://www.mozilla.org/hacking/portable-cpp.html>
+	        C++ portability guide</A> (mozilla)
+        <LI> <A HREF=http://www.nfra.nl/~seg/cppStdDoc.html>
+                C+ Coding Standards</A> (NFRA)
+        <LI> <A HREF=http://aips2.nrao.edu/docs/notes/167/167.html>
+                AIPS++ Programming: Standards and Guidelines</A>
+        <LI> <A HREF=http://www.alma.nrao.edu/development/computing/docs/joint/0010/2001-08-10.pdf>
+                C++ Coding Standards</A> (ALMA)
+        <LI> <A HREF=http://geosoft.no/style.html>
+                C++ Programming Style Guidelines</A> (Geotechnical Software Services)
+        <LI> <A HREF=http://infotech.fanshawec.on.ca/gsantor/Style_Guide/Ellemtel_Style_Guide/cpp2.htm>
+                C++ Style Guide</A> (Ellemtel Telecommunication Systems Laboratories)
+        <LI> <A HREF=http://www.macadamian.com/codingconventions.htm>
+                Coding Conventions for C++ and Java applications</A> (macadamian.com)
+        <LI> <A HREF=http://www.possibility.com/Cpp/CppCodingStandard.html>
+                 C++ Coding Standard</A> (Todd Hoff) 
+        <LI> <A HREF=http://www.eso.org/projects/alma/develop/alma-se/reference/CodingStandards.html>
+	         ALMA's resource list</A> (also some of Scott Meyers' checklists)
+        </UL>
+    <LI> Some helpful guides, if you're into Code review and Code inspection
+        <UL>
+	<LI> <A HREF=http://mindprod.com/unmain.html>
+                How to Write Unmaintainable Code</A>
+	<LI> <A HREF=http://www2.ics.hawaii.edu/~johnson/FTR/Bib/Baldwin92.html>
+                An Abbreviated C++ Code Inspection Checklist</A>
+	<LI> <A HREF=http://iamwww.unibe.ch/~scg/Teaching/PSE/projektHandbuch/codeInspections/maintainabilityChecklist.html>
+                Maintainability Code Inspection Checklist</A> (somewhat java centric)
+	<LI> <A HREF=http://www.macadamian.com/codereview.htm>
+                Code Review Checklist</A>
+	<LI> <A HREF=http://www.eso.org/projects/alma/develop/alma-se/reference/Checklists.html>
+	        ALMA's checklist</A>
+	</UL>
+    <LI> Code documentation: <A HREF=http://www.doxygen.org>doxygen</A>
+    <LI> <A HREF=http://aips2.nrao.edu/docs/html/qag.html>AIPS++ quality assurance group</A> (with links)
+    </UL>
+<LI> C++
+    <UL>
+    <LI> <A HREF=http://www.cplusplus.com/>
+    good collection of reference materials on C++.</A>
+    <LI> <A HREF=http://cpptips.hyperformix.com/cpptips.html>
+    C++ Tip-of-the-Day</A>
+    <LI> <A HREF=http://mindview.net/Books>Thinking in C++</A> 
+    (Bruce Eckel's online books)
+    </UL>
+
+<LI> Debugging:
+    <UL>
+    <LI> <A HREF=http://valgrind.kde.org/>valgrind</A> leak detector
+	(see also <A HREF=http://www.cs.colorado.edu/homes/zorn/public_html/MallocDebug.html>
+		Ben Zorn's extensive list</A>, and the list from
+	<A HREF=http://www.mathtools.net/C++/Memory_management/>
+		Mathtools.net</A>)
+    <LI> Debuggers: gdb, 
+	<A HREF=http://www.gnu.org/software/ddd/>ddd</A>, 
+	<A HREF=http://libre.act-europe.fr/gvd/>gvd</A>.
+    <LI> Profilers: gprof, 
+	<A HREF=http://www.bitwagon.com/tsprof/tsprof.html>tsprof,pmprof</A> (i686 only)
+    <LI> Code coverage: function/path coverage. 
+        <UL> 
+	<LI>GNU's <A HREF=http://user-mode-linux.sourceforge.net/gprof.html>
+	gprof/gcov</A>tool (see also a graphical frontend, 
+	<A HREF=http://www.alphalink.com.au/~gnb/ggcov/>ggcov</A>.
+	<LI><A HREF=http://www.alphalink.com.au/~gnb/ggcov/>ggcov</A>
+	<LI> <A HREF=http://covtool.sourceforge.net/>COVTOOL</A>. 
+	<LI> <A HREF=http://www.io.com/~wazmo/qa/#code_coverage>
+	Code Coverage Trade and Tricks</A>.
+	<LI><A HREF=http://www.eso.org/projects/alma/develop/alma-se/reference/Coverage.html>
+	ALMA's coverage types</A>
+	</UL>
+    <LI> UnitTesting: <A HREF=http://cppunit.sourceforge.net/>cppunit</A> (which we use),
+        but also:         <A HREF=http://cxxtest.sourceforge.net/>cxxtest</A>
+    <LI> <A HREF=http://www.bugzilla.org/>buzzilla</A>
+    <LI> <A HREF=http://quigley.durrow.com/bugzilla.html>bugcli</A> (a CLI to bugzilla)
+    </UL>
+<LI> RDBMS:
+	<UL>
+        <LI> <A HREF=http://www.unixodbc.org/>unixODBC</A>, an ODBC
+              driver manager for Unix which we use to communicate with
+              our database
+	<LI> <A HREF=http://www.mysql.org/>MySQL</A>
+	<LI> <A HREF=http://www.postgresql.org/>PostgreSQL</A>
+	<LI> <A HREF=http://www.ibm.com/software/data/db2/>DB2</A>
+		(also freely available)
+	<LI> <A HREF=http://www.hwaci.com/sw/sqlite/>SQLite</A>
+		(A fast SQL Database Engine In a C Library)
+        <LI> Our current RDBMS candidates are MySQL and PostgreSQL (we
+             eagerly await the stable [production] release of MySQL 5.0).
+	</UL>
+<LI> Build system:
+	<UL>
+	<LI> <A HREF=http://www.gnu.org/software/autoconf/>
+	autoconf</A>, automake, autogen
+	(see also <A HREF=http://sources.redhat.com/autobook/>
+	GNU autoconf, automake and libtool</A>
+	(book by Vaughan et al.)
+	<LI> <A HREF=http://autotoolset.sourceforge.net/tutorial.html>
+	Learning the GNU development tools</A> tutorial
+	<LI> <A HREF=http://www.gnu.org/software/ac-archive/>GNU Autoconf Macro Archive</A>
+	<LI> <A HREF=http://autotools-idl.sourceforge.net/>
+	patch for automake</A> for support for IDL and C++ ORBs.
+        <LI> GNU <A HREF=http://www.gnu.org/software/make/make.html>make</A>, 
+	but see also the story
+        <A HREF=http://www.tip.net.au/~millerp/rmch/recu-make-cons-harm.html>
+            Recursive Make Considered Harmful</A> and 
+	<A HREF=http://freshmeat.net/articles/view/1702/>
+	    What is Wrong with Make</A>
+	<LI> <A HREF=http://sourceforge.net/projects/gmsl/>GMSL</A>: the 
+	GNU Make Standard Library.
+	<LI> <A HREF=http://tinderbox.mozilla.org/showbuilds.cgi>
+		tinderbox</A>, and in particular
+		<A HREF=http://tinderbox.ovro.caltech.edu/tinderbox/carma/status.html>
+		our Tinderbox Status Page </A> 
+	<LI> <A HREF=http://www.tldp.org/LDP/abs/html/>
+		Advanced Bash-Scripting Guide</A>
+	<LI> Make alternatives?:
+             <UL>
+	     <LI> <A HREF=http://www.scons.org/>scons</A>
+	     <LI> <A HREF=http://www.a-a-p.org/>aap</A>
+	     <LI> <A HREF=http://makepp.sourceforge.net/>makepp</A>
+             </UL>
+
+        </UL>
+
+<LI> BLAS, LAPACK (for AIPS++). See also <A HREF=http://www.oonumerics.org/blitz/benchmarks/>
+	Blitz++</A>.
+<LI> <A HREF=http://java.sun.com>Java</A>, and specifically for linux:
+     <A HREF=http://www.blackdown.org/>blackdown</A>,
+     <A HREF=http://java.sun.com/linux>sun</A>,
+     <A HREF=http://www-106.ibm.com/developerworks/java/jdk/linux140/>IBM</A>.
+<LI> OS issues:
+    <UL>
+    <LI> Real Time Linux (RTL vs. RTAI)?
+    <LI> baseline redhat? 
+    </UL>
+<LI> Hardware interfaces:
+    <UL>
+    <LI> <A HREF=http://linux-gpib.sourceforge.net/>GPIB</A> 
+    <LI> CANbus (commercial modules from 
+	<A HREF=http://www.janzag.de/>Janz</A>) - see ovro/common/Janz
+    <LI> cobra: cobra/buildScripts/Makefile*
+    </UL>
+<LI> ephemeris libraries (see also
+	<A HREF=http://ssd.jpl.nasa.gov/iau-comm4/>IAU-4 old</A> and
+	<A HREF=http://danof.obspm.fr/iaucom4/>IAU-4 new</A>; 
+	(<A HREF=http://pds-naif.jpl.nasa.gov/>NAIF</A> (SPICE library: SPICELIB or CSPICE)
+	<A HREF=http://aa.usno.navy.mil/software/novas/novas_info.html>USNO/NOVAS</A>,
+	<A HREF=http://libnova.sourceforge.net/>libnova</A>,
+	...)
+  <UL>
+  <LI> <A HREF=http://www.cv.nrao.edu/~rfisher/>Rick Fisher's homepage </A>
+  <LI> <A HREF=http://ssd.jpl.nasa.gov/horizons.html>JPL HORIZONS </A> (web interface to ephemeris)
+  <LI> <A HREF=http://www.astro.com/swisseph/>SWISS EPHEMERIS</A> (based on DE406)
+  <LI> <A HREF=http://www.ephemeris.com/software.html>ephemeris software</A>, with interfaces to JPL ephemeris (DE405)
+  </UL>
+<LI> CORBA:
+	<A HREF=http://www.iona.com/products/orbacus_home.htm>ORBacus</A>,
+	<A HREF=http://www.labs.redhat.com/orbit/>ORBit</A>
+	<A HREF=http://www.cs.wustl.edu/~schmidt/TAO.html>TAO/ACE</A>
+        (see also 
+            <A HREF=http://www.omg.org/>OMG</A>)
+    <UL>
+    <LI> Python: <A HREF=http://www.fnorb.org>fnorb</A>, <A HREF=http://omniorb.sourceforge.net/>omniORB</A>
+    <LI> Python: <A HREF=http://www.spyron.org/>SPyRO</A> (Simple Python Remote Objects)
+    </UL>
+
+<LI> XML
+    <UL>
+    <LI> <A HREF=http://xml.apache.org/>Xerces </A>, from the Apache project
+    <LI> <A HREF=http://alphaworks.ibm.com>Xeena and XML for C++</A>
+    <LI> <A HREF=http://www.xmlsoft.org/>XML C parser</A> (Gnome) - 
+		also has a nice benchmark comparing expat/xerces/libxml/oracle/sun
+    <LI> <A HREF=http://xmlbench.sourceforge.net/>xmlbench</A>, 
+	for all available multiplatform C/C++ (and some Java) XML parsers.
+    <LI> <A HREF=http://www-106.ibm.com/developerworks/xml/library/x-stand1.html>
+        A survey of XML standards</A> (in 2 installments; great background material on
+        XML)
+    </UL>
+<LI> <A HREF=http://www.astro.caltech.edu/~tjp/pgplot/>
+	PGPLOT</A> Graphics Subroutine Library
+<LI> <A HREF=http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html>
+	CFITSIO</A>, A FITS File Subroutine Library
+<LI> <A HREF=http://tdc-www.harvard.edu/software/wcstools/>
+	wcstools</A>: a libwcs library and associated utilities
+<LI> <A HREF=http://www.acm.org/jgt/papers/Held97/>Erit</A>
+	(A Collection of Efficient and Reliable Intersection Tests)
+<LI> LOGGING:
+    <UL>
+    <LI><A HREF=http://log4cpp.sourceforge.net/>log4cpp</A>: 
+	Logging classes for C++ (the ones we use)
+    <LI><A HREF=http://log4cxx.sourceforge.net/>log4cxx</A>,
+    a log4j clone.
+    </UL>
+<LI> <A HREF=http://libcwd.sourceforge.net/>libcwd</A>:
+	 The C++ Debugging Support Library</A>
+<LI> Weather:
+    <UL>
+    <LI> <A HREF=http://www.campbellsci.com/>Campbell Scientific </A>
+    <LI> <A HREF=http://www.davisnet.com/davis/sbproduct.asp>Davis Instruments Corporation</A>
+         (GroWeather)
+    <LI> <A HREF=http://open2300.sourceforge.net/>drivers for Lacrosse WS2300</A>
+    <LI> <A HREF=http://wx200d.sourceforge.net/>WX200 weather station</A>
+    <LI> <A HREF=http://wx2000.sourceforge.net/>wx2000</A>
+    </UL>
+	
+<LI> Scripting:
+    <UL>
+    <LI> <A HREF=http://www.swig.org>
+	SWIG</A> (Simplified Wrapper and Interface Generator)
+    <LI> <A HREF=http://www.riverbankcomputing.co.uk/sip/>SIP</A> - create python bindings to C/C++
+    <LI> <A HREF=http://www.python.org/>Python</A> (and see also my own <A HREF=http://www.astro.umd.edu/~teuben/python>python refs</A>)
+    <LI> <A HREF=http://tcl.activestate.com/>
+	Tcl/Tk</A> (needed for AIPS++)
+    <LI> <A HREF=http://root.cern.ch/root/Cint.html>CINT</A>
+    </UL>
+
+<LI> Python:
+    <UL>     
+    <LI> <A HREF=http://www.pythonware.com/products/pil/>Python Image Libray</A> (PIL)
+    <LI> STSCI stuff: 
+    <A HREF=http://www.stsci.edu/resources/software_hardware/numarray>numarray</A>,
+    <A HREF=http://www.stsci.edu/resources/software_hardware/pyfits>pyfits</A>
+    (not to be confused with <A HREF=http://numeric.scipy.org/>NumPy</A>)
+    <LI> UW stuff: <A HREF=http://www.astro.washington.edu/rowen/AstroPy.html> AstroPy</A> 
+    (a collection of python for astronomy tools)
+    <LI> <A HREF=http://pygsl.sourceforge.net/>pygsl</A>
+    <LI> <A HREF=http://ipython.scipy.org/moin>ipython</A>
+    </UL>
+
+<LI> <A HREF=http://www.boost.org/>peer-reviewed portable C++ source libraries</A> (BOOST),
+     which may need 
+     <A HREF=http://www.boost.org/tools/build/jam_src/>bjam</A>
+<LI> <A HREF=http://dtemplatelib.sourceforge.net/index.htm>
+	Database Template Library </A> (make ODBC recordsets look just like an STL container)
+<LI> Motif (e.g. lesstif, <A HREF=http://www.opengroup.org/openmotif/>
+	OpenMotif</A>), both for MIRIAD and AIPS++
+<LI> <A HREF=http://www.astro.umd.edu/~teuben/miriad/>
+	MIRIAD</A> (comes with WIP)
+<LI> <A HREF=http://bima.astro.umd.edu/nemo/>
+	NEMO</A> (as library for WASP, also has table-plotters/fitters/...)
+<LI> <A HREF=http://www.astro.umd.edu/~harris/spectrom.html>
+	WASP</A> and some details on 
+	<A HREF=http://www.astro.umd.edu/~teuben/linux/rt>
+	Real-time linux and WASP software</A>
+
+<LI> ATM (wvr package at developed at UMD)
+<LI> <A HREF=http://aips2.nrao.edu>AIPS++</A>
+<LI> <A HREF=http://www.rsinc.com>IDL</A> (Kodak's rsinc)
+</UL>
+Note that some packages listed here depend on packages earlier in the list.
+Some of these packages are also, or may also become, available through
+<A HREF=http://bima.astro.umd.edu/nemo/linuxastro/astromake/>AstroMake</A>.
+<hr>
+
+<H2> CARMA_PKG </H2>
+
+Software we don't develop, but critically develop on for CARMA 
+is contained as source in a directory we refer to as $CARMA_PKG. 
+The installation treats these
+"alien" packages differently, since one often only needs one compiled
+version (referrred to as $CARMA_TOOLS). However, we do maintain easy-to-use
+set of install scripts that simplify installing them (see $CARMA/conf/opt,
+and in particular the install_tools script):
+
+<UL>
+
+<LI> Tools we use
+
+<UL>
+<LI> <A HREF=http://gcc.gnu.org/>c++</A> (the gnu compiler)
+<LI> <A HREF=http://www.gnu.org/software/autoconf/>autoconf</A>
+<LI> <A HREF=http://www.gnu.org/software/automake/>automake</A>
+</UL> 
+
+<LL> Libraries we use
+<UL> 
+
+<LI> <A HREF=http://www.cs.wustl.edu/~schmidt/ACE.html>ACE</A>
+<LI> <A HREF=http://cppunit.sourceforge.net/>cppunit</A> (unit testing)
+<LI> <A HREF=http://www.sleepycat.com/>db</A> (Berkeley db, needed by orbacus/notify)
+<LI> <A HREF=http://sources.redhat.com/gsl/>gsl</A> (gnu scientific library)
+<LI> janz (commercial; drivers for CANbus )
+<LI> <A HREF=http://log4cpp.sourceforge.net/>log4cpp</A> (logging)
+<LI> <A HREF=http://www.orbacus.com/>notify</A> (CORBA notification)
+<LI> <A HREF=http://www.orbacus.com/>notify-java</A> (CORBA notification tools in java)
+<LI> <A HREF=http://aa.usno.navy.mil/software/novas/novas_info.html>NOVAS</A> (Naval Observatory Vector Astrometry)
+<LI> <A HREF=http://omniorb.sourceforge.net/>omniORB</A>
+<LI> <A HREF=http://www.orbacus.com/>orbacus</A> (CORBA)
+<LI> <A HREF=http://www.orbacus.com/>orbacus-java</A> (CORBA tools in java)
+<LI> <A HREF=http://www.astro.caltech.edu/~tjp/pgplot/>pgplot</A>
+<LI> <A HREF=http://www.gnu.org/directory/libs/LibGTop.html>libgtop</A> (optional package for carma/dbms) [not needed anymore]
+<LI> <A HREF=http://www.boost.org/>peer-reviewed portable C++ source libraries</A> (BOOST)
+
+</UL>
+
+<LI> Java tools:
+
+<UL>
+<LI> <A HREF=http://ant.apache.org/index.html>apache-ant</A>
+<LI> <A HREF=http://www.jdom.org>jdom</A> (Java XML reader)
+<LI> <A HREF=http://xml.apache.org/xalan-j/>xalan-java</A> (XLST processing in java)  [needs xerces-java, which we all include as jar files]
+
+</UL>
+
+<LI>  Python packages:
+  <UL>
+  <LI> <A HREF=http://www.astro.washington.edu/owen/AstroPy.html>Imaging</A>: The "Python Image Library" (PIL)
+  <LI> <A HREF=http://www.stsci.edu/resources/software_hardware/numarray>numarray</A>: Numerical Python
+  </UL>
+<LI> 
+</UL>
+
+<H2> related useful links - to be organized </H2>
+<UL>
+<LI> <A HREF=http://www.iau.org/IAU/Activities/nomenclature/units.html>
+	Recommendations concerning Units (IAU)</A>
+<LI> <A HREF=http://www.nist.gov/dads/>
+	Dictionary of Algorithms and Data Structures</A> (DADS)
+<LI> <A HREF=http://sma-www.harvard.edu/private/memos/135/135.html>
+	Librdsmafits.a : a C Library for reading SMA FITS-IDI tables</A>
+	(see also the
+	<A HREF=http://www.aoc.nrao.edu/aips/FITS-IDI.html>FITS IDI</A>
+	format description)
+<LI> <A HREF=http://www.tldp.org/HOWTO/Software-Proj-Mgmt-HOWTO/>
+	Free Software Project Management HOWTO</A>
+<LI> <A HREF=http://www.wiley.com/compbooks/sandred>
+	Managing Open Source Projects</A> (Jan Sandred's book)
+<LI> <A HREF=http://www.phprojekt.com/features.php>phprojekt</A>
+<LI> <A HREF=http://www.achievo.org>achievo</A>
+<LI> <A HREF=http://mrproject.codefactory.se/>MrProject</A>
+<LI> <A HREF=http://www.lofar.org/>LOFAR</A>
+<LI> <A HREF=http://www.math.tu-berlin.de/~ehrhardt/matlab_alternatives.html>Matlab alternatives</A>
+<LI> <A HREF=http://www.daimi.au.dk/~kasperd/comp.os.linux.development.faq.html>
+	comp.os.linux.development FAQ </A>
+<LI> <A HREF=http://www.kegel.com/corba>Dan Kegel's CORBA notes</A>
+<LI> <A HREF=http://www.ciaranmchale.com/>Ciaran McHale's eBooks on CORBA</A> (good intro material)
+<LI> <A HREF=http://www.opengroup.org/products/publications/catalog/t031s.htm>
+	Open Group UNIX specifications</A>:
+	<UL>
+	<LI> <A HREF=http://www.opengroup.org/onlinepubs/009696699/basedefs/contents.html>
+	Base Definitions</A>
+	<LI> <A HREF=http://www.opengroup.org/onlinepubs/009696699/functions/contents.html>
+	System Interfaces</A>
+	<LI> <A HREF=http://www.opengroup.org/onlinepubs/009696699/utilities/contents.html>
+	Shell & Utilities</A>
+	<LI> <A HREF=http://www.opengroup.org/onlinepubs/009696699/xrat/contents.html>
+	Rationale</A>
+	</UL> 
+<LI> <A HREF=http://www.unix-systems.org/>Open Group: The UNIX® System</A> (SUS, SUSv2, SUSv3....>) 
+</UL>
+
+<hr>
+<PRE>
+$Id: cst.html,v 1.21 2007/03/19 15:30:27 teuben Exp $
+</PRE>
+</BODY>
+</HTML>

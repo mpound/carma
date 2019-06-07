@@ -1,0 +1,14 @@
+"Large-Scale C++ Software Design" from John Lakos.
+
+I would recommend looking into the boost.test libraray
+http://www.boost.org/libs/test/doc/index.htm which i prefer over the more
+widely spread CppUnit (I think it's mostly because boost.test is relatively
+new).
+
+http://sourceforge.net/projects/cppunit/
+
+Robert V. Binder:
+"Testing Object-Oriented Systems : Models, patterns and tools"
+It is a 1200 pages thick brick and covers multiple languages, patterns etc.
+
+

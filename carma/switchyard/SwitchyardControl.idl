@@ -1,0 +1,45 @@
+/**
+ * @file Carma Switchyard control interface.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.5 $
+ * $Date: 2011/09/12 22:46:37 $
+ * $Id: SwitchyardControl.idl,v 1.5 2011/09/12 22:46:37 abeard Exp $
+ */
+#ifndef CARMA_SWITCHYARD_SWITCHYARDCONTROL_IDL
+#define CARMA_SWITCHYARD_SWITCHYARDCONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module switchyard {
+
+// Names which this interface will be published under.
+const string LOSWITCHYARDCONTROL_NAME = "carma.switchyard.LO";
+const string LLSWITCHYARDCONTROL_NAME = "carma.switchyard.LL";
+const string IFSWITCHYARDCONTROL_NAME = "carma.switchyard.IF";
+const string DCLOSWITCHYARDCONTROL_NAME = "carma.switchyard.DCLO";
+
+struct SwitchPosition {
+    unsigned short switchNo;  /*< Switch to control 1-38. */
+    unsigned short switchPos; /*< Switch pos, 0 to keep the same. */
+}; // struct SwitchPosition
+
+typedef sequence< SwitchPosition > SwitchPositionSeq;
+
+interface SwitchyardControl {
+
+    /**
+     * Select Position for specified switch number.
+     * @param pos Switch position.
+     * @throw UserException upon invalid parameter or hardware failure.
+     * @throw SystemException upon CORBA error.
+     */
+    void setSwitches( in SwitchPositionSeq pos )
+        raises ( carma::util::UserException );
+
+}; // interface SwitchywardControl
+
+}; // module switchyard
+}; // module carma
+#endif

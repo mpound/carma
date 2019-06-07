@@ -1,0 +1,357 @@
+/** @file
+ * $Id: Master.h.cgwon,v 1.1 2003/07/09 18:18:36 cgwon Exp $
+ *
+ * Master class for monitoring and controlling devices on the CAN bus.  
+ * 
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/09 18:18:36 $
+ */ 
+
+#ifndef CARMA_CANBUS_MASTER_H 
+#define CARMA_CANBUS_MASTER_H
+
+// System includes
+#include <pthread.h>
+
+// C++ includes
+#include <map>
+
+// Carma includes
+#include "carma/canbus/CanDio.h"
+#include "carma/canbus/Device.h"
+#include "carma/util/Time.h"
+
+namespace carma {
+  namespace canbus {
+
+      /** 
+       *  Carma Canbus Master class.
+       *  Master provides the core of a framework responsible for maintaining 
+       *  monitoring and controlling devices on a CAN bus network.
+       *  Its main purpose is to retrieve messages from the CAN bus using
+       *  the base CanDio class and then dispatch them to the appropriate 
+       *  Device class for processing. In contrast, it also provides core
+       *  control functionality such as sending time syncs to devices and
+       *  hardware resets through the CanDio base.  Finally, it also contains
+       *  a built in simulator to simulate monitor packets and ship them 
+       *  through the monitor system pipeline.  It is intimately connected
+       *  with the carma::canbus::Device class and both classes public and
+       *  protected interfaces should be well understood when trying to 
+       *  implement.
+       *  
+       *  In practice, a user will overload the Device class for each type 
+       *  of device that will reside on the network.  The concrete device
+       *  implementation will need to simultaneously inherit from both Device
+       *  and a CORBA defined interface to expose its control interface.  
+       *  Next a user will need to inherit from this Master class to define
+       *  the access interface to the CAN devices.  This is done by defining 
+       *  the network by declaring Device derivatives in the constructor 
+       *  and calling the addDevice() method.  The derived Master class will 
+       *  also generally inherit from a CORBA interface to simultaneously 
+       *  define the device access interface to this network.  This 
+       *  interface will typically consist of getDeviceX methods that 
+       *  retrieves a CORBA reference to the specific devices.  In 
+       *  addition the CORBA interface will need to define control 
+       *  commands that refer to the CAN bus(ses)
+       *  as a whole such as reset(). In this way, the individual Device
+       *  implementations and the Master as a whole become true distributed
+       *  objects.  Any client using this framework will be required to set
+       *  up the CORBA environment (declaring Orbs, connecting to nameservers,
+       *  publishing object references, etc).  For a concrete example see
+       *  the detailed client/server test programs in the Test/ClientServerTest
+       *  subdirectory.
+       *
+       *  Although this may sound complicated, the advantage of this framework
+       *  is that all monitor messages, timing information and core control 
+       *  functionality are handled directly by this Master base class.  The
+       *  user needs only to worry about the detailed API implementation for
+       *  devices and the higher level control interfaces. All intermediate
+       *  details are automatically handled via the framework.
+       *
+       *  This Class, taken in conjunction with its derivatives, the Device 
+       *  class and the Device class derivatives, composes a Factory Method
+       *  Object-Oriented Design Pattern.  Within this context, the Device
+       *  class is a 'Product', and its derivatives are 'Concrete Products'.
+       *  The Master class is a 'Creator' and its derivative is a 
+       *  'Concrete Creator'.  For more information see "Design Patterns -
+       *  Elements of Reusable Object-Oriented Software".
+       */
+      class Master : public CanDio {
+      public:
+
+          /**
+           * Default constructor for emulation.
+           * This constructor should be used when there is not yet any 
+           * Janz hardware on the target system.  The underlying Dio and 
+           * CanIo classes both write to /dev/null when in emulation mode.
+           * Even when using this constructor, the functionality of all 
+           * classes remains the same.  This allows one to completely define
+           * their CAN network, publish DOs and completely simulate both 
+           * the monitor and control system.
+           * @see Device::simulateMsg
+           */
+          Master();
+
+          /**
+           *  Master constructor.  
+           *  This Master constructor takes a modBusNo as an input.
+           *  This number is a hardwired id used to identify the Janz
+           *  Modulbus carrier card on compact PCI bus.  It is located
+           *  on a rom chip on the Modulbus carrier board itself and is 
+           *  labeled with a clearly visible sticker "Mbusx".
+           *  @param modBusNo module bus number of Janz Modbulbus 
+           *  carrier card.
+           */	  	 	
+/**** REVIEW
+ Reviewer: csg
+ Comments: consider not abbreviating module to "mod"
+ */
+
+          Master(int modBusNo);
+
+          /**
+           *  Master constructor.  
+           *  This Master constructor takes a modBusNo and modBusSlot
+           *  as an input.  It is intended for use with only a single
+           *  CAN bus on the multi bus Carma CAN Dio card.  The 
+           *  modBusSlot must be either a 0 or 1 and represents the CAN 
+           *  bus to use.  The modBusNo number is a hardwired id used 
+           *  to identify the Janz Modulbus carrier card on compact PCI 
+           *  bus.  It is located on either a hex switch or a rom chip on 
+           *  the Janz Modulbus cPCI carrier board.
+           *  @param modBusNo module bus number of Janz Modbulbus 
+           *  carrier card.
+           *  @param modBusSlot number of CAN card to use (0 or 1).
+           */	  	 	
+          Master(int modBusNo, int modBusSlot);
+
+          /** 
+           * Master destructor.
+           * Declared virtual so that all derivatives destructors are
+           * called as well if only a pointer to this base Master is
+           * destroyed or deleted.
+           */
+          virtual ~Master();
+
+          /** 
+           * Run the Master.
+           * This routine is responsible for kicking off the whole shabang.  
+           * It blocks on dependent threads permanently.  It is included to
+           * allow a developer a degree of flexibility when designing a 
+           * CAN application.  If the user is developing an application with
+           * a CORBA control mechanism, it is likely their main application
+           * will block on running the orb.  In this case the developer will
+           * want to call this Master::run method in a seperately spawned 
+           * thread.  However, if no CORBA control mechanism is used, main
+           * can call this routine which blocks indefinitely. 
+           */
+          void run();
+
+      protected:
+
+          /** 
+           * Add a device to the master.
+           * Master maintains a map of all devices on the CAN network(s)
+           * it controls.  This routine adds a device to this map and
+           * initializes the device to OFFLINE.  
+           * @param dev pointer to base Device class of a device. 
+           * @see Device::setState
+           */
+/**** REVIEW
+ Reviewer: csg
+ Comments: consider writing out "device" rather than abbreviating to dev
+ */
+          void addDevice(Device *dev);
+
+          /** 
+           * Remove a device. 
+           * Remove a device with the specified key from the master 
+           * device map. Devices are stored in the map using a key 
+           * generated from the Device itself (i.e. Device::getKey()).  
+           * The key can be independently constructed using the 
+           * carma::canbus::createKey routine.  Note that removeDevice 
+           * is not responsible for deleting the object itself, it only
+           * removes the object from Master's device map.  If the user 
+           * intends on dynamically adding and removing devices, he must
+           * destroy his objects explicitly.  This can be done by calling 
+           * getDevice, followed by removeDevice and then deleting the 
+           * object in a manner appropriate for the implementation.  For
+           * a detailed discussion of this see carma::canbus::Device.
+           * @param key of device to be removed.
+           * @see carma::canbus::Device
+           * @see carma::canbus::createKey
+           */
+          void removeDevice(keyType key);
+
+          /**
+           * Get pointer to a device.
+           * This method retrieves a pointer to the specified device.  
+           * @param key of device pointer to retrieve.
+           * @return pointer to specified device.
+           * @see carma::canbus::createKey
+           */
+          Device* getDevice(keyType key);
+
+/**** REVIEW
+ Reviewer: csg
+ Comments: consider making all "get" functions const
+ */
+          /**
+           * Get number of online nodes.
+           * @return number of nodes currently online.
+           */
+          int getOnlineNodeCount();
+
+          /**
+           * Get number of offline nodes.
+           * @return number of nodes currently offline.
+           */
+          int getOfflineNodeCount();
+
+          /**
+           * Get controls.
+           * Master controls correspond to CAN bus control commands
+           * that are accepted by all modules regardless of API 
+           * implementation or functionality.  They consist of 
+           * basic commands such as setTime, Software reset, 
+           * Hardware reset...  This routine, although virtual
+           * has a default implementation that should be called
+           * in any overridden version and prepended to any other
+           * user defined controls.
+           * @return map<msgType, string> map containing the message
+           * id as a key (msgType) and a string describing the control.
+           */
+          virtual map<msgType, string> getControls() = 0;
+
+          /**
+           * Update the status of the master.
+           * This routine is intended to be overloaded by a user
+           * implementing a master subclass.  It is included to allow 
+           * the user to retrieve information from the bus(ses) and 
+           * the Master via getBusStatus() and other Master get 
+           * methods and then place the information into the monitor 
+           * stream which will be implementation defined.  It is 
+           * automatically called once every half second frame.  
+           * If a user doesn't wish to place any bus specific or master 
+           * status info into the monitor stream, this routine must be 
+           * no-oped.
+           * @see CanIo::getBusStatus
+           * @see getStatus
+           */
+          virtual void updateStatus() = 0;
+
+          /**
+           * Send a software reset command to all modules.
+           * This method sends a global reset CAN message to all
+           * modules.  It differs from the CanDio reset which issues
+           * a hardware reset.
+           */
+          void softwareReset();
+
+          /**
+           * Send a time sync message.
+           * This routine is responsible for sending a time
+           * sync message to the bus(ses).  It is declared virtual
+           * to allow different implementations to send differently
+           * formatted time syncs.  The default implementation
+           * is as follows...
+           * CAN Byte 0 and 1 - Modified Julian Day as an unsigned short
+           * integer.
+           * CAN Byte 2 - 5 - Time of Day in billionths of a day as
+           * an unsigned long integer.
+           * Time is retrieved from the system time and this routine
+           * is called every ten seconds.  The default implementation 
+           * sends a time sync to all busses.  Do not use this if you 
+           * intend on tying Bus 0 to Bus 1 as this will (eventually)
+           * cause an error state on the bus.
+           * @see CanIo::postMessage(idType id, vector<byteType> &data)
+           */
+          virtual void setTime();
+
+          /** 
+           * Global control commands.
+           * These command are enumerations of carma::canbus::msgType
+           * for global control commands.
+           */
+/**** REVIEW
+ Reviewer: csg
+ Comments: make "Controls" into "controls"
+ */
+          enum Controls {
+              RESET         = 0x000, /**< Software reset to all modules. */
+              SET_TIME 	    = 0x001, /**< Time sync message id. */
+              STOP_CHANNEL_1_FAST_SAMPLING = 0x002, /**< Ch1 fast sampling. */
+              STOP_CHANNEL_2_FAST_SAMPLING = 0x003  /**< Ch2 fast sampling. */
+          }; 
+
+          // Protected member data.
+          carma::util::Time time_;
+
+      private:
+
+          // Undefined and inaccessible to prevent copying.
+          Master(const Master &);
+          Master &operator=(const Master &);
+
+          /**
+           * Update the devices states.
+           * Each device has an associated state that must be 
+           * updated from the master.  The states, INITIALIZED, 
+           * ONLINE and OFFLINE are updated based on the last time 
+           * we have received a message from the Device.
+           */ 
+          void updateDevicesStates();
+
+          /**
+           * Entry point for timer thread.
+           * Thread entry points are needed to allow C-style calls
+           * to pthreads and are thus static to provide C linkage.
+           * They are placed here (directly in the class) as opposed to
+           * the global namespace (using an extern "C" linkage specifier)
+           * so that we can utilize the visibility rules provided by C++.
+           */
+          static void *timerThreadEntry(void *arg);
+
+          /**
+           * Timer thread.
+           * The timer thread is responsible for performing time critical
+           * functions.  These include updating the devices status,
+           * processing simulated messages if needed (i.e. the device is
+           * OFFLINE) and sending time syncs.
+           */
+          void runTimerThread(); 
+
+          /**
+           * Entry point for main thread.
+           * Thread entry points are needed to allow C-style calls
+           * to pthreads and are thus static to provide C linkage.
+           * They are placed here (directly in the class) as opposed to
+           * the global namespace (using an extern "C" linkage specifier)
+           * so that we can utilize the visibility rules provided by C++.
+           */
+          static void *readThreadEntry(void *arg);
+
+          /**
+           * Thread to read and process incoming CAN messages.
+           * This is known as the main thread because it is the essential
+           * thread in the framework. 
+           */
+          void runReadThread();	
+
+          map<keyType, Device*> devices_; 
+          mutable pthread_mutex_t deviceMutex_;
+/**** REVIEW
+ Reviewer: csg
+ Comments: consider changing onlineNodes_ to nOnlineNodes_ 
+           consider changing offlineNodes_ to nOfflineNodes_
+ */
+          int onlineNodes_;
+          int offlineNodes_;
+          pthread_t timerThreadId_;
+          pthread_t readThreadId_;
+
+      }; // End of class Master
+  }; // Namespace downconverter
+}; // namespace cobra
+#endif

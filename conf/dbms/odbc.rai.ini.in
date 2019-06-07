@@ -1,0 +1,22 @@
+; begin odbc.ini
+[ODBC Data Sources]
+myodbc3       = MySQL ODBC 3.51 Driver DSN 
+
+[myodbc3]
+; this is defined in terms of @carma_tools@, so we use .in file
+#Driver = @carma_tools@/lib/libmyodbc3.so
+Driver = @carma_tools@/lib/libmyodbc5.so
+Description = MySQL ODBC 3.51 Driver DSN
+Server = localhost
+PORT = 3316
+SOCKET = /scr/carma-server/carma/carma/var/mysql.mpdbms.sock
+;USER = root
+:Password = 
+Database = carma
+;FetchBufferSize = 99
+;:ServerOptions =
+;:ConnectOptions =
+
+
+;end odbc.ini
+

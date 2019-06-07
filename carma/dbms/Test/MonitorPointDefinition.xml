@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: MonitorPointDefinition.xml,v 1.1 2004/02/01 05:19:45 cgwon Exp $ -->
+<!-- Example XML file for describing Monitor Data -->
+<Subsystem name="OVROAntenna" count="6">  
+   <Container name="LOsystem">
+      <SoftPoint name="frequency" type="float" update="60" count="1"
+                 persistent="yes" sampling="2">
+       <shortName>freq</shortName>
+       <longName>freq</longName>
+       <units>Hz</units>
+       <description>
+        Some really meaningful thing that takes up more than a single
+        line because we want to test this thing out.
+       </description>
+
+       <!-- take the last valid value in the integrating interval -->
+       <integrate>last</integrate>
+
+       <!-- just to initial values to initialize the threshold database;
+            this can have default values. -->
+       <warnLo>7.0134e10</warnLo>
+       <warnHi>1.50137e11</warnHi>
+       <errLo>7.08131e10</errLo>
+       <errHi>1.50139e11</errHi>
+      </SoftPoint>
+      <Container name="Gunn3mm">
+          <SensePoint name="frequency" type="float" update="40" count="1"
+                      persistent="no" sampling="4">
+          <shortName>freq2</shortName>
+          <longName>freq2</longName>
+          <units>Hz</units>
+          <description>
+           Some else really meaningful thing that takes up more than a single
+           line because we want to test this thing out.
+          </description>
+   
+          <!-- take the last valid value in the integrating interval -->
+<!--          <integrate>first</integrate> -->
+   
+          <!-- just to initial values to initialize the threshold database;
+               this can have default values. -->
+          <warnLo>1.0134e8</warnLo>
+          <warnHi>1.50137e7</warnHi>
+          <errLo>1.08131e8</errLo>
+          <errHi>1.50139e7</errHi>
+         </SensePoint>
+      </Container>
+   </Container>
+</Subsystem>
+

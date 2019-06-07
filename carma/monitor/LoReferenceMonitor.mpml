@@ -1,0 +1,279 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Monitor System device definition for the LoReferenceMonitor CAN module. -->
+<!-- The LoReferenceMonitor is shared among all antenna types.               -->
+<Common scope="global" author="Andrew Beard">
+
+    <Container name="LoReference">
+        <description>
+            LO Reference Monitor Module.
+            The LO Reference Monitor Module provides power to the 10-MHz fiber
+            reference receiver, the 50-MHz reference fiber receiver, the 
+            1100-1260MHz fiber receiver (LO Terminator), and the IF post-amplifier module 
+            (PAM). It also sets the RF attenuation for the 1100-1260 LO 
+            Terminator.
+        </description>
+        
+        <!-- Blanking frame monitor packet 1 -->
+        <MonitorPoint name="photoLevel10Mhz" type="float">
+            <shortName>10MHz Photo Level</shortName>
+            <longName>10MHz Photo Level</longName>
+            <description>
+                The photodiode current in the 10-MHz receiver.
+            </description>
+            <units>dBm</units>
+        </MonitorPoint>
+        
+        <MonitorPoint name="lockStatus10Mhz" type="enum">
+            <shortName>10MHz Lock</shortName>
+            <longName>10MHz Lock Status</longName>
+            <description>
+                Status of the 10-MHz phase lock.
+            </description>
+            <enum name="BAD"/>
+            <enum name="GOOD"/>
+            <errHi>BAD</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="photoStatus10Mhz" type="enum">
+            <shortName>10MHz Photo</shortName>
+            <longName>10MHz Photo Status</longName>
+            <description>
+                Status of the 10-MHz reference photodiode current.
+            </description>
+            <enum name="BAD"/>
+            <enum name="GOOD"/>
+            <errHi>BAD</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="photoLevel50Mhz" type="float">
+            <shortName>50MHz Photo Level</shortName>
+            <longName>50MHz Photo Level</longName>
+            <description>
+                The photodiode current in the 50-MHz receiver.
+            </description>
+            <units>dBm</units>
+        </MonitorPoint>
+        
+        <MonitorPoint name="photoStatus50Mhz" type="enum">
+            <shortName>50MHz Photo</shortName>
+            <longName>50MHz Photo Status</longName>
+            <description>
+                Status of the 50-MHz reference photodiode current.
+            </description>
+            <enum name="BAD"/>
+            <enum name="GOOD"/>
+            <errHi>BAD</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="photoLevelLO" type="float">
+            <shortName>LO Term Photo Level</shortName>
+            <longName>LO Terminator Photo Level</longName>
+            <description>
+                The optical power photodiode current in the LO terminator.
+            </description>
+            <units>dBm</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="loTermPowerState" type="enum">
+            <shortName>LO Term Power State</shortName>
+            <longName>LO Terminator Power State</longName>
+            <description>
+                State of the state machine used to set the LO terminator 
+                output power.
+            </description>
+            <enum name="IDLE">
+                <description>
+                    Has not received a commanded level.
+                </description>
+            </enum>
+            <enum name="BUSY">
+                <description>
+                    Setting power level to the requested value.
+                </description>
+            </enum>
+            <enum name="OK">
+                <description>
+                    Successfully reached requested power.
+                </description>
+            </enum>
+            <enum name="LOW">
+                <description>
+                    Input power is too low.
+                </description>
+            </enum>
+            <enum name="HIGH">
+                <description>
+                    Input power is too high.
+                </description>
+            </enum>
+            <warnHi>IDLE</warnHi>
+            <warnHi>BUSY</warnHi>
+            <warnHi>LOW</warnHi>
+            <warnHi>HIGH</warnHi>
+        </MonitorPoint>
+        
+        <MonitorPoint name="rfinLevelLO" type="float">
+            <shortName>LO Term RF In</shortName>
+            <longName>LO Terminator RF Input Level</longName>
+            <description>
+                The RF input power from the LO Terminator.
+            </description>
+            <units>dBm</units>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 2 -->
+        <MonitorPoint name="rfoutLevelLO" type="float">
+            <shortName>LO Term RF Out</shortName>
+            <longName>LO Terminator RF Output Level</longName>
+            <description>
+                The RF output power from the LO terminator.
+            </description>
+            <units>dBm</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="loTempVolts" type="float">
+            <shortName>LO Term Temp</shortName>
+            <longName>LO Terminator Temperature</longName>
+            <description>
+                The temperature in the LO terminator.
+            </description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="refAttReq" type="byte" >
+            <shortName>LO Term Atten</shortName>
+            <longName>LO Terminator Requested Reference Attenuation</longName>
+            <description>
+                The last requested LO terminator attenuation.
+            </description>
+            <units>dB</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="sn10MHz" type="int">
+            <shortName>10MHz Serial #</shortName>
+            <longName>Serial Number 10MHz</longName>
+            <description>Serial number of the 10-MHz module.</description>
+        </MonitorPoint>
+
+        <MonitorPoint name="sn50MHz" type="int">
+            <shortName>50MHz Serial #</shortName>
+            <longName>Serial Number 50MHz</longName>
+            <description>Serial number of the 50-MHz module.</description>
+        </MonitorPoint>
+        
+        <MonitorPoint name="snLoTerm" type="int">
+            <shortName>LO Term Serial #</shortName>
+            <longName>Serial Number LO Terminator</longName>
+            <description>
+                Serial number of the LO terminator module.
+            </description>
+        </MonitorPoint>
+        
+        <MonitorPoint name="modTemp" type="float" >
+            <shortName>Module Temp</shortName>
+            <longName>Module Temperature</longName>
+            <description>
+                The module temperature as read by the AD7814 sensor.
+            </description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos24v" type="float" >
+            <shortName>+24V Board</shortName>
+            <longName>+24V Power Supply Voltage</longName>
+            <description>
+                The value for the +24V board power supply
+            </description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+        
+        <MonitorPoint name="psPos5vDig" type="float" >
+            <shortName>+5V Digital</shortName>
+            <longName>+5V Digital Power Supply Voltage</longName>
+            <description>
+                The value for the +5V digital power supply.
+            </description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos15v" type="float" >
+            <shortName>+15V External</shortName>
+            <longName>+15V Power Supply Voltage</longName>
+            <description>
+                The value for the +15V power supply.
+            </description>
+            <units>V</units>
+            <warnLo>14.5</warnLo>
+            <warnHi>15.5</warnHi>
+            <errLo>14.0</errLo>
+            <errHi>16.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psNeg9v" type="float" >
+            <shortName>-9V External</shortName>
+            <longName>-9V Power Supply Voltage</longName>
+            <description>
+                The value for the negative 9V power supply.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="psNeg5v" type="float" >
+            <shortName>-5V External</shortName>
+            <longName>-5V External Power Supply Voltage</longName>
+            <description>
+                The value for the -5V power supply.
+            </description>
+            <units>V</units>
+            <warnLo>-5.15</warnLo>
+            <warnHi>-4.85</warnHi>
+            <errLo>-5.25</errLo>
+            <errHi>-4.75</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psNeg15v" type="float" >
+            <shortName>-15V External</shortName>
+            <longName>-15V External Power Supply Voltage</longName>
+            <description>
+                The value for the -15V power supply.
+            </description>
+            <units>V</units>
+            <warnLo>-15.5</warnLo>
+            <warnHi>-14.5</warnHi>
+            <errLo>-16.0</errLo>
+            <errHi>-14.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos5v" type="float" >
+            <shortName>+5V External</shortName>
+            <longName>+5V External Power Supply Voltage</longName>
+            <description>
+                The value for the +5V power supply.
+            </description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos9v" type="float" >
+            <shortName>+9V External</shortName>
+            <longName>+9V External Power Supply Voltage</longName>
+            <description>
+                The value for the +9V external power supply.
+            </description>
+        </MonitorPoint>
+
+    </Container>
+</Common>

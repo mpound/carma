@@ -1,0 +1,45 @@
+# $Id: opticsDelay.tab,v 1.3 2013/10/01 23:23:16 scott Exp $
+#
+# Config file for antenna specific delay values due to differences 
+# in the optics. This component of the delay is at the sky frequency, 
+# like the geometric delay, and is thus a function of frequency.
+# The origin is from differences in the optical path to the receiver 
+# with respect to the intersection of axis. This term includes the distance 
+# from the primary to the secondary and then to the receiver.
+# Units: meters
+#
+# NOTE: The antenna numbers are not used. The rows **must** be in antenna
+# order and include all antennas.
+#
+# This file is read in during initialization of a subarray
+# and the current values will be converted from meters in free space 
+# to nanoseconds when read and then displayed on the Delay page.
+# Data values from Dave Woody 07/09/2013 with revisions 09/30/2013.
+#
+#
+#| antNo | mmRx | cmRx
+#| i     |   r  |   r 
+#|       |   m  |   m
+    1      10.8    9.2
+    2      10.8    9.2
+    3      10.8    9.2
+    4      10.8    9.2
+    5      10.8    9.2
+    6      10.8    9.2
+    7       3.4    4.4
+    8       3.4    4.4
+    9       3.4    4.4
+    10      3.4    4.4
+    11      3.4    4.4
+    12      3.4    4.4
+    13      3.4    4.4
+    14      3.4    4.4
+    15      3.4    4.4
+    16      3.2    3.2
+    17      3.2    3.2
+    18      3.2    3.2
+    19      3.2    3.2
+    20      3.2    3.2
+    21      3.2    3.2
+    22      3.2    3.2
+    23      3.2    3.2

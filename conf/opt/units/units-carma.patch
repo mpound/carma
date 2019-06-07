@@ -1,0 +1,201 @@
+diff -Nru units-1.80.orig/ChangeLog units-1.80/ChangeLog
+--- units-1.80.orig/ChangeLog	2002-05-06 15:20:04.000000000 -0700
++++ units-1.80/ChangeLog	2011-06-21 11:44:41.968266000 -0700
+@@ -1,3 +1,14 @@
++2004-09-20  Chul Gwon <cgwon@astro.umd.edu>
++	* removed sed from end of units.c
++
++2004-09-16  Chul Gwon <cgwon@astro.umd.edu>
++	* added au to units.dat
++
++2004-03-25  Chul Gwon <cgwon@astro.umd.edu>
++	* adapted for use with CARMA
++	* changed Makefile.in for CARMA purposes
++	* removed main() from units.c to enable library compilation
++
+ 2002-05-06  Adrian Mariano  <adrian@vizcacha.cox.rr.com>
+ 
+ 	* units.c (reduceunit): The last change to reduceunit was screwed
+diff -Nru units-1.80.orig/Makefile.in units-1.80/Makefile.in
+--- units-1.80.orig/Makefile.in	2002-05-02 18:15:08.000000000 -0700
++++ units-1.80/Makefile.in	2011-06-21 11:45:55.207846000 -0700
+@@ -42,13 +42,17 @@
+ infodir = @infodir@
+ mandir = @mandir@
+ 
++# 2011-06-21 iws; include definitions from configure
++includedir = @includedir@
++libdir = @libdir@
++
+ transform=@program_transform_name@
+ 
+ datadir = @datadir@
+ DEFS = -DUNITSFILE=\"@UDAT@units.dat\" @DEFIS@ @DEFS@
+ CFLAGS = @CFLAGS@
+ ALL_CFLAGS = $(DEFS) $(CFLAGS) -I$(srcdir)
+-COMPILE = $(CC) $(ALL_CFLAGS) $(LDFLAGS)
++COMPILE = $(CC) $(ALL_CFLAGS) $(LDFLAGS) -fPIC
+ 
+ DISTFILES = README ChangeLog units.info units.doc getopt1.c units.dvi \
+    Makefile.in units.c getopt.c getopt.h units.dat units.man units.texinfo \
+@@ -91,10 +95,12 @@
+ OBJECTS = units$o
+ $(OBJECTS): $(ANSI2KNR)
+ 
+-units: $(OBJECTS) parse.tab.o getopt.o getopt1.o @STRFUNC@
+-	$(CC) $(LDFLAGS) -o units $(OBJECTS) parse.tab.o getopt.o getopt1.o @STRFUNC@ $(LIBS)
++units: parse.tab.o getopt.o getopt1.o @STRFUNC@
++	rm -f units.o
++	$(CC) $(LDFLAGS) -o $@ $@.c $^ $(LIBS) -lreadline -lncurses -lm -DDEBUG_UNITS
+ 
+-install: units units.dat install-doc
++# CSG (3/25/04) - changed this to install-old so we could overwrite install target
++install-old: units units.dat install-doc
+ 	$(srcdir)/mkinstalldirs $(bindir) $(datadir)
+ 	$(INSTALL_PROGRAM) units $(bindir)/`echo units|sed '$(transform)'`
+ 	$(INSTALL_DATA) $(srcdir)/units.dat $(datadir)/units.dat
+@@ -150,7 +156,7 @@
+ clean mostlyclean: 
+ 	-rm -f *.o units units.fn units.ky units.pg units.tp units.vr \
+              units.log units.dvi units.1 units.cp distname .chk units.toc \
+-	     units.aux units.cps units.op $(ANSI2KNR) *._o *._c
++	     units.aux units.cps units.op $(ANSI2KNR) *._o *._c libunits.*
+ 
+ distclean: clean
+ 	-rm -f config.* Makefile TAGS
+@@ -211,6 +217,17 @@
+ 	   getopt1.c getopt.c getopt.h
+ 	gzip `cat distname`.tar
+ 
++libunits.so: getopt.o getopt1.o parse.tab.o units.o
++	ar -r libunits.a $^
++	$(COMPILE) -shared -o libunits.so $^ -lreadline -lncurses -lm
++
++install: libunits.so
++	$(srcdir)/mkinstalldirs $(includedir) $(libdir) $(bindir) $(datadir)
++	$(INSTALL_DATA) $(srcdir)/units.h $(includedir)/units.h
++	$(INSTALL_DATA) $(srcdir)/unittype.h $(includedir)/unittype.h
++	$(INSTALL_PROGRAM) libunits.so $(libdir)/libunits.so
++	$(INSTALL_DATA) $(srcdir)/units.dat $(datadir)/units.dat
++
+ # Tell versions [3.59,3.63) of GNU make not to export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+ .NOEXPORT:
+diff -Nru units-1.80.orig/README units-1.80/README
+--- units-1.80.orig/README	2001-11-26 16:36:37.000000000 -0800
++++ units-1.80/README	2011-06-21 11:44:41.972265000 -0700
+@@ -1,3 +1,13 @@
++CSG (03/25/04): I have modified the original GNU units package for usage with
++CARMA.  The original README is appended at the end of my addendum.
++
++To create the library, run "configure --prefix=$CARMA_TOOLS" (or
++whichever prefix you prefer), and run "make libs".  you can play with
++the original GNU units executable by running "make units".  This will
++not interfere with the compiled libraries.
++
++
++======== ORIGINAL GNU UNITS README =========================
+ This is a beta testing release.  
+ 
+      Completely rewritten parser supports 
+diff -Nru units-1.80.orig/units.c units-1.80/units.c
+--- units-1.80.orig/units.c	2002-05-06 15:20:38.000000000 -0700
++++ units-1.80/units.c	2011-06-21 11:44:41.976264000 -0700
+@@ -55,7 +55,7 @@
+ char *mylocale;                 /* Locale in effect (from LOCALE env var) */
+ char *numformat = "%.8g";	/* printf format for numeric output */
+ char *powerstring = "^";	/* Exponent character used in output */
+-int quiet = 0;                  /* Flag for supressing prompting (-q option) */
++int quiet = 1;                  /* Flag for supressing prompting (-q option) */
+ int unitcheck = 0;              /* Flag for unit checking, set to 1 for 
+                                    regular check, set to 2 for verbose check */
+ int verbose = 0;                /* Flag for verbose operation */
+@@ -2232,6 +2232,8 @@
+   return 0;
+ }
+ 
++
++#ifdef DEBUG_UNITS
+ int
+ main(int argc, char **argv)
+ {
+@@ -2267,6 +2269,7 @@
+ 	showfuncdefinition(funcval);
+   	exit(0);
+       }
++      
+       if (processunit(&have, havestr,"",NOPOINT))
+ 	 exit(1);
+       if (!wantstr){
+@@ -2356,11 +2359,4 @@
+ crude example to convert lines in a file 'feet' from ft to m might be:
+ */
+ 
+-#if 0
+-
+-    "sed 's/.*/& ft\"
+-    "m/' feet|units -q|sed 's/^[[:space:]]*\* //"
+-    "/^[[:space:]]*\//d'"
+-
+-#endif
+-
++#endif /* #ifdef DEBUG_UNITS */
+diff -Nru units-1.80.orig/units.dat units-1.80/units.dat
+--- units-1.80.orig/units.dat	2002-06-16 09:25:29.000000000 -0700
++++ units-1.80/units.dat	2011-06-21 11:44:41.982264000 -0700
+@@ -1380,6 +1380,7 @@
+                                         #   actual mean distance is slightly
+                                         #   larger because the earth's mass is
+                                         #   not negligible.  
++au			astronomicalunit
+ sundist                 1.0000010178 au # mean earth-sun distance
+ moondist                3.844e8 m       # mean earth-moon distance
+ sundist_near            1.471e11 m      # earth-sun distance at perihelion
+@@ -3958,6 +3959,10 @@
+ °R                      degR
+ °                       degree
+ 
++# examples
++#stupid			4.5 K
++#stupider(x) x 4.5 m + 10 m # In 1741 Anders Celsius
++
+ #
+ # Localisation
+ #
+diff -Nru units-1.80.orig/units.h units-1.80/units.h
+--- units-1.80.orig/units.h	2001-03-18 18:32:00.000000000 -0800
++++ units-1.80/units.h	2011-06-21 11:44:41.984263000 -0700
+@@ -90,14 +90,7 @@
+ 
+ extern char *NULLUNIT;
+ 
+-#define MAXSUBUNITS 100		/* Size of internal unit reduction buffer */
+-
+-struct unittype {
+-   char *numerator[MAXSUBUNITS];
+-   char *denominator[MAXSUBUNITS];
+-   double factor;
+-};
+-
++#include "unittype.h"
+ 
+ struct functype {
+   char *param;
+diff -Nru units-1.80.orig/unittype.h units-1.80/unittype.h
+--- units-1.80.orig/unittype.h	1969-12-31 16:00:00.000000000 -0800
++++ units-1.80/unittype.h	2011-06-21 11:44:41.985262000 -0700
+@@ -0,0 +1,14 @@
++#ifndef UNITTYPE_H
++#define UNITTYPE_H
++
++/* separated out unittype for use with CARMA software */
++
++#define MAXSUBUNITS 100		/* Size of internal unit reduction buffer */
++
++struct unittype {
++   char *numerator[MAXSUBUNITS];
++   char *denominator[MAXSUBUNITS];
++   double factor;
++};
++
++#endif

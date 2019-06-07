@@ -1,0 +1,8 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE dag SYSTEM "alarm.dtd" [
+]>
+
+<dag type="alarmoutput">
+	<!-- undefined monitor point - attach to monitor system should fail -->
+	<mp canon="Bogus.Monitor.Point" />
+</dag>

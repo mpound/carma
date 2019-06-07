@@ -1,0 +1,252 @@
+!	Miriad style   oct 1989
+!	TEMPLATE FOR THE COMMON BLOCKS OF THE HAT CREEK INTERFEROMETER
+!	USED BY THE STARTUP PROGRAM TO INITIALIZE THE COMMON
+!	RECORD IS:  name(subscripts/datatype) /value/ [class] !comment
+!	datatypes are I=integer*4 R=real*4  D=real*8
+!	classes are a=one per antenna  b=one per baseline
+!		P=pointing  B=baseline  T=time  I=interferometer
+!		F=frequency R=Correlator receiver D=Display only
+!
+! Revisions 8/18/94 -- jah
+! nants=12  mar 95 wh
+! Added PRESET, PASSFILE, CONFFILE parameters 8/30/95 jah
+MESSAGE(80,7|C) /    /		[D]	!Program specific display lines
+MESLIN(1|I)	/0/		[D]	!Program message line number
+AIRTEMP(1|R)	/0/		[W]	!air temperature [cent]
+ALARMS(8|C)	/ENABLED/	[A]	!Dorm Alarm control
+ALIVE(1|I)	/1/		[C]	!Control heartbeat
+ANT(1|I)	/1/		[C]	!Antenna number
+ANTS(1|I)	/15/		[C]	!Antenna selections
+ANTINUSE(1|I)	/0/		[P]	!Antennas in use (from SETANTS)
+APC(12,9|R)	/0./		[Pa]	!azimuth pointing constants
+APCTV(12,9|R)	/0./		[Pa]	!azimuth pointing constants for TVs
+ASTERISK(1|I)	/1022/		[P]	!translation of ants=* (ant1=2,etc) 
+ATTEN(12|I)	/0/		[C]	!IF attenuator settings (dB)
+AVERR(12|R)	/0./		[Pa]	!Average of tracking error
+AXISNEW(12,2|R)	/0./		[Pa]	!new az/el steps
+AXISOLD(12,2|R)	/0./		[Pa]	!old az/el steps
+AXISERR(12,2|R)	/0./		[Pa]	!error term in servo  (arc sec)
+AXISAVE(12,2|R)	/0./		[Pa]	!ave axis error since axisnum=0(arc sec)
+AXISRMS(12,2|R)	/0./		[Pa]	!rms axis error since axisnum=0(arc sec)
+AXISNUM(1|I)	/0/		[Pa]	!num of points for axisrms
+AXISIN(12,2|D)	/0./		[Pa]	!input readings (average of 10)
+AXISVEL(12,2|R)	/0./		[Pa]	!velocities to axes (hardware depend)
+AZCOP(1|R)	/0./		[P]	!
+AZIM(12|D)	/0./		[Pa]	!Azimuth
+AZIMTRUE(12|D)	/0./		[Pa]	!Azimuth after N/S
+ANTMISS(12|D)	/0./		[Ba]	!antenna axis misalignment (ns)
+ANTPOS(12,3|D)	/0./		[Ba]	!antenna coordinate
+ATLIMIT(1|I)	/0/		[P]	!limit flags
+BAND(1|C)	/B/		[R]	!observing band 1..4
+BEEPS(1|I)	/0/		[D]	!number of beeps for display
+BIRDIE(12,20|R)	/0./		[F]	!Frequencies of birdies [MHz]
+CABYN(1|C)	/Y/		[B]	!Measure cable length if Y
+CABLE(12|D)	/0./		[Ba]	!IF cable length (ns)
+CABN(12|I)	/0/		[B]	!number of current CABLP
+CABLP(5,12|D)	/0/		[B]	!database of CABPHASEs
+CABTIME(12|I)	/0/		[B]	!ticks of last good CABPHASE
+CABSIGMA(12|D)	/0/		[B]	!sigma of CABPHASE
+CABPHASE(12|D)	/0./		[Ba]	!linelength phase at 1200MHz (turns)
+CALBAND(1|C)  /B/             [R]     !calwheel band (a,b,c,d,e)
+CAPLCAL(1|C)	/N/		[C]	!Whether to apply cal to spectrum
+CORBITS(1|I)	/2/		[C]	!Correlator number of bits 1 or 2
+mode/bw
+CORBW(4|R)	/~/		[C]	!Correlator bandwidths
+	/25.,  25., 25., 25./
+CORDIAG(1|I)	/0/		[C]	!Diagnostic level for correlator msgs.
+CORF(4|R)	/~/		[C]	!Correlator frequencies from set_synth
+	/100., 200., 300., 400./
+CORFIN(4|R)	/100./		[C]	!CORFS input from Coraset -->set_synth
+CORMODE(1|I)	/1/		[C]	!Correlator mode
+COROPT(1|I)	/0/		[C]	!Correlator option flag
+CORSHIFT(2|R)	/~/		[C]	!Correlator shift rate
+	/50., 50./
+CORSPEC(16|I)   /~/		[C]	!Correlator window-write selector
+	/1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1/
+C3ATTEN(12|I)	/0/		[C]	!New Correlator 
+C3NSPECT(1|I)	/0/		[C]	!New Correlator 
+C3NCHAN(1|I)	/0/		[C]	!New Correlator 
+C3NSCHAN(8|I)	/0/		[C]	!New Correlator 
+C3MPX(8|I)	/0/		[C]	!New Correlator 
+C3SAMP(8|I)	/0/		[C]	!New Correlator 
+C3OPT(8|I)	/0/		[C]	!New Correlator 
+C3BITS(8|I)	/0/		[C]	!New Correlator 
+C3MODE(2|I)	/0/		[C]	!New Correlator 
+COSLAT(12|D)	/.75679/	[Pa]	!Cos(latitude)
+CONMESS(4|C)	/    /		[I]	!Controller control word
+CONFFILE(80|C)	/ /		[C]	!Name of cache file for correlator setup
+CPASSCAL(1|C)	/Y/		[C]	!Whether to apply passband calibration
+CRESET(1|C)	/Y/		[C]	!Whether to do full correlator setup
+DAZIM(12|D)	/0./		[Pa]	!Azimuth addon (arcmin)
+DAZIMREC(12|D)	/~/		[R]	!Horn azimuth offsets (arcmin)
+	/0., 0., 0., -1.9098, -1.9098, -1.9098, -1.9098, -1.9098, -1.9098/
+DAZIMTV(12|D)	/0./		[R]	!TV camera offset (arcmin)
+DAZIMLAS(12|D)	/0./		[P]	!Last correction by spoint
+DDOT(1|D)	/0./		[I]	!derivative of declenation
+DEC0(1|D)	/0./		[Sa]	!Declenation interpolation
+DEC1(1|D)	/0./		[Sa]	!Declenation interpolation
+DEC(1|D)	/0./		[S]	!declenation in catalog (rad)
+DEREGDIAG(1|I)	/0/		[R]	!dewar regulation diagnostic
+DEWPOINT(1|R)	/0./		[W]	!dewpoint (cent)
+DRA(1|D)	/0./		[S]	!delta RA (arcminutes)
+DDEC(1|D)	/0./		[S]	!delta DEC (arcminutes)
+DELAY(12|D)	/0./		[Ia]	!interferometer delay value (ns)
+DELAY0(12|R)	/~/		[Ba]	!Delay line offset (ns)
+	/500., 500., 500., 500., 500., 500., 500., 500., 500./
+DELAYTIM(12,19|R) /0./		[I]	!Seconds_in for bits of delay+int time 
+DWIRES(12|I)	/0/		[I]	!which delay wires are in at start
+DELEV(12|D)	/0./		[Pa]	!Elevation addon (arcmin)
+DELEVREC(12|D)	/~/		[R]	!Elevation offset of horns
+	/0., 0., 0., 7.126, 7.126, 7.126, 7.126, 7.126, 7.126/
+DELEVTV(12|D)	/0./		[R]	!TV camera offset (arcmin)
+DELEVLAS(12|D)	/0./		[P]	!Last correction by spoint
+DELLONG(12|R)	/0./		[Pa]	!Delta longitude from station 9
+DIABRA(1|D)	/0./		[I]	!dianural aberation RA
+DIABDC(1|D)	/0./		[I]	!dianural aberation DEC
+DSBTSYS(12|R)	/0./		[Ca]	!dsb system temp measured with totpwr detectors
+DYDIAG(1|I)	/0/		[I]	!delay diagnostic level  0-9
+ELCOP(1|R)	/0./		[P]	!
+ELEV(12|D)	/0./		[Pa]	!Elevation
+ELEVTRUE(12|D)	/0./		[Pa]	!Elevation after N/S
+EPC(12,8|R)	/0./		[Pa]	!elevation pointing constants 
+EPCTV(12,8|R)	/0./		[Pa]	!elevation pointing constants for TVs
+FDOP(1|D)	/0./		[F]	!doppler frequency (GHz)
+FOF1(12|D)	/0./		[Ia]	!interferometer foff 1 value
+FOF2(12|D)	/0./		[Ia]	!interferometer foff 2 value
+FOCUS(12|R)	/0./		[A]	!subreflector in/out
+FREQ(1|D)	/0./		[F]	!observing frequency (GHz)
+FREQIF(1|D)	/0./		[F]	!IF frequency
+HA(1|D)		/0./		[Pa]	!Apparent Hour Angle
+HAN(1|C)	/ /		[C]	!Hanning smoothing (Y|N)
+HDOT(1|D)	/0./		[I]	!derivative of hour angle
+CABDIAG(1|I)	/0/		[G]	!Diagnostic level for cable subroutines
+CALDIAG(1|I)	/0/		[G]	!Diagnostic level for calibrations
+IFAMP(1|I)	/123/		[C]	!IF amplifier switch
+IFFREQ(1|D)	/0./		[F]	!IF freq from setfreq
+IF2(1|R)	/0./		[F]	!Second IF frequency (MHz)
+IFSWS(1|I)	/123/		[C]	!IF switch
+INTTIME(1|R)	/0./		[D]	!integration time (secs)
+INDOP(1|I)	/0/		[F]	!
+ISCHAN(16|I)	/0/		[C]	!start channel for spectral window
+ITRACK(12|I)	/0/		[Pa]	!Antenna tracking flag
+IWBDIAG(1|I)	/0/		[G]	!diagnostic level for wbpkg.for
+JYPERK(1|R)	/140/		[I]	!Variable for miriad
+JYPERKA(12|R)	/~/		[I]	!Antenna based jy per k
+ /15.0, 12.25, 13.42, 12.04, 11.62, 13.23, 12.25, 12.25, 12.65, 1., 1., 1./
+LCAB(12|I)	/0/		[Ia]	!previous cable phase (0-255)
+LCABQ(12|I)	/0/		[Ia]	!previous quadrature cab phase (0-255)
+LEVS(8,12|R)	/0/		[C]	!Correlator voltage levels last read
+LIMAZ(2|D)	/~/		[P]	!Azimuth limits (deg) [-255,265] (-255,211 remote)(-130,220 sz)
+	/-255., 265./			
+LIMEL(2|D)	/~/		[P]	!Elevation limits (deg)	
+	/5., 148./
+LOADDATE(12|C)	/   /		[G]	!date of last LOADCOM
+LO1(1|D)	/100./		[F]	!L O frequency
+LO2(1|D)	/1.27/		[F]	!second L O frequency
+LOCKANT(12|I)	/0/		[Pa]	!lock antenna
+LOCKCOR(1|I)	/0/		[C]	!lock correlator
+LOCKFREQ(1|I)	/0/		[F]	!lock frequency changes
+LOCKDISP(1|I)	/0/		[D]	!lock the DISPLAY.SNAP file (display)
+LOCKRCVR(12|I)	/0/		[Pa]	!lock receiver tuning
+LOCKSRC(1|I)	/0/		[P]	!lock ephemeris lookup returning vals
+LOGALL(1|I)	/0/		[D]	!Enables global logging if not 0
+MAXANTS(1|I)	/6/		[C]	!antennas cabled into the correlator
+MAXCORR(2|R)	/0.0/		[C]	!Max poss. correl, test for lag outliers
+MESSEQ(1|I)	/0/		[D]	!Message sequence number for display
+MHARM(1|I)	/0/		[F]	!8-89GHZ harmonic number
+MUX(16|I)	/0/		[C]	!Correlator MUX codes
+NANTS(1|I)	/7/		[B]	!Number of antennas
+NCHAN(1|I)	/0/		[C]	!Number of channels
+NHARM(1|I)	/0/		[F]	!.5-8GHz harmonic number
+NOWAIT(1|I)	/0/		[I]	!override waiting for: 1-slew 2-ifsw 4-flap 8-locks
+NSCHAN(16|I)	/0/		[C]	!number of chans in spec window
+NSPECT(1|I)	/0/		[C]	!number of spectral windows
+OBSDEC(1|D)	/0./		[P]	!Apparent Declination
+OBSRA(1|D)	/0./		[P]	!Apparent Right Ascension
+OBSERVER(12|C)	/   /		[D]	!OBSERVER NAME
+OBSLINE(24|C)	/   /		[D]	!OBSERVED LINE
+OBSTYPE(12|C)	/   /		[D]	!OBSERVATION TYPE
+OPACITY(16|R)	/0./		[C]	!Atmospheric opacity, 1/airmass units
+OSCFREQ(1|D)    /100./          [F]     !MMosc frequency (GHz)
+PASSFILE(80|C)	/ /		[C]	!Name of passband cache file
+PHASELO1(12|R)	/0./		[Ia]	!LO1 extra phase addon (turns)
+PHASELO2(12|R)	/0./		[Ia]	!LO2 extra phase addon (turns)
+PHASEM2(12|R)	/0./		[Ba]	!LO2 cable phase addon (turns)
+PHASEM1(12|R)	/0./		[Ba]	!LO1 cable phase addon (turns)
+POIDAZ(12|R)	/0/		[Pa]	!Pointing azim addon from cop (arcmin)
+POIDEL(12|R)	/0/		[Pa]	!Pointing elev addon from cop (arcmin)
+PRECIPMM(1|R)	/0./		[W]	!Precip. moisture (mm)
+PRESET(1|C)	/Y/		[C]	!Whether to reobserve passband
+PRESSMB(1|R)	/0./		[W]	!pressure (mbars)
+PROGRAM(64|C)	/    /		[D]	!Current program message
+PROJECT(12|C)	/   /		[p]	!Project name for script
+PSTART(1|I)	/0/		[M]	!Project start time
+PSTOP(1|I)	/0/		[M]	!Project stop time
+RA0(1|D)	/0./		[Sa]	!Right Ascension interpolation
+RA1(1|D)	/0./		[Sa]	!Right Ascension interpolation
+RA(1|D)		/0./		[S]	!RA from catalog (rad)
+REFMHZ(1|D)	/730./		[F]	!ref freq in MHz (synth)
+REFOSC(8|C)	/8662/		[F]	!Synthesizer name 8662 or ?
+RELHUMID(1|R)	/0./		[W]	!Relative humidity (%)
+RESTFREQ(16|D)	/0./		[F]	!Rest frequencies for spectral windows
+RESOFF(2,12|I)	/0/		[P]	!Resolver offsets (1 per axis)
+SDF(16|D)	/0./		[C]	!delta freq per chann for spec windows
+SFREQ(16|D)	/0./		[C]	!start freq for spectral windows
+SHADFLAG(1|D)	/20./		[C]	!flag data where sq(u2+v2)< (ns)
+SHADDISC(1|D)	/10./		[C]	!discard data where sq(u2+v2)< (ns)
+SHOWCOM(150|C)	/ /		[D]	!command for showd  (loaded by show)
+SINLAT(12|D)	/.65736/	[Pa]	!Sin(latitude)
+SLEWFLAG(1|I)	/0/		[P]	!Slew flags
+SOURCE(8|C)	/    /		[S]	!Current source name
+SPCFILE(32|C)	/SPEC/		[C]	!Correlator spectrum output file
+SORCDATA(24|I)	/ /		[P]	!Complete source data structure
+STARDATA(24|I)	/ /		[P]	!2nd source data structure for opt point.
+STANAME(60|C)	/15W 20N 15E /	[Ba]	!station names (e.g., '380N')
+STOPFLAG(1|I)	/0/		[D]	!Stop the observation if ne 0
+STOPTIME(1|I)	/0/		[D]	!Stop the observation if lst>stoptime
+SYSTEMPAV(12|R)  /0./		[Ca]	!System temperature average
+SYSTEMP(16,12|R) /0./		[Ca]	!System temperature OF samplerS
+TAU(12|D)	/0./		[Ia]	!interferometer delay (ns)
+TAUDOT(12|D)	/0./		[Ia]	!interferometer delay derivative(ns)
+TAUDD(12|D)	/0./		[Ia]	!interferometer delay second deriv(ns)
+TELLANT(1|I)	/5/		[D]	!Reference ant for TELL subroutine
+TICKOLD(1|D)	/0/		[X]	!old quadtime for pointing interpolation
+TICKNEW(1|D)	/0/		[X]	!new quadtime for pointing interpolation
+TPOWER(12|R)	/0/		[C]	!Sum of total powers from control
+TPWRAMB(12|R)	/0./		[C]	!Receiver tot power, ambient flaps
+TPWRSKY(12|R)	/0./		[C]	!Receiver tot power, on sky
+TPWRTOK(12|R)	/0./		[C]	!total pwr scale factor, Kelvin/volt
+NTPOWER(1|I)	/0/		[C]	!Number of TPOWERs
+TEMP(12,8|R)	/0./		[Ga]	!Thermister readings
+TRANSAZ(12|D)	/0./		[Pa]	!Transmitter azimuth (degrees)
+TRANSEL(12|D)	/0./		[Pa]	!Transmitter elevation (degrees)
+TREGAMP(12|R)	/0./		[Pa]	!Target temps for HEMT amps
+TREGMXR(12|R)	/0./		[Pa]	!Target temps for SIS mixers
+TREGVANE(1|R)	/0./		[Pa]	!Target temp for vane
+TRIGGER(1|I)	/0/		[P]	!Triggers control to recalulate pos
+TRESET(1|C)	/Y/		[C]	!Force TSYS measurement
+TSYSFILE(80|C)	/ /		[C]	!Tsys  cache file name
+VANEREGDIAG(1|I)	/0/	[Pa]	!controls vanereg
+VSOURCE(1|R)	/0./		[F]	!velocity in center channel (km|s)
+VELDOP(1|R)	/0./		[F]	!doppler velocity (km/s)
+VELTYPE(12|C)	/VELO-LSR/	[S]	!velocity type
+VELAZIM(1|I)	/0/		[P]	!constant velocity to azimuth
+VELELEV(1|I)	/0/		[P]	!constant velocity to elevation
+VREST(1|R)	/0./		[F]	!velocity with respect to rest frame
+VSUN(1|R)	/0./		[F]	!projected velocity of sun
+WATCHME(80,12|C) /    /		[D]	!WATCH error messages
+WALANTS(12,2|I)	/~/		[C]	!walshes for antennas (12x2)
+/ 216, 98, 143, 150, 140, 213, 55, 255, 254, 180, 214, 63,
+  62, 138, 86, 225, 227, 19, 228, 245, 94, 14, 104, 231/
+WBANTS(3|I)	/0/		[C]	!walshes for wide band corr
+WALECHO(12|I)	/~/		[C]	!walshes for echo boxes
+/ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12/
+WFREQ(18|R)	/0./		[C]	!average freq for wide band (GHz)
+WINDDIR(1|R)	/  /		[W]	!Wind direction  (deg)
+WINDMAX(1|R)	/0./		[W]	!Max Wind speed this hour(mph)
+WINDMPH(1|R)	/0./		[W]	!Wind speed  (mph)
+WINDDSD(1|R)	/0./		[W]	!Wind direction SD (deg)
+WSYSTEMP(2,12|R) /0./		[W]	!System Temps from Correl ADC's, aver.
+WWIDTH(18|R)	/0./		[C]	!width for wide band (GHz)
+XFREQ(1|D)	/0./		[F]	!Xband oscillator frequency
+

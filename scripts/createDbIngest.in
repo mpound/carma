@@ -1,0 +1,16 @@
+#!/bin/tcsh
+#
+# create a new /halfsec/dbIngest
+# filesystem must be mounted
+# must be run by root
+#
+if (! -e /halfsec/dbIngest) then
+  echo "creating /halfsec/dbIngest..."
+  mkdir /halfsec/dbIngest
+  chown carmadba.prgrmrs /halfsec/dbIngest
+  echo "running /opt/rt/scripts/makeMPDataDirs as carmadba"
+  su -c "/opt/rt/scripts/makeMPDataDirs /halfsec/dbIngest" carmadba
+  chmod -R 775 /halfsec/dbIngest
+else
+ echo "/halfsec/dbIngest already exists"
+endif

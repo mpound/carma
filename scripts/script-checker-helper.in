@@ -1,0 +1,338 @@
+#!/usr/bin/env python
+#
+# This script safely extracts various information from a CARMA observing
+# script, and runs some checks on it.
+#
+# Various tricks are performed so that a running CARMA RTS system is not
+# required. This is important, since just importing some of the CARMA RTS
+# python code can have bad side effects on a current science observation.
+#
+# DEVELOPERS NOTE:
+# A requirement of this script is that it does not require a running CARMA RTS
+# system to do its work. Please keep it that way when you make changes.
+
+import sys, re, os
+import ast
+import logging
+import optparse
+import subprocess as sp
+
+USER_CATALOG = '/array/rt/catalogs'
+CARMA_INSTALL = os.path.abspath(sys.argv[0] + '/../..')
+
+################################################################################
+# Helper Routines
+################################################################################
+
+def setup_logging(level=logging.INFO, stream=sys.stdout):
+
+	# get the default logger instance
+	logger = logging.getLogger()
+
+	# set the default output level
+	logger.setLevel(level)
+
+	# connect the logger to the requested stream
+	ch = logging.StreamHandler(stream)
+
+	# set the output format
+	#fmt = '%(asctime)s %(levelname)s: %(message)s'
+	fmt = '%(levelname)s: %(message)s'
+	formatter = logging.Formatter(fmt)
+
+	# and hook it all together
+	ch.setFormatter(formatter)
+	logger.addHandler(ch)
+
+# Safely obtain a dictionary with the given name. This means we should never
+# execute any code which has side effects which can effect the running system.
+# It ignores imports and the like.
+#
+# The dictionary is returned as a fully functional python dictionary.
+#
+# @contents: the CARMA observing script contents
+# @dictname: the dictionary name to obtain
+def safe_get_dict(contents, dictname):
+	# dictionaries are always specified like this
+	dictstr = dictname + ' = {'
+	index = contents.find(dictstr)
+	if index == -1:
+		raise RuntimeError('dictionary not found: %s' % dictname)
+
+	# skip the dictionary name, up to the opening brace
+	index += len(dictstr) - 1
+
+	# A hacky parser which takes care of matching braces. Basically
+	# a very stupid way to find an entire dictionary, even when the dictionary
+	# includes dictionaries.
+	thedict = ''
+	openbraces = 0
+
+	while True:
+		c = contents[index]
+		index += 1
+		thedict += c
+
+		if c == '{':
+			openbraces += 1
+
+		if c == '}':
+			openbraces -= 1
+
+		if openbraces <= 0:
+			break
+
+	# Raises: SyntaxError, ValueError
+	try:
+		return ast.literal_eval(thedict)
+	except SyntaxError, e:
+		logging.error('syntax error while parsing dictionary: %s', dictname)
+		logging.error('message: %s', str(e))
+		sys.exit(1)
+	except ValueError, e:
+		logging.error('unable to parse dictionary: %s', dictname)
+		logging.error('message: %s', str(e))
+		sys.exit(1)
+
+# Convert the various CARMA observing script catalog/sources list
+# representations into a python list.
+#
+# Handles things like:
+# string representation) '3c84 elmax=85, flux, 0530+135 t=20'
+# list representation) ['3c84 elmax=85', 'flux', '0530+135 t=20']
+def parse_carma_list(data):
+	# None returns an empty list
+	if type(data) == type(None):
+		return []
+
+	# convert a comma-separated string into a list
+	if type(data) == type('string'):
+		data = data.split(',')
+
+	# handle things like: ['3c84 elmax=85', 'flux', '0530+135 t=20']
+	li = [s.strip() for s in data]
+	li = [s for s in li if len(s) > 0]
+	li = [s.split()[0] for s in li]
+	li = [s for s in li if len(s) > 0]
+	return li
+
+# Common routine to extract information from a CARMA observing script
+#
+# @contents: the CARMA observing script file contents
+# @dictvars: a list of 2-tuples containing (dictname, dictkey) pairs
+#
+# @return: (displayname, value) for each dictionary which is present
+def extract_info_from_dictionaries(contents, dictvars):
+	for dictname, dictkey in dictvars:
+
+		# Extract the dictionary from the source file safely, skipping
+		# dictionaries which are not present.
+		pydict = {}
+		try:
+			pydict = safe_get_dict(contents, dictname)
+		except RuntimeError, e:
+			logging.warn('dictionary not found: %s', dictname)
+			continue
+
+		# Extract the value out of the dictionary, skipping dictionaries
+		# where the key is not present.
+		value = None
+		try:
+			value = pydict[dictkey]
+		except KeyError, e:
+			logging.warn('dictionary "%s" does not contain key "%s"', dictname, dictkey)
+			continue
+
+		displayname = "%s['%s']" % (dictname, dictkey)
+		yield (displayname, value)
+
+################################################################################
+# CatalogInformation - information about user catalogs
+################################################################################
+
+class CatalogInformation(object):
+	def __init__(self, name, catalog):
+		self.name = name
+		self.catalog = get_catalog_path(catalog)
+
+def create_catalog_information(name, catalog):
+	li = []
+	for elem in parse_carma_list(catalog):
+		ci = CatalogInformation(name, catalog)
+		li.append(ci)
+
+	return li
+
+# Return the full path to a user catalog
+def get_catalog_path(catalog):
+	if len(catalog) <= 0:
+		raise ValueError('catalog name is empty')
+
+	if catalog[0] == '/':
+		return catalog
+
+	return os.path.join(USER_CATALOG, catalog)
+
+# Call checkcat to make sure catalogs are valid
+def check_catalog(ci):
+	checkcat = os.path.join(CARMA_INSTALL, 'bin', 'checkcat')
+	cmd = [checkcat, 'catalog=%s' % ci.catalog]
+	cmdstr = ' '.join(['"' + s + '"' for s in cmd])
+
+	try:
+		logging.debug('check catalog: %s', ci.catalog)
+		proc = sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.STDOUT)
+		(stdoutdata, stderrdata) = proc.communicate()
+		if proc.returncode != 0:
+			logging.error('problem in catalog: %s', ci.catalog)
+			logging.error('command: %s', cmdstr)
+			logging.error('messages:')
+			for line in stdoutdata.split('\n'):
+				logging.error(line)
+			sys.exit(1)
+	except OSError, e:
+		logging.error('unable to run command: %s', str(e))
+		logging.error('command: %s', cmdstr)
+		sys.exit(1)
+
+################################################################################
+# SourceInformation - information about astronomical sources
+################################################################################
+
+class SourceInformation(object):
+	def __init__(self, name, source, userCatalogs):
+		self.name = name
+		self.source = source
+		self.userCatalogs = userCatalogs
+
+def create_source_information(name, sources, userCatalogs):
+	skip_sources = ('None', 'flux', 'fluxcal', 'passband', 'bandpass', 'point')
+	li = []
+	for elem in parse_carma_list(sources):
+		if str(elem) in skip_sources:
+			continue
+
+		si = SourceInformation(name, elem, userCatalogs)
+		li.append(si)
+
+	return li
+
+# Call the checksource program to check that a source exists
+def check_source(si):
+	checksource = os.path.join(CARMA_INSTALL, 'bin', 'checksource')
+	cmd = [checksource, 'source=%s' % si.source]
+
+	# Convert user catalogs to comma separated list of full paths,
+	# suitable for the checksource program
+	if si.userCatalogs is not None:
+		userCatalogs = ', '.join(si.userCatalogs)
+		cmd.append('catalog=%s' % userCatalogs)
+
+	cmdstr = ' '.join(['"' + s + '"' for s in cmd])
+
+	try:
+		logging.debug('check source: %s', si.source)
+		proc = sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.STDOUT)
+		(stdoutdata, stderrdata) = proc.communicate()
+		if proc.returncode != 0:
+			logging.error('source missing from catalogs')
+			logging.error('source name: %s', si.source)
+			logging.error('script location: %s', si.name)
+			logging.error('command: %s', cmdstr)
+			logging.error('messages:')
+			for line in stdoutdata.split('\n'):
+				logging.error(line)
+			sys.exit(1)
+	except OSError, e:
+		logging.error('unable to run command: %s', str(e))
+		logging.error('command: %s', cmdstr)
+		sys.exit(1)
+
+################################################################################
+# Main
+################################################################################
+
+def handle_one_file(filename):
+	logging.debug('check file: %s', filename)
+
+	# read the file
+	contents = open(filename).read() + '\n'
+
+	# should always be syntactically correct, but check it anyway
+	try:
+		ast.parse(contents, filename)
+	except Exception, e:
+		logging.error('fatal: %s', str(e))
+		sys.exit(1)
+
+	# A list of (dictionary, key) pairs to check for user catalogs
+	catalog_variables = (
+		('projectInfo', 'sourceCatalog'),
+	)
+
+	infos = []
+	for (displayname, value) in extract_info_from_dictionaries(contents, catalog_variables):
+		infos += create_catalog_information(displayname, value)
+
+	# compile the list of user catalogs and check them at the same time
+	userCatalogs = []
+	for ci in infos:
+		userCatalogs.append(ci.catalog)
+		check_catalog(ci)
+
+	# A list of (dictionary, key) pairs to check for sources
+	source_variables = (
+		('sources', 'target'),
+		('sources', 'phaseCal'),
+		('pointing', 'preferred'),
+		('passband', 'preferred'),
+		('fluxcal', 'preferredPri'),
+		('fluxcal', 'preferredSec'),
+		('sources', 'callist'),
+	)
+
+	infos = []
+	for (displayname, value) in extract_info_from_dictionaries(contents, source_variables):
+		infos += create_source_information(displayname, value, userCatalogs)
+
+	# check the sources
+	for si in infos:
+		check_source(si)
+
+def main():
+	setup_logging()
+
+	# option parser usage text
+	usage = """%prog [options] [filenames...]
+
+	A program to safely perform various checks on CARMA observing scripts
+"""
+	# build the option parser
+	parser = optparse.OptionParser(usage=usage)
+
+	parser.set_defaults(verbose=False)
+	parser.add_option('-v', '--verbose', dest='verbose', action='store_true')
+
+	# if there is nothing in argv, print the help and exit
+	if len(sys.argv) == 1:
+		parser.print_help()
+		sys.exit(0)
+
+	# parse the arguments
+	(opts, args) = parser.parse_args()
+
+	# turn on verbose messages if requested
+	if opts.verbose:
+		logger = logging.getLogger()
+		logger.setLevel(logging.DEBUG)
+
+	logging.debug('OPTS: %s', opts)
+	logging.debug('ARGS: %s', args)
+
+	for filename in args:
+		handle_one_file(filename)
+
+if __name__ == '__main__':
+	main()
+
+# vim: set ts=4 sts=4 sw=4 noet tw=80:

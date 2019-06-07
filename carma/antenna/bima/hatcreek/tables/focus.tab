@@ -1,0 +1,35 @@
+# focus.tab
+# $Id: focus.tab,v 1.2 2006/02/09 22:40:03 teuben Exp $
+# table of antenna focus settings, vs freq
+# these data were taken from script /obs/obs/bin/setfocus on 28oct98
+
+# -- BIMA:
+# 12nov97    jrf  updated all ants using 1997 focus data analysis (for el=50).
+#		  NOTE: only ant 3 has a clear temp dependence; the new ants
+#		        have an elevation dependence = elev(deg)*-0.012
+# 30sep98    jrf  ant 3 resolver offset changed.  reset from 15mm to 0mm best focus
+#
+# 19feb99    jrf  ant 10 - new 50K horn lens; 1 and 3mm focus are now the same
+# -- CARMA:
+#  9feb06    pjt  ant 3 is no more, ant 'A' (10) took it place. ants 1..2 and 3..9 same
+
+# format: GHZ1 GHz2 focus1 focus2 ... focusA  tcoef
+#  where GHZ1 to GHZ2 is the LO frq range for this set of focus values
+#        focus1-9 are the focus values, in mm, for ants 1-9
+#	 tcoef is temp coefficient for ant 3 only: focus = focus3 + tcoef * airtemp(c) 
+  
+# blank lines or lines beginning with # are ignored
+
+# for 1cm receivers (1mm MORE than 3mm values - except for antenna 3):
+# GHz1 GHz2   --1--  --2--  --3--  --4--  --5--  --6--  --7--  --8--  --9--   Tcoef3 
+   20.  50.    7.79  -2.07  20.00  13.90  -2.61  21.10   3.90   5.06   2.99   -0.074
+
+# for 3mm receivers:
+# changed ant 6 from 19.9 to 12.4 (limit, after subreflector replaced 12/10/98)
+# GHz1 GHz2   --1--  --2--  --3--  --4--  --5--  --6--  --7--  --8--  --9--   Tcoef3 
+   50. 120.    6.79  -3.07  19.00  12.90  -3.61  20.10   2.90   4.06   1.99   -0.074
+
+# for 1mm receivers (were 1mm LESS than 3mm values - as of 25feb99 SAME as 3mm settings)
+# GHz1 GHz2   --1--  --2--  --3--  --4--  --5--  --6--  --7--  --8--  --9--   Tcoef3 
+  200. 280.    6.79  -3.07  19.00  12.90  -3.61  20.10   2.90   4.06   1.99   -0.074
+

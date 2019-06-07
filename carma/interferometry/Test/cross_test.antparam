@@ -1,0 +1,33 @@
+# $Id: cross_test.antparam,v 1.6 2006/01/06 19:13:26 mpound Exp $
+# @author Marc Pound
+#
+#---------------------------------------------------------------------------
+#
+# This file is a simple test for the delay engine. It contains 5 antennas
+# in a "cross" pattern, at (0,0), (0,+1 meter), (0, -1 meter), etc.
+#
+# The positions X,Y,Z in are equatorial coordinates (nanosec) as defined
+# by TMS equation 4.15
+#
+# Longitude and latitude are in degrees
+#
+# AxisMisalignment is in nanosec.
+#
+# Delay0 is the delay line offset in nanosec.
+#
+# The DelayEngineTestHarness expects meters, so the X, Y, Z, Axismis, Delay0
+# values will be divided by 3.33564 if nanosec=t on the command
+# line (default).
+#
+#-------------------------------------------------------------------
+#    X           Y           Z         AxisMis           Delay0
+#   (ns)        (ns)        (ns)        (ns)              (ns)
+#-------------------------------------------------------------------
+   0.0         0.0         0.0        0.0000000000  0.0
+ 3335.64       0.0         0.0        0.0000000000  0.0
+   0.0     3335.64         0.0        0.0000000000  0.0
+-3335.64       0.0         0.0        0.0000000000  0.0
+   0.0    -3335.64         0.0        0.0000000000  0.0
+   0.0         0.0      3335.64       0.0000000000  0.0
+   0.0         0.0     -3335.64       0.0000000000  0.0
+ 3335.64   3335.64         0.0        0.0000000000  0.0

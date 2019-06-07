@@ -1,0 +1,425 @@
+\documentclass[preprint]{aastex}
+\begin{document}
+\title{CARMA Logging}
+\author{Marc Pound\\
+Doxygen ICD at http://www.astro.umd.edu/~mpound/carma/loggingAPI.html}
+\slugcomment{Version \today}
+
+
+
+\section{Introduction}
+CARMA Logging is based on the open source project log4cpp.\footnote{
+http://log4cpp.sourceforge.net.  The log4cpp API is at
+http://www.astro.umd.edu/~mpound/carma/log4cpp/html/api.} Log4cpp
+is intended to be a C++ implementation of the Java log4j
+package.\footnote{http://jakarta.apache.org/log4j. A good description
+of how log4j and thus log4cpp is intended to work is at
+http://jakarta.apache.org/log4j/docs/manual.html.  You are strongly
+urged to read this description, since I'm not going to repeat it
+all here. You should also familiarize yourself with syslog(3),
+syslogd(8), and syslog.conf(5).}
+There are three main classes in log4cpp: Categories, Appenders and
+Layouts. These three types of components work together to enable
+logging of messages according to message type and level, and to
+control at runtime (via a configuration file) how these messages
+are formatted and where they are reported.  
+
+Category (now called Logger in log4j) contains the methods the
+developer will call to push a log message through the system.
+These methods have names that indicate the priority level of the
+message passed to them, e.g. {\tt info(const string\& message),
+crit(const string\& message)}.  Priority levels correspond to
+the priorities of syslog(3) as given in Table \ref{t-syslog}.
+The Appender class indicates the output channel for the message,
+e.g. syslog, file, rolling file. A Category may have more than one
+Appender, and Appenders may filter messages based on their priority.
+The Layout class is simply the output format of the message.
+
+\begin{deluxetable}{lll}
+\tablewidth{5.5truein}
+\tablecaption{Syslog Priority Levels\label{t-syslog}}
+\tablehead{
+\colhead{Level} &
+\colhead{Meaning} &
+\colhead{log4cpp::Category method}
+}
+\startdata
+EMERG &   system is unusable              & {\tt emerg(const string\&)}\\ 
+ALERT &   action must be taken immediately& {\tt alert(const string\&)}\\ 
+CRIT  &   critical conditions             & {\tt crit(const string\&)}\\ 
+ERR   &   error conditions                & {\tt error(const string\&)}\\ 
+WARNING & warning conditions              & {\tt warn(const string\&)}\\
+NOTICE  & normal but significant condition& {\tt notice(const string\&)}\\ 
+INFO    & informational                   & {\tt info(const string\&)}\\
+DEBUG   & debug-level messages            & {\tt debug(const string\&)}\\
+\enddata
+\end{deluxetable}
+
+
+\begin{figure}
+\epsscale{0.85}
+\plotone{logfig1.eps}
+\caption{CARMA Logging via syslog. The subsystem process uses an 
+a Category (Logger) instance to pass messages to the syslog daemon on 
+the computer where the database resides. 
+(The RDBMS work package specifies that the RDBMS will have its
+own dedicated computer.) The syslog daemon will
+parcel out the log messages to one or more files on /var/log. A
+separate process (Syslog2DB) reads the log files asynchronously
+and stores them in the database.
+}
+\end{figure}
+
+Categories follow a named hierarchy, or logging space,  that is
+categorized according to some developer-chosen criteria.  A category
+is an ancestor of another category if its name followed by a dot
+is a prefix of the descendant category name. A category is a parent
+of a child logger if there are no ancestors between itself and the
+descendant cateory. For instance, the category named "carma.monitor"
+is child of the category named "carma".  The nice thing is that
+the developer does not have to do anything to create the hierarchy
+other than decide where to put the dot.  The Category constructor
+parses the name and inserts the new category in its proper place
+in the hierarchy.
+
+\section{Design}
+For CARMA Logging, the default output channel will be syslog
+and the default Layout will be carma::services::SyslogLayout, a 
+subclass of {\tt log4cpp::Layout}.  Under normal operation, any CARMA subsystem
+process can instantiate a Logger object to pass it logging messages
+to the syslog daemon (syslogd) on the Array Control Computer (see
+Figure 1). For development purposes, the local syslog daemon may be
+may be used.  The rules in /etc/syslog.conf will instruct
+syslogd how to dispose of the messages.  A separate process,
+Syslog2DB, asynchronously reads the syslog files in /var/log and
+stores them in a database.  This design has a number of advantages:
+
+\begin{enumerate} 
+\item It leverages the mature, robust Unix syslog
+system to handle fundamental logging. 
+
+\item Based on logs for 01--30 January 2003, BIMA generates log 
+messages at an average rate of 10500 per 24 hrs. Let's 
+assume CARMA will triple that (about once every 3 seconds).
+This rate is easily handled by syslog (see section \ref{s-syslogperf}).
+
+\item It does not matter if the RDBMS computer is Solaris or
+Linux; syslog works cross-platform (I tested this).
+
+\item It does not require development of a database logger under
+the log4cpp umbrella.
+
+\item Little new C++ code is needed, and the code that is needed is
+straightforward.
+
+\item A barebones logging system that stops at the syslog level 
+can be operational in short order.  Database can be implemented
+later.
+
+\item Development work can proceed using the syslog facility on 
+the developer's machine. The RDBMS machine is not required.
+
+\item Repeated messages are decimated by the syslog facility,
+before they get into the database.
+
+\end{enumerate}
+For debug work, a Logger that writes to a non-system file on the
+mounted filesystem could also be used.
+
+
+\section{Implementation}
+\subsection{The CARMA Logger}
+The class {\tt carma::services::Logger} has two static methods
+that return Category instances.  The Category class contains the
+needed methods for logging messages at various priorities (see
+Table \ref{t-syslog}).
+
+\begin{itemize}
+
+\item {\tt getSyslogger(const string\& identity, const string\&
+host, const string\& logname)} returns a Category reference with a
+syslog Appender instantiated and attached.  The Category is identified by
+{\tt logname} and the Appender is identified by {\tt identity} and {\tt host}.  
+If the {\tt host} string passed to {\tt getSyslogger} is lexically equal
+(strcmp(3)) to the value returned by gethostbyname(3), the Appender
+will be a {\tt log4cpp::SyslogAppender}, otherwise it will be a {\tt
+log4cpp::RemoteSyslogAppender}.  This is transparent to the caller.
+The parameter {\tt logname} is the hierarchical namespace for the
+logger that indicates the subsystem under which the current
+process is running, e.g., ``carma.monitor''. 
+Output format is defined in carma::services::SyslogLayout.
+
+\item{\tt getFilelogger(const string\& identity, const string\& pathname, const string\& logname)} returns a Category reference with a file Appender
+instantiated and attached.  Output format is defined in carma::services::FileLayout.
+
+\end{itemize}
+
+\noindent The parameter identity corresponds to {\tt ident} in {\tt openlog(3)}
+and pathname corresponds to {\tt pathname} in {\tt open(2)}.
+For either method call, if and only if all of the passed
+parameters are the same as those used in a previous call, a reference
+to the previous Category object is returned if that object still
+exists.  If a previous logname is passed with different identity
+and host/pathname, rather than replace the Appender or add a new
+one, an exception will occur.  The reason for this is that 
+Appenders should be replaced or added
+through appropriate use of the addAppender() and setAdditivity()
+methods of Category. 
+Examples of syslog and file loggers are shown in the Appendix.
+
+An Appender needs a Layout object that tell it how to format the
+output messages.  For CARMA, the output format 
+consists of a timestamp, the calling program, the logname, the priority level,
+the nested diagnostic context\footnote{See ``Patterns for Logging Diagnostic Messages'' by Neil Harrison.\\ 
+http://www.mmarray.org/workinggroups/computing/harrison.pdf} 
+and the message itself.  The class
+{\tt log4cpp::TimeStamp} is not used directly. For file output, 
+it is converted to a timestamp derived from {\tt carma::util::Time} class. 
+For syslog output, we will rely on the timestamp applied by syslog
+when the message is received. The reason for this is that if we
+include a timestamp as part of each message going to syslog, 
+duplicate messages are no longer identical.  Therefore they will
+not be decimated by syslog.  The timestamp applied by syslog has
+the format MMM DD hh:mm::ss and is not configurable. However, 1 second
+should be enough precision for most of our applications and any latency
+between send and recieve should be minimal. If necessary,
+the developer can always insert a additional timestamp into the message at
+log method call point.  
+
+The nested diagnostic context is a way to distinguish similar log
+output from different sources. For instance, each CARMA antenna
+may be running an instance of a particular program.  This program
+might have the same identity and logname regardless of where it
+is running. Through proper use the NDC, the exact antenna from
+which a log message originates may be placed within the message
+(see example code).  In the log4cpp package, it is implemented
+({\tt log4cpp::NDC}) as a simple stack in which the developer
+pushes or pops messages.  Since the NDC is a stack, the developer
+can push and pop at specific critical locations in the code for a
+more detailed diagnostic context.
+
+The exact format for the CARMA Layouts will be defined in a configuration file
+(a feature supported by log4cpp).  The configuration file can define
+multiple layout styles tuned to different Appenders and Categories.
+For instance, carma.monitor.* loggers could have a different layout
+than carma.correlator.* loggers.  We may not use this feature,
+but it is nice to have available.  Use of a configuration files
+also allows reconfiguration without recompilation.
+
+
+\subsection{Syslog configuration}
+
+The  /etc/syslog.conf  file is the  main configuration file for the 
+syslog daemon which logs system messages on *nix systems.  
+This file specifies rules for logging.  Each line in syslog.conf
+contains a rule and an action for that rule.  The rule is
+made up of a facility and priority indicator. Take, for example, the
+lines
+
+\begin{verbatim}
+#              RULE                             ACTION
+              kern.*                       /var/adm/kernel
+              kern.crit                    @finlandia
+              kern.info;kern.!err          /var/adm/kernel-info
+\end{verbatim}
+
+
+The first line means all kernel messages get written to
+/var/adm/kernel, the second means all kernel messages of priority
+CRITICAL and higher get forwarded to remote host finlandia, and the
+third means save all kernel messages that come  with  priorities
+from  INFO  up  to  WARNING   in   the   file /var/adm/kernel-info.
+In addition to the standard facilities (kern, mail, cron, user,
+etc), syslog.conf provides 8 facilities local0 through local7
+for administrator-defined use. Thus syslog.conf is very flexible,
+and one can log almost anything at any level of detail.  
+
+CARMA Logging may use one or more of the local3-local7 facilities 
+(we should leave local0 through local2 for other admin purposes).
+Messages will be filtered to files on /carma/var, so as not
+to pollute the system /var directory.
+In the example syslog.conf below, messages are separated out from
+major subsystems. An alternative is to write everything to one file
+and let the database sort it out. I view this as undesirable because
+it reduces the efficacy of duplicate message decimation by increasing the
+chance of message interleaving and because syslog performance is said
+to suffer when the log file gets large.  However, if we are operating
+without the database, a single file may be more attractive to
+see the behavior of the whole system rather than individual
+subsystems.  Another alternative is to
+split the logs up by priority level, e.g. all debug messages regardless
+of origin goes into one file, all infos in another, etc.
+
+\begin{verbatim}
+
+#----------------------------------------------------------------
+# $Id: carmalogging.tex,v 1.1 2005/01/28 21:01:04 mpound Exp $ 
+# Proposed /etc/syslog.conf entries for CARMA Logging System.
+# These are in addition to the default system syslog.conf
+# entries.  Use "-" preceding file names to omit sync'ing after
+# every write to it.
+#----------------------------------------------------------------
+
+# Everybody gets emergency messages (via wall)
+*.=emerg				*
+
+# local3 Catch-all for carma messages not sent to a subsystem log.
+local3.!=debug 				/carma/var/log/carma.log
+local3.=debug				/carma/var/log/carma.debug
+
+# These are just examples; correct subsystem choices will become apparent
+# as we use the system.
+
+# local4 monitor system
+local4.!=debug                          /carma/var/log/carma.monitor
+local4.debug                            /carma/var/log/carma.monitor.debug
+
+# local5 correlator 
+local5.!=debug                          /carma/var/log/carma.correlator
+local5.debug                            /carma/var/log/carma.correlator.debug
+
+# local6 antenna
+local6.!=debug                          /carma/var/log/carma.antenna
+local6.debug                            /carma/var/log/carma.antenna.debug
+
+# local7 loberotator
+local7.!=debug                          /carma/var/log/carma.loberotator
+local7.debug                            /carma/var/log/carma.loberotator.debug
+
+\end{verbatim}
+
+There will be a single syslog daemon that will run on the default
+port 514 and with log device /dev/log.  It is not possible to run
+two instances of syslogd. Listening to multiple ports simultaneously
+(via the {\tt -a} option) does not buy us anything since filtering
+messages based on input log device is not possible.  Furthermore,
+based on performance below, there does not seem to be any need for
+additional log devices.  Therefore, in practice, unless a developer
+has privilege to change /etc/syslog.conf, file output should be
+preferred during development and testing, so as not to pollute the
+system logs.
+
+\subsection{Syslog Performance\label{s-syslogperf}}
+Since syslog uses UDP packets, there is a possibility that messages will
+be dropped if the volume gets too high. To answer the question of whether 
+syslog could handle the expected
+message volume (0.33 messages/second), I ran the following test on my 
+laptop (1GHz CPU, 512MB RAM).
+I wrote messages at given intervals to /var/log/messages via logger(1) and
+timed the performance with /usr/bin/time. 
+The results are shown in 
+Table \ref{t-syslogperf}.  At the expected message volume, the CPU usage 
+is 1\% (or less). At 10 times the expected message volume, the CPU usage
+is 7\%.  Syslog dropped no messages, even with the test running flat out 
+(77 messages per second). 
+I ran the test both sending identical messages each time, so that syslog had
+to decimate them, and different messages.  
+There was no performance change.
+There was also no change regardless of whether or not
+/var/log/messages was synchronized (fsync) after each write 
+(using minus sign in /etc/syslog.conf).  
+I also ran the test with an
+increased system load  (MIRIAD invert, load average of 1.3).  The only
+performance change was that my script slowed down, so the highest message volume
+was only 13 per second.  
+
+The database computer will be at least as fast as the ACC, i.e. 2-3 times
+faster than the test laptop.  So CPU usage should not be an issue unless
+we are getting message volumes of more than $\sim$30 messages per second.
+If we find we are losing messages, there is a well-developed open source 
+syslog replacement called syslog-ng which uses TCP\footnote{Syslog-ng 
+is extremely powerful, allowing filtering based on message content in addition to the usual facilty filtering. We may want to consider using it in any case. See
+http://www.balabit.com/products/syslog\_ng.}.
+But I submit that if we are getting 30 messages per second, we have
+bigger problems.
+
+It has been said that syslog performance suffers when log
+files get too large. But I have not found any information on how 
+large is too large, nor have I done a local test.  Setting up /etc/syslog.conf
+to send different messages classes to separate files as well as judicious use
+of logrotate(8) should ameliorate this potential problem.
+
+\begin{deluxetable}{cccccc}
+\tablewidth{5.1truein}
+\tablecaption{Syslog Performance\label{t-syslogperf}}
+\tablehead{
+\colhead{Volume} &
+\multicolumn{3}{c}{Reported Usage (s)} &
+\colhead{CPU} &
+\colhead{Dropped Messages} \\
+\colhead{ (messages/s)} &
+\colhead{ User } &
+\colhead{ System} &
+\colhead{ Elapsed} &
+\colhead{ (\%)}  &
+\colhead{ } 
+}
+\startdata
+0.33 & 0.01 & 0.01 & 3.0 & 1 & 0 \\
+3 & 0.08 & 0.12 & 3.0 & 7 & 0 \\
+10 & 0.08 & 0.13 & 1.0 & 20 & 0 \\
+77 & 0.50 & 0.81 & 1.4 & 96 & 0 \\
+\enddata
+\tablecomments{Tests were done on a Dell Inspiron 8000, 512MB RAM, 1 GHZ CPU.}
+\end{deluxetable}
+
+
+\subsection{Database Writer}
+
+Syslog2DB will be a daemon running on the database computer.
+On startup it will read /etc/syslog.conf to discover which file(s)
+it should be monitoring.  These can be monitored by blocked reads in a
+multithread environment, or it can spawn multiple copies of itself
+similar to httpd daemons.  The database table will be simple,
+with the following columns: Timestamp, Priority, Caller, Logname,
+NDC, Message.  These should be sufficient for system diagnosis.
+
+Syslog2DB will use the ODBC API to the database; it will only
+store having no need to fetch. Implementation details depend on 
+which database we use.  For instance, MySql and Postgres each have 
+their own ODBC libraries/frontends.  For that reason, full testing
+and implemenation cannot proceed until the RDBMS package has
+undergone design review.
+
+Finally, I note an alternative to Syslog2DB:  direct storage into
+the database from /etc/syslog.conf.  Once the database is fully
+operational, we should consider this option, as it eliminates an
+extra link in the software chain.  If we use syslog-ng, explicit
+recipes for both MySQL and PostGres are posted on the syslog-ng
+website.  Another open-source syslog replacement is {\tt msyslog},
+http://msyslog.sourceforge.net, with built-in MySQL and PostGres
+support.
+
+
+\appendix
+\clearpage
+\section{Example Usage}
+\subsection{Logging to Syslog}
+\input Log2Syslog.cc
+
+\clearpage
+\subsection{Example Syslog Output}
+
+I've wrapped the lines to make them fit on the page.  The individual
+tokens are wrapped in curly brackets to make them easy to parse
+by Syslog2DB.
+
+\noindent
+{\tt
+Mar 11 11:23:58 lupus Antenna Calibrator Control:  \{INFO\} \{carma.antenna.control\}\\
+\hspace*{0.25in} \{whoami: BIMA Antenna 4\} \{This is some info\} \\
+Mar 11 11:23:58 lupus Antenna Calibrator Control:  \{WARN\} \{carma.antenna.control\}\\
+\hspace*{0.25in} \{whoami: BIMA Antenna 4\} \{You are surrounded by twisty little passages, all alike\} 
+Mar 11 11:23:58 lupus last message repeated 20 times\\
+Mar 11 11:23:58 lupus Antenna Calibrator Control:  \{WARN\} \{carma.antenna.control\}\\
+\hspace*{0.25in} \{whoami: BIMA Antenna 4\} \{I'll be gone 500 miles when the day is done.\}\\ 
+Mar 11 11:23:59 lupus Antenna Calibrator Control:  \{EMERG\} \{carma.antenna.control\}\\
+\hspace*{0.25in} \{whoami: BIMA Antenna 4\} \{Abandon ship!\} 
+}
+
+\clearpage
+\subsection{Logging to a File}
+\input Log2File.cc
+
+
+\end{document}

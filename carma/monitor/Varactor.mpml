@@ -1,0 +1,211 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Varactor-Tuned Gunn PLL monitor point definitions.                      -->
+<!-- Author: Andrew Beard                                                    -->
+<!-- $Id: Varactor.mpml,v 1.8 2011/09/26 17:48:22 iws Exp $                                                                  -->
+
+<Common scope="global" author="Andrew Beard">
+
+    <Container name="VaractorModule" >
+        <description>
+            The varactor module controls a 38 GHz varactor-tuned Gunn oscillator
+            for the centimeter-wave receivers.  The varactor voltage is varied
+            to maintain phase lock between a 50MHz reference and the phaselock
+            IF obtained from harmonic mixing of the gunn output with a 12GHz
+            reference.
+        </description>
+
+        <MonitorPoint name="lockStatus" type="enum">
+            <shortName>Phase Lock</shortName>
+            <longName>Phase Lock Status</longName>
+            <description>Phase lock status.</description>
+            <enum name="UNLOCKED"/> <!-- 0x00 -->
+            <enum name="LOCKED"/>   <!-- 0x01 -->
+            <errHi>UNLOCKED</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="refStatus" type="enum">
+            <shortName>Reference</shortName>
+            <longName>Reference Status</longName>
+            <description>Monitors the 50MHz reference into the PLL module.</description>
+            <enum name="LEVEL_LOW"/>
+            <enum name="LEVEL_OK"/>
+            <errHi>LEVEL_LOW</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="commandedFreq" type="float">
+            <shortName>Commanded Freq</shortName>
+            <longName>Commanded Frequency</longName>
+            <description>
+                Dummy LO frequency sent down by the control system.
+            </description>
+            <units>GHz</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="gunnCurrent" type="float">
+            <shortName>Gunn Current</shortName>
+            <longName>Gunn Current</longName>
+            <description>Gunn Current</description>
+            <units>mA</units>
+            <precision>0</precision>
+        </MonitorPoint>
+
+        <MonitorPoint name="loopGainResistance" type="int">
+            <shortName>Loop Gain</shortName>
+            <longName>Loop Gain Resistance</longName>
+            <description>
+                Resistance in feedback loop for setting PLL gain.
+            </description>
+            <units>ohm</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="vError" type="float">
+            <shortName>Error Voltage</shortName>
+            <longName>Error Voltage</longName>
+            <description>Error Voltage</description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="ifLevel" type="float">
+            <shortName>IF AGC Level</shortName>
+            <longName>IF AGC Level Voltage</longName>
+            <description>IF AGC Level Voltage</description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="noiseMeter" type="float">
+            <shortName>Phase Noise</shortName>
+            <longName>Phase Noise Voltage</longName>
+            <description>Phase noise meter voltage.</description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="gunnEnabled" type="bool">
+            <shortName>Gunn Enabled</shortName>
+            <longName>Gunn Enabled</longName>
+            <description>Gunn on if true.</description>
+            <units></units>
+        </MonitorPoint>
+
+        <MonitorPoint name="sweepEnabled" type="bool">
+            <shortName>Sweep Enabled</shortName>
+            <longName>Sweep Enabled</longName>
+            <description>Frequency sweep enabled if true.</description>
+        </MonitorPoint>
+
+        <MonitorPoint name="ifPortEnabled" type="bool">
+            <shortName>IF Enabled</shortName>
+            <longName>IF Port Enabled</longName>
+            <description>
+                Flags if the IF monitor port on the module is turned on or off.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="dataValid" type="bool">
+            <shortName>Data Valid</shortName>
+            <longName>Data Valid</longName>
+            <description>
+                Flags if state of module was consistent with good visibility
+                data during last blanking period.
+            </description>
+            <errHi>false</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="temperature" type="float">
+            <shortName>Temperature</shortName>
+            <longName>Module Temperature</longName>
+            <description>CAN module board temperature</description>
+            <units>C</units>
+            <precision>2</precision>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps24V" type="float">
+            <shortName>+24V</shortName>
+            <longName>Power Supply 24 V</longName>
+            <description>24V Analog Supply Voltage</description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5vDigital" type="float">
+            <shortName>+5V Digital</shortName>
+            <longName>Power Supply 5V Digital</longName>
+            <description>5V Analog Supply Voltage</description>
+            <units>V</units>
+            <warnLo>4.9</warnLo>
+            <warnHi>5.1</warnHi>
+            <errLo>4.8</errLo>
+            <errHi>5.2</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps15vAnalog" type="float">
+            <shortName>+15V PSU</shortName>
+            <longName>Power Supply 15V</longName>
+            <description>15V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>14.0</warnLo>
+            <warnHi>16.0</warnHi>
+            <errLo>13.0</errLo>
+            <errHi>17.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps12vAnalog" type="float">
+            <shortName>+12V Analog</shortName>
+            <longName>Power Supply 12 V Analog</longName>
+            <description>12V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>11.0</warnLo>
+            <warnHi>13.0</warnHi>
+            <errLo>10.0</errLo>
+            <errHi>14.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps6vAnalog" type="float">
+            <shortName>+6V Analog</shortName>
+            <longName>Power Supply 6V Analog</longName>
+            <description>6V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>5.5</warnLo>
+            <warnHi>6.5</warnHi>
+            <errLo>5.0</errLo>
+            <errHi>7.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psNeg15vAnalog" type="float">
+            <shortName>-15V Analog</shortName>
+            <longName>Power Supply Negative 15 V Analog</longName>
+            <description>-15V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>-15.5</warnLo>
+            <warnHi>-14.5</warnHi>
+            <errLo>-16.0</errLo>
+            <errHi>-14.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps9vAnalog" type="float">
+            <shortName>+9V Analog</shortName>
+            <longName>Power Supply 9V Analog</longName>
+            <description>9V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>8.5</warnLo>
+            <warnHi>9.5</warnHi>
+            <errLo>8.0</errLo>
+            <errHi>10.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5vAnalog" type="float">
+            <shortName>+5V Analog</shortName>
+            <longName>Power Supply 5V Analog</longName>
+            <description>5V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>4.9</warnLo>
+            <warnHi>5.1</warnHi>
+            <errLo>4.8</errLo>
+            <errHi>5.2</errHi>
+        </MonitorPoint>
+    </Container>
+</Common>

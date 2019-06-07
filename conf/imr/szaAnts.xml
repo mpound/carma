@@ -1,0 +1,128 @@
+<!-- SZA Antennas 
+  The FSP delay is set to 350msec rather than the nominal 275msec to give
+  headroom in case there is an error on CANbus0. Currently this causes a 
+  transmission on CANbus1, which is unpopulated, resulting in an infinite
+  loop of errors using enough cpu time to delay the publishing of the
+  monitor data.
+-->
+
+<oad hostname="c16.carma.pvt" system="sza">
+    <server name="Sza1FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza1 delay=350" 
+            startup-priority="&monitor;" />
+    <server name="Sza1Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=0 logd=/home/control/szalog logf=c16 host=localhost ignorewraplogic=f" />
+    <server name="RemoteCanSza1" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+    <server name="OTsza1" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza1 awdelay=0.03 emulate=true nice=20" />
+</oad>
+
+<oad hostname="c17.carma.pvt" system="sza">
+    <server name="Sza2FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza2 delay=350" 
+            startup-priority="&monitor;" />
+    <server name="Sza2Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=1 logd=/home/control/szalog logf=c17 host=localhost ignorewraplogic=f" />
+    <server name="RemoteCanSza2" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+    <server name="OTsza2" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza2 awdelay=0.03
+                 emulate=true nice=20" />
+</oad>
+
+<oad hostname="c18.carma.pvt" system="sza">
+    <server name="Sza3FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza3 delay=350" 
+            startup-priority="&monitor;" />
+    <server name="Sza3Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=2 logd=/home/control/szalog logf=c18 host=localhost ignorewraplogic=f" />
+    <server name="RemoteCanSza3" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+    <server name="OTsza3" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza3 awdelay=0.03
+                 emulate=true nice=20" />
+</oad>
+
+<oad hostname="c19.carma.pvt" system="sza">
+    <server name="Sza4FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza4 delay=350" 
+            startup-priority="&monitor;" />
+    <server name="Sza4Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=3 logd=/home/control/szalog logf=c19 host=localhost ignorewraplogic=f" />
+    <server name="RemoteCanSza4" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+    <server name="OTsza4" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza4 awdelay=0.03 emulate=true nice=20" />
+</oad>
+
+<oad hostname="c20.carma.pvt" system="sza">
+    <server name="Sza5FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza5 delay=350"
+            startup-priority="&monitor;" />
+    <server name="Sza5Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=4 logd=/home/control/szalog logf=c20 host=localhost ignorewraplogic=f" />
+    <server name="RemoteCanSza5" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+    <server name="OTsza5" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza5 awdelay=0.03 emulate=true nice=20" />
+</oad>
+
+<oad hostname="c21.carma.pvt" system="sza">
+    <server name="Sza6FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza6 delay=350" 
+            startup-priority="&monitor;" />
+    <server name="Sza6Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=5 logd=/home/control/szalog logf=c21 host=localhost ignorewraplogic=f" />
+    <server name="RemoteCanSza6" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+    <server name="OTsza6" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza6 awdelay=0.03 emulate=true nice=20" />
+</oad>
+<oad hostname="c22.carma.pvt" system="sza">
+    <server name="Sza7FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza7 delay=350" 
+            startup-priority="&monitor;" />
+    <server name="Sza7Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=6 logd=/home/control/szalog logf=c22 host=localhost ignorewraplogic=f" />
+    <server name="RemoteCanSza7" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+    <server name="OTsza7" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza7 awdelay=0.03 emulate=true nice=20" />
+</oad>
+<oad hostname="c23.carma.pvt" system="sza">
+    <server name="Sza8FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza8 delay=350" 
+            startup-priority="&monitor;" />
+    <server name="Sza8Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=7 logd=/home/control/szalog logf=c23 host=localhost ignorewraplogic=f" />
+    <server name="RemoteCanSza8" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+    <server name="OTsza8" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza8 awdelay=0.03 emulate=true nice=20" />
+</oad>
+

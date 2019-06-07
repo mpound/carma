@@ -1,0 +1,24 @@
+#!/bin/tcsh
+
+# run an imr program from command line
+# It will poll the imr server to get the command line arguments for the
+# program
+
+set HELP = 1
+
+if ($#argv == 2) then
+   set HELP = 0
+   set IMR = $1
+   set PGM = $2
+
+   set program = `/opt/rt/bin/imradmin --imr $IMR --get-server-info $PGM | grep Path | awk '{print $2}'`
+   set args = `/opt/rt/bin/imradmin --imr $IMR --get-server-info $PGM | grep Argu | awk '{for(i=2;i<=40;i++)printf "%s ",$i;print ""}'`
+   echo "Running\n$program $args"
+   $program $args
+endif
+
+if ($HELP) then
+   echo "Usage: runSingle <imr server> <program-to-run>"
+   echo "Ex: runSingle corba DataTransfer"
+endif
+

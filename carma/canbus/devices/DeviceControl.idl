@@ -1,0 +1,75 @@
+/** @file
+ * Carma CANbus Device control base interface.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.4 $
+ * $Date: 2011/05/17 16:27:37 $
+ * $Id: DeviceControl.idl,v 1.4 2011/05/17 16:27:37 iws Exp $
+ */
+#ifndef CARMA_CANBUS_DEVICES_DEVICECONTROL_IDL
+#define CARMA_CANBUS_DEVICES_DEVICECONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module canbus {
+module devices {
+
+    /**
+     * Carma CANbus base Device control interface.
+     * This interface defines the base control methods that should be
+     * available to all Carma CANbus devices.  It is intended for use
+     * by any carma::canbus::Device class derivatives which wish to directly
+     * use Corba for control functionality.  A particular user may also be
+     * interested in the XAC variant implementations if the CAN node in
+     * question is based on the XAC microprocessor.
+     */
+    interface DeviceControl {
+
+        /**
+         * Reset the module via CAN reset message.
+         **/
+        void reset() raises (carma::util::UserException);
+
+        /**
+         * Stop fast sampling on channel 1 for any device.
+         * This command is global in that it applies to all devices on the bus
+         */
+        void stopChannelOneFastSampling() raises (carma::util::UserException);
+
+        /**
+         * Stop fast sampling on channel 2 for any device.
+         * This command is global in that it applies to all devices on the bus
+         */
+        void stopChannelTwoFastSampling() raises (carma::util::UserException);
+
+        /**
+         * Start fast sampling data from this node on channel 1
+         * @param fastItem id as described in module API
+         */
+        void startChannelOneFastSampling(in unsigned short fastItem) raises
+            (carma::util::UserException);
+
+        /**
+         * Start fast sampling data from this node on channel 2
+         * @param fastItem id as described in module API
+         */
+        void startChannelTwoFastSampling(in unsigned short fastItem) raises
+            (carma::util::UserException);
+
+        // Debug routine for engineering.
+        /**
+         * Is device ONLINE?
+         * A device is considered ONLINE if it is actively sending monitor
+         * packets on the frame timescale.
+         * @return true if device is ONLINE.
+         */
+        boolean isOnline() raises (carma::util::UserException);
+
+    }; // End DeviceControl interface
+
+}; // end devices module
+}; // end canbus module
+}; // end carma module
+#endif
+

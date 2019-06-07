@@ -1,0 +1,712 @@
+\documentclass[letterpaper,12pt,oneside,pdftex]{article}
+
+%% My Commands
+\newcommand{\myname}{Ira W. Snyder}
+\newcommand{\myemail}{iws@ovro.caltech.edu}
+\newcommand{\mytitle}{Monitor Point Markup Language}
+
+\newcommand{\emaillink}[1]{\href{mailto:#1}{$<$#1$>$}}
+\newcommand{\sourcecode}[1]{
+    % Any parameters can be changed here to get wider tabs, etc.
+    \VerbatimInput[frame=lines,numbers=left,tabsize=4,fontsize=\scriptsize]{#1}
+}
+\newcommand{\plaintext}[1]{
+    \VerbatimInput[frame=lines,tabsize=4,fontsize=\scriptsize]{#1}
+}
+\newcommand{\fullbox}[1]{\fbox{\begin{minipage}{\textwidth}#1\end{minipage}}}
+\newcommand{\shadebox}[1]{\fcolorbox{black}{shade}{\begin{minipage}{\textwidth}#1\end{minipage}}}
+
+\newcommand{\mpml}[1]{\texttt{<#1>}}
+\newcommand{\attr}[1]{\texttt{#1}}
+
+% Packed itemize (decreased spacing between elements)
+\newenvironment{pitemize}{
+\begin{itemize}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{itemize}}
+
+% Packed enumerate (decreased spacing between elements)
+\newenvironment{penumerate}{
+\begin{enumerate}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{enumerate}}
+
+%% Packages to include
+
+%% Font to use
+%\usepackage{pslatex}
+%\usepackage{cmbright}
+%\usepackage{concrete}
+%\usepackage{palatino}
+%\usepackage{ae}
+%\usepackage{pxfonts}
+%\usepackage{txfonts}
+
+% To put verbatim text in boxes
+% NOTE: you will need verbatimbox.sty in the same directory
+% NOTE: if it is not already installed globally
+\usepackage{verbatimbox}
+
+% Colors for use in \shadebox
+\usepackage{color}
+\definecolor{shade}{gray}{0.85}
+
+% Fix spacing with 12pt docs
+\usepackage{exscale}
+
+% Extra spacing options
+%\usepackage{setspace}
+%\singlespacing
+%\onehalfspacing
+%\doublespacing
+
+% Remove space at the beginning of paragraphs
+\usepackage{parskip}
+
+% Set Margins
+\usepackage[left=1in,top=1in,right=1in,nohead,nofoot]{geometry}
+
+% Support for nicer tables
+%\usepackage{booktabs}
+
+% Support for source code listings
+\usepackage{fancyvrb}
+
+% Support for removing all page numbers
+\usepackage{nopageno}
+
+% Support for URLs (unneeded with hyperref)
+%\usepackage{url}
+
+% Support PDF HyperText References
+\usepackage[pdftex,bookmarks,breaklinks=true,%
+            pdftitle={\mytitle},pdfauthor={\myname},%
+            colorlinks]{hyperref}
+
+% Force PDF links to hit the top of an image rather than the caption.
+% This makes it easier for users: they don't need to scroll up to see
+% the image. This MUST come after hyperref.
+\usepackage[all]{hypcap}
+
+
+%% Generate Title Page
+\title{\mytitle}
+\author{\myname\\\emaillink{\myemail}}
+\date{\today}
+
+\begin{document}
+
+% Switch font families
+\sffamily
+
+% Title Page
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+The Monitor Point Markup Language (MPML) is a set of XML tags used to define
+monitor point hierarchies.It functionally serves two purposes: to provide data
+for configuring the monitor point database and to configure automatically
+generated classes interacting with a hierarchy in software. As the single point
+of input for both purposes, it also serves as documentation for monitor point
+data. This document describes how to use the MPML tags to define a hierarchy and
+generate C++ classes for interacting with it. 
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Getting Started}
+
+The easiest way to get started is to look at the annotated example source file
+\texttt{TestSubsystem.mpml}. In a compiled CARMA build tree, you can look at the
+generated output files \texttt{TestSubsystem.h} and \texttt{TestSubsystem.cc}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Generating C++ Code}
+
+The preferred way to generate C++ code is to let the CARMA build system handle
+it for you. It is also sometimes convenient to run the code generator by hand,
+which is described below.
+
+The help output should get you started:
+
+\begin{verbbox}
+iws@build1 ~/devel/carma-cvs/build $ ./scripts/mpmlgen/mpmlgen --help
+usage: Generator.py [options] <filename.mpml>
+
+options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -t, --skip-translation
+                        Do not generate C++ code
+  -v, --verbose         Print verbose messages (give twice for more!)
+  -e, --extensions      Generate extension classes
+  -M, --dependencies    Generate dependency information
+  -o DIR, --output-directory=DIR
+                        Output directory (default is current)
+  -I DIR, --include-directory=DIR
+                        Add an extra include path
+  -L FILE, --database=FILE
+                        Output database-compatible pseudo-MPML
+\end{verbbox}
+\shadebox{\theverbbox}
+
+The default mode of the \texttt{mpmlgen} tool is to generate C++ code in the
+current directory. All other options change this default behavior. Options which
+are not self explanatory are described below.
+
+The \texttt{--skip-translation} option inhibits the generator from writing
+generated C++ code to disk. It will still validate and parse the source
+document.
+
+The \texttt{--verbose} option is used to print some extra information about the
+parsing and code generation process. Using this option a single time will
+provide extra information. Using this option twice will provide debugging
+information.
+
+The \texttt{--extenions} option is used to generate template source files for
+extension classes. This is to be used with extended objects. See section
+\ref{sec:extensions} for more information.
+
+The \texttt{--dependencies} option is used by the GNU Autoconf/Automake build
+system to properly calculate dependencies when an MPML source file is changed.
+You will never need to use this option by hand. Please note that this option is
+additive: like GNU GCC, it is used to calculate dependencies at the same time as
+compilation. This avoids parsing the file twice.
+
+The \texttt{--database} option is used by the CARMA Monitor Point Database
+loader to pre-process the file into a pseudo-MPML format with all common
+reference information removed. If you are working on the database, it may be
+useful to look at the output of this command.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Reusable Types}
+
+When working with generic hardware or software components, you will often find
+it very convenient to use multiple instances of the same C++ object to represent
+the monitor stream for the component. By using the same C++ type, you can write
+generic code once and reuse it multiple times. This includes usage in several
+distinct subsystems, as well as multiple instances within a single subsystem.
+
+A good example of this use case is the CARMA Canbus monitor container. Many
+parts of the array's hardware are controlled via canbus. Therefore, defining a
+common set of monitor points for all canbus hardware makes the system more
+consistent as a whole: once you learn one part, you can apply the knowledge
+system wide.
+
+To make this usage of the monitor system as convenient as possible, the
+\mpml{Common} mechanism has been provided. This generates C++ classes at the
+\texttt{carma::monitor} namespace, and allows these classes to be reused in
+multiple places.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Defining a reusable type (for multiple subsystems)}
+
+This is easy. Create a seperate MPML source file, and make it look something
+like this:
+
+\begin{verbbox}
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global">
+    <Container name="TestCommonContainer">
+        <description>
+            A simple container for use in the MPML handbook examples.
+        </description>
+        <MonitorPoint type="int" name="insideTCC" />
+        <!-- more containers and monitor points go here -->
+    </Container>
+    <MonitorPoint type="int" name="testCommonMP" />
+</Common>
+\end{verbbox}
+\shadebox{\theverbbox}
+
+Please note that you can \emph{only} reference objects at the top-level scope.
+This means that both the \texttt{TestCommonContainer} and \texttt{testCommonMP}
+objects can be referenced. The \texttt{insideTCC} monitor point
+cannot be referenced: it can only be used as part of the container.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Using a reusable type}
+
+This is also quite easy. Wherever you decide to use this file, you must include
+it, and then reference the object you wish to use. Like this:
+
+\begin{verbbox}
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<Subsystem name="Test">
+    <!-- include the TestCommon.mpml source file -->
+    <?common TestCommon.mpml?>
+
+    <!-- create an instance of the TestCommonContainer type -->
+    <CommonContainer ref="TestCommonContainer" />
+
+    <!-- create an instance of the testCommonMP monitor point -->
+    <CommonMonitorPoint ref="testCommonMP" />
+</Subsystem>
+\end{verbbox}
+\shadebox{\theverbbox}
+
+There are additional advanced uses of the \mpml{CommonContainer} and
+\mpml{CommonMonitorPoint} which are described in the reference guide, Section
+\ref{subsec:CommonReference}. Please read it.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Defining a reusable type (single subsystem only)}
+
+This example uses the \mpml{Common scope="local"} tag, described in Section
+\ref{subsec:common-tag}. It generates the reusable C++ classes at subsystem
+scope, meaning they are only useful within this subsystem.
+
+The reason this feature was implemented was to allow several subsystems to have
+reusable objects with the same name. It has not yet been used in the CARMA MPML
+source code.
+
+\begin{verbbox}
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<Subsystem name="Test">
+    <Common scope="local">
+        <Container name="MyLocalContainer">
+            <!-- containers and monitor points here -->
+        </Container>
+    </Common>
+
+    <!-- create two instances of the MyLocalContainer container -->
+    <CommonContainer ref="MyLocalContainer" name="InstanceA" />
+    <CommonContainer ref="MyLocalContainer" name="InstanceB" />
+</Subsystem>
+\end{verbbox}
+\shadebox{\theverbbox}
+
+You can see that the \texttt{MyLocalContainer} object was used several times.
+Please see Section \ref{subsec:CommonReference} for more details on how to use
+the \mpml{CommonContainer} tag.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Extending Automatically Generated C++ Classes}
+\label{sec:extensions}
+
+Sometimes it is very convenient to provide extra methods for users of a
+container or subsystem object. The purpose is to make the object easier to use
+by providing extra convenience methods that are specific to the class.
+
+Please see the \texttt{TestSubsystem.mpml} or \texttt{ControlSubsystem.mpml}
+source files for examples. You will want to look in both the source and build
+trees for the generated files. Extended objects require both generated code
+(part of the build tree) and extension code (part of the source tree). The
+extension code is named with an \texttt{Ext.h} or \texttt{Ext.cc} suffix.
+
+Extension code templates can be generated with the \texttt{mpmlgen -e} option.
+These can then be customized by hand to add any desired functions or member
+variables.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{MPML Reference Guide}
+
+The best source of information about allowed parameters and their results will
+come from reading the DTD and the source code of the MPML code generator itself.
+However, I will attempt to document each element and its purpose below.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{The \mpml{Subsystem} Tag}
+
+This is a top-level tag which is used to describe a subsystem. You should put a
+single subsystem into each MPML source file.
+
+The C++ class describing the subsystem will be generated into the
+\texttt{carma::monitor} namespace. All children classes will be generated into
+the \texttt{carma::monitor::NameSubsystem} namespace.
+
+It can contain all other tags, including:
+
+\begin{pitemize}
+\item \mpml{MonitorPoint}
+\item \mpml{Container}
+\item \mpml{CommonContainer}
+\item \mpml{CommonMonitorPoint}
+\item \mpml{Common scope="local"}
+\item \mpml{description}
+\item \mpml{shortName}
+\item \mpml{longName}
+\end{pitemize}
+
+And supports the following attributes:
+
+\begin{pitemize}
+\item \attr{name}
+\item \attr{priority}
+\item \attr{author}
+\item \attr{count}
+\item \attr{persistent}
+\item \attr{indexName}
+\item \attr{extendFrom="Base"}
+\end{pitemize}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{The \mpml{Common} Tag}
+\label{subsec:common-tag}
+
+This is a top-level tag which is used to describe a set of reusable monitor
+points and containers. Please take special notice of the \attr{scope}\
+attribute, described below.
+
+Children will be generated into C++ classes which can be reused in multiple
+subsystems, as well as other common source files. The generator will produce C++
+classes in the \texttt{carma::monitor} namespace.
+
+It can contain the following tags:
+
+\begin{pitemize}
+\item \mpml{MonitorPoint}
+\item \mpml{Container}
+\item \mpml{CommonContainer}
+\item \mpml{CommonMonitorPoint}
+\end{pitemize}
+
+And supports the following attributes:
+
+\begin{pitemize}
+\item \attr{scope}
+\end{pitemize}
+
+The \attr{scope}\ attribute demands special attention. The two allowed values
+are \texttt{global} and \texttt{local}. When used as a top-level container (the
+most frequent usage), use \texttt{scope="global"}.
+
+The \mpml{Common} tag also supports a special use case by setting the
+\texttt{scope="local"} attribute. This use is \emph{only} allowed directly
+beneath a \mpml{Subsystem} tag. This will cause the MPML generator to create C++
+classes at the Subsystem namespace. These classes can be reused several times
+within the subsystem using the normal mechanisms.
+
+It should also be noted that \mpml{Common scope="local"} classes will override
+\mpml{Common scope="global"} if both have the same name. This follows the usual
+C++ practice of shadowing variables and classes.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{The \mpml{Container} Tag}
+
+A container is a logical grouping of monitor points. It will usually be used to
+describe a collection of monitor points such as those for a single piece of
+hardware.
+
+Each container is a specialization of the
+\texttt{carma::monitor::MonitorContainer} class.
+
+It can contain the following tags:
+
+\begin{pitemize}
+\item \mpml{MonitorPoint}
+\item \mpml{Container}
+\item \mpml{CommonContainer}
+\item \mpml{CommonMonitorPoint}
+\item \mpml{description}
+\item \mpml{shortName}
+\item \mpml{longName}
+\end{pitemize}
+
+And supports the following attributes:
+
+\begin{pitemize}
+\item \attr{name}
+\item \attr{priority}
+\item \attr{count}
+\item \attr{persistent}
+\item \attr{indexName}
+\item \attr{extendFrom="Base"}
+\end{pitemize}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{The \mpml{MonitorPoint} Tag}
+
+A MonitorPoint describes a sensor value. This may come from hardware (such as a
+temperature sensor) or software (such as a processing time in the pipeline).
+
+It can contain the following tags:
+
+\begin{pitemize}
+\item \mpml{description}
+\item \mpml{shortName}
+\item \mpml{longName}
+\item \mpml{units}
+\item \mpml{width}
+\item \mpml{errHi}
+\item \mpml{errLo}
+\item \mpml{warnHi}
+\item \mpml{warnLo}
+\item \mpml{precision}
+\item \mpml{integrate}
+\item \mpml{enum}
+\end{pitemize}
+
+The \mpml{errHi}, \mpml{errLo}, \mpml{warnHi}, and \mpml{warnLo} tags control
+the error thresholds used by the Fault System and RTD displays. They can be
+given multiple times for \mpml{MonitorPoint type="enum"}. This is useful because
+it allows several distinct enumeration values to be error states.
+
+See Section \ref{subsec:enum-tag} for information on the \mpml{enum} tag.
+
+And supports the following attributes:
+
+\begin{pitemize}
+\item \attr{name}
+\item \attr{type}
+\item \attr{priority}
+\item \attr{author}
+\item \attr{count}
+\item \attr{sampling}
+\item \attr{persistent}
+\item \attr{update}
+\item \attr{spectrum}
+\end{pitemize}
+
+The \attr{type} attribute (required) is very special. It defines the underlying
+class to use for the C++ object. These classes come from the
+\texttt{monitorPointSpecializations.h} header file. Valid values are:
+\texttt{char}, \texttt{byte}, \texttt{short}, \texttt{int}, \texttt{bool},
+\texttt{float}, \texttt{double}, \texttt{complex}, \texttt{string},
+\texttt{absTime}, \texttt{serialNo}, and \texttt{enum}.
+
+The \attr{sampling} attribute is used to determine how many samples this monitor
+point shall carry. Most monitor points only carry a single sample, however some
+monitor points may have several readings per 500ms monitor interval. This
+attribute supports such a use case.
+
+The \attr{update} attribute is used to describe how often the monitor point is
+updated. The value is interpreted as the number of 500ms monitor frames. When
+setting this value to any number greater than one, you \emph{must} also set the
+\attr{persistent} attribute to \texttt{true}.
+
+The \attr{spectrum} attribute is used to show that the monitor point is a
+spectrum, rather than the default of a time series. Look at the
+\texttt{MonitorPoint.h} code for more information.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{\mpml{CommonContainer} and \mpml{CommonMonitorPoint}}
+\label{subsec:CommonReference}
+
+These tags are almost exactly identical, except that they are used to reference
+a common Container or MonitorPoint respectively.
+
+All common sources will be checked to make sure that one of them contains the
+referenced object. This includes both local and global (external) commons.
+
+This element supports the following attributes:
+
+\begin{pitemize}
+\item \attr{ref}
+\item \attr{name}
+\item \attr{count}
+\end{pitemize}
+
+The \attr{ref} attribute (required) must contain the name of the object you wish
+to reference. For example, the timestamp monitor point (part of
+\texttt{TimestampCommon.mpml}) is referenced like so:
+
+\begin{verbbox}
+<CommonMonitorPoint ref="timestamp" />
+\end{verbbox}
+\shadebox{\theverbbox}
+
+The \attr{name} attribute (optional) must contain the name as you wish the
+object to show up in the monitor point hierarchy. This can be used to create
+multiple instances of the same common class.
+
+\begin{verbbox}
+<CommonMonitorPoint ref="timestamp" name="timestamp1" />
+<CommonMonitorPoint ref="timestamp" name="timestamp2" />
+\end{verbbox}
+\shadebox{\theverbbox}
+
+The \attr{count} attribute (optional) must contain the number of monitor points
+you wish to be used. This works exactly as the count attribute does on regular
+monitor points. It is provided to give you counted-renamed instance semantics.
+The following example will create the monitor points
+\texttt{X.myTimestamp[1-4]}.
+
+\begin{verbbox}
+<CommonMonitorPoint ref="timestamp" name="myTimestamp" count="4" />
+\end{verbbox}
+\shadebox{\theverbbox}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{The \mpml{enum} Tag}
+\label{subsec:enum-tag}
+
+This tag is only useful within a \mpml{MonitorPoint type="enum"} tag. It
+describes the individual enumeration values that are created for the monitor
+point.
+
+It can contain the following tags:
+
+\begin{pitemize}
+\item \mpml{description}
+\end{pitemize}
+
+And supports the following attributes:
+
+\begin{pitemize}
+\item \attr{name}
+\end{pitemize}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Widely Used Text-Only Elements}
+
+There are many types of elements which only contain text. This text will be
+substituted directly into the C++ code, usually as a \texttt{std::string}. It is
+not parsed in any way.
+
+The names of the elements should describe their use.
+
+\begin{pitemize}
+\item \mpml{description}
+\item \mpml{shortName}
+\item \mpml{longName}
+\item \mpml{errHi}
+\item \mpml{errLo}
+\item \mpml{warnHi}
+\item \mpml{warnLo}
+\item \mpml{units}
+\item \mpml{width}
+\item \mpml{integrate}
+\item \mpml{precision}
+\end{pitemize}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Widely Used Attributes}
+
+There are several attributes which are used for many different MPML elements.
+These are all described together since they have identical uses on each
+different object.
+
+The \attr{name} attribute is used to give a name to a subsystem, container, or
+monitor point. It is used as part of the canonical name and C++ accessor
+functions.
+
+The \attr{priority} attribute is used to set the priority for a subsystem,
+container, or monitor point. When used on a subsystem or container, it applies
+recursively to all objects beneath it in the hierarchy. Acceptable values are:
+\texttt{vital}, \texttt{useful}, \texttt{normal}, \texttt{debug},
+\texttt{verbose}, \texttt{default}, \texttt{dontarchive}.
+
+The \attr{author} attribute is used to set the author for a subsystem or monitor
+point. It is only useful for data description purposes.
+
+The \attr{count} attribute is used to provide array semantics to an object. It
+will create several objects, each with the name \texttt{Name[1-N]}.
+
+The \attr{indexName} attribute is used to change the index variable and accessor
+name in the generated class. The default is to create a variable named
+\texttt{index} and a function \texttt{getIndex()}. It is only useful with the
+\attr{count} attribute set to a number greater than one.
+
+The \attr{persistent} attribute is used to make subsystem, container, or monitor
+point persistent. This means that it will not be marked bad even if it has not
+been updated recently. Valid values are \texttt{true} and \texttt{false}.
+
+The \attr{extendFrom} attribute is used to create extension classes which can be
+modified by the user. See Section \ref{sec:extensions}, which describes how to
+use this attribute.  The only valid value is \texttt{Base}.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Including External Common Source Files}
+
+This is done using XML processing instructions. To include an external source of
+common monitor points (a file beginning with \mpml{Common scope="global"}), use
+the following syntax:
+
+\begin{verbbox}
+<?common Filename.mpml?>
+\end{verbbox}
+\shadebox{\theverbbox}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview of the MPML Generator Code}
+
+This is intended as a very quick guide to hacking the MPML generator code
+itself. It is mostly a braindump by the author, as this documentation is being
+written. When in doubt, please consult the source code.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Cheetah Templates}
+
+The files \texttt{database.tmpl}, \texttt{header.tmpl}, and \texttt{source.tmpl}
+are Cheetah templates. These have placeholders which are filled in using Python
+variables data structures.
+
+It should be fairly simple to read the code once you have an understanding of
+the Cheetah template language. Basically, it is a text substitution language.
+Anything not prefixed with a dollar sign is raw text that will appear in the
+output.
+
+See the Cheetah documentation for more information:\\
+\url{http://cheetahtemplate.sourceforge.net/docs/users_guide_html/users_guide.html}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{MPML Utilities}
+
+The file \texttt{MPMLUtils.py} is the Python source code used for some extra
+utility functions. These are mostly used by the Cheetah templates, but are also
+used in a few other places in the code.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{DTD Validation}
+
+The file \texttt{DTDValidator.py} is the Python source code used for DTD
+validation. This requires the use of the XMLProc XML parser. The Python standard
+library XML functions use the expat parser, which does not support DTD
+validation.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{SAX Internal Representation}
+
+The file \texttt{SAXIR.py} provides the internal representation (IR) as used by
+the XML parser. It also houses the XML parser itself, as well as some other
+classes which are closely related to the XML parser.
+
+The \texttt{MPMLHandler} class is what actually handles parsing an MPML source
+file. This should be familiar to you if you have ever programmed an XML parser
+using the SAX API.
+
+The \texttt{CommonReferenceResolver} class is used to resolve all of the
+\mpml{CommonContainer} and \mpml{CommonMonitorPoint} objects for a single
+instance of the \texttt{MPMLHandler} class. This means parsing all of the
+external common include files, and finding the referenced monitor points
+themselves. Care has been taken to allow circular common inclusions.
+
+The \texttt{MPStorageCounter} class is used to calculate the number of monitor
+points and samples contained within a subsystem. This information is used in the
+generated C++ code.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{The Main Program}
+
+The file \texttt{Generator.py} contains the main program. This includes the
+option parser, as well as the rest of the glue connecting the other pieces
+together.
+
+The \texttt{MPMLRenderer} class is used to actually turn an MPML source file
+into an output file. This includes all types of output: dependency information,
+database pseudo-MPML, and C++ source code.
+
+The \texttt{Generator} class is used to take a file and generate all requested
+output (if any). An instance of this class is created for each input file
+specified.
+
+The \texttt{main()} function is where the option parser is created and invoked.
+Afterwards, the \texttt{Generator} class is invoked as necessary.
+
+\end{document}
+
+% vim: set ts=4 sts=4 sw=4 expandtab nocindent noautoindent textwidth=80:

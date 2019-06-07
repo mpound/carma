@@ -1,0 +1,991 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<! note: if links in this file do not work, the phasemon home direcotry may have been moved.
+try running ~phasemon/html/make_sym_links.csh >
+<HTML>
+<HEAD>
+   <TITLE>Phase Monitor Help</TITLE>
+</HEAD>
+<BODY>
+
+<H1 ALIGN=CENTER><FONT SIZE=+4>The CARMA&nbsp;Atmospheric Phase Monitor</FONT></H1>
+
+<P><IMG SRC="images/mount.jpg" HSPACE=30 HEIGHT=316 WIDTH=227 ALIGN=RIGHT></P>
+
+<UL>
+<LI><A HREF="#Basic Principles">Basic principles</A></LI>
+
+<LI><A HREF="#Satellite">Satellite</A></LI>
+
+<LI><A HREF="#Reflectors and mounts">Reflectors and mounts</A></LI>
+
+<LI><A HREF="#Dish and frontend">Dish and frontend</A></LI>
+
+<LI><A HREF="#In-line amplifiers">In-line amplifier</A></LI>
+
+<LI><A HREF="#RF Cables">RF Cables</A></LI>
+
+<LI><A HREF="#Pit box">Pit box</A></LI>
+
+<LI><A HREF="#AC Power">AC Power</A></LI>
+
+<LI><A HREF="#Electronics Box">Electronics box</A></LI>
+
+<LI><A HREF="#Correlator units">Correlator units</A></LI>
+
+<LI><A HREF="#Amplifiers">Amplifiers</A></LI>
+
+<LI><A HREF="#180 degree phase switch">180<SUP>o</SUP> phase switch</A></LI>
+
+<LI><A HREF="#Trim cables">Trim cables</A></LI>
+
+<LI><A HREF="#Gilbert cells">Gilbert Cells</A></LI>
+
+<LI><A HREF="#Demodulation board">Demodulation board</A></LI>
+
+<LI><A HREF="#A/D unit">A/D unit</A></LI>
+
+<LI><A HREF="#Communication">Communication</A></LI>
+
+<LI><A HREF="#environment computer">environment computer</A></LI>
+
+<LI><A HREF="#phasemon program"><I>carmaPhaseMonitor</I> program</A></LI>
+
+<!--
+<LI><A HREF="#Power spectrum computation">Power spectrum computation</A></LI>
+-->
+
+<LI><A HREF="#WIP routines for plotting data">WIP routines for plotting
+data</A></LI>
+
+<LI><A HREF="#Signal levels">Signal levels</A></LI>
+
+<LI><A HREF="#Known problems / features">Known problems / feature</A></LI>
+
+<LI><A HREF="#Checking the instrument status">Checking the instrument status</A></LI>
+
+<LI><A HREF="trouble.html">Troubleshooting</A></LI>
+</UL>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Basic Principles"></A>Basic Principles</H4>
+
+<P><A HREF="design.eps">Figure 1</A> shows the basic features of the design.
+The signal source is the digital television band broadcast by the DBS-1
+<A HREF="#Satellite">satellite</A>. The power in this band, spanning 12.2
+to 12.7 GHz, is orders of magnitude more than that from the communications
+satellite beacon tones used by previous systems. </P>
+
+<P>The primary goal is to measure the difference in electrical path length
+between two parallel columns through the atmosphere, p<SUB>1</SUB> - p<SUB>2</SUB>.
+These columns are sampled by two flat reflectors, which direct the two
+beams onto a single commercial 18&quot; (50 cm) <A HREF="#Dish and frontend">satellite
+dish</A>. The diplexed signals are then amplified, down-converted to a
+band from 950 to 1450 MHz, <A HREF="#In-line amplifiers">amplified again</A>
+and sent via <A HREF="#Cables">coaxial cable </A>to the <A HREF="#Electronics Box">electronics
+box</A>, located in a <A HREF="#Pit box">pit</A> midway along the 100 m
+baseline. After further <A HREF="#Amplifiers">amplification</A>, the signal
+path is split; there is a delay of 100 m in one arm with respect to the
+other, corresponding to the length of the baseline. The signals in the
+two arms are multiplied together using a pair of <A HREF="#Gilbert cells">Gilbert
+Cell multipliers</A> to obtain both the in-phase and quadrature correlation
+products. A double-balanced mixer in one arm is used to impose a 1 kHz
+<A HREF="#180 degree phase switch">180<SUP>o</SUP> phase switch</A> on
+the signals to help remove the Gilbert Cell DC&nbsp;offset. The switching
+waveform is used to <A HREF="#Demodulation board">demodulate</A> the multiplier
+outputs, and the resulting voltages are time averaged over 1 s and sampled
+at 1 Hz by an <A HREF="#A/D unit">Analog-to-Digital converter</A>. </P>
+
+<P>Signals from both columns 1 and 2 are present in each arm, but there
+is only one combination with zero delay offset at the correlator, namely
+column 1 in the short arm and column 2 in the long arm. The other combinations
+have either 100 or 200 m of relative delay and therefore do not produce
+a correlated output. This technique is possible because the signals are
+broadband, with a coherence length of only 60 cm; monochromatic signals
+have a much longer coherence length and cannot be separated on the basis
+of delay.</P>
+
+<P>The in-phase and quadrature correlation products define a vector, with
+amplitude proportional to the signal power and phase given by </P>
+
+<UL>
+<UL>
+<UL>
+<UL>
+<P>2 * PI * (p<SUB>1</SUB> + p<SUB>3</SUB> - p<SUB>2</SUB>) / LAMBDA.......................................(1)</P>
+</UL>
+</UL>
+</UL>
+</UL>
+
+<P>However, since we wish to measure p<SUB>1</SUB> - p<SUB>2</SUB>, the
+ground path contribution p<SUB>3</SUB> must be removed. This is achieved
+by adding the mirror image of the system shown in Fig. 1, which measures</P>
+
+<UL>
+<UL>
+<UL>
+<UL>
+<P>2 * PI * (p<SUB>2</SUB> + p<SUB>3</SUB> - p<SUB>1</SUB>) / LAMBDA. .....................................(2)</P>
+</UL>
+</UL>
+</UL>
+</UL>
+
+<P>The two interferometers are co-mounted, with an 18&quot; dish, small
+flat and large flat at each end of the baseline, as depicted in <A HREF="mount.jpg">Fig.
+2</A>. Taking the difference between Eqs. (1) and (2) gives the difference
+between the sky path lengths, p<SUB>1</SUB> - p<SUB>2</SUB>; taking the
+sum gives the fluctuation in the ground path, p<SUB>3</SUB>. </P>
+
+<P>An RS485/RS232 <A HREF="#Communication">communication link </A>sends
+the data to a <A HREF="#environment computer">environment&nbsp;computer</A> in the
+main control building, where the <I><A HREF="#phasemon program">phasemon</A></I>
+program is running continuously to acquire, process and save the data.
+A graphical interface to the data products is provided by a series of <A HREF="#WIP routines for plotting data">WIP&nbsp;routines</A>.</P>
+
+<P>Because the signals from the two columns are down-converted together
+and pass through the same amplifiers and cables before the split, any phase
+drifts in these components will be in common and have no effect, alleviating
+the need for thermal stability. The simple design, with minimal components
+and no phase-locked loops or filters results in a low-cost and robust system.
+</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Satellite"></A>Satellite</H4>
+
+<P>There are 3 Hughes Direct Broadcast Satellites at the 101<SUP>o</SUP>
+W longitude slot in the ring of geostationary orbits, separated by 0.2<SUP>o</SUP>.
+DBS-1 is configured with 16 transponders broadcasting 120 W each in Left
+Circular Polarization. The carrier phase of each transponder is modulated
+(using Quadrature Phase Shift Keying) with a bandwidth of approximately
+30 MHz. DBS-2 and DBS-3 broadcast in Right Circular Polarization, together
+delivering 240 W in each of 16 subbands. Complications arise if the signal
+originates from more than one satellite, so the interferometer observes
+the left circular polarization signal from DBS-1, at an azimuth of 133<SUP>o</SUP>
+and elevation 43<SUP>o</SUP>. The Effective Isotropic Radiated Power (EIRP)
+for a location in California is ~53 dBW, roughly 10<SUP>4</SUP> times more
+powerful than the communication satellite beacon tones utilized by <A HREF="http://adsbit.harvard.edu/cgi-bin/nph-iarticle_query?1996PASP..108..441R">Radford,
+Reiland &amp; Shillue (1996)</A>; this corresponds to an energy flux of
+approximately 1.1x 10<SUP>-11 </SUP>W m<SUP>-2</SUP> at Hat Creek. Maps
+of the <A HREF="http://www.TBS-satellite.com/tse/online/prog_dbs_pire.html">EIRP
+for these</A> and other broadcast satellites can be found on the World
+Wide Web. The center frequency of the broadcast band is at 12.45 GHz, with
+a corresponding wavelength of 2.4 cm. In the subsequent reception and processing,
+the signal is treated without regard to its information content.</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Reflectors and mounts"></A>Reflectors and mounts</H4>
+
+<P>The baseline is 98.5 m long, at an azimuth of 43<SUP>o</SUP> with respect
+to magnetic North, perpendicular to the satellite direction. The large
+and small flat reflectors have dimensions of 762 x 610 mm and 762 x 229
+mm, respectively, and can be freely adjusted in both azimuth and elevation.
+Bouncing the signal off the large reflector and the subsequent propagation
+along the baseline length D reduce the signal flux at the receiving dish
+by a factor of approximately (LAMBDA * D)<SUP>2</SUP> / (A<SUB>r</SUB>
+cos45<SUP>o</SUP>)<SUP>2</SUP>,where A<SUB>r</SUB> is the surface area
+of the large reflector. This calculation assumes that the receiver is in
+the far field of the large reflector, and that the large reflector is oriented
+at 45<SUP>o</SUP> with respect to both the satellite and the receiver.
+For the dimensions given above, this attenuation factor is ~ 50. The reflectors
+and dishes are mounted on rigid stands constructed from 4&quot; diameter
+steel pipe, set into a concrete foundation.</P>
+
+<H5>Alignment:</H5>
+
+<P>The reflectors should be tightly clamped in position, and will only
+need realigning if given a strong knock. Lining up the red marks on each
+reflector should be sufficient to obtain a signal (click on image for full-size
+version). The output voltage amplitudes are quite sensitive to these positions,
+and should be checked after any adjustments. There is another DBS&nbsp;satellite
+at a longitude of 119<SUP>o</SUP> W that has a very similar spectrum that
+might cause confusion. </P>
+
+<CENTER><P><A HREF="images/align_small_el.jpg"><IMG SRC="images/align_small_el.jpg" HSPACE=10 BORDER=0 HEIGHT=96 WIDTH=128 ALIGN=TEXTTOP></A><A HREF="images/align_small_az.jpg"><IMG SRC="images/align_small_az.jpg" HSPACE=10 BORDER=0 HEIGHT=96 WIDTH=128 ALIGN=TEXTTOP></A>Small
+reflector</P></CENTER>
+
+<CENTER><P><A HREF="images/align_large_el.jpg"><IMG SRC="images/align_large_el.jpg" ALT="Large reflector elevation" HSPACE=10 BORDER=0 HEIGHT=96 WIDTH=128 ALIGN=TEXTTOP></A><A HREF="images/align_large_az.jpg"><IMG SRC="images/align_large_az.jpg" HSPACE=10 BORDER=0 HEIGHT=128 WIDTH=96 ALIGN=TEXTTOP></A>Large
+reflector</P></CENTER>
+
+<P>The dishes can be adjusted in elevation and should be aimed at the large
+flat reflector at the other end of the baseline. There are no alignment
+marks. The correct position is with the plate tipped back almost as far
+as it will go, with about 1/8&quot; clearance between the end of the upper
+stand-off thread and the vertical tube of the mount.</P>
+
+<P>Should it be necessary, a power meter can be used at any point in the
+system to maximize signal strength. If the measurement is performed between
+the LNB&nbsp;frontend and the electronics box, then a bias tee must be
+used to separate the 14 volt DC&nbsp;power going out to the frontend and
+the RF&nbsp;signal coming back. It is also possible to maximize the voltages
+from the output of the correlator. </P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Dish and frontend"></A>Dish and frontend</H4>
+
+<P>The dishes are standard consumer 18&quot; diameter satellite dishes
+(Sony). These were purchased for $30 each, including the Low Noise Block
+(LNB), containing the feed, frontend amplifier and down-converter. Lab
+measurements gave an effective receiver temperature of ~ 150 K. The dishes
+are mounted onto a 1/4&quot; steel backing plate with stand-offs to provide
+extra stiffening. </P>
+
+<P>The LNB&nbsp;contains an oscillator that is used to perform the down-conversion.
+The exact frequency drifts with the ambient temperature (by of order 50
+kHz). This causes a small drift in the phase response of the instrument
+(see <A HREF="#Known problems / features">Known problems / features</A>).</P>
+
+<P>The LNB frontends can receive both left and right circular polarizations,
+according to the voltage of the DC power supply (11.5 - 14.0 V = RHCP;
+16.0 - 19.0 V = LHCP). Observing the left circular broadcasts from DBS-1,
+requires that the LNB receives in right circular mode, since there is an
+extra reflection in the path that reverses the sense of the circular polarization.
+This effect also means that the instrument is not sensitive to the problem
+of ground reflections. A&nbsp;DC&nbsp;supply of 14 V is used to drive the
+LNB.</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="In-line amplifiers"></A>In-line amplifiers</H4>
+
+<P>Gain ~ 13 dB, bandwidth 950 - 2050 MHz. Two F-type connectors. Power
+from the 14 volt DC&nbsp;supply sent from the correlator box to the LNB.
+Strapped to the side of the mount, protected by a section of black heat
+shrink tubing and silicone grease for waterproofing. Purchased from National
+Home Theatre (615-895-4646).</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="RF Cables"></A>RF Cables</H4>
+
+<P>Times LMR-400, 50 Ohm impedance, 0.84c propagation speed, loss = 3.88
+dB per 100' at 900 MHz, $430 per 1000 ft (purchased from Tessco 800-472-7373).
+Chosen primarily for low loss.</P>
+
+<P>1.5&quot; plastic conduit brings the cable from the dishes to the pit-box,
+at a depth of about 2'. The cable runs are approx. 60 m from the SW dish
+and 55 m from the NE&nbsp;dish. The pit box is not exactly midway because
+the AC&nbsp;power cable was not long emough to reach from Lab 2. There
+are extra turns of cable from the NE dish in the pit box; this extra length
+was kept to avoid an electrical length of close to 100 m for the round-trip
+reflection path (correlator box to in-line amp to correlator box).</P>
+
+<P>The two delay lines are approximately 84 m long (electrical length ~
+100 m) and are wound onto the same spool in the pit box.</P>
+
+<P>A total of 6 RF cables go into the correlator box, fitting in the 3
+large slots cut into the side of the box. The cables are labelled. Those
+associated with the SW dish (white tape on the connectors) go underneath;
+those associated with the NE&nbsp;dish (red tape on the connectors)&nbsp;go
+on top (click on image below for full size version). As seen in the close-up
+picture below, the left-to-right order of cables is <I>delay in</I>, <I>antenna</I>,
+<I>delay out, </I>matching the layout inside the box.</P>
+
+<CENTER><P><A HREF="images/pitbox_cables.jpg"><IMG SRC="images/pitbox_cables.jpg" HSPACE=20 BORDER=0 HEIGHT=96 WIDTH=128 ALIGN=TEXTTOP></A><A HREF="images/RF_cables.jpg"><IMG SRC="images/RF_cables.jpg" HSPACE=20 BORDER=0 HEIGHT=96 WIDTH=128 ALIGN=TEXTTOP></A></P></CENTER>
+
+<P>The large RF cables are connected to the SMA&nbsp;inputs / outputs of
+the correlator boards via 6 short lengths of flexible cable that provide
+strain relief. These should be labelled. The level of strain relief is
+not ideal and care should be taken when connecting and disconnecting.</P>
+
+<P><A HREF="cable_routing.eps">A map of cable routings.</A></P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Pit box"></A>Pit box</H4>
+
+<P>Located roughly midway along the baseline, this provides a benign environment
+for the correlator box and delay lines. The white wooden cover stops the
+meltwater from accumulated snow getting into the pit box down the side
+of the concrete lid. There may be a dead lizard in the pit box.</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="AC Power"></A>AC Power</H4>
+
+<P>Power for the correlator box (and therefore the LNBs and in-line amplifiers)
+comes from Lab 2. The cable is plugged into a wall socket behind the sheet
+metal rack, on the West side of the building. It then runs in 1.5&quot;
+conduit to the pit box. If it is necessary to run extra instrumentation
+at the pit box on AC&nbsp;power, the short adaptor cable can be used (this
+should be left in the pit box).</P>
+
+<P><A HREF="cable_routing.eps">A map of cable routings.</A></P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Electronics Box"></A>Electronics Box</H4>
+
+<P>This NEMA&nbsp;box contains two power supplies, two <A HREF="#Correlator units">correlator
+units</A>, <A HREF="#Demodulation board">the demodulation board</A>, <A HREF="#A/D unit">the
+A/D converter</A> and fan for cooling. </P>
+
+<H5>To remove from pit box:</H5>
+
+<OL>
+<LI>Undo latches to open lid</LI>
+
+<LI>Disconnect AC power inside box</LI>
+
+<LI>Disconnect RF cables at the BNC&nbsp;connection between large and small
+cables</LI>
+
+<LI>Use a screw driver to disconnect RS485 communication cable from A/D
+unit</LI>
+</OL>
+
+<H5>To reinstall in pit box:</H5>
+
+<P>Reverse the above sequence. RF cables should be in the <A HREF="#RF Cables">appropriate
+slots</A>. The fan sometimes doesn't start properly. Try banging the lid
+onto the main part of the box to give it some stimulation.</P>
+
+<CENTER><P><A HREF="images/pitbox_cables.jpg"><IMG SRC="images/pitbox_cables.jpg" HSPACE=20 BORDER=0 HEIGHT=96 WIDTH=128 ALIGN=TEXTTOP></A></P></CENTER>
+
+<H5>Taking the components apart:</H5>
+
+<P>This should be straightforward. There is a connector for disconnecting
+the fan. The baseplate is removed by undoing the brass screws at each corner.
+The `stack' can be disassembled from the top down, or can be removed in
+one piece by removing the screws in the bottom of the baseplate. Some of
+the stand-offs have filed notches to provide clearance from the correlator
+units. The inputs to the A/D unit are color coded to correspond to the
+wires. The correlator units have `lower' and `upper' labels to indicate
+where they go in the stack. Click image for full size version.</P>
+
+<CENTER><P><A HREF="images/stack1.jpg"><IMG SRC="images/stack1.jpg" HSPACE=5 VSPACE=10 BORDER=0 HEIGHT=80 WIDTH=106 ALIGN=TEXTTOP></A><A HREF="images/stack2.jpg"><IMG SRC="images/stack2.jpg" HSPACE=5 VSPACE=10 BORDER=0 HEIGHT=80 WIDTH=106 ALIGN=TEXTTOP></A><A HREF="images/stack3.jpg"><IMG SRC="images/stack3.jpg" HSPACE=5 VSPACE=10 BORDER=0 HEIGHT=80 WIDTH=106 ALIGN=TEXTTOP></A><A HREF="images/stack4.jpg"><IMG SRC="images/stack4.jpg" HSPACE=5 VSPACE=10 BORDER=0 HEIGHT=80 WIDTH=106 ALIGN=TEXTTOP></A></P></CENTER>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Correlator units"></A>Correlator units</H4>
+
+<P><A HREF="corr_board_schematic.ps">Circuit diagram</A>, component layout
+for <A HREF="corr_board_top_layout.ps">top</A> and <A HREF="corr_board_bottom_layout.ps">bottom</A>
+of board. <FONT COLOR="#FF0000"><B>NOTE</B>: one modification has been
+made that is not included in these figures:</FONT></P>
+
+<UL>
+<LI>The switch MGS 71008 has been removed. The J6 SMA&nbsp;input is now
+connected directly to the A input of the JH141 quadrature splitter. The
+associated J2 connector has been removed.</LI>
+</UL>
+
+<P>There is one correlator unit for each of the two separate interferometers.
+A basic description and context is given in <A HREF="#Basic Principles">Basic
+Principles</A>. There are 3 basic sections to the board:</P>
+
+<OL>
+<LI>14 volt DC power supply to the frontend. </LI>
+
+<LI>2 stage amplification of the incoming signals.</LI>
+
+<LI>Complex correlation of the signals.</LI>
+</OL>
+
+<P>As depicted in <A HREF="design.eps">Fig. 1</A>, there are 5 SMA&nbsp;connections
+to each board: the input from the dish LNB, trim in and out, and delay
+line in and out. Power supply is +14 V / +10 V / Gnd. There are also feedthrough
+outputs for the two voltages representing the in-phase and quadrature correlation
+products. Click on images for full-size version.</P>
+
+<CENTER><P><A HREF="images/corr_unit_top.jpg"><IMG SRC="images/corr_unit_top.jpg" HSPACE=20 BORDER=0 HEIGHT=118 WIDTH=151 ALIGN=TEXTTOP></A><A HREF="images/corr_unit_bottom.jpg"><IMG SRC="images/corr_unit_bottom.jpg" HSPACE=20 BORDER=0 HEIGHT=122 WIDTH=154 ALIGN=TEXTTOP></A></P></CENTER>
+
+<P>Some of the components get quite hot during normal operation: the bias
+resistors for the two amplifiers, the MSA-0520 amplifier (there is a hole
+in the circuit board under this device which has been filled with solder,
+and a copper strap has been connected to the top side), and the <A HREF="#Gilbert cells">Gilbert
+Cell multipliers</A> (stand-offs mounted on the lid with some thermal grease
+provide extra cooling).</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Amplifiers"></A>Amplifiers</H4>
+
+<P>The INA-10386 amp has a nominal gain of 25 dB; the MSA&nbsp;0520 has
+8.5 dB. In practice, the combination seems to have a gain of around 40
+dB. See also <A HREF="#Signal levels">Signal levels</A>.</P>
+
+<P>The match at the input is not very good, and some form of attenuation
+is needed to prevent oscillation. The long length of RF&nbsp;cable to the
+LNB serves this purpose. The INA-10386 is biased to operate with a supply
+current of ~ 50 mA; the MSA 0520 operates at ~ 90 mA.</P>
+
+<P><FONT COLOR="#FF0000"><B><I>Warning:</I></B> Don't connect a regular
+attenuator to the input (or anywhere between the correlator unit and the
+frontend) because it will draw excessive current from the 14 volt DC&nbsp;bias
+voltage.</FONT></P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="180 degree phase switch"></A>180<SUP>o</SUP> phase switch</H4>
+
+<P>The signal passing through one of the arms is inverted at regular intervals,
+which also inverts the correlation products. This modulation is used to
+remove the DC offset at the output of the <A HREF="#Gilbert cells">Gilbert
+cell multipliers</A>. A ZEM-4300MH double-balanced mixer performs the inversion,
+driven by a 1 kHz square wave of approximately +/- 5 V generated by the
+555 timer on the Demodulation board. The insertion loss of the mixer is
+about 8 dB.</P>
+
+<P>The 555 timer is able to drive current loads well in excess of the 10
+mA used to switch the mixer diodes on and off. There is a voltage drop
+with increasing current load that his higher for the positive part of the
+cycle than the negative part (i.e. it is more efficient as a current sink
+than a source). This asymmetry needs to be balanced, so that the output
+power from the mixer is independent of the switching state. The balance
+circuit shown <A HREF="balance_circuit.eps">here</A> is mounted on a stand-off
+underneath the stack.</P>
+
+<H5>Balancing the mixers:</H5>
+
+<P>The pots have been adjusted to give equal output power for each switching
+state. If this needs to be repeated:</P>
+
+<OL>
+<LI>Connect a power meter to the output of the mixer (the port connected
+to `Trim in' on the correlator unit)</LI>
+
+<LI>Freeze the system in the positive state of the switching cycle by connecting
+pin 8 to pin 6 on the 555 chip on the Demodulation board.</LI>
+
+<LI>Measure the power.</LI>
+
+<LI>Switch to the negative state by connecting pin 1 to pin 6 of the 555
+chip (no connection between pin 8 and pin 6).</LI>
+
+<LI>Measure the power.</LI>
+
+<LI>Adjust relevant pot.</LI>
+
+<LI>Repeat 2 through 6 until the two power levels are equal.</LI>
+</OL>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Trim cables"></A>Trim cables</H4>
+
+<P>These short lengths of cable offset the length of the delay lines and
+can be used to change the relative delay without re-cutting the large cables.
+They also provide a connection to the mixers used for the phase switching.</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Gilbert cells"></A>Gilbert cells</H4>
+
+<P>Gilbert cells are `active mixers' that multiply together two RF signals
+to generate an IF&nbsp;output. They are made by Hewlett Packard (IAM 82008),
+can be obtained from Newark distributors (~$3 each), have an input bandwidth
+of 5 GHz and provide about 15 dB of conversion gain.</P>
+
+<P>In this application, only the DC output at the IF&nbsp;(modulated by
+the phase switching) is of interest. Since the ICs take only a single polarity
+supply (+10 V in this circuit)&nbsp;the IF&nbsp;output sits at about 5
+V in the absence of correlated signals. The exact value of this offset
+voltage is sensitive to the power levels of the signals applied at the
+LO&nbsp;and RF&nbsp;ports, and so has a tendency to drift around. This
+was the primary reason for introducing the phase switching.</P>
+
+<P>The input RF power at either LO&nbsp;or RF&nbsp;ports should not exceed
++14 dBm. The power levels during normal operation are both close to 0 dBm.
+The mixers are operating in a somewhat saturated mode, which seems to give
+satisfactory results. </P>
+
+<P>The ICs run quite hot. This is why they are run at 10 V (they run much
+hotter at higher voltage). Stand-offs mounted on the lid of the correlator
+unit provide an extra cooling path.</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Demodulation board"></A>Demodulation board</H4>
+
+<P>The output of each <A HREF="#Gilbert cells">Gilbert cell multiplier</A>
+is a noisy 1 kHz square wave whose amplitude is the desired signal, superimposed
+on a DC offset of about 5 V. The demodulation board extracts the amplitude
+of the square wave from each of the 4 multiplier outputs, applies a 1 sec
+time average and a gain of 20 before the voltages are passed to the <A HREF="#A/D unit">A/D
+unit</A>.</P>
+
+<P>The 1kHz switching waveform is generated by a 555 timer in a standard
+astable configuration. See <A HREF="#180 degree phase switch">180<SUP>o</SUP>
+phase switching</A> for further details. The rest of the circuit consists
+of 4 identical sections, each of which processes one multiplier output.
+The DC component of each incoming signal is blocked with a capacitor and
+a voltage follower provides a buffer at the input to the AD630. The latter
+is configured with two gain blocks, one provides +2 and the other -2 gain,
+and they are switched in and out according to the polarity of the voltage
+on Pin 9 (a reduced amplitude version of the switching waveform). The demodulated
+output is time averaged and amplified by a further factor 10 by a standard
+RC op-amp arrangement. The trim pots are adjusted to ensure zero output
+for zero input.</P>
+
+<P><A HREF="demod_board_schematic.ps">Circuit diagram</A>, <A HREF="demod_board_layout.ps">component
+layout</A> <BR>
+<FONT COLOR="#FF0000"><B><I>Note</I></B>: the following modifications have
+been made that are not included in these drawings:</FONT></P>
+
+<UL>
+<LI>The hex-inverter IC (MC14049B) has been removed.</LI>
+
+<LI>The phase-switch mixer is driven directly from Pin 3 of the 555 timer
+chip, so that there are only two wires (black and white) attached to connector
+P3.</LI>
+
+<LI>The 555 timer circuit now runs off a +/- 5 V&nbsp;supply to provide
+a positive and negative square wave output, instead of the 0 / -5 V shown
+in the drawings.</LI>
+
+<LI>A 10 uF capacitor has been connected directly across the power supply
+pins of the 555 timer to suppress the switching waveform on the power lines.</LI>
+</UL>
+
+<P>Click on image for a full-size version.</P>
+
+<CENTER><P><A HREF="images/demod_board.jpg"><IMG SRC="images/demod_board.jpg" BORDER=0 HEIGHT=131 WIDTH=139 ALIGN=TEXTTOP></A></P></CENTER>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="A/D unit"></A>A/D unit</H4>
+
+<P>Advantech ADAM&nbsp;4017, 16 bit resolution in up to 8 multiplexed channels.
+Opto-isolated, runs off +10 to + 30 V, RS-485 / RS-232 protocol (see <A HREF="#Communication">communication</A>),
+up to 10 samples per sec.</P>
+
+<P><A HREF="images/ADAM.jpg"><IMG SRC="images/ADAM.jpg" HEIGHT=107 WIDTH=66 ALIGN=LEFT></A></P>
+
+<P>The unit is mounted on the baseplate of the electronics box and requires
+a power supply (14 V), connection to the twisted pair for communication
+(using the color code indicated by the little color strips on the box),
+and connection to the 4 input voltages (also with appropriate color coding).
+Click on the image for a full-size version. </P>
+
+<P>The unit converts input voltages into ASCII strings that are sent down
+a serial line to the <A HREF="#environment computer">environment computer</A>. Communication
+is through a simple `Command - Reply' protocol. Here are some examples:</P>
+
+<CENTER><TABLE BORDER=1 CELLSPACING=0 CELLPADDING=5 >
+<TR>
+<TD>Purpose</TD>
+
+<TD>Host command</TD>
+
+<TD>Reply from A/D unit</TD>
+</TR>
+
+<TR>
+<TD>Get config status from A/D at address 01</TD>
+
+<TD>$012</TD>
+
+<TD>!01080600</TD>
+</TR>
+
+<TR>
+<TD>Change the configuration of A/D at 01</TD>
+
+<TD>%0102080600</TD>
+
+<TD>!02</TD>
+</TR>
+
+<TR>
+<TD>Enable only channels 0 to 3 for multiplexing on A/D with address 01</TD>
+
+<TD>$0150F</TD>
+
+<TD>!01</TD>
+</TR>
+
+<TR>
+<TD>Read the value of channel 2 of the A/D unit with address 01</TD>
+
+<TD>#012</TD>
+
+<TD>&gt;+1.4567</TD>
+</TR>
+
+<TR>
+<TD>Read the values of all channels selected for multiplexing (assume chans
+0 to 3) on A/D with address 01</TD>
+
+<TD>#01</TD>
+
+<TD>&gt;-0.3421+1.9425+1.4567-0.5112</TD>
+</TR>
+</TABLE></CENTER>
+
+<P>A complete description of commands and replies can be found in the ADAM&nbsp;4000
+series User's Manual. <FONT COLOR="#FF0000"><B><I>Note:</I></B> the last
+example (which is actually used to acquire the 4 voltages)&nbsp;is not
+listed in the Manual, and was discovered by accident.</FONT></P>
+
+<P><FONT COLOR="#000000">The A/D is configured to operate with an address
+of 01, a range of -10 to +10 V, with a 50 ms integration time (to eliminate
+60 Hz noise), a serial communication speed of 9600 baud, checksum disabled,
+and engineering units (i.e. volts) as the format. This is what is indicated
+by the reply code given in the first example above.</FONT></P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Communication"></A>Communication</H4>
+
+<P>A twisted pair connects the A/D unit with an ADAM&nbsp;4520 (a similar
+looking unit)&nbsp;that converts the twisted pair RS 485 signals into RS
+232 protocol (see <A HREF="comm.eps">Diagram</A>). <A HREF="cable_routing.eps">A
+map of cable routings</A> shows how the twisted pair gets to the control
+building. </P>
+
+<P>Some of the commands and responses used to communicate with the A/D
+unit are described in the <A HREF="#A/D unit">A/D</A> section.</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="environment computer"></A>environment&nbsp;computer</H4>
+
+<P>Data from the phase monitor goes to the CARMA computer environment.carma.pvt
+(serial port 2, connected to the USB<->serial 4 port dongle aka /dev/ttyUSB2). The <I><A HREF="#phasemon program">carmaPhaseMonitor</A></I> program
+runs continuously in the background, with little loading on the CPU. </P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="phasemon program"></A><I>carmaPhaseMonitor</I> program</H4>
+
+<p>The source for carmaPhaseMonitor is in the CARMA source tree under <a href="http://www.mmarray.org/viewcvs/viewcvs.cgi/carma/carma/phasemonitor/">carma/carma/phasemonitor</a></p>
+
+<P>This program runs continuously as a background process on the <A HREF="#environment computer">environment computer</A>.
+It requests readings of the 4 voltages every second from the A/D unit.
+These are converted into phases, and then to ground path and sky path difference
+measurements (see <A HREF="#Basic Principles">Basic principles</A>). The
+following data files are generated:</P>
+
+<UL>
+<LI><A HREF="../data/1sec.new">1sec.new</A>: contains corrected data ending
+with the current reading (1/ time in MJD; 2/ sky path
+diff in microns, ground path in microns; 3-6/ the 4 corrected voltages;
+7/ the number of seconds elapsed since previous reading; 8/ error code).
+As of 07 Dec 2007, this file is ever growing at a rate of approximately
+2.5GBytes/year.  While a cron driven script should be created to archive
+this data (it is highly compressable), care must be taken to avoid
+interfering with the running carmaPhaseMonitor software.  TBD - colby
+</LI>
+
+
+<LI><A HREF="../data/sample.dat">sample.dat</A>: contains one line for each 10
+minute sample interval, ending with the most recent sample (1/ time in MJD; 2/ average sky
+path diff in microns; 3/ average ground path in microns; 4/ rms of sky
+path diff in microns; 5/ average complex amplitude for interferometer containing
+SW dish in volts; 6/ average complex amplitude for interferometer containing
+NE&nbsp;dish in volts; 7/ number of errors during sample). Item (4) is
+of the most interest. (see above about archiving, growth rate of this file is
+around 4.2MBytes/year)</LI>
+
+<LI><A HREF="../data/last_sample_time">last_sample_time</A>: the UT&nbsp;time for
+the middle of the last 10 minute sample. Used for labelling plots.</LI>
+
+<LI>Logging: The phase monitor reports info,warnings and errors via the regular CARMA log system under the "environment" subsystem.</LI>
+</UL>
+
+<P><B><I>Making changes to carmaPhaseMonitor:</I></B></P>
+You need to be familiar with the regular CARMA build/install process to do this. Please ask the CCWG or colby at astro dot berkeley dot edu
+<P>
+<HR WIDTH="100%"></P>
+
+<!--
+<H4><A NAME="Power spectrum computation"></A>Power spectrum computation</H4>
+
+<P>The program FT is executed automatically at the end of each 6 hour interval,
+and computes the power spectrum of the data stored in 1sec.old. The source
+code is FT.c (in ~phasemon/powerspec/src), and should be straightforward to understand.
+It first fits 12- and 24-hour sinusoids to the sample sky path data in
+6hrs.old, and subtracts these from the 1 sec sky path data to remove the
+effects of satellite motion. Then an FFT is performed and the resulting
+spectrum is compressed into 100 frequencies which are saved in a ~phasemon/powerspec/spectra
+with a name indicating the UT&nbsp;day range for the data. The last N spectra
+can be displayed with the <TT>pmn_spectra</TT> command (an alias). N is
+set in the <TT> ~phasemon/powerspec/spectra.csh</TT> file.</P>
+
+<P>The temporal power spectrum is very useful for estimating the impact
+of atmospheric fluctuations on observations. This is discussed at length
+in two papers:&nbsp;</P>
+
+<UL>
+<LI><A HREF="http://www.ed-phys.fr/articles/astro/full/1997/06/ds1227/ds1227.html">The
+Temporal Power Spectrum of Atmospheric Fluctuations due to Water Vapor.</A></LI>
+
+<LI><A HREF="http://www.ed-phys.fr/articles/astro/full/1997/06/ds1229/ds1229.html">Phase
+Calibration and Water Vapor Radiometry for Millimeter-Wave Arrays.</A></LI>
+</UL>
+-->
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="WIP routines for plotting data"></A>WIP&nbsp;routines for
+plotting data</H4>
+
+<UL>
+<LI><A HREF="../wip/pmn.carma.wip">pmn.carma.wip<BR>
+</A>Invoked by the phasecron.csh script every 0,10,20,30,40,50 minute of the hour via cron job on cedarflat.mmarray.org from the obs account. Displays the last 9 days of sky rms
+data, with curves to show the corresponding coherence at 100 GHz and 230
+GHz. Most recent example is <A HREF="../pmn.gif">here</A>.</LI>
+
+<LI><A HREF="../wip/status.cedarflat.wip">status.cedarflat.wip<BR> </A>Invoked as part
+of the phasecron.csh script every 0,10,20,30,40,50 minute of the hour via cron job on cedarflat.mmarray.org from the obs account.
+Displays the last 3
+days of sky rms, ground rms, sky path, ground path, signal levels and
+number of errors.  Used to monitor the instrument performance. Most
+recent example is <A HREF="../pmn_status.gif">here</A>.</LI>
+
+<LI><A HREF="../wip/calibration.wip">calibration.wip<BR> </A>Invoked calibration.csh
+Displays the loci of the
+complex voltage (in-phase and quadrature components) from the output
+of each interferometer system, as recorded in <A
+HREF="../data/1sec.new">1sec.new</A>. These should trace circles (but see <A HREF="#Known problems /
+features">Known problems / features</A>) and might be useful for
+debugging. </LI>
+
+<!--
+<LI><A HREF="1sec.wip">1sec.wip<BR> </A>Invoked by alias
+<TT>pmn_1sec</TT> (<i>phasemon</i> account). Displays the 1 sec
+measurements of sky path and ground path recorded in <A
+HREF="1sec.new">1sec.new</A> and <A HREF="1sec.old">1sec.old</A> as
+well as any errors that occurred.</LI>
+
+<LI><A HREF="volts_vs_time.wip">volts_vs_time.wip<BR> </A>Invoked by
+alias <TT>pmn_volts_vs_t</TT> (<i>phasemon</i> account). Displays the
+1 sec voltages for each of the 4 channels as a function of
+time. Useful for establishing whether an error is associated with only
+one channel.</LI>
+
+<LI><A HREF="pmn_vs_weather.wip">pmn_vs_weather.wip<BR>
+</A>No alias. Used for comparing phase monitor data to weather variables
+recorded in the watch.0 file.</LI>
+</UL>
+-->
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Signal levels"></A>Signal levels</H4>
+
+<UL>
+<LI>Voltages</LI>
+
+<UL>
+
+<LI>Interferometer with SW dish (white on pmn_status plot) ~ 0.1 V at Cedar Flat, 07 Dec 2007</LI>
+<LI>Interferometer with NE dish (green on pmn_status plot) ~ 0.1 V at Cedar Flat, 07 Dec 2007</LI>
+
+<LI>Interferometer with SW dish (white on pmn_status plot) ~ 2.3 V at Hat Creek, pre DBS satellite changes</LI>
+<LI>Interferometer with NE dish (green on pmn_status plot) ~ 1.9 V at Hat Creek, pre DBS satellite changes</LI>
+</UL>
+
+<LI>Power levels</LI>
+
+<UL>
+<LI>LNB frontend output ~ -28 dBm</LI>
+
+<LI>In-line amp output ~ -15 dBm</LI>
+
+<LI>Input to correlator box ~ -25 dBm</LI>
+
+<LI><FONT COLOR="#FF0000">Delay line output: SW dish = +14.0 dBm; NE dish
+= +12.5 dBm</FONT></LI>
+
+<LI>Phase-switch mixer output: SW&nbsp;dish ~ +7 dBm; NE dish ~ + 5.5dBm</LI>
+</UL>
+</UL>
+
+<P>Approximately half of the power is due to thermal noise from the frontend
+and pickup from the ground. The other half is dominated by the signal from
+the small reflector. The signal from the large reflector is down by a factor
+of about 20. Remember that the amplitude of the correlated output is proportional
+to the geometric mean of the two input signals, i.e., reducing the signal
+power from the large reflector by a factor of four only reduces the output
+voltages by a factor of two. </P>
+
+<P>If there is a problem, the power level at the delay line output is the
+easiest to measure, since there is no DC&nbsp;voltage on the line at this
+point. All the other power levels above should be considered as estimates.
+Different LNBs will have different output levels.</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Known problems / features"></A>Known problems / features</H4>
+
+<UL>
+<LI><A HREF="#Complex voltage traces tilted ellipse, not circle">Complex
+voltage traces tilted ellipse, not circle</A></LI>
+
+<LI><A HREF="#Voltage Offset">Voltage offset</A></LI>
+
+<LI><A HREF="#Intermittent narrowband spectral features">Intermittent narrowband
+spectral features</A></LI>
+
+<LI><A HREF="#Local oscillator drift">Local oscillator drift</A></LI>
+</UL>
+
+<P><FONT COLOR="#FF0000"><B><I>Note:</I></B> that for all of the above
+problems, the ground path measurement is affected by the same amount or
+more compared to the sky path measurement. The measured ground path rms
+is therefore a good upper limit to the uncertainty in sky path.</FONT></P>
+
+<P><A NAME="Complex voltage traces tilted ellipse, not circle"></A><B>Complex
+voltage traces tilted ellipse, not circle<BR>
+</B>The loci displayed by the <a href="../calibration">corrected calibration plots</a> (which are close to circles)
+represent corrected voltages. Without correction, the voltages trace out
+tilted ellipses. The corrections are made in the <I>carmaPhaseMonitor</I> program
+to convert the ellipses into circles. The problem is caused by the second
+input to the quadrature splitter (JH-141) not being terminated by 50 ohms
+(it's an open circuit). There is a reflection off the Gilbert cell inputs
+that goes back out through both inputs of the JH-141, gets reflected by
+the open circuit and then returns back to the Gilbert cells. The phase
+shifts through the splitter are such that the complex vector representing
+this reflection component rotates in the opposite sense to the real signal
+component as the phase is changed, and the ideal circle becomes an ellipse.
+The software correction seems to work well enough, but it should also be
+easy to add the correct termination to the JH-141. In this case the software
+corrections can be disabled (but not for the voltage offset - see below).</P>
+
+<P><A NAME="Voltage Offset"></A><B>Voltage Offset<BR>
+</B>The 180<SUP>o</SUP> phase switching is supposed to remove all offsets
+from the correlator outputs, so that in the absence of correlated inputs
+there is zero voltage at the output of each demodulated channel. There
+are, however, small offsets present after phase switching has been applied.
+The constant components of these offsets are removed by corrections in
+the <I>carmaPhaseMonitor</I> program, but small time-variable shifts remain. When
+the offset is not quite right, the complex amplitude shows small fluctuations
+dependent on the phase, which introduces the low-level modulation in the
+signal strength plots displayed by the <a href="../pmn_status.gif">instrument status</a> plot. The reason is probably
+that the reflection from the mixers used for phase switching depends on
+the switching state. Thus, the power level at the input to the Gilbert
+cells has a residual fluctuation in synch with the phase switching that
+produces a non-zero output (the Gilbert cell output is sensitive to input
+power level). The main result of a non-corrected offset is that the sky
+path rms and ground path rms measurements are not perfectly decoupled,
+and there is a small (&lt;10%)&nbsp;`leakage' between the two. e.g. If
+the sky path rms is 500 microns, then the ground rms path will be 50 microns,
+even in the absence of real ground path fluctuations. Since sky path rms
+is invariably larger than the ground path rms, it is the latter measurement
+that is degraded. This problem is not severe, but could be improved by
+adding extra attenuation between the phase switching mixer output and the
+input to the Gilbert cells.</P>
+
+<P><A NAME="Intermittent narrowband spectral features"></A><B>Intermittent
+narrowband spectral features<BR>
+</B>There are sometimes periods during which there are narrowband spectral
+features present at around 900 MHz (i.e. about 50 MHz below the start of
+the broadcast band). These vary quite rapidly with time, and come from
+a point on the sky very close to the DBS satellites. The exact origin is
+not known. Although the total power in these signals is weak compared to
+the TV signals, their impact is amplified by their narrowband nature, which
+is not affected by the 100 m delay offset in the system. i.e. power from
+the spurious peaks entering via the small reflector only (no loss due to
+propagation from the large reflector) can produce a correlated output despite
+the delay offset, and because the frequency and amplitude of these peaks
+varies with time, the effect appears as increased phase noise. Again the
+effect is not that large (it appears equally in both the sky path rms and
+ground path rms. Filters could be used to greatly remove the impact of
+these spurious features. Old filters for the LO&nbsp;reference signal of
+the mm array could be used, and 2 have been set aside should this be necessary.
+They would be best inserted after the in-line amplifier; inserting them
+at the input to the correlator units would require extra attenuation to
+reduce the effect of the poor match at the amplifier inputs. The filters
+would need to be modified to have a DC&nbsp;pass for the LNB&nbsp;power
+supply voltage.</P>
+
+<P><A NAME="Local oscillator drift"></A><B>Local oscillator drift<BR>
+</B>The local oscillator frequencies that are used for the down-conversion
+in the LNB frontends drift a little with ambient temperature. This produces
+a spurious phase drift in the system output. The reason is that the signals
+are centered on a frequency of 1.2 GHz when they pass through the delay
+lines, but the original delay offset is incurred at around 12.4 GHz as
+the signals propagate from the large reflector to the dish 100 m away.
+It is easy to show that the ground path measurement is sensitive to the
+common-mode variations in the two LO&nbsp;frequencies. The apparent change
+in ground path is given by (delta_F<SUB>LO1</SUB> +&nbsp;delta_F<SUB>LO2</SUB>)
+100 m / 12.4 GHz. The sky path is sensitive to the difference in the LO
+drifts. The apparent change in the sky path measurement is (delta_F<SUB>LO1</SUB>
+-&nbsp;delta_F<SUB>LO2</SUB>) 100 m / 12.4 GHz. A change of 1 kHz in an
+LO frequency produces an apparent path change of 8 microns. Since most
+temperature changes are common to the two frontends, the impact will be
+mostly in the ground path measurement. The largest relative drift in the
+two frequencies will occur when one becomes shadowed for a long period
+of time while the other remains in the sun. This effect was measured, and
+there was a 50 kHz relative drift over a period of an hour, corresponding
+to a 400 micron drift in the measured sky path. This has very little impact
+on the 10 minute rms measurement.</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<H4><A NAME="Checking the instrument status"></A>Checking the instrument
+status</H4>
+
+<P><A HREF="pmn_status_example.ps">Here</A> is an example of the output
+from the <TT>pmn_status</TT> command when the instrument is working normally.This
+can be compared to the <A HREF="pmn_status.gif">current version</A>. </P>
+
+<UL>
+<LI>The sky rms path fluctuations in red should exceed the ground rms path
+is blue. The latter provides an upper limit on the errors in the former&nbsp;(see
+<A HREF="#Known problems / features">Known problems / features</A>). </LI>
+
+<LI>The sky path (red curve in the second panel)&nbsp;should be approximately
+sinusoidal with a peak-to-peak amplitude of order 10<SUP>5</SUP> microns.
+This is a result of the satellite motion on the sky (the orbit has an inclination
+to the equator of a few tenths of a degree). The ground path (blue curve)
+should be pretty much flat. If the phasemon program is restarted, there
+is likely to be a step in the sky path, since the program cannot keep track
+of phase wraps when it is not running and starts again from close to zero.</LI>
+
+<LI>The signal strengths in the third panel represent the amplitudes of
+the complex voltage measured with each interferometer. The white curve
+represents the signals from the SW dish; the green curve is for the NE
+dish. The wiggles are the result of the <A HREF="#Voltage Offset">voltage
+offset</A>. There may also be a slower variation that looks like the sinusoidal
+variation in the sky path. This reflects the shape of the signal autocorrelation
+function which is being sampled as the path offset changes with the satellite
+motion. This is not a cause for concern (as long as it is not very severe),
+but means the delay line / trim cable combination is not quite right.</LI>
+
+<LI>The number of errors per 10 minute sample are shown in the bottom panel.
+An error here or there is not uncommon. In the example, there is a clear
+correspondence with the time of data, which suggests it may be related
+to a regular loading of the computer CPU. The last 100 errors are logged
+in <A HREF="message.log">message.log</A>.</LI>
+</UL>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<P><FONT SIZE=-1>Oliver Lay, Sept. 1998</FONT></P>
+
+Please report problems with the system or documentation to Douglas Bock:
+<a href="mailto:dbock@astro.berkeley.edu">dbock@astro.berkeley.edu</a>
+
+</BODY>
+</HTML>

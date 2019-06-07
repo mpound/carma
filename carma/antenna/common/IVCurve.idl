@@ -1,0 +1,39 @@
+/**
+ * @file
+ * 
+ * IVcurve data structure definition.
+ * 
+ * @author Andrew Beard
+ */
+#ifndef CARMA_ANTENNA_COMMON_IVCURVE_IDL
+#define CARMA_ANTENNA_COMMON_IVCURVE_IDL
+
+module carma {
+  module antenna {
+      module common {
+
+          struct IVPoint {
+              double fjd; /**< Fractional Julian Day */
+              float  Ij; /**< bias current values, microamps     */
+              float  Vj; /**< bias voltage values, millivolts    */
+          }; 
+
+          /**
+           * Data returned by an IV curve method
+           * Be careful not to assume that the totPower contains the same
+           * number of elements as the IV sequence as total power may or
+           * may not have been requested.  Also, even if it has there is 
+           * no underlying mechanism to assure that the points match up in 
+           * time, hence the separate sequences.  In other words, use at 
+           * your own discretion.
+           */
+          struct IVCurve {
+              sequence< IVPoint > ivSequence;  /**< IV points */
+              sequence<float>  totPower; /**< Total power output, milliWatts */
+          }; // End IVCurve
+
+
+      }; // End module common
+  }; // End module antenna
+}; // End module carma
+#endif

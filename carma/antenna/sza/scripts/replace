@@ -1,0 +1,42 @@
+#!/bin/sh
+#-----------------------------------------------------------------------
+# Perform a global replace of one string for another in a list of text
+# files.                                                     MCS May94
+#-----------------------------------------------------------------------
+# Usage:
+#
+#  replace from_string to_string file1 [file2...]
+#-----------------------------------------------------------------------
+
+if [ $# -lt 3 ]; then
+  echo 'Usage: replace from_string to_string file1 [file2...]'
+  exit 1
+fi
+
+# Get the string to be replaced.
+
+from_string="$1"
+
+# Get the replacement string.
+
+to_string="$2"
+
+# Remove the first two arguments.
+
+shift 2
+
+# Do the replacement on each file in turn.
+
+for file in $*;do
+
+  if [ -w "$file" ]; then
+    echo " $file : $from_string -> $to_string "
+    ed -s $file << EOF
+      1,\$s|$from_string|$to_string|g
+      w
+      q
+EOF
+  else
+    echo "Can't edit file: $file"
+  fi
+done

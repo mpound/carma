@@ -1,0 +1,101 @@
+/** @file
+ * Ovro Rx Electronics Temperature Control interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.4 $
+ * $Date: 2011/05/17 16:27:33 $
+ * $Id: RxTemperatureControl.idl,v 1.4 2011/05/17 16:27:33 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_RXTEMPERATURECONTROL_IDL
+#define CARMA_ANTENNA_OVRO_RXTEMPERATURECONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+    /**
+     * RxTemperatureControl nameserver name.
+     */
+    const string RX_TEMPERATURE_CONTROL_NAME = "RxTemperatures";
+
+    /**
+     * RxTemperatureControl interface for controlling the 10-m Receiver
+     * Electronics Control module.
+     */
+    interface RxTemperatureControl {
+
+        enum LoopId { LOOP_1, LOOP_2 };
+
+        enum OpMode { LOOP_ON, LOOP_OFF, MANUAL };
+
+        /**
+         * Set desired temperature.
+         * @param loop Loop to apply this to.
+         * @param temp Desired temperature.
+         */
+        void setTemperature( in LoopId loop, in float temp )
+            raises (carma::util::UserException);
+
+        /**
+         * Set operation mode and begin regulating temperature with it.
+         * @param loop Loop to apply to.
+         * @param mode OpMode to regulate temperature.
+         * @param pwr % of maximum PWM controller power (OpMode = MANUAL only).
+         */
+        void regulateTemperature(
+            in LoopId loop,
+            in OpMode mode,
+            in float pwr) raises (carma::util::UserException);
+
+        /**
+         * Set loop gain.
+         * @param loop Loop to apply to.
+         * @param gain Gain to apply.
+         */
+        void setLoopGain( in LoopId loop, in float gain )
+            raises (carma::util::UserException);
+
+        /**
+         * Set loop integration constant.
+         * @param loop Loop to apply to.
+         * @param integration Integration constant to apply.
+         */
+        void setLoopIntegrationConstant( in LoopId loop, in float integration)
+            raises (carma::util::UserException);
+
+        /**
+         * Set loop rate constant.
+         * @param loop Loop to apply to.
+         * @param rate Rate constant to apply.
+         */
+        void setLoopRateConstant( in LoopId loop, in float rate)
+            raises (carma::util::UserException);
+
+        /**
+         * Set loop bandwidth
+         * @param loop Loop to apply to.
+         * @param bandwidth Bandwidth to apply.
+         */
+        void setLoopBandwidth( in LoopId loop, in float bandwidth )
+            raises (carma::util::UserException);
+
+        /**
+         * Write parameters to EEPROM.
+         * Write current parameters to EEPROM to serve as new defaults.
+         */
+        void writeParametersToEEPROM()
+            raises (carma::util::UserException);
+
+        /**
+         * Reset the module
+         */
+        void reset() raises (carma::util::UserException);
+
+    }; // End interface RxTemperatureControl
+
+};};}; // End module carma::antenna::ovro
+#endif

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+    
+<Common scope="global">
+
+    <MonitorPoint name="noiseStatus" type="enum" >
+        <shortName>Noise Source</shortName>
+        <longName>Noise Source Status</longName>
+        <enum name="DISABLED"/> <!-- 0x00 -->
+        <enum name="ENABLED">   <!-- 0x01 -->
+            <description>
+                Noise source and output enabled.
+            </description>
+        </enum>
+        <enum name="CHANGING">  <!-- 0x02 -->
+            <description>
+                Changing during last blanking frame period.
+            </description>
+        </enum>
+        <warnHi>CHANGING</warnHi>
+    </MonitorPoint>
+   
+</Common>

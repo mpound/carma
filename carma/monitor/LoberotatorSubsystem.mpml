@@ -1,0 +1,506 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- Loberotator Subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="Loberotator" priority="vital" author="Steve Scott">
+
+
+   <?common MonitorStats.mpml?>
+   <CommonContainer ref="MonitorSubsystemStats" />
+
+   <?common CanbusCommon.mpml?>
+   <?common TimestampCommon.mpml?>
+
+   <MonitorPoint name="numBoards" persistent="true" type="int">
+      <shortName>numBoards</shortName>
+      <units></units>
+      <description>
+         Number of loberotator boards
+      </description>
+   </MonitorPoint>
+
+   <Container name="Channel"  count="24" >
+        <description>A loberotator channel - a single DDS</description>
+
+        <MonitorPoint name="channelNum" persistent="true"  type="int">
+          <shortName>Channel</shortName>
+          <units></units>
+          <description>
+            Channel number within the full loberotator system [1-24]
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="boardNum" persistent="true" type="int">
+          <shortName>Board</shortName>
+          <longName>Board number</longName>
+          <units></units>
+          <description>
+            Parent board for this channel
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="loFreq" persistent="true" type="double">
+          <shortName>LO1 Freq</shortName>
+          <units>GHz</units>
+          <description>
+            LO1 Frequency in GHz
+          </description>
+          <precision>3</precision>
+        </MonitorPoint>
+
+        <MonitorPoint name="multiplier" persistent="true" type="int">
+          <shortName>Multiplier</shortName>
+          <units></units>
+          <description>
+            Multiplier applied to rate/phase to get the DDS rate/phae.
+            The DDS is then added to the oscillator, which may be
+            further multiplied/divided by hardware to form the firstLO
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="divisor" persistent="true" type="int">
+          <shortName>Divisor</shortName>
+          <units></units>
+          <description>
+            Divisor applied to rate/phase to get the DDS rate/phae.
+            The DDS is then added to the oscillator, which may be
+            further multiplied/divided by hardware to form the firstLO
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="sign" persistent="true" type="int">
+          <shortName>Sign</shortName>
+          <units></units>
+          <description>
+            Sign applied to phase/rate before setting DDS.
+            This can correct for the DDS using different lock sidebands
+            when it is added to the oscillator.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="delay" type="double">
+          <shortName>Delay</shortName>
+          <units>ns</units>
+          <precision>3</precision>
+          <width>9</width>
+          <description>
+            Delay from the control system
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="delayRate" type="double">
+          <shortName>Delay Rate</shortName>
+          <units>ns/s</units>
+          <precision>3</precision>
+          <description>
+            Delay rate from the control system
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="fringeTracking" persistent="true" type="enum">
+          <shortName>Fringe Tracking</shortName>
+          <description>
+            Control of fringe tracking in the linux code. This does not
+            affect any offset phase that may be requested.
+          </description>
+          <enum name="ON">
+            <description>
+                Offset phase is on
+            </description>
+          </enum>
+          <enum name="OFF">
+            <description>
+                Offset phase is turned off (normal state)
+            </description>
+          </enum>
+          <warnHi>OFF</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="offsetPhaseState" type="enum"
+             persistent="true" priority="normal">
+          <shortName>Offset Phase State</shortName>
+          <description>
+            An addition phase offset and rate to be added to the DDS
+            for debugging
+          </description>
+          <enum name="ON">
+            <description>
+                Offset phase is on
+            </description>
+          </enum>
+          <warnHi>ON</warnHi>
+          <enum name="OFF">
+            <description>
+                Offset phase is turned off (normal state)
+            </description>
+          </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="offsetPhase" type="float"
+             persistent="true" priority="normal">
+          <shortName>Offset Phase</shortName>
+          <units>deg</units>
+          <description>
+            Offset phase for debugging
+          </description>
+          <precision>1</precision>
+        </MonitorPoint>
+
+        <MonitorPoint name="offsetPhaseRate" type="float"
+             persistent="true" priority="normal">
+          <shortName>Offset Phase Rate</shortName>
+          <units>Hz</units>
+          <description>
+            Offset phase rate for debugging
+          </description>
+          <precision>3</precision>
+          <width>8</width>
+        </MonitorPoint>
+
+        <MonitorPoint name="phase" type="double">
+          <shortName>DDS Phase</shortName>
+          <units>deg</units>
+          <description>
+            DDS phase
+          </description>
+          <precision>1</precision>
+        </MonitorPoint>
+
+        <MonitorPoint name="phaseRate" type="double">
+          <shortName>DDS Phase Rate</shortName>
+          <units>Hz</units>
+          <description>
+            DDS phase rate
+          </description>
+          <precision>3</precision>
+          <width>8</width>
+        </MonitorPoint>
+
+        <MonitorPoint name="ddsFringeTracking" type="enum">
+          <shortName>DDS Fringe Trk</shortName>
+          <description>
+            State of DDS fringe tracking (not to be confused with high
+            level fringe tracking state)
+          </description>
+          <enum name="ON">
+            <description>
+                DDS doing fringe tracking (normal)
+            </description>
+          </enum>
+          <enum name="OFF">
+            <description>
+                DDS fringe tracking disabled (engineering)
+            </description>
+          </enum>
+          <warnHi>OFF</warnHi>
+          <enum name="INVALID">
+            <description>
+                 An invalid code has been returned by the hardware
+            </description>
+          </enum>
+          <errHi>INVALID</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="phaseSwitch90" type="enum">
+          <shortName>Phaseswitch90</shortName>
+          <description>
+            Phaseswitch state for 90 deg switching
+          </description>
+          <enum name="ON">
+            <description>
+                Phaseswitching 90d is enabled (normal)
+            </description>
+          </enum>
+          <enum name="OFF">
+            <description>
+                Phaseswitching 90d is disabled (testing)
+            </description>
+          </enum>
+          <warnHi>OFF</warnHi>
+          <enum name="INVALID">
+            <description>
+                 An invalid code has been returned by the hardware
+            </description>
+          </enum>
+          <errHi>INVALID</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="phaseSwitch180" type="enum">
+          <shortName>Phaseswitch180</shortName>
+          <description>
+            Phaseswitch state for 180 deg switching
+          </description>
+          <enum name="ON">
+            <description>
+                Phaseswitching is enabled (normal)
+            </description>
+          </enum>
+          <enum name="OFF">
+            <description>
+                Phaseswitching is disabled (testing)
+            </description>
+          </enum>
+          <warnHi>OFF</warnHi>
+          <enum name="INVALID">
+            <description>
+                 An invalid code has been returned by the hardware
+            </description>
+          </enum>
+          <errHi>INVALID</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="walshColumn" type="int">
+          <shortName>Walsh Col</shortName>
+          <description>
+            Walsh column used by this LR channel
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="psColumnState" type="enum">
+          <shortName>PS Column State</shortName>
+          <description>
+            State of phase-switch column
+          </description>
+          <enum name="OK">
+            <description>
+                Phaseswitch column has been succesfully downloaded
+            </description>
+          </enum>
+          <enum name="BUSY">
+            <description>
+                Phaseswitch column was downloading during last frame
+            </description>
+          </enum>
+          <errHi>BUSY</errHi>
+          <enum name="BADCRC">
+            <description>
+                Phaseswitch column download failed with bad CRC
+            </description>
+          </enum>
+          <errHi>BADCRC</errHi>
+          <enum name="TMO">
+            <description>
+                Phaseswitch column download failed with time-out
+            </description>
+          </enum>
+          <errHi>TMO</errHi>
+          <enum name="DEFAULT">
+            <description>
+                Running on default phaseswitch column
+            </description>
+          </enum>
+          <enum name="INVALID">
+            <description>
+                An invalid code has been returned by the hw
+            </description>
+          </enum>
+          <errHi>INVALID</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="commandTime" type="float" >
+          <longName>Command Time</longName>
+          <shortName>Cmd Time</shortName>
+          <units>s</units>
+          <description>
+           Time that last phase/rate command was received for this channel.
+           In seconds, modulo 10 seconds.
+          </description>
+        </MonitorPoint>
+        
+        
+
+   </Container> <!-- End Channel -->
+
+   <Container name="Board" indexName="b" priority="debug"
+        count="6" >
+
+      <MonitorPoint name="boardNum"  persistent="true" type="int">
+        <shortName>Board Num</shortName>
+        <longName>Board number</longName>
+        <units></units>
+        <description>
+          Board number, starting at 1
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="pps" type="enum">
+        <longName>1 PPS Present</longName>
+        <shortName>1 PPS</shortName>
+        <description>
+          One pulse per second external signal
+        </description>
+        <enum name="OK">
+          <description>
+            Signal is present and OK
+          </description>
+        </enum>
+        <enum name="MISSING">
+          <description>
+            Signal is missing
+          </description>
+        </enum>
+        <errHi>MISSING</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="heartbeat" type="enum">
+        <longName>1024 PPS</longName>
+        <shortName>1024 PPS</shortName>
+        <description>
+          1024 pulses per second external signal
+        </description>
+        <enum name="OK">
+          <description>
+            Signal is present and OK
+          </description>
+        </enum>
+        <enum name="MISSING">
+          <description>
+            Signal is missing
+          </description>
+        </enum>
+        <errHi>MISSING</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="dataValid" type="enum">
+        <longName>Data Validity</longName>
+        <shortName>Data Valid</shortName>
+        <description>
+          Module state could corrupt visibilities
+          (e.g. downloading phaseswitch tables)
+        </description>
+        <enum name="VALID">
+          <description>
+            Data is not invalid
+          </description>
+        </enum>
+        <enum name="BAD">
+          <description>
+            Data is invalid
+          </description>
+        </enum>
+        <errHi>BAD</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="timeDiff" type="short">
+        <longName>Time Difference</longName>
+        <shortName>Time Diff</shortName>
+        <units>ms</units>
+        <description>
+          Time difference between XAC time and NTP
+        </description>
+        <errHi>  60</errHi>
+        <warnHi> 21</warnHi>
+        <warnLo>-21</warnLo>
+        <errLo> -60</errLo>
+      </MonitorPoint>
+
+      <MonitorPoint name="temperature" type="float">
+        <longName>Board Temperature</longName>
+        <shortName>Temp</shortName>
+        <units>C</units>
+        <description>
+          Board temperature
+        </description>
+        <precision>2</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="analog5v" type="float" priority="normal">
+        <longName>+5V Power Supply #1</longName>
+        <shortName>+5V Analog</shortName>
+        <units>V</units>
+        <precision>2</precision>
+        <description>
+          +5V analog power supply voltage
+        </description>
+        <warnLo>4.85</warnLo>
+        <warnHi>5.15</warnHi>
+        <errLo>4.75</errLo>
+        <errHi>5.25</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="digital5v" type="float" priority="normal">
+        <longName>+5V Digital Power Supply</longName>
+        <shortName>+5V Digital</shortName>
+        <units>V</units>
+        <precision>2</precision>
+        <description>
+          +5V digital power supply voltage
+        </description>
+        <warnLo>4.85</warnLo>
+        <warnHi>5.15</warnHi>
+        <errLo>4.75</errLo>
+        <errHi>5.25</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="digitalNeg5v" type="float" priority="normal">
+        <longName>-5V Digital Power Supply</longName>
+        <shortName>-5V Digital</shortName>
+        <units>V</units>
+        <precision>2</precision>
+        <description>
+          -5V digital power supply voltage
+        </description>
+        <errHi> -4.0</errHi>
+        <warnHi>-4.5</warnHi>
+        <warnLo>-5.5</warnLo>
+        <errLo> -6.0</errLo>
+     </MonitorPoint>
+
+      <MonitorPoint name="ps24v" type="float" priority="normal">
+        <longName>+24V Power Supply</longName>
+        <shortName>+24V</shortName>
+        <units>V</units>
+        <precision>2</precision>
+        <description>
+          +24V power supply voltage
+        </description>
+        <warnLo>20.0</warnLo>
+        <warnHi>28.0</warnHi>
+        <errLo>18.0</errLo>
+        <errHi>30.0</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="lostCommandCount" type="short" >
+        <longName>Lost Command Count</longName>
+        <shortName>Lost Cmds</shortName>
+        <description>
+          Running total of missed fringe rate/phase commands
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="ppsResetCount" type="short" >
+        <longName>PPSresetCount</longName>
+        <shortName>PPS resets</shortName>
+        <description>
+          Number of times the internal 1 PPS counter has been reset by the
+          external 1 PPS signal.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="missedPPScount" type="short" >
+        <longName>Missed PPS count</longName>
+        <shortName>Missed PPS</shortName>
+        <description>
+          Count of times when expected 1 PPS was not received
+        </description>
+      </MonitorPoint>
+
+     <!-- Each board has an XAC Container -->
+     <!-- Need to make Containers unique with the Ext trick -->
+     <CommonContainer ref="Xac"  />
+
+   </Container>      <!-- End Board -->
+
+    <!-- ********************************** -->
+    <!-- CAN host specific monitor points.  -->
+    <!-- ********************************** -->
+    <Container name="Can" >
+        <CommonContainer ref="Host" />
+        <CommonContainer ref="Bus" />
+    </Container>
+
+    <CommonMonitorPoint ref="timestamp" />
+
+</Subsystem>

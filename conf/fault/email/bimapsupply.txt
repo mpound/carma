@@ -1,0 +1,8 @@
+The helium supply pressure for the cryogenic system is low.
+Low supply pressure can cause a cryogenic warm up so this alarm requires
+prompt attention.
+
+See also:
+http://cedarflat.mmarray.org/wiki/Alarms#BimaX.BimaSpecific.Dewar.psupply
+
+If it's the middle of the night and you need guidance, email help@mmarray.org.

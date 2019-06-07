@@ -1,0 +1,362 @@
+%$Id: Program.tex,v 1.13 2005/03/15 02:20:21 teuben Exp $
+
+\documentclass[preprint]{aastex} % AASTeXv5.0
+
+\begin{document}
+
+
+\title{The CARMA Program}
+
+\author{N. S. Amarnath, Peter Teuben}
+\affil{Document Version: 2005-February-1}
+%% List additional authors in the same way.
+
+\begin{abstract}
+
+\begin{verbatim}
+
+Program is a singleton class that gives a (CARMA) program a uniform CLI look and feel.
+Every CARMA program should use the Program class in the way described in this document.
+
+1) program keywords, as doxygen-type tags in the comment (//) section. They are compiled by
+   the ``keys'' program into C++ code, then compiled and linked into your executable.
+   Doxygen tags (proposed)
+    @version
+    @usage
+    @description
+    @keys <keyname>	<default-value>	<type>	<one-line-help>
+
+   The amount of program keywords is defined by, and up to the programmer
+
+2) system keywords
+    small set of keywords EACH program will listen to
+	- daemonize=t|f
+	- logger
+		loghost=
+		logtype=
+		logfile=
+	- carmaconf=$CARMA/etc/carma.conf    (to be discussed)
+	- corbaconf=$CARMA/etc/corba.conf    (to be discussed)
+
+   The amount of system keywords is defined by the Program class, and future 
+   extensions to be discussed.
+
+\end{verbatim}
+
+\end{abstract}
+
+\section{Introduction}
+
+This document proposes a generic structure for all CARMA programs,
+including specializations for daemon processes. The intent is to
+allow CARMA developers to focus on the functionality to be delivered
+rather than the mundane tasks associated with program level tasks,
+such as generic exception handling, commandline argument parsing,
+default policies for program variables and daemonising a UNIX
+(Solaris/Linux) process. Most importantly, it ensures a uniform
+look and feel for all CARMA programs.
+
+\section{Program}
+
+Every CARMA program will have to do the following:
+
+\begin{itemize}
+
+
+\item 
+initialize all program and system (command line) parameters
+%% program variables are global variables initialized by environment - through
+%% CLI, file, and/or env variables.
+
+\item 
+initialize a logger
+
+\item
+initialize program "watch" variables as required
+
+\item
+setup exception handling
+
+\end{itemize}
+
+This argues for a style of programming where the user does not write
+a {\tt main()}, but will be provided via a library. The main would
+look something like:
+
+\footnotesize\begin{verbatim}
+int main(int argc, char *argv[]) 
+{
+  try {
+    Program p(argc,argv);
+    p.initialize()
+    p.run()
+    p.terminate();
+  } catch (...) {
+    ...
+  }
+}
+  
+\end{verbatim}\normalsize
+Each there should only be one instance of {\tt Program} in a program,
+this argues for a {\bf Singleton} style implementation of this class.
+If this class is wrapped through a set of global functions, a CARMA
+program could be as simple as this:
+
+\footnotesize\begin{verbatim}
+#include  "carma/main.h"
+
+void carma_main(void)
+{
+  x = getdparam("x");
+  cout << "x = " << x << endl;
+}
+  
+\end{verbatim}\normalsize
+
+However, in the style of OO we will give the programmer a little more 
+responsibility, and use the {\tt Program} class explicitly.
+
+\subsection{main()}
+
+Application programmers only need to write a ``Program::main()''.
+This user interface will be controlled by a 
+{\bf singleton} class, {\tt Program}. The
+{\tt program keywords} are defined via doxygen tags,
+and a special ``compiler'' (dubbed {\tt keys} will
+compile these doxygen-tags into a static structure
+that is used by the {\tt Program} class at 
+instantiation. 
+
+\footnotesize
+\begin{verbatim}
+#include "carma/util/Program.h"
+#include <cstdio>
+
+using namespace std;
+using namespace carma::util;
+
+
+//
+// @version     $Revision: 1.13 $ $Date: 2005/03/15 02:20:21 $
+//
+// @usage       make a Plummer model, with a spatial or mass cut-off
+//
+// @description
+//      mkplummer builds a nbody system according to a Plummer model, in virial
+//      units (M=G=-4E=1, with E the total energy), and finite spatial extent
+//      which can be regulated by specifying mfrac or rfrac or using their default
+//      values.
+//      litt: S.J. Aarseth, M. Henon and R. Wielen (1974),
+//            Astron. and Astrophys. 37, p. 183.
+//
+//      There could be more description here, but not sure if the parser will find it.
+//
+// @key nbody   123     i   number of bodies in the Nbody system
+// @key seed    0       i   random seed
+// @key mfrac   0.999   r   Mass cutoff
+// @key rfrac   22.8    r   Radial cutoff (virial units)
+// @key comment ""      s   Optional comments added to output data stream
+// @key iflag   f       b   an as yet undocumented flag
+// @key oflag   t       b   another as yet undocumented flag
+//
+//
+
+
+void compute(void)
+{
+    Program &p = Program::getProgram();
+    int n = p.getiParameter("nbody");
+    printf("Finishing off computing:   n=%d\n",n);
+}
+ 
+int Program::main()
+{
+    string comment;
+    int  n, seed, argc;
+    string *argv;
+    double  mfrac, rfrac;
+    bool  i_flag, o_flag;
+    char  seedlog[128];
+ 
+    n = getiParameter("nbody");
+    if (hasValue("comment")) comment = getParameter("comment");
+    mfrac = getdParameter("mfrac");
+    rfrac = getdParameter("rfrac");
+ 
+    //    seed = srandinter(getiparam("seed"));
+    seed = getiParameter("seed");
+ 
+    i_flag = getbParameter("iflag");            // undocumented features
+    o_flag = getbParameter("oflag");            // undocumented features
+
+    if (o_flag) cerr << "mkplummer: random seed = " << seed << endl;
+    sprintf(seedlog, "       random number generator seed = %d",seed);
+    cout << "COMMENT:" << seedlog << endl;
+    cout << "nbody = " << n << endl;
+    cout << "mfrac = " << mfrac <<endl;
+    cout << "i/o flag = " << i_flag << " " << o_flag << endl;
+ 
+    compute();
+}
+ 
+
+\end{verbatim}
+\normalsize
+which can now be compiled and linked as follows (normally a Makefile takes care of this):
+
+\begin{verbatim}
+  % keys tProgram1.cc > tProgram1_keys.cc
+  % g++ -o tProgram1 `carmaincs` tProgram1.cc tProgram1_keys.cc `carmalibs`
+\end{verbatim}
+
+There are some important properties of this approach:
+\begin{enumerate}
+\item there is a fixed set of programs keywords, 
+that must have a name, a default, a type and some one line help. 
+\item keywords are not dynamic, or indexed (cf. FITS)
+\item parsing order is well defined (see below)
+\end{enumerate}
+
+It is also proposed that the parsing order for the values of the keywords
+will be in the following decreasing order of relevance:
+\begin{enumerate}
+\item command line
+\item some table with ``global'' or ``program'' defaults (Amar is working on this,
+  this could reside in the proposed \verb+$CARMA/etc/carma.conf\+
+\item the static table (as shown by the @key entries near {\it Program::main})
+\end{enumerate}
+
+The type of a keyword is useful to give at instantiation time, since the program has
+not really begun to run, 
+and is already able to stop running because of some trivial parsing error .
+\begin{itemize}
+\item[{\bf r}] real (float or double; we don't distinguish)
+\item[{\bf i}] integer
+\item[{\bf b}] boolean (true: t,1,y   false: f,0,n)
+\item[{\bf hms}] hh:mm:ss.s type thingo, though decimal also allowed?
+\item[{\bf dms}] dd:mm:ss.s type thingo, though decimal also allowed?
+\item[{\bf t}] time (dates?) 
+\item[{\bf s}] string, catch-all for anything that will not be type-checked at all
+\end{itemize}
+
+The type can be optionally following by a ``{\tt +}'' symbol, which is needed if multiple items
+of the same type are allowed (we could perhaps allow implied loops
+for arrays, e.g. 1:10:2  would compute as 1,3,5,7,9). Complex types, such as 
+``{\tt s,i,r,r,r}'' are also possible.
+
+\begin{enumerate}
+\item {\bf deamonize=} if used, controls how program is to be daemonized (see {\it daemon(3)}
+\item {\bf logger=} if used, allows to deviate from the default CARMA way to log (need input from Marc)
+  Could also split this up in {\tt loghost=, logtype=, logfile=}.
+\item {\bf carmaconf=} override configuration in \verb+$CARMA/etc/carma.conf\+ 
+\item {\bf corbaconf=} override configuration in \verb+$CARMA/etc/corba.conf\+ 
+\item {\bf help=} helper (for compatibility {\bf --help} is also understood, including a number of
+  associated helper flags.
+
+
+
+\end{enumerate}
+
+
+\subsection{Command Line Interface}
+
+A uniform and consistent Command Line Interface (CLI) will be an important
+asset to our software. We are proposing a simple static table of a finite
+set of ``{\it program keywords}'' (unique to the program, and defined
+by the programmer) and
+small set of ``{\it system keywords}'' (same meaning to all CARMA programs,
+defined by the Program class).
+Although the traditional unix style flags (getopts, now modernized by 
+long names) may look appealing, we find their usage often confusing
+(e.g. sticky vs. non-sticky, multiple use of flags on the command line, 
+the ambigues meaning of booleans: does -l mean yes or no longs?).
+We do however allow flags like {\tt --help} that are overloaded to their
+system keyword equivalents.
+
+\subsection{Exception Handling}
+
+A uniform policy for managing CARMA exceptions will make life easier for 
+programmers. Managing an exception may involve one or more of 
+
+\begin{itemize}
+
+\item
+reporting/logging the exception
+
+\item
+taking recovery/cleanup actions
+
+\item
+throwing an exception to the next level.
+
+\end{itemize}
+
+A common exception handling mechanism will be supported through a common 
+base class {\tt carma::util::BaseExceptionObj}, that will provide facilities 
+for raising an exception, storing a string describing the nature of the 
+exception, and will have the ability to log an exception. One other derived 
+classes will also be provided - a {\tt carma::util::SystemExceptionObj}
+class for managing system errors.
+
+Class {\tt SystemExceptionObj} will provide facilities to obtain system (OS) 
+error details, and concatenate any system information string for the 
+error to the logged output. Some system errors may also be fatal. 
+In such a case, programmers may get a chance to clean up, and ensure that
+the program/thread makes a clean exit.
+
+
+\section{Initialization and termination of a "typical" CARMA process}
+
+Initialization of a CARMA process will involve initialization of the process
+wide logger, and, depending on the nature of the process, 
+
+\begin {enumerate}
+\item daemonizing the process
+\item initializing cleanup utilities (if we decide to have some, that is)
+\item initializing CORBA nameserver and notification services, 
+\item reading in program configuration information and initializing
+the appropriate variables.
+\end {enumerate}
+
+Termination of the process will involve
+
+\begin {enumerate}
+\item cleaning up memory (heap) resources
+\item releasing system resources (files, shared memeory, sockets...)
+\item closing and deleting process wide logger, and
+\item exiting.
+\end {enumerate}
+
+\section{Examples}
+
+\begin{verbatim}
+
+  @key  file  @required     string     Input filename, no default.
+  @key  eps   0.01          double     Pointing accuracy [arcsec]
+  @key  dra   15,arcsec     unit       Offset in RA
+
+\end{verbatim}
+
+\begin{references}
+
+argtable  http://argtable.sourceforge.net/doc/html/index.html
+
+clig	  http://wsd.iitb.fhg.de/~kir/clighome/
+
+clo++     http://pmade.org/~pjones/software/clo++/
+
+perl      http://www-106.ibm.com/developerworks/linux/library/l-perl-speak.html
+
+gengetopt http://www.gnu.org/software/gengetopt/gengetopt.html
+
+parseargs
+
+NEMO      src/kernel/io/getparam.c
+
+BaseException	CARMA CVS tree - carma/doc/util/html/index.html
+
+\end{references}
+
+
+\end{document}
+

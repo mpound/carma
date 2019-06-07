@@ -1,0 +1,199 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Quadrature Modulator CAN device monitor point definitions.  Quadrature -->
+<!-- Modulator monitor points are shared by both the wideband and spectral  -->
+<!-- downconverter subsystems.                                              -->
+<!-- Author: Andrew Beard                                                   -->
+
+<Common scope="global" author="Andy Beard">
+
+    <Container name="QuadMod" priority="normal" >
+
+       <MonitorPoint name="modulationEnabled" type="bool" priority="useful" >
+         <shortName>Modulation Enabled</shortName>
+         <longName>Modulation Status</longName>
+         <description>
+            Indicates if quadrature modulation is currently
+            enabled or disabled.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="powerOutEnabled" type="bool" priority="useful" >
+         <shortName>Pout Enabled</shortName>
+         <longName>Power Output Enabled</longName>
+         <description>
+            Pout power level control status.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="inputPower" type="float" priority="useful" >
+         <shortName>Power In</shortName>
+         <longName>Input Log Power</longName>
+         <description>Input log power level
+         </description>
+         <units>dBm</units>
+       </MonitorPoint>
+
+       <MonitorPoint name="outputPower" type="float" priority="useful" >
+         <shortName>Power Out</shortName>
+         <longName>Output Log Power</longName>
+         <description>Output log power level
+         </description>
+         <units>dBm</units>
+       </MonitorPoint>
+
+       <MonitorPoint name="atten" type="byte" priority="useful" >
+         <shortName>Atten</shortName>
+         <longName>Attenuation</longName>
+         <description>Output power digital attenuation level
+         </description>
+         <units>dB</units>
+       </MonitorPoint>
+
+       <MonitorPoint name="pOutStat" type="enum" priority="useful" >
+            <shortName>ALC State</shortName>
+            <longName>Power Output Automatic Level Control Status</longName>
+            <description>
+                Pout Attenuator Level Control (ALC) status
+            </description>
+            <enum name="MANUAL">       <!-- 0x00 -->
+            <description>Manual control</description>
+            </enum>
+            <enum name="PRESET_BUSY">  <!-- 0x01 -->
+                <description>Preset routine busy</description>
+            </enum>
+            <enum name="PRESET_DONE">  <!-- 0x02 -->
+                <description>
+                    Preset routine done and succesful.
+                </description>
+            </enum>
+            <enum name="PRESET_HIGH">  <!-- 0x03 -->
+                <description>
+                    Preset routine done (Input too high)
+                </description>
+            </enum>
+            <enum name="PRESET_LOW">   <!-- 0x04 -->
+                <description>
+                    Preset routine done (Input too low)
+                </description>
+            </enum>
+            <enum name="SET_BUSY">     <!-- 0x05 -->
+                <description>Set level routine busy</description>
+            </enum>
+            <enum name="SET_DONE">     <!-- 0x06 -->
+                <description>Set level routine done (Input OK)</description>
+            </enum>
+            <enum name="SET_HIGH">     <!-- 0x07 -->
+            <description>
+                Set level routine done (Input too high)
+            </description>
+            </enum>
+            <enum name="SET_LOW">     <!-- 0x08 -->
+                <description>
+                    Set level routine done (Input too low)
+                </description>
+            </enum>
+       </MonitorPoint>
+
+       <MonitorPoint name="ppsPresent" type="bool" priority="useful">
+           <shortName>PPS Present</shortName>
+           <longName>External PPS Present</longName>
+           <description>
+            Indicates if the external PPS signal is present.
+           </description>
+           <errHi>false</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="heartbeatPresent" type="bool" priority="useful">
+           <shortName>Heartbeat Present</shortName>
+           <longName>External Heartbeat Present</longName>
+           <description>
+            Indicates if the external heartbeat signal is present.
+           </description>
+           <errHi>false</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="pstcState" type="enum">
+         <shortName>Phase Switch Table</shortName>
+         <longName>Phase-switch Table Column State</longName>
+         <description>State of phase-switch table column</description>
+         <enum name="VALID"> <!-- 0x00 -->
+           <description>Column is valid</description>
+         </enum>
+         <enum name="DOWNLOADING"> <!-- 0x01 -->
+           <description>Column was being downloaded during blanking frame
+           </description>
+         </enum>
+         <enum name="FAIL_BAD_CRC"> <!-- 0x02 -->
+           <description>Column download failed due to bad CRC</description>
+         </enum>
+         <enum name="FAIL_OTHER"> <!-- 0x03 -->
+           <description>Column download failed for unknown reason</description>
+         </enum>
+         <enum name="DEFAULT"> <!-- 0x04 -->
+           <description>Default table loaded</description>
+         </enum>
+       </MonitorPoint>
+
+       <MonitorPoint name="temp" type="float" priority="useful" >
+         <shortName>Temp</shortName>
+         <longName>Temperature</longName>
+         <description>Module temperature
+         </description>
+         <units>C</units>
+       </MonitorPoint>
+
+       <MonitorPoint name="ps24v" type="float" >
+         <shortName>+24V Supply</shortName>
+         <longName>Power Supply 24V</longName>
+         <description>+24V power supply voltage</description>
+         <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="ps5v1" type="float" >
+         <shortName>+5V Analog</shortName>
+         <longName>+5V Analog Power Supply</longName>
+         <description>+5V analog power supply voltage</description>
+         <units>V</units>
+         <warnLo>4.85</warnLo>
+         <warnHi>5.15</warnHi>
+         <errLo>4.75</errLo>
+         <errHi>5.25</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="ps5v2" type="float" >
+         <shortName>-5V Analog</shortName>
+         <longName>-5V Analog Power Supply</longName>
+         <description>-5V analog power supply voltage</description>
+         <units>V</units>
+         <warnHi>-4.85</warnHi>
+         <warnLo>-5.15</warnLo>
+         <errHi>-4.75</errHi>
+         <errLo>-5.25</errLo>
+       </MonitorPoint>
+
+       <MonitorPoint name="ps5v3" type="float" >
+         <shortName>+5V Digital</shortName>
+         <longName>+5V Digital Power Supply</longName>
+         <description>+5V digital power supply voltage</description>
+         <units>V</units>
+         <warnLo>4.85</warnLo>
+         <warnHi>5.15</warnHi>
+         <errLo>4.75</errLo>
+         <errHi>5.25</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="inputNo" type="short" persistent="true">
+         <shortName>Input</shortName>
+         <longName>IF input number</longName>
+         <description>IF input number, starting at one
+         </description>
+       </MonitorPoint>
+
+   </Container>
+</Common>

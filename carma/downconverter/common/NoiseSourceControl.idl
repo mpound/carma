@@ -1,0 +1,101 @@
+/** @file
+ * Carma noise source control interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.10 $
+ * $Date: 2011/05/17 16:27:46 $
+ * $Id: NoiseSourceControl.idl,v 1.10 2011/05/17 16:27:46 iws Exp $
+ */
+#ifndef CARMA_DOWNCONVERTER_NOISESOURCECONTROL_IDL
+#define CARMA_DOWNCONVERTER_NOISESOURCECONTROL_IDL
+
+#include "carma/canbus/devices/DeviceControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module downconverter {
+
+/**
+ * Carma dowconverter noise source control interface.
+ * Both the wideband and spectral line downconverter will use the same
+ * noise source CAN modules and thus share this interface.
+ */
+interface NoiseSourceControl : carma::canbus::devices::DeviceControl {
+
+    /**
+     * Set noise output power to preset level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setNoiseOutputToPreset() raises (carma::util::UserException);
+
+    /**
+     * Set output power to indicated level.
+     * @param pout desired output power level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setNoiseOutput(in double pout) raises (carma::util::UserException);
+
+    /**
+     * Set output power attenuation to indicated level.
+     * The attenuation range is 0-31 dB in integral steps.
+     * Numbers outside of this range are ignored by the XAC.
+     * @param atten desired output power attenuation.
+     * @exception carma::util::UserException on failure.
+     */
+    void setNoiseAttenuation(in unsigned short atten) raises
+        (carma::util::UserException);
+
+    /**
+     * Enable noise source.
+     * @param enable true for enable false disable.
+     * @exception carma::util::UserException on failure.
+     */
+    void enableNoiseSource(in boolean enable) raises
+        (carma::util::UserException);
+
+    /**
+     * Set tone output to preset level.
+     * Turns tone source on, noise source off and command the output power
+     * level to the preset value stored in the modules EEPROM.
+     */
+    void setToneOutputToPreset( ) raises ( carma::util::UserException );
+
+    /**
+     * Set tone output to requested level.
+     * Turns tone source on, noise source off and commands the output power
+     * level to the value specified in the message.
+     * @param powerIndBm Output tone power level in dBm.
+     */
+    void setToneOutput( in double powerIndBm )
+        raises ( carma::util::UserException );
+
+    /**
+     * Set tone attenuation to indicated level.
+     * @param atten desired tone attenuation.
+     * @exception carma::util::UserException on failure.
+     */
+    void setToneAttenuation(in unsigned short atten) raises
+        (carma::util::UserException);
+
+    /**
+     * Enable tone source.
+     * @param enable true for enable false for disable.
+     * @exception carma::util::UserException on failure.
+     */
+    void enableToneSource(in boolean enable) raises
+        (carma::util::UserException);
+
+    // Engineering routines
+    /**
+     * Is NoiseSource enabled.
+     * This command is for Engineering purposes only!
+     * This method indicates if the noise source is enabled.
+     * @return true if noise source is enabled, false otherwise.
+     */
+    boolean isEnabled();
+
+}; // End NoiseSourceControl interface
+}; // End downconverter module
+}; // End carma module
+#endif
+

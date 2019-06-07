@@ -1,0 +1,98 @@
+#------------------------------------------------------------
+#  This is for the Mars model in use before July 15, 2013.
+#  and thus for historic info only.
+#  Use planetTb.wip now.
+
+# $Id: mars.wip,v 1.3 2013/07/15 21:29:02 mpound Exp $
+#------------------------------------------------------------
+data marstb.tab.old
+xcol 1
+ycol 2
+limits 51550  57016 185 240
+limits 53000  54000 185 240
+box bcnst bcnst
+ylabel T\db\u (K)
+xlabel MJD
+lstyle 1
+lwidth 3
+color 2
+connect
+move 53050 227.5
+label 43 GHz (model)
+ycol 3
+#lstyle 2
+color 3
+connect
+move 53050 230
+label 115 GHz (model)
+ycol 4 
+#lstyle 3
+color 5
+connect 
+move 53050 232.5
+label 230 GHz (model)
+ycol 5
+#lstyle 4
+color 7
+connect
+move 53050 235
+label 345 GHz (model)
+color 1
+
+expand 1.2
+data mars.interpdata.old
+xcol 1
+ycol 2
+# 85 GHz
+filled_square
+points
+move 53050 225
+dot
+rmove 10 -.5 
+expand 1.0
+label 85 GHz (interp)
+expand 1.2
+ycol 3
+# 100 GHz
+filled_triangle
+points
+move 53050 222.5
+dot
+rmove 10 -.5 
+expand 1.0
+label 100 GHz (interp)
+expand 1.2
+ycol 5
+# 220 GHz
+circle
+points
+move 53050 220.0
+dot
+rmove 10 -.5 
+expand 1.0
+label 220 GHz (interp)
+
+# CHECK ONLY.
+# 115 GHz
+#ycol 4
+#filled_circle
+#points
+
+color 8
+dline 2 53000 206.027 54000 206.027
+move 53800 204
+label 85
+
+dline 2 53000 207. 54000 207
+move 53800 208
+label 100
+
+dline 2 53000 213.785 54000 213.785
+move 53800 215
+label 220
+
+dline 2 53590 235 53700 235
+move 53710 234.5
+label Power law with frequency
+
+end

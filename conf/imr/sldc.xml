@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "/home/abeard/development/carma/build/bin/">
+    <!ENTITY RUN_DIR "/home/abeard/development/carma/build/">
+    <!ENTITY LOG "">
+]>
+
+<!-- Spectral Line Downconverter local test config.  -->
+
+<domain>
+
+   <oad hostname="localhost">
+       
+       <server name="FrameCollator"
+            path="&BIN_DIR;/frameCollator"
+            directory="&RUN_DIR;" 
+            args=" &LOG; mode=final"  />
+       
+       <server name="Subarray1" 
+            path="&BIN_DIR;/subarrayControl"
+            directory="&RUN_DIR;"  
+            args="runSAT=true &LOG;" />
+
+   </oad>
+   <oad hostname="canlab.ovro.pvt">
+        <server name="SldcFSP" 
+            path="&BIN_DIR;frameScriberPublisher"
+            args="subsystem=Sldc delay=300 "
+            directory="&RUN_DIR;"  />
+    
+        <server name="Sldc" 
+            path="&BIN_DIR;carmaSldcHost"
+            args="sim=true emulate=true"
+            directory="&RUN_DIR;"  />
+
+         <server name="RemoteCan" path="&BIN_DIR;/canOverIpServer"
+                directory="&RUN_DIR;"   
+                args=""/>
+    
+    </oad>
+
+</domain>

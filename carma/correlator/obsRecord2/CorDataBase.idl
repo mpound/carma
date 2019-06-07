@@ -1,0 +1,263 @@
+// $Id: CorDataBase.idl,v 1.41 2013/11/26 16:41:23 mpound Exp $
+
+#include "carma/util/PhaseSwitching.idl"
+#include "carma/util/SeqTypedefs.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+  module correlator {
+    /**
+     *  Correlator classes pertaining to CORBA implementations.
+     */
+    module obsRecord2 {
+
+      /**
+       *  Correlator Data to be transported via CORBA.
+       */
+      typedef sequence<octet> DataSeq;
+
+      /**
+       *  Supported spectral correlator bandwidths. Due to the heterogeneous
+       *  hardware, not all correlator bands support every mode listed.
+       *  3- and 4-bit mode supported only by CARMA style hardware.  COBRA supports
+       *  only 2-bit mode.
+       */
+      enum BandWidthType {
+          BAND_500MHZ,  ///< 500 MHz bandwidth, 2Bit mode
+          BAND_250MHZ,  ///< 250 MHz bandwidth, 2Bit mode
+          BAND_125MHZ,  ///< 125 MHz bandwidth, 2Bit mode
+          BAND_62MHZ,   ///< 62.5 MHz bandwidth, 2Bit mode
+          BAND_31MHZ,   ///< 31.25 MHz bandwidth, 2Bit mode
+          BAND_8MHZ,    ///< 7.8125 MHz bandwidth, 2Bit mode
+          BAND_2MHZ,    ///< 1.953125 MHz bandwidth, 2Bit mode
+
+          BAND_500MHZ_3BIT,  ///< 500 MHz bandwidth, 3Bit mode
+          BAND_250MHZ_3BIT,  ///< 250 MHz bandwidth, 3Bit mode
+          BAND_125MHZ_3BIT,  ///< 125 MHz bandwidth, 3Bit mode
+          BAND_62MHZ_3BIT,   ///< 62.5 MHz bandwidth, 3Bit mode
+          BAND_31MHZ_3BIT,   ///< 31.25 MHz bandwidth, 3Bit mode
+          BAND_8MHZ_3BIT,    ///< 7.8125 MHz bandwidth, 3Bit mode
+          BAND_2MHZ_3BIT,    ///< 1.953125 MHz bandwidth, 3Bit mode
+
+          BAND_500MHZ_4BIT,  ///< 500 MHz bandwidth, 4Bit mode
+          BAND_250MHZ_4BIT,  ///< 250 MHz bandwidth, 4Bit mode
+          BAND_125MHZ_4BIT,  ///< 125 MHz bandwidth, 4Bit mode
+          BAND_62MHZ_4BIT,   ///< 62.5 MHz bandwidth, 4Bit mode
+          BAND_31MHZ_4BIT,   ///< 31.25 MHz bandwidth, 4Bit mode
+          BAND_8MHZ_4BIT,    ///< 7.8125 MHz bandwidth, 4Bit mode
+          BAND_2MHZ_4BIT     ///< 1.953125 MHz bandwidth, 4Bit mode
+      };
+
+      /**
+       *  Correlator operational modes.
+       */
+      enum ModeType {
+          MODE_IDLE,    ///< Meaning??
+          MODE_NORMAL   ///< Normal operation.
+      };
+
+      /**
+       *  Downconverter sideband choice.
+       */
+      enum SidebandType {
+          UPPER_SB,     ///< Upper side band.
+          LOWER_SB      ///< Lower side band.
+      };
+
+      //! @brief  Astroband mode -- The correlator FPGA configuration/polarization mode
+      enum FpgaModeType {
+          SINGLEPOL,  ///< default, single polarization mode, e.g. LL or RR
+          DUALPOL,    ///< dual-polarization, LL and RR
+          FULLPOL,    ///< Full-stokes mode
+          CARMA23     ///< 23-station mode
+      };
+
+      /**
+       *  IDL structure holding all Correlator Data.
+       *  All of the data taken at the same pointing center over the same
+       *  time period. A <b>CorData</b> contains an array of
+       *  <b>bytes</b>, which represents a serialized form of a
+       *  CorrelatorData object.
+       *
+       * @author Rick Hobbs
+       * @version $Revision: 1.41 $, $Date: 2013/11/26 16:41:23 $
+       */
+      struct CorData_s {
+        DataSeq         correlatorData;
+      };
+
+
+      struct DelayTriplet {
+        long   inputNumber;
+
+        double delay0;
+        double timestamp0;
+
+        double delay1;
+        double timestamp1;
+
+        double delay2;
+        double timestamp2;
+      };
+
+      typedef sequence< DelayTriplet > DelayTripletSeq;
+      typedef sequence< BandWidthType > BandWidthSeq;
+      typedef sequence< FpgaModeType > FpgaModeSeq;
+
+      /**
+       *  CORBA interface for controlling the correlator.
+       */
+      interface Correlator_I : carma::util::PhaseSwitching {
+
+        /**
+         *  Sets the spectral bandwidth mode for the band.
+         *  Available modes depend on the associated digital hardware.
+         *  @param bandwidth New spectral bandwidth mode.
+         *  @param fpgaMode New FPGA mode (e.g. SINGLEPOL,DUALPOL,FULLPOL,CARMA223)
+         *  @param seqNo Associated sequence number.
+         *  @param astroBandNo  The AstroBand number
+         */
+        void setBandwidth(in BandWidthType bandwidth,
+                          in FpgaModeType  fpgaMode,
+                          in long          seqNo ,
+                          in long          astroBandNo )
+            raises ( carma::util::UserException );
+
+        /**
+         * Vectorized version of setBandwidth command for CARMA3G correlator.
+         * The C3G correlator requires all bands be configured simultaneously,
+         * hence a vectorized setBandwidth is needed.
+         *  @param bandwidth Sequence of spectral bandwidth modes.
+         *  @param fpgaMode Sequence of FPGA modes (e.g. SINGLEPOL,DUALPOL,FULLPOL,CARMA223)
+         *  @param seqNo Associated sequence number.
+         *  @param astroBandNo  Sequence of AstroBand numbers
+         */
+        void setBandwidthVector(in BandWidthSeq bandwidth,
+                          in FpgaModeSeq fpgaMode,
+                          in long          seqNo ,
+                          in carma::util::SeqLong  astroBandNo )
+            raises ( carma::util::UserException );
+
+
+        /**
+         *  Updates the current status of the noise source.
+         *  This method informs the correlator whether the noise source
+         *  is on or off (it does not alter the physical state of the
+         *  noise source).
+         *
+         *  @param isOn Whether the noise source is presently on.
+         */
+        void setNoiseSourceState(in boolean isOn)
+            raises ( carma::util::UserException );
+
+        /**
+         * Assign delay information to input channels.
+         * Called by SubarrayControl to
+         * pass along updated delays, which are calculated by
+         * the DelayEngine
+         *
+         * @param inputTriplets Sequence of input delay triplets.
+         *
+         * @return none.
+         */
+        void setInputDelayTriplets( in DelayTripletSeq inputTriplets )
+            raises ( carma::util::UserException );
+
+         /**
+          * Sets correlator input Walsh column indices
+          * @param cols90   Walsh columns used for 90-deg demodulation.
+          * @param cols180     Walsh columns used for 180-deg demodulation.
+          * @param nStates90   Number of states for 90-deg demodulation
+          *                    (zero maintains existing value).
+          * @param nStates180  Number of states for 180-deg demodulation
+          *                    (zero maintains existing value).
+          * @param noiseEnabled True if the columns are for the noise source
+          *                     False if RF.
+          */
+         void setWalshColumns(in carma::util::SeqLong cols90,
+                              in carma::util::SeqLong cols180,
+                              in long nStates90,
+                              in long nStates180,
+                              in boolean noiseEnabled)
+            raises ( carma::util::UserException );
+
+        /**
+         *  Specifies the downconverter frequency and sideband
+         *  in use for the band.
+         *  It does not affect the physical state of the downconverter.
+         *
+         *  @param freq Downconverter LO frequency (GHz).
+         *  @param sb  Upper or lower sideband indicator
+         *  @param bdcEnabled Block Downconverter enabled
+         */
+        void setDownconverterSettings( in double       freqInGHz,
+                                       in SidebandType sb,
+                                       in boolean bdcEnabled )
+            raises ( carma::util::UserException );
+
+        // Sigh, can't overload IDL methods...
+        /**
+         * Vectorized version of setDownconverterSettings command for 
+         * CARMA3G correlator.
+         * @param freq Sequence of downconverter LO frequencies (GHz).
+         */
+        void setDownconverterSettingsVector( in carma::util::SeqFloat freq )
+            raises ( carma::util::UserException );
+
+        /**
+         * Set the optimal digitizer thresholds on the CARMA boards.
+         * This method is a no-op on COBRA boards.
+         *  @param seqNo Associated sequence number.
+         */
+        void optimizeThresholds(in long seqNo )
+            raises ( carma::util::UserException );
+
+        /**
+         *  Initiates the correlator hardware phase flattening routine.
+         *  The noise source must be on.  This method is implemented
+         *  only for the CARMA boards and is a no-op for COBRA boards.
+         * <br><b>Precondition:</b> Noise source must be on.
+         *  @param seqNo Associated sequence number.
+         */
+        void flattenPhases( in long seqNo )
+            raises ( carma::util::UserException );
+
+        /**
+         *  Initiates the correlator hardware spectral calibration routine.
+         *  This method is implemented only for the CARMA boards
+         *  and is a no-op for COBRA boards.
+         *  @param enable Enable calibration or not
+         *  @param cache  Whether to cache new calibration spectra.
+         *  @param count  Integration time for calibration spectra (in frames).
+         *  @param seqNo Associated sequence number.
+         */
+        void calibrateSpectra( in boolean enable,
+                               in boolean cache,
+                               in long count,
+                               in long seqNo )
+            raises ( carma::util::UserException );
+
+
+        /**
+         * Set secondary lobe rotation residual frequency and
+         * tracking sideband
+        void setLobeResidualSettings( in double freqInGHz,
+                                       in SidebandType sb )
+            raises ( carma::util::UserException );
+         */
+
+        /**
+         * Enable or disable correlations (COBRA boards only).
+         * This is to be used when the correlator room is
+         * overheating.
+         * @param enable Enable correlation or not.
+         */
+         void enableCorrelation( in boolean enable )
+            raises ( carma::util::UserException );
+
+
+      };
+
+    };   // obsRecord2
+  };     // correlator
+};       // carma

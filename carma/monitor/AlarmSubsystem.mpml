@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- $Id -->
+<!-- Alarm Subsystem monitor point definitions -->
+
+<Subsystem name="Alarm" priority="useful">
+
+   <shortName>Alarm</shortName>
+   <longName>Alarm Subsystem</longName>
+   <description>
+     The Alarm subsystem handles turning on and off the audio alarm.
+     The alarm has watchdog timer that, if not updated, will cause
+     it to sound the alarm in situations where it loses contact with
+     critical systems running on the ACC.
+     Along with this, it is controlable by the running system, tapping
+     into notifications from the fault system, matching on a list of
+     regex's for triggering alarm events.  See the files conf/alarm/watch.tab
+     conf/alarm/sounds.tab and the dynamic watch file (TBD location)
+     for more info.
+   </description>
+
+   <?common MonitorStats.mpml?>
+   <CommonContainer ref="MonitorSubsystemStats" />
+
+   <?common TimestampCommon.mpml?>
+   <CommonMonitorPoint ref="timestamp" />
+
+  <MonitorPoint name="alarmEnable" type="enum">
+    <shortName>alarmEnable</shortName>
+    <units></units>
+    <description>
+       Is alarm currently enabled/disabled/triggered?
+    </description>
+    <enum name="DISABLED">
+     <description>
+       Alarm will not sound even if triggered.
+     </description>
+    </enum>
+    <enum name="ENABLED">
+     <description>
+       Alarm will sound if triggered.
+     </description>
+    </enum>
+    <enum name="TRIGGERED">
+     <description>
+       Alarm has been triggered.
+     </description>
+    </enum>
+
+    <warnHi>DISABLED</warnHi>
+    <warnLo>DISABLED</warnLo>
+    <errLo>TRIGGERED</errLo>
+    <errHi>TRIGGERED</errHi>
+  </MonitorPoint>
+
+  <MonitorPoint name="alarmOn" type="bool">
+    <shortName>alarmOn</shortName>
+    <units></units>
+    <description>
+       Is alarm currently activated?
+    </description>
+    <errLo>true</errLo>
+    <errHi>true</errHi>
+  </MonitorPoint>
+
+  <MonitorPoint name="alarmTime" type="absTime">
+    <shortName>LastAlarm</shortName>
+    <units>UTC</units>
+    <description>
+       Time that alarm was triggered
+    </description>
+  </MonitorPoint>
+
+  <!-- NOTE: allocate enough samples for 80 chars of data -->
+  <MonitorPoint name="alarmMP" type="string" sampling="10">
+   <shortName>MonitorPoint</shortName>
+   <longName>Alarm Monitor Point</longName>
+   <description>
+     Name of MP that currently triggered alarm
+   </description>
+   <width>80</width>
+  </MonitorPoint>
+
+  <!-- NOTE: allocate enough samples for 80 chars of data -->
+  <MonitorPoint name="alarmReason" type="string" sampling="10">
+   <shortName>Reason</shortName>
+   <longName>Reason for Alarm</longName>
+   <description>
+     Further explanation about alarm
+   </description>
+   <width>80</width>
+  </MonitorPoint>
+
+</Subsystem>

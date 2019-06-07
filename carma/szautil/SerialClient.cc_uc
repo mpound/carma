@@ -1,0 +1,379 @@
+#include <fcntl.h>
+
+#include "sza/util/Exception.h"
+#include "sza/util/LogStream.h"
+#include "sza/util/SerialClient.h"
+
+using namespace std;
+using namespace sza::util;
+
+//------------------------------------------------------------
+// Recognized baud rates
+//------------------------------------------------------------
+
+/**
+ * Recognized baud rates
+ */
+SerialClient::BaudRate SerialClient::baudRates_[] = {
+  {  B1200,   1200},
+  {  B2400,   2400},
+  {  B4800,   4800},
+  {  B9600,   9600},
+  { B38400,  38400},
+  { B57600,  57600},
+  {B115200, 115200}
+};
+
+/**
+ * The number of elements in the above array
+ */
+unsigned SerialClient::nBaudRates_ = sizeof(baudRates_)/sizeof(SerialClient::BaudRate);
+
+/**.......................................................................
+ * Constructor.
+ */
+SerialClient::SerialClient(std::string portName, int baudRate) :
+  portName_(portName)
+{
+  baudRate_ = 0; // Uninitialized state
+
+  setBaudRate(baudRate);
+
+  setStopBits(1);
+
+  stripUnprintable(false);
+}
+
+/**.......................................................................
+ * Destructor.
+ */
+SerialClient::~SerialClient() 
+{
+  // Reset the attributes which were in effect before we connected
+
+  try {
+    resetAttributes();
+  } catch(...) {}
+}
+
+/**.......................................................................
+ * Set the baudrate
+ */
+void SerialClient::setBaudRate(int baudRate)
+{
+  LogStream errStr;
+
+  // Parse the baudrate
+
+  for(unsigned ibaud = 0; ibaud < nBaudRates_; ibaud++) {
+    if(baudRate == baudRates_[ibaud].baudRate) {
+      baudRate_ = &baudRates_[ibaud];
+      return;
+    }
+  }
+
+  // Else error
+
+  errStr.initMessage(true);
+
+  errStr << "Unsupported baud rate: " << baudRate << endl
+	 << " Should be one of: " << endl;
+    
+  for(unsigned ibaud = 0; ibaud < nBaudRates_; ibaud++) 
+    errStr << baudRates_[ibaud].baudRate << endl;
+  
+  throw Error(errStr);
+}
+
+/*.......................................................................
+ * Initialize the serial port connection to the TERM
+ */
+void SerialClient::connect()
+{
+  struct termios termio;
+  LogStream errStr;
+
+  /**
+   * Open a read-write connection to the serial port.
+   */
+  fd_ = -1;
+
+  fflush(stdin);
+  fflush(stdout);
+
+  fd_ = open(portName_.c_str(), O_RDWR);
+  if(fd_ < 0) {
+    errStr.appendSysError(true, "open()");
+    throw Error(errStr);
+  } else {
+    fprintf(stdout,"\nConnection established: type ^C to exit.\n\n");
+  }
+
+  /*
+   * Set up for 8-bit terminal-I/O at the requested baud rate
+   *
+   *
+   * Store the current state for restoration when we exit.
+   */
+  saveAttributes();
+
+  termio = termioSave_;
+
+  /*
+   * Turn off echo, canonical processing, extended input, signal chars.
+   */
+  termio.c_lflag &= ~(ECHO|ICANON|IEXTEN|ISIG);
+
+  /*
+   * Turn off SIGINT and BREAK, input parity, check off, don't strip 8th bit
+   * on input, no output flow term
+   */
+  termio.c_iflag &= ~(BRKINT|ICRNL|INPCK|ISTRIP|IXON); 
+
+  // As a test, turn off start-stop input control too
+
+  termio.c_iflag &= ~(IXOFF); 
+
+  /*
+   * Clear size bits, parity checking off, turn off 2-stop bits.
+   */
+  termio.c_cflag &= ~(CSIZE|PARENB|CSTOPB);
+
+  /*
+   * Set 8 bits/char
+   */
+  termio.c_cflag |= CS8;
+
+  /*
+   * output processing off.
+   */
+  termio.c_oflag &= ~(OPOST);
+
+  /*
+   * Case B: 1 byte at a time, no timer.
+   */
+  termio.c_cc[VMIN] = 1;
+  termio.c_cc[VTIME] = 0;
+
+ /* 
+  * Set input/output speed
+  */
+  if(cfsetispeed(&termio, baudRate_->speed) < 0 || 
+     cfsetospeed(&termio, baudRate_->speed) < 0) {
+    errStr.appendMessage(true, "Error setting port speed.");
+    throw Error(errStr);
+  }
+  /*
+   * Set the new attributes.
+   */
+  if(tcsetattr(fd_, TCSAFLUSH, &termio) < 0) {
+    errStr.appendSysError(true, "tcsetattr()");
+    throw Error(errStr);
+  }
+}
+
+/**.......................................................................
+ * Turn echo on/off
+ */
+void SerialClient::enableEcho(bool enable)
+{
+  setIoFlag(enable ? SERIAL_ECHO_ON : SERIAL_ECHO_OFF);
+}
+
+/**.......................................................................
+ * Turn input hardware flow control on/off
+ */
+void SerialClient::enableHardwareInputFlowControl(bool enable)
+{
+  setIoFlag(enable ? SERIAL_IXON_ON : SERIAL_IXON_OFF);
+}
+
+/**.......................................................................
+ * Turn output hardware flow control on/off
+ */
+void SerialClient::enableHardwareOutputFlowControl(bool enable)
+{
+  setIoFlag(enable ? SERIAL_IXOFF_ON : SERIAL_IXOFF_OFF);
+}
+
+/**.......................................................................
+ * Turn output processing on/off
+ */
+void SerialClient::enableOutputProcessingChecking(bool enable)
+{
+  setIoFlag(enable ? SERIAL_OPOST_ON : SERIAL_OPOST_OFF);
+}
+
+/**.......................................................................
+ * Turn parity checking on/off
+ */
+void SerialClient::enableParityChecking(bool enable)
+{
+  setIoFlag(enable ? SERIAL_PARITY_ON : SERIAL_PARITY_OFF);
+}
+
+/**.......................................................................
+ * Set the number of stop bits to 1
+ */
+void SerialClient::set1StopBit()
+{
+  setIoFlag(SERIAL_1STOPBIT);
+}
+
+/**.......................................................................
+ * Set the number of stop bits to 2
+ */
+void SerialClient::set2StopBit()
+{
+  setIoFlag(SERIAL_2STOPBIT);
+}
+
+/**.......................................................................
+ * Set the number of bits per char to 8
+ */
+void SerialClient::setBitsPerChar(unsigned short nBit)
+{
+  switch(nBit) {
+  case 8:
+    setIoFlag(SERIAL_8BIT);
+    break;
+  default:
+    ThrowError("Unsupported number of bits: " << nBit);
+    break;
+  }
+}
+
+/**.......................................................................
+ * Use canonical processing
+ */
+void SerialClient::useCanonicalProcessing(bool use)
+{
+  setIoFlag(use ? SERIAL_CANONICAL_ON : SERIAL_CANONICAL_OFF);
+}
+
+/**.......................................................................
+ * Set a flag in the termios struct
+ */
+void SerialClient::setIoFlag(IoFlag flag)
+{
+  switch(flag) {
+  case SERIAL_ECHO_OFF:
+    attributes_.c_lflag &= ~ECHO;
+    break;
+  case SERIAL_ECHO_ON:
+    attributes_.c_lflag |= ECHO;
+    break;
+  case SERIAL_CANONICAL_OFF:
+    attributes_.c_lflag &= ~ICANON;
+    break;
+  case SERIAL_CANONICAL_ON:
+    attributes_.c_lflag |= ICANON;
+    break;
+  case SERIAL_IEXTEND_OFF:
+    attributes_.c_lflag &= ~IEXTEND;
+    break;
+  case SERIAL_IEXTEND_ON:
+    attributes_.c_lflag |= IEXTEND;
+    break;
+  case SERIAL_SIG_OFF:
+    attributes_.c_lflag &= ~ISIG;
+    break;
+  case SERIAL_SIG_ON:
+    attributes_.c_lflag |= ISIG;
+    break;
+    
+    // attributes_s.c_iflag flags
+    
+  case SERIAL_IXOFF_OFF:
+    attributes_.c_iflag &= ~IXOFF;
+    break;
+  case SERIAL_IXOFF_ON:
+    attributes_.c_iflag |= IXOFF;
+    break;
+  case SERIAL_IXON_OFF:
+    attributes_.c_iflag &= ~IXON;
+    break;
+  case SERIAL_IXON_ON:
+    attributes_.c_iflag |= IXON;
+    break;
+
+    // attributes_s.c_cflag flags
+
+  case SERIAL_SIZE_OFF:
+    attributes_.c_cflag &= ~CSIZE;
+    break;
+  case SERIAL_SIZE_ON:
+    attributes_.c_cflag |= CSIZE;
+    break;
+  case SERIAL_PARITY_OFF:
+    attributes_.c_cflag &= ~PARENB;
+    break;
+  case SERIAL_PARITY_ON:
+    attributes_.c_cflag |= PARENB;
+    break;
+  case SERIAL_1STOPBIT:
+    attributes_.c_cflag &= ~CSTOPB;
+    break;
+  case SERIAL_2STOPBIT:
+    attributes_.c_cflag |= CSTOPB;
+    break;
+  case SERIAL_8BIT:
+    attributes_.c_cflag |= CS8;
+    break;
+
+    // attributes_s.o_flag
+
+  case SERIAL_OPOST_OFF:
+    attributes_.c_oflag &= ~OPOST;
+    break;
+  case SERIAL_OPOST_ON:
+    attributes_.c_oflag |= OPOST;
+    break;
+  default:
+    break;
+  }
+
+  // Apply these attributes
+
+  applyAttributes();
+}
+
+/**.......................................................................
+ * Reset the saved attributes 
+ */
+void SerialClient::resetAttributes() 
+{
+  if(fd_ < 0) 
+    ThrowError("File descriptor is < 0");
+  
+  // Set the new attributes.
+  
+  if(tcsetattr(fd_, TCSAFLUSH, &savedAttributes_) < 0)
+    ThrowSysError(true, "tcsetattr()");
+}
+
+/**.......................................................................
+ * Set the current attributes 
+ */
+void SerialClient::applyAttributes() 
+{
+  if(fd_ < 0)
+    return;
+  
+  // Else set the new attributes.
+
+  if(tcsetattr(fd_, TCSAFLUSH, &attributes_) < 0) 
+    ThrowSysError("tcsetattr()");
+}
+
+/**.......................................................................
+ * Save the current attributes 
+ */
+void SerialClient::saveAttributes() 
+{
+  if(fd_ < 0) 
+    ThrowError("File descriptor is < 0");
+  
+  if(tcgetattr(fd_, &savedAttributes_) < 0) 
+    ThrowError("tcgetattr()");
+}

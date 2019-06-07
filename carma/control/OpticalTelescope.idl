@@ -1,0 +1,175 @@
+#ifndef CARMA_CONTROL_OPTICALTELESCOPE_IDL
+#define CARMA_CONTROL_OPTICALTELESCOPE_IDL
+
+/**
+ * @file
+ *
+ * Interface for the CARMA Control System Optical Telescope.
+ *
+ * @author: Andy Beard
+ *
+ * $Id: OpticalTelescope.idl,v 1.9 2011/05/17 16:27:40 iws Exp $
+ *
+ * $CarmaCopyright$
+ *
+ */
+
+#include "carma/antenna/common/OpticalTelControl.idl"
+#include "carma/control/SequenceTypedefs.idl"
+
+module carma {
+module control {
+
+typedef carma::antenna::common::Resolution Resolution;
+typedef carma::antenna::common::CentroidResults CentroidResults;
+
+interface  OpticalTelescope {
+
+    /**
+     * Set dimensions of frame returned by the frameGrabber.
+     * @param x Size in x dimension
+     * @param y Size in y dimension
+     * @param x0 Initial x offset
+     * @param y0 Initial y offset
+     * @throws carma::util::UserException if dimensions exceed resolution.
+     */
+    void setFrameDimensions( in short x,
+                             in short y,
+                             in short x0,
+                             in short y0,
+                             in SeqShort carmaAntNoSeq)
+        raises (carma::util::UserException);
+
+    /**
+     * Set frame brightness.
+     * @param brightness Fractional brightness (0.0 - 1.0).
+     */
+    void setFrameBrightness( in float brightness,
+                             in SeqShort carmaAntNoSeq )
+        raises (carma::util::UserException);
+
+    /**
+     * Set frame contrast.
+     * @param contrast Fractional contrast (0.0, 1.0).
+     */
+    void setFrameContrast( in float constrast,
+                           in SeqShort carmaAntNoSeq )
+        raises (carma::util::UserException);
+
+    /**
+     * Set the resolution of the framegrabber.
+     * @param resolution New desired resolution.
+     * @see carma::antenna::common::Resolution
+     */
+    void setFramegrabberResolution( in Resolution fgResolution,
+                                    in SeqShort carmaAntNoSeq )
+        raises (carma::util::UserException);
+
+    /**
+     * Set image rotation and az/el fields of view.
+     * Rotation is used to align raw camera images with the az/el coordinate
+     * system, speeding up pointing convergence.  Field of view values
+     * define the plate scale in azimuth and elevation *after* rotation.
+     * @param rotationInDegrees Amount of rotation in degrees.
+     * @param azFOVInArcminutes Azimuth field of view in arcminutes
+     * @param elFOVInArcminutes Elevation field of view in arcminutes
+     * @param carmaAntNo carma antenna number
+     */
+    void setRotationAndFieldsOfView( in float rotationInDegrees,
+                                     in float azFOVInArcminutes,
+                                     in float elFOVInArcminutes,
+                                     in short carmaAntNo )
+        raises (carma::util::UserException);
+
+    /**
+     * Take background image for future background subtraction.
+     * Note that the background image and foreground image must have
+     * matching dimensions.  This method does not block.  Use
+     * wait(WAIT_CENTROID) to wait for this routine to complete on an
+     * arbitrary number of antennas or timeout. There is currently no
+     * high level method for retrieving the background image, let me know
+     * if you need one.
+     * @param numFrames Number of frames to co-add into image.
+     * @throw carma::util::UserException on fatal error (e.g. unmatched dims).
+     */
+    void takeBackgroundImage( in unsigned short numFrames,
+                              in SeqShort carmaAntNoSeq )
+        raises (carma::util::UserException);
+
+    /**
+     * Find centroid of star in field of view.
+     * This command does not block.  Use SubarrayControl::wait( CENTROID ) to
+     * wait for an arbitrary number of antennas to complete.  Use
+     * getCentroidResults to retrieve results for a particular antenna.
+     * @param numFramesPerImage Number of frames to co-add per image.
+     * @param minValidCentroids Minimum number of valid centroids after
+     *        which to return.
+     * @param maxCentroidAttempts Maximum number of images to centroid on
+     *        in an attempt to obtain numValidImages.
+     * @param numEdgePixels Number of edged pixels to ignore.
+     * @param apertureRadiusPixels Radius of centroiding aperture in pixels.
+     * @param pixelThresholdSigma Only pixels with a value greater than
+     *        the median + pixelThresholdSigma * sigma  will be considered
+     *        for centroiding.  3.0 is a good default.
+     * @param subBackground Subtract background image.
+     * @param normalizeMedian Before subtracting the images, scale the
+     *        background images and the current image to the same median
+     *        value.
+     * @throw carma::util::UserException If backgroundImage or
+     *        normalizeMedian specified but no image stored.
+     * @pre If subBackground or normalizeMedian is true a background
+     *        image must have been stored prior with takeBackgroundImage.
+     *
+     * @see takeBackgroundImage
+     * @see carma::control::SubarrayControl::wait
+     * @see getCentroidResults
+     */
+    void findCentroid( in unsigned short numFramesPerImage,
+                       in unsigned short minValidCentroids,
+                       in unsigned short maxCentroidAttempts,
+                       in unsigned short numEdgePixels,
+                       in unsigned short apertureRadiusPixels,
+                       in float pixelThresholdSigma,
+                       in boolean subBackground,
+                       in boolean normalizeMedian,
+                       in SeqShort carmaAntNoSeq )
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve centroid results.
+     * @param carmaAntNo Carma antenna number.
+     * @see carma::antenna::CentroidResults
+     */
+    CentroidResults getCentroidResults( in short carmaAntNo )
+        raises (carma::util::UserException);
+
+    /**
+     * Create and return an image from the input number of frames.
+     * Co-adds input number of frames and returns the result.  This
+     * command blocks while grabbing and co-adding frames and
+     * is thus only for experimental and debugging purposes.
+     * @param numFrames Number of frames to co-add into image.
+     * @param subBackground Subtract background image.
+     * @param normalizeMedian Before subtracting the images, scale the
+     *        background images and the current image to the same median
+     *        value.
+     * @param normalizeImage Normalize output image such that the minimum
+     *        pixel value is 0 and the maximum is 255 (contrast stretch).
+     * @param carmaAntNo Carma antenna number.
+     * @pre If subBackground is specified a background image must be taken
+     *      prior with identical size and rotation properties.
+     * @throw carma::util::UserException on fatal error.
+     */
+    carma::antenna::common::flattenedOpticalImage
+    getImage( in unsigned short numFrames,
+              in boolean subBackground,
+              in boolean normalizeMedian,
+              in boolean normalizeImage,
+              in short carmaAntNo )
+        raises (carma::util::UserException);
+
+}; // interface SubarrayControl
+}; // module control
+}; // module carma
+#endif // #ifndef CARMA_CONTROL_OPTICAL_TELESCOPE_IDL
+

@@ -1,0 +1,794 @@
+<?xml version="1.0"?>
+
+<!-- $Id: carmaPipelineTest.xml,v 1.10 2014/11/03 19:21:22 iws Exp $  -->
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "/opt/rt/bin">
+        <!ENTITY DEFAULT_DIR "/home/control">
+        <!ENTITY EMULATE "true">
+        <!ENTITY LOG "traceFile=syslog traceLevel=0">
+        <!ENTITY USE_DB "useDBMS=true">
+        <!ENTITY CORR_INIS "f=correlator/slcorrelator.conf sim=correlator/labCarma15.ini hwtype=carma ">
+]>
+
+<!-- Configuration for the CARMA runtime system.  
+     For a detailed description of all tags see 
+       carma/conf/exampleCarmaConfig.xml 
+     Domains should not be specified in the hostnames 
+     (Paul handles those in the DNS as he moves computers around).
+     
+     OAD names **must** be native host names, not DNS aliases.
+ -->
+
+
+<!-- @version -->
+<domain>
+
+    <!-- The main system 'acc' -->
+    <oad hostname="acc.carma.pvt">
+        <server name="delayEngineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=delayEngine delay=250"/>
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args="traceFile=syslog traceLevel=0 &USE_DB; delay=600" 
+                system="monitor" critical="true" />
+        <server name="controlFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=control delay=190"
+                system="control" critical="true" />
+
+        <server name="Subarray1" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="subarrayNo=1 runSAT=true &LOG; &USE_DB;"
+                system="control" critical="true"/>
+
+<!--
+        <server name="Subarray2" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="subarrayNo=2 runSAT=true &LOG; &USE_DB; " 
+                system="control"/>
+-->
+
+        <server name="Subarray3" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="subarrayNo=3 runSAT=true &LOG; &USE_DB;"
+                system="control" />
+
+        <server name="Subarray4" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="subarrayNo=4 runSAT=true &LOG; &USE_DB; "
+                system="control" />
+
+<!--
+        <server name="Subarray5" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="subarrayNo=5 runSAT=true &LOG; &USE_DB; " />
+-->
+
+        <server name="FaultSystem" path="&BIN_DIR;/faultSystem"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB;" />
+
+        <server name="PipelineSync" path="&BIN_DIR;/monitorPipelineSync"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; "
+                system="monitor" critical="true"/>
+
+        <server name="MonitorAverage" path="&BIN_DIR;/monitorAverageWriter"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; useDBMS=true dbconffile=dbms/dbms.remote.conf  framepriority=useful" 
+                system="monitor" critical="true"/>
+        
+        <server name="MonitorDeleter" path="&BIN_DIR;/monitorDataDeleter"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; useDBMS=true nice=5 " />
+
+        <server name="ControlState" path="&BIN_DIR;/carmaControlState"
+                directory="&DEFAULT_DIR;" 
+                args="statedir=/array/rt/state production=true &LOG; &USE_DB; nice=10 "
+                system="control" critical="true" />
+
+    </oad>
+    
+    <oad hostname="corba.carma.pvt">
+        <server name="ProcessMonitorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; useDBMS=true subsystem=Imr delay=150"
+                system="monitor" critical="true" />
+
+        <server name="ProcessMonitor" path="&BIN_DIR;/processMonitor"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; useDBMS=true file=/home/abeard/development/carma/carma/conf/imr/carmaPipelineTest.xml  writedelay=0.100 poll=5"
+                system="monitor" critical="true" />
+    </oad>
+
+    <!-- Pipeline processes-->
+    <oad hostname="slpipeline.carma.pvt">
+        <server name="slPipelineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  &USE_DB; subsystem=slpipeline delay=400" 
+                system="data" />
+        <server name="SlDataCatcher" path="&BIN_DIR;/catchData"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG;  &USE_DB; mode=sl" 
+                system="data" critical="true" />                
+        <server name="SlPipeline" path="&BIN_DIR;/pipeline"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB;  mode=sl vbdir=/opt/visbrick" 
+                system="data" critical="true"/>
+    </oad>
+    
+    <!-- Loberotator machine processes-->
+    <oad hostname="loberotator.carma.pvt" system="interferometry" >
+        <server name="loberotatorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=loberotator delay=145"/>
+        <server name="masterClockFSP" path="&BIN_DIR;/frameScriberPublisher"
+	        directory="&DEFAULT_DIR;" 
+	        args="&LOG; &USE_DB;  subsystem=masterclock delay=75"/>
+    
+        <server name="LoberotatorHost" path="&BIN_DIR;/carmaLoberotatorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; board=0 canbus=1" />
+        <server name="MasterClock" path="&BIN_DIR;/carmaClockHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; board=0 bus=0 awdelay=0.040"/>
+         
+         <server name="RemoteCanLoberotator" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad>
+    
+    <!-- Linelength machine processes -->
+    <oad hostname="linelength.carma.pvt" system="interferometry" >
+        <server name="linelengthFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=linelength"/>
+        <server name="lorefFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=loref delay=150"/>
+    
+        <server name="LOrefHost" path="&BIN_DIR;/carmaLORefHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  emulate=false  synth1_gpib=1 synth1_8662=false synth1_mux=122 synth3_gpib=2 synth3_8662=false synth3_mux=112 counter_gpib=14 switch_gpib=9" 
+                critical="true" />
+        <server name="LineLengthHost" path="&BIN_DIR;/carmaLineLengthHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  emulate=true" />
+    </oad>
+     
+    <!-- Environmental machine processes-->
+    <!-- dps=false until dual /dev/ttyUSB access solved -->
+    <oad hostname="environment.carma.pvt">
+        <server name="weatherFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=weather delay=200"/>
+        <server name="WeatherHost" path="&BIN_DIR;/weatherStation"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB;  emulate=false traceFile=syslog traceLevel=0 dps=true ws=true" />
+
+        <server name="phaseMonitorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=phaseMonitor"/>
+        <server name="PhaseMonitorHost" path="&BIN_DIR;/carmaPhaseMonitor"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB;  emulate=false traceFile=syslog traceLevel=0 parameters=/opt/rt/conf/phasemonitor/CedarFlat.tab device=/dev/ttyUSB2 output=/home/obs/phasemon ft=false record=/home/obs/phasemon/raw.dat" />
+	<server name="tipperFSP" path="&BIN_DIR;/frameScriberPublisher"
+	        directory="&DEFAULT_DIR;" 
+	        args="&LOG; &USE_DB;  subsystem=opacityMonitor"/>
+	<server name="TipperHost" path="&BIN_DIR;/carmaTipper"
+	        directory="&DEFAULT_DIR;"  args="&USE_DB;  emulate=false traceFile=syslog traceLevel=0 device=/dev/ttyUSB3 dir=/misc/array/rt/TipperData" />
+
+    </oad>
+    
+    <!-- Spectral line downconverter -->
+    <oad hostname="sldc.carma.pvt" system="correlator">
+        <server name="sldcFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=sldc"/>   
+        <server name="Sldc" path="&BIN_DIR;/carmaSldcHost"
+                args="&LOG; &USE_DB; "
+                directory="&DEFAULT_DIR;" />
+         <server name="RemoteCanSldc" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad>
+    
+    <!-- Spectral line correlator crates -->
+    <oad hostname="slcor1.carma.pvt" system="correlator">
+
+        <server name="slcBand1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand1" />
+        
+        <server name="SlcBand1" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=1 p=19001 &CORR_INIS;"/>
+    </oad>
+
+    <oad hostname="slcor2.carma.pvt" system="correlator">
+
+        <server name="slcBand2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand2" />
+        
+        <server name="SlcBand2" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=2 p=19002 &CORR_INIS;"/>
+
+    </oad>
+
+    <oad hostname="slcor3.carma.pvt" system="correlator">
+
+        <server name="slcBand3FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand3" />
+        
+        <server name="SlcBand3" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=3 p=19003 &CORR_INIS;"/>
+
+    </oad>
+    
+    <!-- OVRO antennas -->
+    <oad hostname="ovro1.carma.pvt" system="ovro">
+        <server name="ovro1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=ovro1 delay=200" />
+         <server name="RemoteCanOvro1" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+        <server name="CanHostOvro1" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB;  ant=1 board=0 awdelay=0.160 "/>
+        <server name="OTovro1" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=ovro1 nice=20 awdelay=0.050" />
+
+        <server name="slcBand4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand4" />
+
+        <server name="SlcBand4" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=4 p=19004 &CORR_INIS;"
+                system="correlator" />
+
+    </oad>
+
+    <oad hostname="ovro2.carma.pvt" system="ovro">
+        <server name="ovro2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=ovro2 delay=200" />
+         <server name="RemoteCanOvro2" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+        <server name="CanHostOvro2" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB;  ant=2 board=0 awdelay=0.160 "/>
+        <server name="OTovro2" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=ovro2 nice=20 awdelay=0.050" />
+        
+        <server name="slcBand5FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand5" />
+
+        <server name="SlcBand5" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=5 p=19005 &CORR_INIS;"
+                system="correlator" />
+    </oad>    
+    <oad hostname="ovro3.carma.pvt" system="ovro">
+        <server name="ovro3FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=ovro3 delay=200" />
+        <server name="RemoteCanOvro3" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+        <server name="CanHostOvro3" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB;  ant=3 board=0 awdelay=0.160 "/>
+        <server name="OTovro3" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=ovro3 nice=20 awdelay=0.050" />
+                
+        <server name="slcBand6FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand6" />
+
+        <server name="SlcBand6" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=6 p=19006 &CORR_INIS;"
+                system="correlator" />
+    </oad>
+    <oad hostname="ovro4.carma.pvt" system="ovro">
+        <server name="ovro4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=ovro4 delay=200"/>
+         <server name="RemoteCanOvro4" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+        <server name="CanHostOvro4" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB;  ant=4 board=0 awdelay=0.160 "/>
+        <server name="OTovro4" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=ovro4 nice=20 awdelay=0.050" />
+                
+        <server name="slcBand7FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand7" />
+
+        <server name="SlcBand7" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=7 p=19007 &CORR_INIS;"
+                system="correlator" />
+    </oad>
+    <oad hostname="ovro5.carma.pvt" system="ovro">
+        <server name="ovro5FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=ovro5 delay=200" />
+         <server name="RemoteCanOvro5" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+        <server name="CanHostOvro5" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB;  ant=5 board=0 awdelay=0.160 "/>
+        <server name="OTovro5" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=ovro5 nice=20 awdelay=0.050" />
+        
+        <server name="slcBand8FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand8" />
+
+        <server name="SlcBand8" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=8 p=19008 &CORR_INIS;"
+                system="correlator" />
+    </oad>
+    <oad hostname="ovro6.carma.pvt" system="ovro">
+        <server name="ovro6FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=ovro6 delay=200" />
+         <server name="RemoteCanOvro6" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+        <server name="CanHostOvro6" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; ant=6 board=0 awdelay=0.160 "/>
+        <server name="OTovro6" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=ovro6 nice=20 awdelay=0.050" />
+    </oad>
+    
+
+    <!-- Bima antennas  -->
+    <oad hostname="bima1.carma.pvt" system="bima">
+        <server name="bima1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima1 delay=150" />
+
+        <server name="THbima1" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=false  &LOG; &USE_DB; antenna=bima1" />
+
+        <server name="DMbima1" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima1" />
+
+        <server name="RMbima1" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima1" />
+
+        <server name="MHbima1" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima1 awdelay=0.120" />
+
+        <server name="IFbima1" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima1 awdelay=0.120" />
+
+        <server name="OTbima1" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima1 nice=10 awdelay=0.100" />
+
+        <server name="CHbima1" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima1" />
+
+         <server name="RemoteCanBima1" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+
+    <oad hostname="bima2.carma.pvt" system="bima">
+        <server name="bima2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima2 delay=150" />
+
+        <server name="THbima2" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=false  &LOG; &USE_DB; antenna=bima2" />
+
+        <server name="DMbima2" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima2" />
+
+        <server name="RMbima2" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima2" />
+
+        <server name="MHbima2" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima2 awdelay=0.120" />
+
+        <server name="IFbima2" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima2 awdelay=0.120" />
+
+        <server name="OTbima2" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima2 nice=10 awdelay=0.100" />
+
+        <server name="CHbima2" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima2" />
+
+         <server name="RemoteCanBima2" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+    
+    <oad hostname="bima3.carma.pvt" system="bima">
+        <server name="bima3FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima3 delay=150" />
+
+        <server name="THbima3" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=false  &LOG; &USE_DB; antenna=bima3" />
+
+        <server name="DMbima3" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima3" />
+
+        <server name="RMbima3" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima3" />
+
+        <server name="MHbima3" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima3 awdelay=0.120" />
+
+        <server name="IFbima3" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima3 awdelay=0.120" />
+
+        <server name="OTbima3" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima3 nice=10 awdelay=0.100" />
+
+        <server name="CHbima3" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima3" />
+
+         <server name="RemoteCanBima3" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+    
+    <oad hostname="bima4.carma.pvt" system="bima">
+        <server name="bima4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima4 delay=150" />
+
+        <server name="THbima4" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=false  &LOG; &USE_DB; antenna=bima4" />
+
+        <server name="DMbima4" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima4" />
+
+        <server name="RMbima4" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima4" />
+
+        <server name="MHbima4" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima4 awdelay=0.120" />
+
+        <server name="IFbima4" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima4 awdelay=0.120" />
+
+        <server name="OTbima4" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima4 nice=10 awdelay=0.100" />
+
+        <server name="CHbima4" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima4" />
+
+         <server name="RemoteCanBima4" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+
+   <oad hostname="bima5.carma.pvt" system="bima">
+        <server name="bima5FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima5 delay=150" />
+
+        <server name="THbima5" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=false  &LOG; &USE_DB; antenna=bima5" />
+
+        <server name="DMbima5" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima5" />
+
+        <server name="RMbima5" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima5" />
+
+        <server name="MHbima5" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima5 awdelay=0.120" />
+
+        <server name="IFbima5" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima5 awdelay=0.120" />
+
+        <server name="OTbima5" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima5 nice=10 awdelay=0.100" />
+
+        <server name="CHbima5" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima5" />
+
+         <server name="RemoteCanBima5" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+    
+    <oad hostname="bima6.carma.pvt" system="bima">
+        <server name="bima6FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima6 delay=150" />
+
+        <server name="THbima6" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima6" />
+
+        <server name="DMbima6" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima6" />
+
+        <server name="RMbima6" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima6" />
+
+        <server name="MHbima6" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima6 awdelay=0.120" />
+
+        <server name="IFbima6" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima6 awdelay=0.120" />
+
+        <server name="OTbima6" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima6 nice=10 awdelay=0.100" />
+
+        <server name="CHbima6" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima6" />
+
+         <server name="RemoteCanBima6" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+
+    <oad hostname="bima7.carma.pvt" system="bima">
+        <server name="bima7FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima7 delay=150" />
+
+        <server name="THbima7" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=false  &LOG; &USE_DB; antenna=bima7" />
+
+        <server name="DMbima7" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima7" />
+
+        <server name="RMbima7" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima7" />
+
+        <server name="MHbima7" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima7 awdelay=0.120" />
+
+        <server name="IFbima7" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima7 awdelay=0.120" />
+
+        <server name="OTbima7" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima7 nice=10 awdelay=0.100" />
+
+        <server name="CHbima7" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima7" />
+
+         <server name="RemoteCanBima7" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+
+    <oad hostname="bima8.carma.pvt" system="bima">
+        <server name="bima8FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima8 delay=150" />
+        <server name="THbima8" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=false  &LOG; &USE_DB; antenna=bima8" />
+
+        <server name="DMbima8" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima8" />
+
+        <server name="RMbima8" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima8" />
+
+        <server name="MHbima8" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima8 awdelay=0.120" />
+
+        <server name="IFbima8" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima8 awdelay=0.120" />
+
+        <server name="OTbima8" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima8 nice=10 awdelay=0.100" />
+
+        <server name="CHbima8" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima8" />
+
+         <server name="RemoteCanBima8" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+
+    <oad hostname="bima9.carma.pvt" system="bima">
+        <server name="bima9FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=bima9 delay=150" />
+
+        <server name="THbima9" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=false  &LOG; &USE_DB; antenna=bima9" />
+
+        <server name="DMbima9" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima9" />
+
+        <server name="RMbima9" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args=" &LOG; &USE_DB; antenna=bima9" />
+
+        <server name="MHbima9" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=bima9 awdelay=0.120" />
+
+        <server name="IFbima9" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima9 awdelay=0.120" />
+
+        <server name="OTbima9" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima9 nice=10 awdelay=0.100" />
+
+        <server name="CHbima9" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; emulate=false antenna=bima9" />
+
+         <server name="RemoteCanBima9" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;  "/>
+    </oad> 
+       
+    <!-- Database processes -->
+    <oad hostname="database.carma.pvt" system="data">
+        <!-- maybe LogWatch should be on the acc? -->
+        <server name="LogWatch" path="&BIN_DIR;/logGrowthWatchdog"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; "
+                system="misc" />
+<!-- Commented out until it is fixed properly, as per RTS decision 9/2006
+        <server name="LogParser" path="&BIN_DIR;/syslog2Db"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; loop=-1 "
+                system="misc" />
+-->
+        <server name="LogLoader" path="&BIN_DIR;/logDataLoader"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; " 
+                system="misc" />
+        <server name="LogDeleter" path="&BIN_DIR;/logDataDeleter"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; " 
+                system="misc" />
+        <server name="MonitorLoader" path="&BIN_DIR;/monitorDataLoader"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; useDBMS=true  maxtime=15.0"
+                system="monitor"/>
+
+    </oad> 
+
+    <!-- sdp processes -->
+    <oad hostname="sdp.carma.pvt" system="data">
+<!-- Note sdpFiller requires projectdatabasemanagerHost to be up and running.
+     So PDBHost/FSP should be the first entries on sdp
+ -->
+        <server name="projectDatabaseManagerFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=projectdatabasemanager"/>
+        <server name="ProjectDatabaseManagerHost" path="&BIN_DIR;/carmaProjectDatabaseManagerHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; database=test rt=true" critical="true" />
+        <server name="dataflowFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=dataflow delay=130"/>
+        <server name="AstroHeaderWriter" path="&BIN_DIR;/astroHeaderWriter"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; " 
+                critical="true" />
+        <server name="DataTransfer" path="&BIN_DIR;/dataTransfer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; " />
+<!-- Note sdpFiller requires projectdatabasemanagerHost to be up and running.
+     So sdpFiller should be the last entry on sdp
+ -->
+        <server name="SDPFiller" path="&BIN_DIR;/sdpFiller"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; rt=true  pdb=true" />
+    </oad> 
+
+    <!-- The test subsystem with simulated data -->
+    <oad hostname="database.carma.pvt" system="misc" >
+        <server name="testFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=test delay=120" />
+        <server name="TestSimulator" path="&BIN_DIR;/testMPwriterReader"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  writeOnly=true iterations=0
+                " />
+    </oad> 
+    
+    
+    <!-- Alarm subsystem -->
+    <oad hostname="alarm.carma.pvt">
+      <server name="alarmFSP" path="&BIN_DIR;/frameScriberPublisher"
+	      directory="&DEFAULT_DIR;" 
+	      args="&LOG; &USE_DB; subsystem=alarm delay=170"/>
+      <server name="alarmControl" path="&BIN_DIR;/carmaAlarm"
+              directory="&DEFAULT_DIR;" 
+	      args="&LOG; &USE_DB; mode=control"/>
+      <server name="alarmDevice" path="&BIN_DIR;/carmaAlarm"
+              directory="&DEFAULT_DIR;" 
+	      args="&LOG; &USE_DB; mode=device"/>
+    </oad>
+
+</domain>
+    

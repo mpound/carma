@@ -1,0 +1,8 @@
+This is a generic message that is sent by the fault system when the alarm
+is activated for a monitor point.
+
+The alarms wiki page has details for many of the common alarms:
+http://cedarflat.mmarray.org/wiki/Alarms
+
+If you cannot find help on the wiki relevant to the alarms listed below,
+email help@mmarray.org.

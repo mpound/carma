@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type"
+ content="text/html; charset=ISO-8859-1">
+  <title>Carma CANbus Library FAQ</title>
+</head>
+<body>
+<h1>Carma CANbus Library FAQ</h1>
+<br>
+<h3>Introduction</h3>
+<p>$Revision: 1.4 $</p>
+<p>This faq attempts to answer common questions that have been asked by
+users of the Carma CANbus Library. &nbsp;If you have a question that is
+not answered here please do not hesitate to contact me at
+andy@ovro.caltech.edu.
+</p>
+
+
+<a name="TOC"></a><br>
+<ol>
+  <li><a href="#Simulation_vs_Emulation">How does <span
+ style="font-style: italic;">simulation</span> differ from <span
+ style="font-style: italic;">emulation</span>?</a></li>
+  <li><a href="#Why_Simulate">So why do you use simulation?</a></li>
+  <li><a href="#Disable_Simulation">How do I disable simulation?</a></li>
+  <li><a href="#simulateMsg">How does my simulateMsg routine get used?</a></li>
+  <li><a href="#real_or_sim">How do I know if a CAN message is real or
+simulated?</a><br>
+  </li>
+  <li><a href="#TimeSyncs">Are timesync messages sent automatically?</a></li>
+  <li><a href="#Overriding_Timesyncs">How do I disable/modify timesync
+messages?</a></li>
+  <li><a href="#Sniffing">How do I verify that my CAN messages are
+truly being sent?</a></li>
+  <li><a href="#Modulbus">What the hell is a modulbus?</a></li>
+  <li><a href="#Device_removal">Why is my device automatically removed
+from Master?</a></li>
+  <li><a href="#Device_state">What are the ONLINE, OFFLINE and
+INITIALIZED states for?</a></li>
+  <li><a href="#The_CANbus_library_seems_rather_rigid">The CANbus
+library seems unflexible. &nbsp;What do you have to say for yourself?</a><br>
+  </li>
+</ol>
+<br>
+<h3><a name="Simulation_vs_Emulation"></a>What is the difference
+between <span style="font-style: italic;">simulation</span> in
+canbus::Master and <span style="font-style: italic;">emulation</span>
+(when using the default Master constructor)?</h3>
+Simulation refers to the CANbus devices themselves... &nbsp;The
+canbus::Master class will detect if your device (CAN module) is sending
+packets from the CANbus, if it isn't, it marks the corresponding Device
+class as OFFLINE and then begins simulating CAN packets for the device
+by calling your particular canbus::Device::simulateMsg() method every
+half second. &nbsp;This allows a user to still write a complete set of
+monitor data to the monitor stream even when no real messages are being
+received. &nbsp;Hence it serves as a useful testing tool.<br>
+<br>
+Emulation refers to the host machines CANbus hardware - namely the
+Carma CAN/Dio Janz card. &nbsp;If the developer doesn't have access to a
+system with Janz hardware, they can use the emulate canbus::Master
+constructor instead. &nbsp;In this case all canbus writes go to
+/dev/null and canbus reads are only simulated messages.<br>
+<br>
+<span style="font-style: italic; font-weight: bold;">Simulation occurs
+if a device is OFFLINE regardless of the emulation mode.</span><br>
+<br>
+[<a href="#TOC">TOP</a>]<br>
+<h3><a name="Why_Simulate"></a>Ok wait, do you mean to say that
+messages will be simulated even if we are using the Janz hardware and we
+have CAN nodes on the bus? &nbsp;Why?</h3>
+Yes. &nbsp;For several reasons. &nbsp;The first is that this allows a
+developer to write a complete set of monitor data at all times to the
+monitor system. &nbsp;Thus it allows for one to debug data transfer
+related problems and to give assurance that data is being transferred
+and thus the data transfer pipelines are intact and functioning.
+&nbsp;Second, it allows the developer to set appropriate flags and
+invalidate data when the node fails or quits communicating for whatever
+reason (somebody unplugged the bus, bumped into the power cord, yes
+these things happen all the time). &nbsp;Thus, if a node is ONLINE and
+all of a sudden goes OFFLINE (and thus begins simulation), the simulated
+data will immediately notify the ACC that something is wrong (make sure
+important flags are INVALID in simulated data). &nbsp;Furthermore, it
+implicitly gives an idea of where it went wrong - the module on the
+canbus or the CAN host process vs. any of the intermediate data
+pipelines. <br>
+Finally, it allows a developer to achieve a high percentage of coverage
+testing without ever having access to a canbus. &nbsp;Simple Device
+implementation bugs are often exposed right off the bat when the device
+is being simulated. <br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="Disable_Simulation"></a>Sure, whatever - how do I disable
+simulation?</h3>
+The canbus::Master class determines what messages to simulate by
+calling the overloaded Device::getHalfSecMonitors and
+Device::getSlowMonitors methods. &nbsp;If you don't want to implement
+simulation or simply want to disable it for a particular device,
+overload these methods to return an empty map.<br>
+<br>
+&nbsp;std::map&lt;msgType, std::string&gt;
+MyDevice::getHalfSecMonitors() <br>
+{<br>
+&nbsp;&nbsp;&nbsp; std::map&lt;msgType, std::string&gt; emptyMap;<br>
+&nbsp;&nbsp;&nbsp; return emptyMap;<br>
+}<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<br>
+<h3><a name="simulateMsg"></a>How does my simulateMsg routine get used?</h3>
+SimulateMsg allows the user to create a CAN Message that contains
+simulated data (vs. a real CAN message which is received from the bus).
+&nbsp;When the device is OFFLINE, the Master class calls simulateMsg for
+all message types returned from YourDevice::getHalfSecMonitors and
+YourDevice::getSlowMonitors. &nbsp;You should likewise return a
+simulated message for each of these message types. &nbsp;<br>
+<br>
+After master calls simulateMsg for all message types, it takes the
+returned messages and places them into the CAN message queue. &nbsp;This
+queue is the same queue used to store CAN messages from the CANbus for
+processing by the master. &nbsp;From here on out, all processing is
+done normally - in other words, the Master class then reads the message
+back in from the queue, calls processMsg on this message and behaves
+exactly as if the message actually came from the CANbus. &nbsp;Since
+the message is treated by Master in exactly the same manner as real
+messages, the simulated message is likewise subjected to all the
+filtering and processing of a real message. &nbsp;Thus if simulateMsg
+returns a message with the host process bit set to 0, Master will
+ignore it. &nbsp;If the simulated msg has an API different from the
+Device APIs stored in Master will ignore it. &nbsp;Likewise for all Id
+parameters. &nbsp;This actually serves as a very good consistency
+check. <br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="real_or_sim"></a>Wait, then how do I know if a received
+message is real or simulated?</h3>
+The input parameters to processMsg contain a boolean "sim" flag.
+&nbsp;If the flag is set, the received message was simulated. &nbsp;Thus
+your logic to set the module ONLINE could look something like this:<br>
+<br>
+&nbsp;&nbsp;&nbsp; if (getState() == OFFLINE &amp;&amp; !sim) <br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; setState(ONLINE);<br>
+<br>
+Another way to tell if the message was simulated is to check the
+lastRxMjd on the Device. &nbsp;This is guaranteed to reflect the MJD of
+the last <span style="font-style: italic;">real </span>message
+received from the bus. &nbsp;If the mjd from the current message does
+not match the Device lastRxMjd, then the message is simulated. &nbsp;The
+prior method should be used in most cases.<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="TimeSyncs"></a>I've heard that canbus::Master
+automatically broadcasts time syncs to the CANbus. &nbsp;Is this
+true?&nbsp;</h3>
+Yes. &nbsp;canbus::Master sends time syncs every ten seconds. &nbsp;You
+need do nothing.<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="Overriding_Timesyncs"></a>But I don't use the standard
+CANbus API timesync format or I get my time from an external source
+only. &nbsp;What do I do?</h3>
+In this case you can overload the Master::setTime method to do either
+nothing or to use your particular format. &nbsp;Either way, setTime will
+continue to be called every ten seconds:<br>
+<br>
+void MyMaster::setTime() {<br>
+&nbsp;&nbsp;&nbsp; // Timeless<br>
+}<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="Sniffing"></a>I've read the documentation, created my
+Master and Device variants and my program runs, but how do I know if my
+messages are truly being sent over the CANbus?</h3>
+The best technique is to connect bus0 to bus1 and then use bus0 to run
+your application and bus1 to run a CANbus sniffer (bin/cansniffer).
+&nbsp;This allows you to read all messages going out from or coming in
+to the host. &nbsp;<br>
+<br>
+You will need to make sure that DIO is disabled on one of the busses.
+&nbsp;This cannot be done in software and must instead be done by
+setting jumpers on the RJ45 breakout board. &nbsp;<a
+ href="http://www.mmarray.org/project/WP/CANbus/hw/JANZ_OVRO_CAN/cmod%20comb.pdf">See
+this (pg. 3) for more information</a>.<br>
+<br>
+You will also need a CAN-T connector. 1 segment comes from bus0 another
+from bus1 and the third from the rest of the network.<br>
+<br>
+There is also a way to do this without connecting the busses together.
+&nbsp;The carma::canbus::Message class now contains an enableEcho()
+method (<a
+ href="http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1canbus_1_1Message.html#a20">see
+carma::canbus::Message::enableEcho()</a>). &nbsp;This will cause the
+CAN message to be echoed back to the host upon successful transmission.
+&nbsp;canbus::Master will ignore these echoed messages (since they are
+not addressed to the host), &nbsp;but they will be accessible via the <a
+ href="http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1canbus_1_1DirectCan.html">DirectCan</a>
+queues. &nbsp;<br>
+<br>
+This mechanism is a bit more involved as it might require code changes
+in multiple places (i.e. wherever you send a message). &nbsp;An easy way
+to do this would be to wrap postMessage in your inherited Master class:<br>
+<br>
+void MyMaster::postMessage(carma::canbus::Message msg, txPriorityType
+prio) <br>
+{<br>
+&nbsp;&nbsp;&nbsp; #ifdef ECHO<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // Echo this message back to the
+host<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; msg.enableEcho();<br>
+&nbsp;&nbsp;&nbsp; #endif<br>
+&nbsp;&nbsp;&nbsp; CanIo::postMessage(msg, prio);<br>
+}<br>
+<br>
+Keep in mind though that you must still create a DirectCan application
+to read the echoed messages. &nbsp;It is likely that in the near future
+I will create a dcansniffer application for this purpose.<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="Modulbus"></a>What the hell is a modulbus?</h3>
+Modulbus is a proprietary mezzanine bus standard from Janz. &nbsp;It is
+analogous to the more common industry standard of PMC (PCI Mezzanine
+Card). &nbsp;Mezzanine carrier boards connect to common busses (such as
+PCI or VME) and then contain smaller daugterboards often referred to as
+modules. &nbsp;The modules talk to the carrier board via the modulbus
+protocol and the carrier board bridges this to the PCI bus and hence the
+host platform. &nbsp;The two CANbus cards, single DIO card and single
+RJ45 breakout card are modulbus daughterboards which reside on a
+modulbus carrier board. &nbsp;<br>
+<br>
+Janz uses the term modulbus very liberally nearly everywhere, they
+refer to the carrier board as a modulbus as well as the daughterboard
+slots. &nbsp;It reminds me of the "We are from the planet Malkmar"
+episode on South Park. &nbsp;Unfortunately, I've fallen for this and you
+will see the term modulbus misused in my documentation as well.
+&nbsp;This is being phased out for the terms <span
+ style="font-weight: bold;">board</span> and <span
+ style="font-weight: bold;">canbus</span> to help eliminate any
+confusion. &nbsp;Below I try and set the record straight:<br>
+<br>
+The term <span style="font-weight: bold;">board</span> or <span
+ style="font-weight: bold;">boardId</span> refers to the carrier board
+as a whole, not the individual daughterboards. &nbsp;The <span
+ style="font-weight: bold;">boardId</span> is found on the back of the
+carrier board on either a small red hex switch or a large ROM chip
+labeled "Mbus X". &nbsp;It is in no way related to the PCI slot and
+serves a purpose only when there is more than one carrier board in a
+crate. &nbsp;The library needs to know this number in order to open the
+appropriate device files. &nbsp;Likewise the driver needs to know this
+number when being insmoded. &nbsp;<br>
+<br>
+If you don't want to remove the board to determine the boardId, you can
+check /etc/rc.local to see how the driver is being insmoded. &nbsp;You
+should see a line like this:<br>
+<br>
+/sbin/insmod -f -v /lib/modules/`uname -r`/misc/dpm.o
+io=58,1,0,0,250,1,1,0,250<br>
+<br>
+The second number in io= is the <span style="font-weight: bold;">boardId</span>(as
+is every subsequent 4th digit).&nbsp;<span style="font-weight: bold;"> </span>You
+can also check the system log and you should see something like this:<br>
+<br>
+abeard@ovrolab abeard&gt;dmesg<br>
+....<br>
+DPM: register driver $Revision: 1.4 $ Jul&nbsp; 1 2004 14:42:21<br>
+DPM: register driver at major # 58<br>
+DPM(1,0): io=0xf8818000, irq=10 (ICAN3)<br>
+DPM(1,1): io=0xf8818200, irq=10 (ICAN3)<br>
+DPM: 2 module(s) found<br>
+....<br>
+<br>
+Where DPM(1,0) refers to the <span style="font-weight: bold;">boardId</span>
+and <span style="font-weight: bold;">canbus </span>respectively.
+&nbsp;If you don't see this message then it is likely that the above io
+parameters to insmod do not contain the correct <span
+ style="font-weight: bold;">boardId</span>.<br>
+<br>
+<span style="font-weight: bold;">canbus </span>should be either a 0 or
+1. &nbsp;The top blue RJ45 slot is <span style="font-weight: bold;">canbus</span>0
+and the bottom blue RJ45 slot is <span style="font-weight: bold;">canbus</span>
+1. &nbsp;Don't use the bottom green slot for CAN.<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="Device_removal"></a>I start my application and promptly
+receive the message :&nbsp;</h3>
+<h3>File ../../carma/carma/canbus/Master.cc, Line 695: File
+../carma/somefile: SomeException:<br>
+Caught in Master::runReadThread() while processing msg 0x110 from api
+12 node 1<br>
+Removing device and proceeding.<br>
+</h3>
+Your overloaded processMsg routine is essentially a callback routine
+that gets called every time a CAN message is received from the bus.
+&nbsp;If you receive the above message (or similar), it means that your
+processMsg routine threw an exception and is thus misbehaved from the
+perspective of the caller (the Master class). &nbsp;In this situation, I
+go out of the way to make sure that this doesn't bring down the whole
+application and instead simply remove the device from the Master device
+map and continue. &nbsp;This means that no messages coming from your
+device will be processed in the future, but at the same time all other
+nodes keep functioning. &nbsp;<br>
+<br>
+There are a couple ways to avoid this behaviour. &nbsp;The easiest is
+to fix what generates the exception. &nbsp;You can also embed all of
+your processMsg code in a single try/catch block and handle your own
+exceptions by setting appropriate flags or whatever you need to do to
+notify somebody that things are awry. &nbsp;If you would rather have the
+entire application abort, you can do something like the following:<br>
+<br>
+virtual void processMsg(msgType messageId,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+std::vector&lt;byteType&gt;&amp; data,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+bool sim) <br>
+{<br>
+&nbsp;&nbsp;&nbsp; try {<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // Process the message<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; ... &nbsp;<br>
+&nbsp;&nbsp;&nbsp; } catch (...) {<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; abort();<br>
+&nbsp;&nbsp;&nbsp; }<br>
+}<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="Device_state"></a>I'm still confused about the whole
+ONLINE, INITIALIZED, OFFLINE thing. &nbsp;Can you better explain this?</h3>
+I'll try. &nbsp;The ONLINE, INITIALIZED and OFFLINE states are used to
+reflect the state of the module in software. &nbsp;If no messages are
+being received from the module within half a second, it get's set to
+OFFLINE automatically by canbus::Master. &nbsp;Unfortunately, it is more
+difficult to automate the setting of ONLINE and this must be done by the
+Device class implementor in processMsg. &nbsp;The reason for this is
+that different implementations may have a different idea of what ONLINE
+means - If a module doesn't go through an initialization stage and
+receives no control commands, it may very well be considered ONLINE the
+moment you receive an unsimulated message from it. &nbsp;However, other
+modules require initialization and must go through an intermediate stage
+(INITIALIZE). <br>
+<br>
+One of the more common mistakes in implementing the Device class is
+forgetting to set the device state to ONLINE.<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+<h3><a name="The_CANbus_library_seems_rather_rigid"></a>The CANbus
+library seems unflexible. &nbsp;What do you have to say for yourself?</h3>
+All I can do is argue to the contrary.&nbsp; For starters, CANbus is
+probably the most independent of all Carma libraries. &nbsp;When
+designing the library I went out of my way to make sure that
+carma::canbus did not bring in unneeded dependencies (i.e. most of
+carma). &nbsp;In particular, the library uses no Corba whatsoever and is
+not dependent on the Carma Monitor System or Carma Control System
+despite the fact that these will be the common transport mechanisms.
+&nbsp;It is dependent on libcarmautil but only for the common exception
+handling mechanism. &nbsp;<br>
+<br>
+It may also seem like the processMsg callback is forced to process
+messages in a particular way. &nbsp;This however is not the case -
+processMsg is free to do whatever it wants to with the data it receives
+from the CANbus.&nbsp; &nbsp;This means that a user could just as easily
+shove all the data into a shared memory segment as he could place it
+into the Carma Monitor System.&nbsp;Furthermore, there is no lost
+information due to the messages trip through the framework.
+&nbsp;ProcessMsg is also not restricted to the frame timescale - rather
+it is called asynchronously whenever a message is received.&nbsp; The
+same applies to control - Device class derivatives have the ability to
+send messages directly via the canIo_ member variable and can wrap these
+calls in their own interface (Corba or not). &nbsp;<br>
+<br>
+That said, the library does utilize common timescales for simulation
+purposes. &nbsp;Namely, messages are simulated on the frame (1/2 second)
+and slow (5 second) timescales. &nbsp;However, the user is still free to <a
+ href="#Disable_Simulation">bypass simulation entirely</a> and implement
+their own simulation mechanism. &nbsp;The library also depends heavily
+on the Carma CANbus Message Id Protocol and I regret to say that any
+different Id protocol will most certainly be unuseable within this
+framework. &nbsp;<br>
+<br>
+Throughout the documentation, I make heavy reference to the common
+Carma use cases. &nbsp;This may be a little misleading and I apologize.
+&nbsp;Chances are that you can still easily use this library and
+framework for most atypical cases. It would be very easy to bridge
+canbus library Device/Master derivatives to non-native monitor/control
+systems or other data transport mechanisms. &nbsp;These include raw
+sockets, Rick's serialization classes, etc.<br>
+<br>
+<br>
+[<a href="canfaq.html#TOC">TOP</a>]<br>
+</body>
+</html>

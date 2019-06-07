@@ -1,0 +1,22 @@
+#
+# $Id: desc.tab,v 1.122 2014/10/01 18:46:29 plambeck Exp $
+#
+# a1 is the berkeley lab system...
+# "unit1" is a special entry for unit testing
+#
+# note: C10 h106, C12 h107, C14 h262 do NOT have band B modulators
+#       C8 h125 and C15 h100 have isolators, I think
+#
+#|name |dewar  |oscAD |oscB |atten|modB |modD |psimod|cmOptics|cmdewar| 
+#|s    |s      |s     |s    |i    |b    |b    |i     |b       |s      | 
+  a1    dewar10  h136  h110  30000 false true  -30    false    rx7
+  bima1 dewar14  h128  h125  30000 true  true  -30    true     rx12
+  bima2 dewar9   h140  h261  30000 false true  -30    true     rx5
+  bima3 dewar12  h103  h138  30000 true  true  -30    true     rx6
+  bima4 dewar5   h127  h106  30000 false true    0    true     rx13
+  bima5 dewar4   h126  h137  30000 true  true    0    true     rx1
+  bima6 dewar11  h143  h107  30000 false true    0    true     rx3
+  bima7 dewar13  h102  h109  30000 true  true    0    true     rx10
+  bima8 dewar8   h142  h262  30000 false true  -30    true     rx7
+  bima9 dewar6   h141  h100  30000 false true  -30    true     rx2
+  unit1 dewarT   hT1   hT2   30000 false false   0    false    rx7

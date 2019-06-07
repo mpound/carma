@@ -1,0 +1,5 @@
+This alarm is caused when one of the server processes on the main
+correlator crate crashes.
+
+Look here for fixes for this problem:
+http://cedarflat.mmarray.org/wiki/Alarms#CarmaSlcBandX.corMonitorHeader.received

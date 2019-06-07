@@ -1,0 +1,31 @@
+#! /bin/csh -f
+#
+# BIMA pointing example, manual Mel style
+# Created:   2-sep-2005		Peter Teuben
+# 
+#  $Id: run2,v 1.1 2015/03/02 17:10:42 teuben Exp $
+#
+
+set tmp=tmp$$
+set date=`date +%d%b%y`
+set point=./point
+set data=~control/pointingData.txt
+
+foreach _arg ($*)
+   set $_arg
+end
+
+# -----------------------------------------------------------------------
+# sanity checks
+
+if (! -e $data) then
+  echo "Data file $data does not exist"
+  exit 1
+endif
+
+foreach ant (bima2 bima3)
+ grep $date $data |\
+  grep $ant |\
+  awk '{printf("%7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %-8s\n",$4-53608+26,$5,$6,$7,$8,0,"N/A")}' > tmp.$ant.dat 
+end
+

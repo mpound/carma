@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+NOTE: this DTD is meant to be used to verify a pre-processed DAG
+NOTE: configuration file only. It does not try to encapsulate any of
+NOTE: the shorthands used to construct the original DAG file.
+-->
+
+<!-- the top level element -->
+<!ELEMENT dag (if|mp|transient|varmap_scope)*>
+<!ATTLIST dag alarm_after CDATA #IMPLIED>
+<!ATTLIST dag alarm_prefix (sys|sci1|sci2|eng1|eng2|offline) #IMPLIED>
+<!ATTLIST dag sound CDATA #IMPLIED>
+<!ATTLIST dag type (alarmoutput) #REQUIRED>
+
+<!--
+     Capability to stop evaluation based on monitor point value
+
+     This allows you to "chop off" part of the DAG tree based on the
+     value of a monitor point. Everything is done with regular expressions
+     to allow for arbitrarily complex matching schemes.
+
+     We also allow negation to make certain regular expressions easier
+     to write.
+-->
+<!ELEMENT if (if|mp|transient|varmap_scope)+>
+<!ATTLIST if canon CDATA #REQUIRED>
+<!ATTLIST if val CDATA #REQUIRED>
+<!ATTLIST if negate (true|false) #REQUIRED>
+
+<!--
+     A way to add a variable expansion based on a monitor point name
+
+     This is useful for allowing runtime changeable monitor point names
+     in child nodes without having to enumerate every possibility in
+     <if> conditions.
+
+     The information from this variable map is passed into the email
+     system. This allows the template engine to have some information
+     about the state of the evaluation. For example: antenna number
+     connected to a downconverter input.
+-->
+<!ELEMENT varmap_scope (if|mp|transient|varmap_scope)+>
+<!ATTLIST varmap_scope var CDATA #REQUIRED>
+<!ATTLIST varmap_scope canon CDATA #REQUIRED>
+
+<!--
+     A transient (runtime-changeable) condition
+
+     This allows you to change the DAG at runtime using a control system
+     command. You will use it to disable large sections of monitor points
+     during certain array configurations.
+-->
+<!ELEMENT transient (if|mp|transient|varmap_scope)*>
+<!ATTLIST transient cond (alarmEnableSubarray) #REQUIRED>
+<!ATTLIST transient subarray CDATA #REQUIRED>
+
+<!--
+     Monitor Point
+
+     This represents an instance of a carma::monitor::MonitorPoint in C++.
+     It is the only thing that has a value and really effects the "good"
+     or "bad" state of a DAG evaluation.
+
+     When an <mp> node has children, this effects evaluation. When a "bad"
+     node state is encountered, the children are not evaluated, and the first
+     bad node in the tree is reported as the error condition.
+-->
+<!ELEMENT mp (if|mp|transient|varmap_scope)*>
+<!ATTLIST mp canon CDATA #REQUIRED>
+<!ATTLIST mp alarm_after CDATA #REQUIRED>
+<!ATTLIST mp alarm_prefix (sys|sci1|sci2|eng1|eng2|offline) #REQUIRED>
+<!ATTLIST mp sound CDATA #REQUIRED>
+<!ATTLIST mp silent (true|false) #REQUIRED>

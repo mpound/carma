@@ -1,0 +1,48 @@
+/** @file
+ *
+ * RxSelector Rx Factory Interface.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard</dl>
+ * $Revision: 1.6 $
+ * $Date: 2011/05/17 16:27:31 $
+ * $Id: RxSelector.idl,v 1.6 2011/05/17 16:27:31 iws Exp $
+ */
+#ifndef CARMA_ANTENNA_COMMON_RXSELECTOR_IDL
+#define CARMA_ANTENNA_COMMON_RXSELECTOR_IDL
+
+#include "carma/antenna/common/RxControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module common {
+
+    // DO Name
+    /**
+     * RxSelector nameserver name.
+     */
+    const string RXSELECTOR_NAME = "RxSelector";
+
+    /**
+     * RxSelect interface for retrieval of RxControl DOs.
+     * Serves as a single DO, published on the nameserver, from which various
+     * receiver types can be retrieved.
+     */
+    interface RxSelector {
+
+        /**
+         * Return a pointer to the Rx subsystem. The return value will
+         * be used by client applications as an object reference by
+         * which the Rx subsystem methods can be invoked.
+	 *
+	 * @param RxControl::Type rxtype Reciever type, one of
+	 * RX1CM, RX1MM, RX3MM, RXANY
+	 * @see RxControl
+         */
+        RxControl Rx(in RxControl::Type rxtype)
+            raises (carma::util::UserException);
+
+
+    }; // End RxSelector interface
+};};}; // End module carma::anntenna::common
+#endif

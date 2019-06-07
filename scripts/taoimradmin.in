@@ -1,0 +1,97 @@
+#!/bin/sh
+
+# $Id: taoimradmin.in,v 1.2 2011/08/15 20:45:05 abeard Exp $
+# Wrapper script for the TAO imradmin program. 
+# Allows the imradmin program to be run without knowing the
+# installation location of carma tools
+
+
+
+################################################
+
+CARMA_TOOLS=@carma_tools@
+
+# So that carma programs can run
+export LD_LIBRARY_PATH=${CARMA_TOOLS}/lib:@cxx_stdlib_dir@
+#echo ld_lib_path:$LD_LIBRARY_PATH
+
+# Defaults for variables
+IMRHOST=imr
+IMRPORT=20000
+
+# Command to invoke the real imradmin program
+IMRADMINPGM=${CARMA_TOOLS}/bin/tao_imr
+
+numargs=$#
+
+# Function
+function printWrapperHelp {
+    echo "Usage: $0 [options] command"
+    echo "Options: --imr hostname<:port> - sets hostname where IMR resides"
+}
+
+function printHelp {
+    echo `$IMRADMINPGM -?`
+}
+
+    
+if [ $numargs -eq 0 ]; then
+    printWrapperHelp
+    echo $EXIT_FAILURE
+fi
+
+
+# get list of arguments
+arglist=("$@")
+
+options=()
+
+# run through arguments for commands
+maxindex=$((numargs-1))
+for (( index=0; $index < $numargs; index=$index+1 ));
+do
+    arg=${arglist[$index]}
+    #echo numargs:$numargs  index:$index arg:$arg
+    case $arg in
+    	--imr | -i)
+    	    if [ $index -eq $maxindex ]; then
+    	       echo Must supply imr name after the --imr keyword
+    	       exit $EXIT_FAILURE
+    	    fi
+    	    # Skip to the next argument to get the hostname
+    	    i=$((i-1))
+    	    index=$((index+1))
+    	    IMRHOSTPORT=${arglist[$index]}
+    	    ;;
+    	help | --help | -h)
+    	    printWrapperHelp
+            printHelp
+            exit $EXIT_SUCCESS
+    	    ;;
+        *)
+            options=("${options[@]}" "$arg")
+            #echo "options $options"
+            ;;
+    esac
+done
+
+if [ "$IMRHOSTPORT" = "" ]; then
+    printWrapperHelp
+    exit $EXIT_FAILURE
+fi
+
+IMRHOST="${IMRHOSTPORT%:*}"
+if [[ "$IMRHOSTPORT" =~ ':' ]]; then
+    IMRPORT="${2#*:}"
+fi
+
+if [ "$IMRHOST" = "localhost" -o "$IMRHOST" = "LOCALHOST" ]; then
+    IMRHOST=`hostname`
+fi
+
+ORB="-ORBDefaultInitRef corbaloc::$IMRHOST:$IMRPORT"
+
+$IMRADMINPGM $ORB ${options[@]}
+
+exit $?
+

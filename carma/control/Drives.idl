@@ -1,0 +1,313 @@
+#ifndef CARMA_CONTROL_DRIVES_IDL
+#define CARMA_CONTROL_DRIVES_IDL
+
+#include "carma/antenna/common/DriveControl.idl"
+#include "carma/control/AzWrapMode.idl"
+#include "carma/control/SequenceTypedefs.idl"
+#include "carma/util/UserException.idl"
+
+/**
+ * @file
+ *
+ * Interface for the drive related portions of the Subarray controller.
+ *
+ * $Id: Drives.idl,v 1.13 2014/05/05 21:40:42 scott Exp $
+ *
+ * $CarmaCopyright$
+ */
+
+module carma {
+module control {
+
+/**
+ * Tracking and drive related portions of the subarray control interface.
+ * The interface is split into several pieces because the idl parser overflows.
+ */
+interface Drives {
+
+    /**
+     * Track the requested source.
+     * This position serves as the reference for both pointing and optionally
+     * the phase center.
+     * Any offsets entered with offset, equatOffset, or phaseCenterOffset are
+     * set to zero to avoid mistakes for the most common observing
+     * patterns.
+     * This command is saved as system state.
+     *
+     * @param source source name
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas
+     * @param affectPhaseCenter Whether or not to change the
+     *                          phase center/subarray info
+     * @param azWrapMode specifies whether to add or subtract a turn from
+     *                   the nominal azimuth
+     * @param time when azWrapMode==TIME, an az wrap will be requested that
+     *             allows the source to be tracked for 'time' minutes. Ignored
+     *             if azWrapMode != TIME.
+     * @param overTheTop specifies whether to use an elevation that is
+     *                    more than 90 degrees
+     *
+     * @throws UserException if the source does not exist or an error
+     * occurs in distributing the source info to other distributed components
+     * @see offset, equatOffset, phaseCenterOffset
+     * @throws UserException if integration is in progress,
+     * or if subarray has not been initialized
+     * @see setInitializationFlag
+     */
+    void track( in string     source,
+                in SeqShort   carmaAntNoSeq,
+                in boolean    affectPhaseCenter,
+                in AzWrapMode xzWrapMode,
+                in double     time,
+                in boolean    overTheTop )
+        raises(carma::util::UserException);
+
+    /**
+     * Track the wind in a manner that minimizes snow buildup on antenna
+     * backing structures.  On ovro antennas, tracking is done at a 60
+     * degree offset into the wind.  On bima antennas tracking is done with
+     * the antenna back to the wind (opposite the wind vector).
+     * @throws UserException on error.
+     */
+    void snowTrack( in SeqShort carmaAntNoSeq )
+        raises(carma::util::UserException);
+
+    /**
+     * Track the wind in an antenna specific manner during high winds.
+     * This command stows ovro dishes at the zenith during high winds.
+     * For bima antennas, it actively tracks with dish backs to the wind.
+     * @throws UserException on error.
+     */
+    void windTrack( in SeqShort carmaAntNoSeq )
+        raises(carma::util::UserException);
+
+    /**
+     * Collimation offset from the mount.
+     * This offset tracks slowly varying (timescale of hours)
+     * collimation offsets and will be applied to all apertures.
+     * @param az (actually cross-elevation) collimation offset in arcmin
+     * This offset is an arc on the great circle perpendicular to the
+     * nominal source position.
+     * @param el collimation offset in arcmin
+     * @param carmaAntNo carma antenna number
+     */
+    void mountOffset(in double az, in double el, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Stows antennas in the ZENITH, SERVICE, or SAFE position.
+     * @param position One of ZENITH, SERVICE, SAFE
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void stow(in carma::antenna::common::DriveControl::Position pos,
+              in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Stops the antennas and turns off the drive system
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void stop(in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Offset from the nominal position.
+     * Convenience routine, used by pointing, for testing, etc.
+     * This offset will be removed on the next change of source or
+     * tracking mode.
+     * @param azArcmin (actually cross-elevation) collimation offset in arcmin
+     * This offset is an arc on the great circle perpendicular to the
+     * nominal source position.
+     * @param elArcmin elevation offset in arcmin
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @see track, move
+     */
+    void offset(in double azArcmin, in double elArcmin,
+                in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Offset in azimuth from the nominal position,
+     * Convenience routine.
+     * The elevation offset is unchanged.
+     * This offset will be removed on the next change of source or
+     * tracking mode.
+     * @param azArcmin (actually cross-elevation) collimation offset in arcmin
+     * This offset is an arc on the great circle perpendicular to the
+     * nominal source position.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void offsetAz(in double azArcmin, in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Offset in elevation from the nominal position,
+     * Convenience routine.
+     * This offset will be removed on the next change of source or
+     * tracking mode.
+     * @param elArcmin elevation offset in arcmin
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void offsetEl(in double elArcmin, in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Move antenna(s) to the requested az/el position.
+     * Convenience routine.
+     * This command is memorized as part of the system state.
+     * @param azDegrees azimuth in degrees
+     * @param elDegrees elevation in degrees
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @see moveAz
+     * @see moveEl
+     */
+    void move(in double azDegrees, in double elDegrees,
+              in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Move antenna(s) to the requested az position (el unchanged).
+     * Convenience routine.
+     * This command is memorized as part of the system state.
+     * @param azDegrees azimuth in degrees
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void moveAz(in double azDegrees, in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Move antenna(s) to the requested el position.
+     * Convenience routine.
+     * This command is memorized as part of the system state.
+     * @param elDegrees elevation in degrees
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void moveEl(in double elDegrees, in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets tracking threshold
+     * The tracking threshold is the sky tracking error in beamwidths
+     * that is used to determine if the antenna state is TRACK
+     * @param threshold - tracking threshold in beamwidths
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void trackThreshold(in float threshold, in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+    * Set the azimuth and elevation ranges within which
+    * an antenna(s) is safe from collisions with other antennas.
+    * Note: an invocation DriveControl::stow(SAFE) must throw an
+    * exception if valid safe
+    * ranges have not been set with this command beforehand.
+    * @param azLow - the low end of the safe azimuth range, in degrees.
+    * @param azHigh - the high end of the safe azimuth range, in degrees.
+    * @param elLow - the low end of the safe elevation range, in degrees.
+    * @param elHigh - the high end of the safe elevation range, in degrees.
+    * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+    *                      the single value zero means all subarray antennas.
+    * @see antenna::common::DriveControl::setSafeRange()
+    */
+    void setSafeRange(in float azLow, in float azHigh,
+                      in float elLow, in float elHigh,
+                      in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Set ovro mount pointing constants
+     * el" = elEncoder + m2
+     * el' = el"+ apertureOffsetEl +apertureSagEl*cos(el") - AFtilt
+     * az' = azEncoder + m1 + apertureOffsetAz/cos(el')
+     * az = az'+ [m3 + LRtilt - m4*sin(az') - m5*cos(az')]*sin(el')/cos(el')
+     * el = el' - m4*cos(az') + m5*sin(az')
+     * @param m1 azimuth encoder offset, arcmin
+     * @param m2 elevation encoder offset, arcmin
+     * @param m3 non-orthogonality of axes, arcmin
+     * @param m4 azimuth axis verticality, North/South, arcmin
+     * @param m5 azimuth axis verticality, East/West, arcmin
+     * @param carmaAntNo carma antenna number
+     */
+    void setOvroMountPointingConstants( in double m1,
+                                        in double m2,
+                                        in double m3,
+                                        in double m4,
+                                        in double m5,
+                                        in short  carmaAntNo )
+         raises ( carma::util::UserException );
+
+    /**
+     * Set bima mount pointing constants
+     *
+     * @param dazCoefs A sequence of coefficients for use with the pointing
+     *                 model's azimuth offset equation.
+     *
+     * @param delCoefs A sequence of coefficients for use with the pointing
+     *                 model's elevation offset equation.
+     *
+     * @param carmaAntNo carma antenna number
+     */
+    void setBimaMountPointingConstants( in SeqDouble dazCoefs,
+                                        in SeqDouble delCoefs,
+                                        in short     carmaAntNo )
+        raises ( carma::util::UserException );
+
+  //------------------------------------------------------------
+  // Begin SZA Mount Pointing Constants
+  //------------------------------------------------------------
+
+  void setSzaMountPointingConstants(in unsigned long azEncoderCountsPerTurn,     in unsigned long elEncoderCountsPerTurn,
+				    in unsigned long azMinEncoderCount,          in unsigned long azMaxEncoderCount,
+				    in unsigned long elMinEncoderCount,          in unsigned long elMaxEncoderCount,
+				    in double        azEncoderZeroDegrees,       in double        elEncoderZeroDegrees,
+				    in double        haTiltDegrees,  in double latTiltDegrees, in double elTiltDegrees,
+				    in double        opticalXCollimationDegrees, in double   opticalYCollimationDegrees,
+				    in double        opticalFlexureSinDegrees,   in double   opticalFlexureCosDegrees,
+				    in double        radioXCollimationDegrees,   in double   radioYCollimationDegrees,
+				    in double        radioFlexureSinDegrees,     in double   radioFlexureCosDegrees,
+				    in short         carmaAntNo )
+    raises ( carma::util::UserException );
+  
+  void setSzaEncoderLimits(in unsigned long azMinCount, in unsigned long azMaxCount,
+			   in unsigned long elMinCount, in unsigned long elMaxCount, 
+			   in short carmaAntNo)
+    raises ( carma::util::UserException );
+  
+  void setSzaEncoderZeros(in double azEncZeroDeg, in double elEncZeroDeg,
+			  in short carmaAntNo)
+    raises ( carma::util::UserException );
+  
+  void setSzaTilts(in double haTilt, in double latTilt, in double elTilt,
+		   in short carmaAntNo)
+    raises ( carma::util::UserException );
+
+  //------------------------------------------------------------
+  // End SZA Mount Pointing Constants
+  //------------------------------------------------------------
+
+     /**
+     * Set azimuth mount offset
+     * This is a convenience method that sets m1 of the ovro model,
+     * and equivalent terms for the other models.
+     * This is the only pointing constant that should change after an
+     * antenna move.
+     * @param m1 azimuth encoder offset, arcmin
+     * @param carmaAntNo carma antenna number
+     */
+    void azPointingConstant(in double m1,  in short carmaAntNo)
+         raises(carma::util::UserException);
+
+}; // end interface SubarrayControlTrack
+}; // end control
+}; // end carma
+
+#endif

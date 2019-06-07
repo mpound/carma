@@ -1,0 +1,21 @@
+Author: Andy Beard
+The type_id is used by omniORB to automatically narrow resolved objects to
+their appropriate client side proxy interface.  This makes python particularly
+easy (one might say pleasurable relative to C++) to resolve and use CORBA
+distributed objects.  Unfortunately, TAO by default did not embed this info
+in the IMRified IORs.  
+
+This patch fixes that and retains the ORBacus behaviour with respect to
+omniORB clients.
+--- ACE_wrappers/TAO/tao/PortableServer/Root_POA.cpp	2010-01-15 01:56:57.000000000 -0800
++++ ACE+TAO-5.8.1-carma-1.5/TAO/tao/PortableServer/Root_POA.cpp	2010-09-26 20:26:26.000000000 -0700
+@@ -2011,6 +2011,9 @@ TAO_Root_POA::key_to_object (const TAO::
+ 
+       obj = this->orb_core_.orb ()->string_to_object (ior.c_str ());
+ 
++      // CARMA: Set the typeid.  This will be contributed upstream by OCI
++      obj->_stubobj()->type_id = type_id;
++
+       return obj;
+     }
+ 

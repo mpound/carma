@@ -1,0 +1,16 @@
+#-----------------------------------------------------------------------
+# For CARMA-3G testing purposes SINGLELEFT is a copy of the default LL
+# configuration, since I have copied the "CARMA" sections in
+# the correlator INI file for "CARMA-3G"
+#-----------------------------------------------------------------------
+
+#C[1-23]L BD[1-23]
+
+C[1-15]L:A  SLCOR[1-8]:[1-15]
+
+C[16-23]L:A WBCOR[1-8]:[1-8]
+C[16-23]L:A WBCOR[1-8]:[9-16]
+
+
+
+

@@ -1,0 +1,32 @@
+
+Reviewer: Peter Teuben //-REV-PJT
+
+Coding Review Checklist:
+
+- frameType: i like it !! 
+  but is there a way we can force doxygen to recognize it?			****
+  
+- frameType: do you foresee any problems if it would be a 'long int'
+  instead of an 'int' ?  [just a query]
+
+- there are two string versions of 'time' defined in this class,
+  the (in my opinion should be) deprecatable ddMMMyy (e.g. 27Mar03)
+  which is not Y2K, and also ambiguous (MMM suggests MAY, instead
+  of May). The FITS-Y2K agreement uses yyyy-mm-dd for dates, and
+  if time is used, yyyy-mm-ddThh:mm:ss.ss (e.g. 2003-03-27T13:04:26.234)
+
+  !! note that the Time class uses the FITS definition wrong, that
+     should obviously be fixed.  **fixed**
+
+- since this class defines the MJD constants for two epochs, for those
+  rare time, would this also not be a good place to define e.g.
+  JD2000   **added**
+
+- a good thing for unit testing is to check to see if the rounding is
+  done correctly (e.g. suppose we get a vendor that didn't do the floor()
+  correctly, or where the (int) casting didn't work right.
+
+
+
+
+

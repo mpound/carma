@@ -1,0 +1,58 @@
+Definitions used by the tdump program   (no TABS in this file, please)
+hex_add  nbytes label conversions (out and in) {2=2's v=volts U=unsignd B=bits V=vel T=deg}
+ 04     2       ultimate calibr         - B
+ 08     2       v/f slot 1              - U
+ 0A     2       v/f slot 2              - U
+ 0C     2       v/f slot 3              - U
+ 0E     2       v/f slot 4              - U
+ 10     2       MD1_ModC_DAC            U -
+ 12     2       MD1_YIG_DAC             U -
+ 14     2       MD1_Heat_DAC            U -
+ 16     2       MD1_Vmixr_DAC           U -
+ 18     1       MD1_Lock/Status         U B
+ 19     1       MD1_Toggle              B B
+ 1A     1       MD1_Direction           B B
+ 1B     2       MD1_Bits_Out            B B
+ 1D     1       MD1_8DAC1               U -
+ 1E     1       MD1_8DAC2               U B
+ 1F     1       MD1_8DAC3               U B
+ 20     2       Azim_Res                - U
+ 22     2       Elev_Res                - U
+ 24     2       Focus_Res               - U
+ 2C     2       Azim_Veloc              V B
+ 2E     2       Elev_Veloc              V B
+ 30     2       Azim_Cos                - 2
+ 32     2       Azim_Sin                - 2
+ 34     2       Elev_Cos                - 2
+ 36     2       Elev_Sin                - 2
+ 3C     1       Offset_control          B -
+ 3D     3       Offset_1_Freq           F -
+ 40     1       Offset_1_walsh          U -
+ 41     3       Offset_2_Freq           F -
+ 44     1       Offset_2_walsh          U -
+ 45     2       Offset_1_Phase          P -
+ 47     2       Offset_2_Phase          P -
+ 50     2       MD5_ModB_DAC            U -
+ 52     2       MD5_YIG_DAC             U -
+ 54     2       MD5_Heat_DAC            U -
+ 56     2       MD5_Vmixr_DAC           U -
+ 58     1       MD5_Lock/Status         U B
+ 59     1       MD5_Toggle              B B
+ 5A     1       MD5_Direction           B B
+ 5B     2       MD5_Bits_Out            B B
+ 5D     1       MD5_8DAC1               U -
+ 5E     1       MD5_8DAC2               U B
+ 5F     1       MD5_8DAC3               U B
+ 60     2       MD6_ModA_DAC            U -
+ 62     2       MD6_MMosc_DAC           U -
+ 64     2       MD6_MMloopG_DAC         U -
+ 66     2       MD6_DAC3                U -
+ 68     1       MD6_Lock/Status         U B
+ 69     1       MD6_Toggle              B B
+ 6A     1       MD6_Direction           B B
+ 6B     2       MD6_Bits_Out            B B
+ 6D     1       MD6_EchoLev_DAC         U -
+ 6E     1       MD6_EchoA_DAC           U B
+ 6F     1       MD6_EchoB_DAC           U B
+13A     3       Ant_status              - B
+13E     1       Tele_Error              - B

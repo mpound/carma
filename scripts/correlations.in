@@ -1,0 +1,230 @@
+#!/bin/bash
+# vim: set ts=4 sts=4 sw=4 noet:
+#
+# $Id: correlations.in,v 1.8 2014/07/16 16:58:23 iws Exp $
+#
+# Enable/Disable the raw correlation logic on the correlator boards.
+# Supports both Spectral and Wideband Correlators.
+
+export SSH="ssh -n -x -4  -o ServerAliveCountMax=3 -o ServerAliveInterval=5 -o StrictHostKeyChecking=no"
+
+export SPECTRAL="0"
+export WIDEBAND="0"
+export LOCAL="0"
+
+export MODE="test"
+
+export DEBUG="0"
+export RETVAL="0"
+
+stderr() {
+	echo "$@" >&2
+}
+
+debug() {
+	[[ "$DEBUG" -ne "0" ]] && echo "$@"
+}
+
+usage() {
+	echo "Usage: $0 <spectral|wideband|all> <off|on>"
+	echo
+	echo "First Parameter: correlator type"
+	echo "spectral - Spectral Line Correlator"
+	echo "wideband - Wideband Correlator"
+	echo "all      - Spectral Line Correlator + Wideband Correlator"
+	echo "local    - Local Machine"
+	echo
+	echo "Second Parameter: enable/disable correlations"
+	echo "off  - disable correlations"
+	echo "on   - enable correlations"
+	echo "test - test communications"
+}
+
+# Shut off local machine correlations (Spectral Line Correlator)
+# $1: enable/disable: string with value "0" or "1" (boolean)
+handleSpectralLocal() {
+	local CMD='echo "$HOSTNAME reporting in"'
+	local SYSFSNODE="/sys/class/misc/carma-fpga-program/power_enable"
+	local FAILEDBOARDS=""
+
+	debug "local correlator is spectral line: $1"
+	case "$1" in
+		test)
+			CMD='echo "$HOSTNAME reporting in"'
+			;;
+		on)
+			CMD="echo 1 > $SYSFSNODE"
+			;;
+		off)
+			CMD="echo 0 > $SYSFSNODE"
+			;;
+		*)
+			stderr "unknown enable/disable command: $1"
+			exit 1
+			;;
+	esac
+
+	for i in $(hostname -s)-{2..12} $(hostname -s)-{14..17} ; do
+		debug "ssh to board $i: run command: $CMD"
+		timeout 10 $SSH "$i" "$CMD"
+		if [[ "$?" -ne "0" ]]; then
+			stderr "ERROR: unable to communicate with $i"
+			RETVAL="1"
+			FAILEDBOARDS="$i $FAILEDBOARDS"
+		fi
+	done
+
+	# report failed boards by crate-slot name also
+	if [[ -n "$FAILEDBOARDS" ]]; then
+		stderr "ERROR: failed boards on $HOSTNAME: $FAILEDBOARDS"
+	fi
+}
+
+# Shut off local machine correlations (Wideband Correlator)
+# $1: enable/disable: string with value "0" or "1" (boolean)
+handleWidebandLocal() {
+	local ENABLE="0"
+
+	debug "local correlator is wideband: $1"
+	case "$1" in
+		test)
+			echo "$HOSTNAME reporting in"
+			return 0
+			;;
+		on)
+			ENABLE="1"
+			;;
+		off)
+			ENABLE="0"
+			;;
+		*)
+			stderr "unknown enable/disable command: $1"
+			;;
+	esac
+
+	for i in /dev/cobra_stdio* ; do
+		debug "echo \"e 0 $ENABLE\" > \"$i\""
+		echo "e 0 $ENABLE" > "$i"
+	done
+}
+
+# Enable/Disable correlations on local machine
+#
+# $1: string: on|off|test
+handleLocal() {
+	if [[ $HOSTNAME =~ "slcor" ]]; then
+		handleSpectralLocal "$1"
+	elif [[ $HOSTNAME =~ "wbcor" ]]; then
+		handleWidebandLocal "$1"
+	else
+		stderr "Unknown local correlator type: $HOSTNAME"
+		exit 1
+	fi
+}
+
+# Cancel the script for the necessary subarrays
+#
+# $1: string: spectral|wideband
+# $2: string: on|off|test
+handleScriptCancel() {
+	if [[ "$2" == "on" ]]; then
+		return 0
+	fi
+
+	cat "/opt/rt/scripts/script-cancel-helper" \
+		| sed -e "s/@TYPE_PARAM@/$1/" -e "s/@MODE_PARAM@/$2/" \
+		| timeout 30s "/opt/rt/scripts/sciall" --imr "acc.carma.pvt" --noinit
+}
+
+################################################################################
+# Main
+################################################################################
+
+# no arguments produces help
+if [[ "$#" -eq "0" ]]; then
+	usage
+	exit 0
+fi
+
+# incorrect number of arguments
+if [[ "$#" -ne "2" ]]; then
+	stderr "ERROR: parameters specified incorrectly"
+	stderr
+	usage
+	exit 1
+fi
+
+# handle correlator type parameter
+case "$1" in
+	spectral)
+		SPECTRAL="1"
+		;;
+	wideband)
+		WIDEBAND="1"
+		;;
+	all)
+		SPECTRAL="1"
+		WIDEBAND="1"
+		;;
+	local)
+		LOCAL="1"
+		;;
+	*)
+		stderr "ERROR: unknown correlator type: $1"
+		exit 1
+		;;
+esac
+
+# handle enable / disable parameter
+case "$2" in
+	off)
+		MODE="off"
+		;;
+	on)
+		MODE="on"
+		;;
+	test)
+		MODE="test"
+		;;
+	*)
+		stderr "ERROR: unknown enable/disable choice: $2"
+		exit 1
+		;;
+esac
+
+if [[ "$LOCAL" -eq "1" ]]; then
+	debug "running on local machine: $MODE"
+	handleLocal "$MODE"
+fi
+
+if [[ "$SPECTRAL" -eq "1" ]]; then
+	debug "working on spectral line correlator: $MODE"
+	handleScriptCancel "spectral" "$MODE"
+	for i in slcor{1..8}.carma.pvt ; do
+		debug "connect to host: $i"
+		$SSH "$i" "/opt/rt/scripts/correlations local $MODE"
+		if [[ "$?" -ne "0" ]]; then
+			stderr "ERROR: unable to communicate with $i"
+			RETVAL="1"
+		fi
+	done
+fi
+
+if [[ "$WIDEBAND" -eq "1" ]]; then
+	debug "working on wideband correlator: $MODE"
+	handleScriptCancel "wideband" "$MODE"
+	for i in wbcor{1..8}.carma.pvt ; do
+		debug "connect to host: $i"
+		$SSH "$i" "/opt/rt/scripts/correlations local $MODE"
+		if [[ "$?" -ne "0" ]]; then
+			stderr "ERROR: unable to communicate with $i"
+			RETVAL="1"
+		fi
+	done
+fi
+
+# wait for all subprocesses to exit
+wait
+
+# exit with return code
+exit "$RETVAL"

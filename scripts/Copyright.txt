@@ -1,0 +1,13 @@
+//*********************************************************************
+//
+// (c) Copyright 2003
+// Combined Array for Research in Millimeter Astronomy
+// A consortium formed by
+// The University of California, Berkeley
+// The University of Illinois, Urbana-Champaign
+// The University of Maryland, College Park
+// The California Institute of Technology, Pasadena
+// in collaboration with
+// The University of Chicago
+//
+//*********************************************************************

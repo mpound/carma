@@ -1,0 +1,176 @@
+# parameters for DBConnectionFactory
+# mysql is the default rdbms, so there is no reason to specify it
+# explicitly here
+# @param rdbms the rdbms backend to which to establish a connection
+# rdbms = mysql
+
+# parameters for DBConnection
+# @param dbname name of the database to which to connect, default carma
+# @param dbuser username of the database account, default carmauser
+# @param passwordFile file in which to find the password, if no
+# password necessary leave blank, default blank, IMPORTANT passwords
+# are sensitive information and so password files should be well protected
+# @param odbcini path to the odbc.ini file, default blank (=> use
+# normal procedure for determining this value:
+# 1. $ODBCINI env variable
+# 2. ~/.odbc.ini 
+# 3. /etc/odbc.ini
+dbuser = mdl
+# dbname = carma
+# passwordFile = 
+odbcini = @abs_top_builddir@/conf/dbms/odbc.test.ini
+
+# local socket to which to connect (the value here is used for native 
+# connections, and also needs to be specified for ODBC connections in
+# the corresponding odbc*.ini.in connection file)
+socket = /tmp/mysql.sock
+
+# port number to which to connect (the value here is used for native 
+# connections, and also needs to be specified for ODBC connections in
+# the corresponding odbc*.ini.in connection file)
+port = 3306
+
+# this config file sets various directories used for the writing,
+# loading, and archiving of database-related files
+
+top = /tmp/carma_tests/dbmsTest
+
+# areas to write monitor point data
+mpDir = ${top}/monitorData
+mpFrameDir = ${mpDir}/frame
+mpMinuteDir = ${mpDir}/minute
+mpWBCorrelDir = ${mpDir}/wbcorrel
+mpSLCorrelDir = ${mpDir}/slcorrel
+
+# frame monitor point data
+mpFrameComplexDir = ${mpFrameDir}/complex
+mpFrameNumericDir = ${mpFrameDir}/numeric
+mpFrameShortDir = ${mpFrameDir}/short
+mpFrameStringDir = ${mpFrameDir}/string
+
+# one minute average monitor point data
+mpMinuteComplexDir = ${mpMinuteDir}/complex
+mpMinuteNumericDir = ${mpMinuteDir}/numeric
+mpMinuteShortDir = ${mpMinuteDir}/short
+mpMinuteStringDir = ${mpMinuteDir}/string
+
+# wb correlation integrated monitor point data
+mpWBCorrelComplexDir = ${mpWBCorrelDir}/complex
+mpWBCorrelNumericDir = ${mpWBCorrelDir}/numeric
+mpWBCorrelShortDir = ${mpWBCorrelDir}/short
+mpWBCorrelStringDir = ${mpWBCorrelDir}/string
+
+# spectral line correlation integrated monitor point data
+mpSLCorrelComplexDir = ${mpSLCorrelDir}/complex
+mpSLCorrelNumericDir = ${mpSLCorrelDir}/numeric
+mpSLCorrelShortDir = ${mpSLCorrelDir}/short
+mpSLCorrelStringDir = ${mpSLCorrelDir}/string
+
+# areas where symlinks are created to monitor point data files.  The
+# presence of these symlinks indicate that the data are ready to be
+# loaded into the database
+
+# areas to write monitor point data
+dbloadDir = ${top}/dbload
+dbloadFrameDir = ${dbloadDir}/frame
+dbloadMinuteDir = ${dbloadDir}/minute
+dbloadWBCorrelDir = ${dbloadDir}/wbcorrel
+dbloadSLCorrelDir = ${dbloadDir}/slcorrel
+
+# frame monitor point data
+dbloadFrameComplexDir = ${dbloadFrameDir}/complex
+dbloadFrameNumericDir = ${dbloadFrameDir}/numeric
+dbloadFrameShortDir = ${dbloadFrameDir}/short
+dbloadFrameStringDir = ${dbloadFrameDir}/string
+
+# one minute average monitor point data
+dbloadMinuteComplexDir = ${dbloadMinuteDir}/complex
+dbloadMinuteNumericDir = ${dbloadMinuteDir}/numeric
+dbloadMinuteShortDir = ${dbloadMinuteDir}/short
+dbloadMinuteStringDir = ${dbloadMinuteDir}/string
+
+# wideband correlation integrated monitor point data
+dbloadWBCorrelComplexDir = ${dbloadWBCorrelDir}/complex
+dbloadWBCorrelNumericDir = ${dbloadWBCorrelDir}/numeric
+dbloadWBCorrelShortDir = ${dbloadWBCorrelDir}/short
+dbloadWBCorrelStringDir = ${dbloadWBCorrelDir}/string
+
+# spectral line correlation integrated monitor point data
+dbloadSLCorrelComplexDir = ${dbloadSLCorrelDir}/complex
+dbloadSLCorrelNumericDir = ${dbloadSLCorrelDir}/numeric
+dbloadSLCorrelShortDir = ${dbloadSLCorrelDir}/short
+dbloadSLCorrelStringDir = ${dbloadSLCorrelDir}/string
+
+# areas where symlinks are created to monitor point data files.  The
+# presence of these symlinks indicate that the data are ready to be
+# transferred to the archive
+
+# areas to write monitor point data
+transferDir = ${top}/transfer
+
+transferMinuteDir = ${transferDir}/minute
+transferWBCorrelDir = ${transferDir}/wbcorrel
+transferSLCorrelDir = ${transferDir}/slcorrel
+
+# one minute average monitor point data
+transferMinuteComplexDir = ${transferMinuteDir}/complex
+transferMinuteNumericDir = ${transferMinuteDir}/numeric
+transferMinuteShortDir = ${transferMinuteDir}/short
+transferMinuteStringDir = ${transferMinuteDir}/string
+
+# wideband correlation integrated monitor point data
+transferWBCorrelComplexDir = ${transferWBCorrelDir}/complex
+transferWBCorrelNumericDir = ${transferWBCorrelDir}/numeric
+transferWBCorrelShortDir = ${transferWBCorrelDir}/short
+transferWBCorrelStringDir = ${transferWBCorrelDir}/string
+
+# spectral line correlation integrated monitor point data
+transferSLCorrelComplexDir = ${transferSLCorrelDir}/complex
+transferSLCorrelNumericDir = ${transferSLCorrelDir}/numeric
+transferSLCorrelShortDir = ${transferSLCorrelDir}/short
+transferSLCorrelStringDir = ${transferSLCorrelDir}/string
+
+# areas where symlinks are created to monitor point data files.  The
+# presence of these symlinks indicate that the data are ready to be
+# loaded into the database
+
+# areas to write monitor point data
+sdpDir = ${top}/sdp
+sdpFrameDir = ${sdpDir}/frame
+sdpMinuteDir = ${sdpDir}/minute
+sdpWBCorrelDir = ${sdpDir}/wbcorrel
+sdpSLCorrelDir = ${sdpDir}/slcorrel
+
+# frame monitor point data
+sdpFrameComplexDir = ${sdpFrameDir}/complex
+sdpFrameNumericDir = ${sdpFrameDir}/numeric
+sdpFrameShortDir = ${sdpFrameDir}/short
+sdpFrameStringDir = ${sdpFrameDir}/string
+
+# one minute average monitor point data
+sdpMinuteComplexDir = ${sdpMinuteDir}/complex
+sdpMinuteNumericDir = ${sdpMinuteDir}/numeric
+sdpMinuteShortDir = ${sdpMinuteDir}/short
+sdpMinuteStringDir = ${sdpMinuteDir}/string
+
+# wideband correlation integrated monitor point data
+sdpWBCorrelComplexDir = ${sdpWBCorrelDir}/complex
+sdpWBCorrelNumericDir = ${sdpWBCorrelDir}/numeric
+sdpWBCorrelShortDir = ${sdpWBCorrelDir}/short
+sdpWBCorrelStringDir = ${sdpWBCorrelDir}/string
+
+# spectral line correlation integrated monitor point data
+sdpSLCorrelComplexDir = ${sdpSLCorrelDir}/complex
+sdpSLCorrelNumericDir = ${sdpSLCorrelDir}/numeric
+sdpSLCorrelShortDir = ${sdpSLCorrelDir}/short
+sdpSLCorrelStringDir = ${sdpSLCorrelDir}/string
+
+#
+# areas to write and read log data
+#
+# directory to which syslog2Db will write the log data files
+logDir = ${top}/logData
+# directory to write the log data files will be symlinked (where
+# logDataLoader will read them)
+dbloadLogDir = ${dbloadDir}/logData
+

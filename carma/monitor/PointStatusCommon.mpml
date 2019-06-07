@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+    
+<Common scope="global">
+
+    <MonitorPoint name="pointStatus" type="enum" persistent="true" priority="vital">
+      <shortName>pntStatus</shortName>
+      <description>
+      Single-dish pointing status (On/Off source). Not used
+      in interferometric observations.  Can be set with pointStatus().
+      Control.subarrayN.pointStatus This monitor points
+      maps to the MIRIAD header variable 'on'.  It indicates the
+      status for the subarray as a whole and should match the
+      pointStaus of individual antennas in the subarray 
+      (Control.AntennaN.pointStatus).  Not used in interferometric
+      observations.
+      </description>
+      <enum name="ONSRC"/>
+      <enum name="OFFSRC"/>
+    </MonitorPoint>
+   
+</Common>

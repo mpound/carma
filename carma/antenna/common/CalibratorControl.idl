@@ -1,0 +1,72 @@
+#ifndef _CALIBRATORIDL
+#define _CALIBRATORIDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+
+  module antenna {
+
+    module common {
+
+      /**
+       * CalibratorControl Distributed Object Name.
+       * This is the name that the CalibratorControl DO will be published on
+       * the nameserver with. It will most likely be published under the
+       * "carma.< antenna >." naming context
+       */
+      const string CALIBRATOR_NAME = "Calibrator";
+
+      /**
+       * %Antenna calibrator control
+       *
+       * The calibratoribrator is a wheel or flap that is inserted in the beam
+       * so that the receiver looks at a calibratoribration signal.
+       */
+      interface CalibratorControl {
+	/**
+	 * %A calibrator position enumerator.
+	 *
+	 * Used by the RxControl interface to specify a widget position
+	 *
+	 * @see RxControl
+	 *
+	 * All positions may not be implemented on all antennas.
+	 *
+     * @todo have hardware folks define what calibration positions
+	 * will be available on which antennas.
+	 */
+	enum Position {
+        SKY,        /**< The sky */
+        AMBIENT,    /**< An ambient temperature load */
+        FIXEDTEMP,  /**< A fixed temperature load */
+        PARTIAL     /**< A partially reflecting load */
+    };
+
+	/**
+	 * Control the %calibrator.
+     * The sequence number is used to verify the remote
+	 * system has completed the requested operation.
+	 * The sequence number is stored locally on the remote system
+	 * and once complete, the corresponding monitor point for
+	 * this sequence number is set to the one passed as seqNo.
+	 * There are 4 distinct positions.
+	 * @param CalibratorControl::Position position requested calibrator
+	 * position
+	 * @param seqNo Sequence number to return when command completes
+	 * in monitor point named CalSeqNum
+	 * @see CalibratorPosControl
+	 */
+	void setPos( in CalibratorControl::Position pos,
+                 in unsigned long seqNo ) raises (carma::util::UserException);
+
+      }; // End Calibrator
+
+    }; // End common module
+
+  }; // End antenna module
+
+}; // End carma module
+
+#endif  // _CALIBRATORIDL
+

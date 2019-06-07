@@ -1,0 +1,199 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- Subsystem definition containing monitor points for running servers  -->
+  
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="Imr" priority="verbose">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <MonitorPoint name="numServers" type="int" persistent="true" >
+        <shortName>Processes</shortName>
+        <longName>ProcessCount</longName>
+        <description>
+            The number of servers running on the system.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="numCriticalServers" type="int" persistent="true" >
+        <shortName>Critical Processes</shortName>
+        <longName>Critical Process Count</longName>
+        <description>
+            The number of critical servers in the system. A critical server
+            is one which is absolutely necessary for the array to produce 
+            data.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="numRunningServers" type="int" persistent="false" >
+        <shortName>Running</shortName>
+        <longName>Number of Running Servers</longName>
+        <description>
+            The number of servers in the RUNNING state.
+        </description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="numNotRunningServers" type="int" persistent="false" >
+        <shortName>Not Running</shortName>
+        <longName>Number of Running Servers</longName>
+        <description>
+            The number of servers not in the RUNNING state.
+        </description>
+        <warnHi>1</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="numNotRunningCriticalServers" type="int" 
+                  persistent="false" >
+        <shortName>Critical Processes NOT Running</shortName>
+        <longName>Number of Failed Critical Servers</longName>
+        <description>
+            The number of critical servers not in the RUNNING state.
+        </description>
+        <errHi>1</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="configFilename" type="string" persistent="true" >
+        <shortName>ConfigFilename</shortName>
+        <longName>XML Configuration Filename</longName>
+        <description>
+            The system XML configuration fully qualified filename.
+        </description>
+        <width>45</width>
+    </MonitorPoint>
+
+    <Container name="Server" count="350" >
+        <description> 
+            Contains monitor points which describe the configuration and state
+            of CARMA processes.
+        </description>
+
+        <MonitorPoint name="name" type="string" persistent="true" >
+            <shortName>Name</shortName>
+            <longName>Server Name</longName>
+            <description>
+                The name of the server as registered with the IMR.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="state" type="enum" >
+            <shortName>State</shortName>
+            <longName>Server State</longName>
+            <description>
+                The state of the server as seen by the IMR.
+            </description>
+            <enum name="FORKED" >
+                <description>
+                    The server has been spawned by the IMR (via fork) but has
+                    not yet started Portable Object Adaptor(s) (POAs).  If this
+                    state persists for many frames, it signals an improperly
+                    functioning server.
+                </description>
+            </enum>
+            <enum name="STARTING" >
+                <description>
+                    The server has created POAs and is proceeding to startup. 
+                    The server has not yet activated a POA pending startup 
+                    tasks and activation of any Distributed Objects (DOs). 
+                    Like the FORKED state, if this state persists for many 
+                    frames, it signals a malfunctioning server.
+                </description>
+            </enum>
+            <enum name="RUNNING" >
+                <description>
+                    The server has activated POA(s) and is running normally. 
+                    This is the nominal state of the server.
+                </description>
+            </enum>
+            <enum name="STOPPING" >
+                <description>
+                    The server has deactivated any POA(s) and is performing 
+                    shutdown tasks.  If a server exists in this state for many
+                    frames, it indicates shutdown errors. 
+                </description>
+            </enum>
+            <enum name="STOPPED" >
+                <description>
+                    The server is not running or is improperly configured and 
+                    not running under IMR control (verify with ps on host).
+                </description>
+            </enum>
+            <enum name="UNKNOWN" >
+                <description>
+                    The servers state could not be determined.
+                </description>
+            </enum>
+
+            <!-- Duplicate name hack: the following duplicate enum names -->
+            <!-- are postfixed with a c to indicate critical processes   -->
+            <!-- as specified in the XML configuration files.            -->
+            <enum name="FORKEDc" >
+                <description>
+                    The critical server has been spawned by the IMR (via fork) 
+                    but has not yet started Portable Object Adaptor(s) (POAs).
+                    If this state persists for many frames, it signals an 
+                    improperly functioning server.
+                </description>
+            </enum>
+            <enum name="STARTINGc" >
+                <description>
+                    The critical server has created POAs and is proceeding to 
+                    startup.  The server has not yet activated a POA pending 
+                    startup tasks and activation of any Distributed Objects 
+                    (DOs).  Like the FORKED_ state, if this state persists for 
+                    many frames, it signals a malfunctioning server.
+                </description>
+            </enum>
+            <enum name="STOPPINGc" >
+                <description>
+                    The critical server has deactivated any POA(s) and is 
+                    performing shutdown tasks.  If a server exists in this 
+                    state for many frames, it indicates shutdown errors. 
+                </description>
+            </enum>
+            <enum name="STOPPEDc" >
+                <description>
+                    The critical server is not running or is improperly 
+                    configured and not running under IMR control 
+                    (verify with ps on host).
+                </description>
+            </enum>
+            <enum name="UNKNOWNc" >
+                <description>
+                    The critical servers state could not be determined.
+                </description>
+            </enum>
+            
+            
+            <warnHi>STOPPED</warnHi>
+            <warnHi>STOPPING</warnHi>
+            <warnHi>FORKED</warnHi>
+            <warnHi>STARTING</warnHi>
+            <warnHi>UNKNOWN</warnHi>
+            <errHi>STOPPEDc</errHi>
+            <errHi>STOPPINGc</errHi>
+            <errHi>FORKEDc</errHi>
+            <errHi>STARTINGc</errHi>
+            <errHi>UNKNOWNc</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="serverType" type="enum" persistent="true" >
+            <shortName>ServerType</shortName>
+            <longName>Server Type</longName>
+            <description>
+                Describes which RTS system the application fits into.
+            </description>
+            <enum name="DATA" />
+            <enum name="MONITOR" />
+            <enum name="CONTROL" />
+            <enum name="INTERFEROMETRY" />
+            <enum name="CORRELATOR" />
+            <enum name="OVRO" />
+            <enum name="BIMA" />
+            <enum name="SZA" />
+            <enum name="MISC" />
+            <enum name="UNKNOWN" />
+        </MonitorPoint>
+    </Container>
+</Subsystem> 

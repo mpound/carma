@@ -1,0 +1,95 @@
+#!/bin/sh
+# Check & repair the CARMA database.
+#
+#
+# Notes:
+#
+# Must be be run while the mysql server is running.
+#
+# Will likely take hours to finish.
+####
+
+################################################################
+################################################################
+
+
+# Where mysqlcheck is.
+TOOLS=@carma_tools@
+CHECK=${TOOLS}/bin/mysqlcheck
+
+# How to find the config file.
+CARMA=@abs_top_builddir@
+#conffile=${CARMA}/conf/dbms/mysql.hr.conf
+conffile=${CARMA}/conf/dbms/mysql.conf
+
+# database to backup and a user that can access it.
+user="mdl"
+db=carma
+
+usage(){
+    echo "$0 [conffile=<config file>] [-h] [-s] [-r] [-v]"
+    echo " -h	Display this message."
+    echo " -c	Disable \"--check-only-changed\"."
+    echo " -r	Disable auto repair of bad tables."
+    echo " -s	Disable silent. (ie Display \"<tablename>  OK\" for ea. table)."
+    echo " -q	Disable \"--quick\"."
+    echo " -v	Enable display of program operation."
+    echo "Normal usage is to run $0 with no arguments."
+    echo "NOTE: $0 may take hours to complete."
+}
+
+# Don't show "OK" for each table.
+SILENT="--silent"
+VERBOSE="--verbose"
+# Repair tables after check scan.
+REPAIR="--auto-repair"
+QUICK="--quick"
+CHKCHNG="--check-only-changed"
+
+# Default settings.
+chkchng="${CHKCHNG}"
+quick="${QUICK}"
+repair="${REPAIR}"
+silent="${SILENT}"
+verbose=""
+xtraargs=""
+
+for x in $*; do
+  case $x in
+      conffile=*) conffile=`echo $x | grep conffile | awk -F = '{print $2}'`
+      ;;
+      db=*) db=`echo $x | grep db | awk -F = '{print $2}'`
+      ;;
+      -c*) chkchng=""
+      ;;
+      -v*) verbose="${VERBOSE}"
+      ;;
+      -s*) silent=""
+      ;;
+      -r*) repair=
+      ;;
+      -q*) quick=""
+      ;;
+       -h*) usage ; exit 0
+      ;;
+      --help) usage ; exit 0
+      ;;
+      *) echo "Unknown command line parameter $x";  usage; exit 1
+  esac
+  shift
+done
+
+# Make sure config file is there.
+if [ ! -f $conffile ]; then
+	echo "Could not find $conffile"
+	exit 1
+fi
+
+################################################################
+
+
+LD_LIBRARY_PATH=${TOOLS}/lib
+export LD_LIBRARY_PATH
+
+$CHECK --defaults-file=$conffile --user=$user ${verbose} \
+    ${silent} ${repair} ${quick} ${chkchng} $db

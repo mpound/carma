@@ -1,0 +1,233 @@
+<?xml version="1.0"?>
+<!-- $Id: rauchLocal.xml,v 1.5 2013/04/09 22:48:04 abeard Exp $ -->
+
+<!-- Include the domain dtd definition. -->
+<!-- Set up to run from BUILD directory!!! -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR      "/home/rauch/astro/carma/carma-build/bin">
+        <!ENTITY DEF_DIR      "/home/rauch/astro/carma/carma-build">
+        <!ENTITY DATA_DIR     "/home/rauch/astro/carma/carma-data">
+        <!ENTITY COMMON_ARGS  "traceFile=syslog ">
+        <!ENTITY CORL_CONF    "correlator/slcorrelator.conf">
+        <!ENTITY CORL_INI     "correlator/carma15.ini">
+]>
+
+
+<!-- 
+    This is a single machine configuration containing the following subsystems:
+    
+    * Monitor system
+    * OVRO antennas 1-6
+    * Spectral line downconverters
+    * Spectral correlator bands 1-3
+ -->
+
+<!-- @version -->
+<domain>
+    <oad hostname="localhost" system="monitor">
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS;"
+                critical="true" />
+        <server name="ProcessMonitorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS; subsystem=Imr delay=150"
+                critical="true" />
+        <server name="ProcessMonitor" path="&BIN_DIR;/processMonitor"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; file=&DEF_DIR;/conf/imr/rauchLocal.xml writedelay=0.100"
+                critical="true" />
+    </oad>
+
+    <oad hostname="localhost" system="ovro">
+        <server name="Ovro1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=ovro1 delay=300" />
+        <server name="Ovro1CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; ant=1 emulate=true simulate=true "/>
+
+        <server name="Ovro2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=ovro2 delay=300" />
+        <server name="Ovro2CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; ant=2 emulate=true simulate=true "/>
+
+        <server name="Ovro3FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=ovro3 delay=300" />
+        <server name="Ovro3CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; ant=3 emulate=true simulate=true "/>
+
+        <server name="Ovro4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=ovro4 delay=300" />
+        <server name="Ovro4CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; ant=4 emulate=true simulate=true "/>
+
+        <server name="Ovro5FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=ovro5 delay=300" />
+        <server name="Ovro5CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; ant=5 emulate=true simulate=true "/>
+
+        <server name="Ovro6FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=ovro6 delay=300" />
+        <server name="Ovro6CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; ant=6 emulate=true simulate=true "/>
+    </oad>
+
+    <oad hostname="localhost" system="correlator">
+        <server name="sldcFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=sldc delay=300" />
+        <server name="Sldc" path="&BIN_DIR;/carmaSldcHost"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; emulate=true sim=true" />
+
+        <server name="slcBand1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slcBand1"/>
+        <server name="SlcBand1" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; b=1 p=19001 f=&CORL_CONF; sim=&CORL_INI;"
+                critical="true" />
+
+        <server name="slcBand2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slcBand2"/>
+        <server name="SlcBand2" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; b=2 p=19002 f=&CORL_CONF; sim=&CORL_INI;"
+                critical="true" />
+
+        <server name="slcBand3FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slcBand3"/>
+        <server name="SlcBand3" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; b=3 p=19003 f=&CORL_CONF; sim=&CORL_INI;"
+                critical="true" />
+
+<!--
+        <server name="slcBand4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slcBand4"/>
+        <server name="SlcBand4" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; b=4 p=19004 f=&CORL_CONF; sim=correlator/taipan15.ini"
+                critical="true" />
+
+        <server name="slcBand5FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slcBand5"/>
+        <server name="SlcBand5" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; b=5 p=19005 f=&CORL_CONF; sim=correlator/taipan15.ini"
+                critical="true" />
+
+        <server name="slcBand6FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slcBand6"/>
+        <server name="SlcBand6" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; b=6 p=19006 f=&CORL_CONF; sim=correlator/taipan15.ini"
+                critical="true" />
+
+        <server name="slcBand7FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slcBand7"/>
+        <server name="SlcBand7" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; b=7 p=19007 f=&CORL_CONF; sim=correlator/taipan15.ini"
+                critical="true" />
+
+        <server name="slcBand8FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slcBand8"/>
+        <server name="SlcBand8" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; b=8 p=19008 f=&CORL_CONF; sim=correlator/taipan15.ini"
+                critical="true" />
+-->
+    </oad>
+
+    <oad hostname="localhost" system="control">
+        <server name="controlFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=control"
+                critical="true" />
+        <server name="Subarray1" path="&BIN_DIR;/subarrayControl"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS; subarrayNo=1 nice=5"
+                critical="true" />
+<!--
+        <server name="Subarray2" path="&BIN_DIR;/subarrayControl"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS; subarrayNo=2" />
+-->
+        <server name="Subarray3" path="&BIN_DIR;/subarrayControl"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS; subarrayNo=3 nice=5" />
+        <server name="Subarray4" path="&BIN_DIR;/subarrayControl"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS; subarrayNo=4 nice=5" />
+
+        <server name="FaultSystem" path="&BIN_DIR;/faultSystem"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS; inputCMS=raw outputCMS=final simName=good"
+                critical="true" />
+    </oad>
+
+    <oad hostname="localhost" system="interferometry">
+        <server name="loberotatorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=loberotator"  />
+        <server name="LobeRotator" path="&BIN_DIR;/carmaLoberotatorHost"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; emulate=true sim=true" />
+    </oad>
+
+    <oad hostname="localhost" system="data">
+        <server name="slPipelineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=slpipeline" />
+        <server name="SlDataCatcher" path="&BIN_DIR;/catchData"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS; mode=sl"
+                critical="true" />
+        <server name="SlPipeline" path="&BIN_DIR;/pipeline"
+                directory="&DEF_DIR;"  
+                args="&COMMON_ARGS; mode=sl vbdir=&DATA_DIR;"
+                critical="true" />
+    </oad>
+
+    <oad hostname="localhost">
+        <server name="testFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=test" />
+        <server name="delayEngineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=delayEngine" />
+
+        <server name="testSimulator" path="&BIN_DIR;/testMPwriterReader"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; writeOnly=true iterations=0" />
+
+        <server name="alarmFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; subsystem=alarm"/>
+        <server name="alarmControl" path="&BIN_DIR;/carmaAlarm"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; mode=control"/>
+        <server name="alarmDevice" path="&BIN_DIR;/carmaAlarm"
+                directory="&DEF_DIR;" 
+                args="&COMMON_ARGS; mode=device emulate=true"/>
+    </oad>
+</domain>

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+function deprecated() {
+  echo "The controlSystem script is no longer supported."
+  echo "Use scripts/taoControlSystem instead."
+
+  exit 0
+}
+
+deprecated

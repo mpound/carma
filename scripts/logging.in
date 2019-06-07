@@ -1,0 +1,127 @@
+#!/bin/false
+#
+# Functions for logging to carma facilities.
+# Optionally set LOGGING_NDC, LOGGING_FACILITY and LOGGING_ECHO_TO_TERMINAL.
+# 
+LOGGING_ECHO_TO_TERMINAL=
+LOGGING_NDC=
+LOGGING_FACILITY=
+
+# Optionally at the top of your script, set LOGGING_FACILITY to one of:
+RECEIVERS_LOGGING_FACILITY="local1"
+CARMA_LOGGING_FACILITY="local2"
+MONITOR_LOGGING_FACILITY="local3"
+CONTROL_LOGGING_FACILITY="local4"
+INTERFEROMETRY_LOGGING_FACILITY="local5"
+ENVIRONMENT_LOGGING_FACILITY="local6"
+
+# Log at critical level.
+# Inputs: Log message
+function logcrit () {
+    log crit $@
+}
+
+# Log at error level.
+# Inputs: Log message
+function logerror () {
+    log error $@
+}
+
+# Log at warning level.
+# Inputs: Log message
+function logwarning () {
+    log warning $@
+}
+
+# Log at notice level.
+# Inputs: Log message
+function lognotice () {
+    log notice $@
+}
+
+# Log at info level.
+# Inputs: Log message
+function loginfo () {
+    log info $@
+}
+
+
+# Log at debug level.
+# Inputs: Log message
+function logdebug () {
+    log info $@
+}
+
+LOGGING_FACILITIES="$RECEIVERS_LOGGING_FACILITY $CARMA_LOGGING_FACILITY "
+LOGGING_FACILITIES+="$MONITOR_LOGGING_FACILITY $CONTROL_LOGGING_FACILITY "
+LOGGING_FACILITIES+="$INTERFEROMETRY_LOGGING_FACILITY "
+LOGGING_FACILITIES+="$ENVIRONMENT_LOGGING_FACILITY"
+
+# Log to all carma facilities at NOTICE level
+function logcarmanotice () {
+
+    local savedfacility=$LOGGING_FACILITY
+
+    for facility in $LOGGING_FACILITIES; do
+        LOGGING_FACILITY=$facility
+        lognotice $@
+    done
+
+    LOGGING_FACILITY=$savedfacility
+}
+
+
+# Usage: log level msg
+# 
+# Generic log function to log to LOGGING_FACILITY at any level.
+# Function reads LOGGING_FACILITY, if it isn't set, the carma facility is
+# used.
+#
+# variables read: LOGGING_FACILITY, LOGGING_NDC
+# inputs: level "msg" 
+function log () {
+    if [ ! $LOGGING_FACILITY ]; then
+        LOGGING_FACILITY=$CARMA_LOGGING_FACILITY
+    fi
+
+    local level=
+    case $1 in
+        debug)
+            level="DEBUG"
+            ;;
+        info)
+            level="INFO"
+            ;;
+        notice)
+            level="NOTICE"
+            ;;
+        warning)
+            level="WARNING"
+            ;;
+        err|error)
+            level="ERROR"
+            ;;
+        crit)
+            level="CRIT"
+            ;;
+        *) 
+            echo "$level is an invalid log level.  Must be one of: " 
+            echo "debug|info|notice|warning|err|crit."
+            exit 1 
+            ;;
+    esac
+
+    export TZ=GMT
+    YEAR=`/bin/date +%Y` 
+    local scriptname=`echo $0 | sed 's/-//g'`
+    local name="carma.scripts.`basename $scriptname`"
+    local ndc=$LOGGING_NDC
+    local logmsg="{$YEAR} {$level} {$name} {$ndc} {${@:2}}"
+    logger -p "$LOGGING_FACILITY.$1" $logmsg
+    if [ $LOGGING_ECHO_TO_TERMINAL ]; then
+        echo $logmsg
+    fi
+    unset TZ
+}
+
+

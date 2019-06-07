@@ -1,0 +1,225 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+<Subsystem name="SignalPath" priority="vital">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+ 
+    <?common CanbusCommon.mpml?>
+    <?common ControlCorrelEnum.mpml?>
+    <?common SignalPathCommonContainers.mpml?>
+    <?common SwitchyardCommon.mpml?>
+    <?common TimestampCommon.mpml?>
+
+    <CommonMonitorPoint ref="timestamp"/>
+
+    <Container name="IFSwitchyard">
+        <description>
+            Hardware monitor points from the IF Switchyard CAN module.
+        </description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="Switchyard" />
+        <CommonContainer ref="Xac" />
+    </Container>
+
+    <Container name="LLSwitchyard">
+        <description>
+            Hardware monitor points from the Linelength Switchyard CAN module.
+        </description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="Switchyard" />
+        <CommonContainer ref="Xac" />
+    </Container>
+
+    <Container name="LOSwitchyard">
+        <description>
+            Hardware monitor points from the LO Ref Switchyard CAN module.
+        </description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="Switchyard" />
+        <CommonContainer ref="Xac" />
+    </Container>
+
+    <Container name="DCLOSwitchyard">
+        <description>
+            Hardware monitor points from the Downconverter LO Ref Switchyard 
+            CAN module.
+        </description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="Switchyard" />
+        <CommonContainer ref="Xac" />
+    </Container>
+
+<!-- ============================================================ -->
+<!-- Current signal-path mapping -->
+<!-- ============================================================ -->
+
+    <Container name="Mapping">
+
+      <description>
+	Current signal-path map
+      </description>
+
+<!-- ============================================================ -->
+<!-- Frame count of last modification -->
+<!-- ============================================================ -->
+
+      <CommonMonitorPoint ref="lastModified" />
+
+<!-- ============================================================ -->
+<!-- True if the hardware configuration is correct -->
+<!-- ============================================================ -->
+
+      <CommonMonitorPoint ref="hardwareConfValid" />
+
+<!-- ============================================================ -->
+<!-- Astroband information -->
+<!-- ============================================================ -->
+
+      <Container name="Astroband" count="&NUM_ASTRO_BANDS;" indexName="astrobandNo">
+
+        <description>
+	  The current configuration of an astronomical band
+        </description>
+
+        <CommonMonitorPoint ref="lastModified" />
+        <CommonMonitorPoint ref="subarrayNo" />
+        <CommonMonitorPoint ref="correlatorDesignation" />
+        <CommonMonitorPoint ref="hardwareConfValid" />
+        <CommonMonitorPoint ref="confName" />
+        <CommonMonitorPoint ref="confTag" />
+        <CommonMonitorPoint ref="nAntInConfiguration" />
+        <CommonMonitorPoint ref="nInput" />
+
+        <!--- monitor points for the pipeline to query -->
+        <MonitorPoint name="expectedChannels" type="int" priority="useful" persistent="true">
+          <shortName>expChan</shortName>
+          <description> The number of channels expected to be produced
+           by this astroband given its configuration.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="expectedCorrBands" type="int" priority="useful" persistent="true">
+          <shortName>expCorrBand</shortName>
+          <description> The number of correlator bands expected in
+           this astroband given its configuration.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="correlatorEfficiency" type="float" priority="vital" persistent="true">
+        <shortName>corrEff</shortName>
+        <description>The correlator efficiency due to the Van Vleck correction applied to this astroband.  The efficiency is a function only of bit mode.
+        </description>
+        </MonitorPoint>
+
+        <CommonContainer ref="Input" count="&NUM_ASTRO_BAND_INPUTS;" />
+
+      </Container>
+
+<!-- ============================================================ -->
+<!-- End Astroband container -->
+<!-- ============================================================ -->
+
+<!-- ============================================================ -->
+<!-- Reverse mapping from Astroband to Correlator band            -->
+<!-- ============================================================ -->
+
+      <Container name="SlcBand" count="&NUM_SLC_BANDS;" indexName="corrbandNo">
+
+        <description>
+	  The current configuration of a spectral-line correlator band
+        </description>
+
+        <CommonMonitorPoint ref="lastModified" />
+        <CommonMonitorPoint ref="subarrayNo" />
+        <CommonMonitorPoint ref="nInput" />
+        <CommonContainer ref="Input" count="&NUM_SLDC_INPUTS;" />
+
+      </Container>
+
+      <Container name="WbcBand" count="&NUM_WBC_BANDS;" indexName="corrbandNo">
+
+        <description>
+	  The current configuration of a wideband correlator band
+        </description>
+
+        <CommonMonitorPoint ref="lastModified" />
+        <CommonMonitorPoint ref="subarrayNo" />
+        <CommonMonitorPoint ref="nInput" />
+        <CommonContainer ref="Input" count="&NUM_WBDC_INPUTS;" />
+
+      </Container>
+
+<!-- ============================================================ -->
+<!-- End reverse mapping from Astroband to Correlator             -->
+<!-- ============================================================ -->
+
+<!-- ============================================================ -->
+<!-- IFSwitch container -->
+<!-- ============================================================ -->
+
+      <Container name="IFSwitch"   count="&NUM_IF_SWITCHES;"    indexName="IFSwitchNo">
+
+        <description>
+	  The current configuration of an IF switch
+        </description>
+
+        <CommonMonitorPoint ref="antennaIFNo" />
+
+        <Container name="AntennaIF" count="&NUM_ANTENNA_IF;" indexName="antennaIFNo">
+	  <CommonMonitorPoint ref="antennaNo" />
+  	  <CommonMonitorPoint ref="polarization" />
+  	  <CommonMonitorPoint ref="splitterChannel" />
+	</Container>
+
+      </Container>
+
+<!-- ============================================================ -->
+<!-- End Switch container -->
+<!-- ============================================================ -->
+
+<!-- ============================================================ -->
+<!-- Antenna container -->
+<!-- ============================================================ -->
+
+      <Container name="Antenna"   count="&NUM_ANTENNAS;"    indexName="antNo">
+
+        <description>
+	  The current configuration of an antenna
+        </description>
+
+	<CommonMonitorPoint ref="antennaNo" />
+	<CommonMonitorPoint ref="walshColNo" />
+	<CommonMonitorPoint ref="subarrayNo" />
+	<CommonMonitorPoint ref="correlatorDesignation" />
+
+      </Container>
+
+<!-- ============================================================ -->
+<!-- End Antenna container -->
+<!-- ============================================================ -->
+
+<!-- ============================================================ -->
+<!-- Subarray container -->
+<!-- ============================================================ -->
+
+      <Container name="Subarray"   count="&NUM_SUBARRAYS;"    indexName="saNo">
+
+        <description>
+	  The current configuration of a subarray
+        </description>
+
+	<CommonMonitorPoint ref="subarrayNo" />
+	<CommonMonitorPoint ref="nAntInSubarray" />
+	<CommonMonitorPoint ref="correlatorDesignation" />
+
+      </Container>
+
+<!-- ============================================================ -->
+<!-- End Subarray container -->
+<!-- ============================================================ -->
+
+    </Container>
+    
+</Subsystem>

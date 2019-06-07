@@ -1,0 +1,321 @@
+#!/bin/sh
+
+if [ ! -d fullNotservTest ]; then
+    mkdir fullNotservTest
+fi
+
+function start {
+    if [ -z "$IMRHOST" ]; then
+	IMRHOST=`hostname`
+    fi
+    echo "IMR set to "$IMRHOST
+
+    top b >& fullNotservTest/top.log &
+    echo $! > fullNotservTest/pids
+    sleep 1
+
+    bin/frameCollator imr=$IMRHOST >& fullNotservTest/frameCollator.log&
+    echo $! >> fullNotservTest/pids
+    sleep 2
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima1 >& fullNotservTest/bima1.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima2 >& fullNotservTest/bima2.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima3 >& fullNotservTest/bima3.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima4 >& fullNotservTest/bima4.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima5 >& fullNotservTest/bima5.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima6 >& fullNotservTest/bima6.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima7 >& fullNotservTest/bima7.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima8 >& fullNotservTest/bima8.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=bima9 >& fullNotservTest/bima9.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=ovro1 >& fullNotservTest/ovro1.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=ovro2 >& fullNotservTest/ovro2.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=ovro3 >& fullNotservTest/ovro3.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=ovro4 >& fullNotservTest/ovro4.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=ovro5 >& fullNotservTest/ovro5.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=ovro6 >& fullNotservTest/ovro6.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sza1 >& fullNotservTest/sza1.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sza2 >& fullNotservTest/sza2.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sza3 >& fullNotservTest/sza3.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sza4 >& fullNotservTest/sza4.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sza5 >& fullNotservTest/sza5.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sza6 >& fullNotservTest/sza6.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sza7 >& fullNotservTest/sza7.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15									 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sza8 >& fullNotservTest/sza8.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=loberotator >& fullNotservTest/loberotator.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=delayengine >& fullNotservTest/delayengine.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=weather >& fullNotservTest/weather.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=loref >& fullNotservTest/loref.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=masterclock >& fullNotservTest/masterclock.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=phasemonitor >& fullNotservTest/phasemonitor.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=opacitymonitor >& fullNotservTest/opacitymonitor.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=linelength >& fullNotservTest/linelength.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=centralif >& fullNotservTest/centralif.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=control >& fullNotservTest/control.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdc >& fullNotservTest/wbdc.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=sldc >& fullNotservTest/sldc.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband1 >& fullNotservTest/wbdcband1.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband2 >& fullNotservTest/wbdcband2.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband3 >& fullNotservTest/wbdcband3.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband4 >& fullNotservTest/wbdcband4.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband5 >& fullNotservTest/wbdcband5.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband6 >& fullNotservTest/wbdcband6.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband7 >& fullNotservTest/wbdcband7.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband8 >& fullNotservTest/wbdcband8.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										   
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband9 >& fullNotservTest/wbdcband9.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband10 >& fullNotservTest/wbdcband10.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										     
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband11 >& fullNotservTest/wbdcband11.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										     
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband12 >& fullNotservTest/wbdcband12.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										     
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband13 >& fullNotservTest/wbdcband13.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										     
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband14 >& fullNotservTest/wbdcband14.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										     
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband15 >& fullNotservTest/wbdcband15.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										     
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=wbdcband16 >& fullNotservTest/wbdcband16.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=slcband1 >& fullNotservTest/slcband1.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=slcband2 >& fullNotservTest/slcband2.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=slcband3 >& fullNotservTest/slcband3.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=slcband4 >& fullNotservTest/slcband4.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=slcband5 >& fullNotservTest/slcband5.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=slcband6 >& fullNotservTest/slcband6.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=slcband7 >& fullNotservTest/slcband7.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15										 
+    bin/frameScriberPublisher imr=$IMRHOST subsystem=slcband8 >& fullNotservTest/slcband8.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    # start pipeline stuff
+    bin/catchData -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/catchData.log&
+    echo $! >> fullNotservTest/pids
+    sleep 15
+
+    bin/CorrelatorSimServer b=0 c=carma.correlator.Band0 v=b0_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css0.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=1 c=carma.correlator.Band1 v=b1_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css1.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=2 c=carma.correlator.Band2 v=b2_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css2.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=3 c=carma.correlator.Band3 v=b3_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css3.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=4 c=carma.correlator.Band4 v=b4_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css4.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=5 c=carma.correlator.Band5 v=b5_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css5.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=6 c=carma.correlator.Band6 v=b6_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css6.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=7 c=carma.correlator.Band7 v=b7_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css7.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=8 c=carma.correlator.Band8 v=b8_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css8.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=9 c=carma.correlator.Band9 v=b9_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css9.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=10 c=carma.correlator.Band10 v=b10_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css10.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=11 c=carma.correlator.Band11 v=b11_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css11.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=12 c=carma.correlator.Band12 v=b12_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css12.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=13 c=carma.correlator.Band13 v=b13_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css13.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=14 c=carma.correlator.Band14 v=b14_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css14.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+    bin/CorrelatorSimServer b=15 c=carma.correlator.Band15 v=b15_ecn -- -ORBDefaultInitRef corbaloc::$IMRHOST >& fullNotservTest/css15.log &
+    echo $! >> fullNotservTest/pids
+    sleep 15
+}
+
+function stop {
+    for pid in `cat fullNotservTest/pids`
+    do
+	kill -9 $pid
+    done
+}
+
+
+function callOptions {
+    case "$1" in
+	--imrhost)
+	    IMRHOST=$2
+	    ;;
+    esac
+}
+
+function callCommand {
+    case "$1" in
+	start)
+	    start
+	    ;;
+	stop)
+	    stop
+	    ;;
+	usage)
+	    echo ""
+	    echo "Usage: $0 [--imrhost imrhost] {start|stop}"
+	    ;;
+	*)
+	    return 0;
+	    ;;
+    esac
+}    
+
+# get list of arguments
+argList=($*)
+
+if [ $# == 0 ]; then
+  callCommand "usage"
+fi
+
+# run through arguments to check for options
+for (( i=$#-1; i+1; i=i-1 ));
+do
+    callOptions "${argList[$i]}" "${argList[$i+1]}"
+done
+
+# run through arguments for commands
+for (( i=$#; i+1; i=i-1 ));
+do
+    callCommand "${argList[$i]}"
+done

@@ -1,0 +1,589 @@
+#!/bin/bash
+# 
+# Start the master imr, nameserver and notificaion serve
+# on the imr host, followed by all the OADs and associated programs.
+
+
+# Define CARMA environment variable for the root of the build/install
+# Figure out the root of the build/install directory
+# The assumption and requirement is that this script is located
+# one level below the build/install root
+# Fixes case where a relative path is given
+CANONICAL_SCRIPTNAME=`/usr/bin/readlink -f "$0"`
+ABSPATH=`/usr/bin/dirname ${CANONICAL_SCRIPTNAME}`
+export CARMA_RUN=`/usr/bin/dirname ${ABSPATH}`
+
+# Command line option processing library.
+. $CARMA_RUN/scripts/shflags
+DEFINE_string imracc '' 'Name of imr and acc when both are the same machine'
+DEFINE_string imr '' 'Name of imr host, including domain'
+DEFINE_string acc '' 'Name of functional acc host, including domain'
+DEFINE_string file '' 'An xml system configuration file containing a list 
+of hosts and processes.The default directory is the install config directory'
+DEFINE_string dir '' 'Directory to use for runtime files.'
+DEFINE_boolean verbose false 'Turn on verbose output'
+DEFINE_boolean debug false 'Turn on debug output'
+DEFINE_boolean parallel true 'Parallel process startup on other computers'
+
+function outputDescription {
+    cat - <<EOF
+
+Starts and stops a control system, as defined by an imr host, a functional
+acc host, and a configuration file. The functional acc host is a host
+where the processes should be started before the other hosts (but after corba). 
+This script should only be invoked by the control user, and begins by
+starting the corba and acc processes and then does an ssh to all the hosts 
+in the system and executes the rc.carma script. If this script hangs, 
+use the verbose and serial options to see where it is hanging. 
+The alive command checks to see if any control system processes are
+still running on the control system computers, while the status command 
+checks the status of control system processes on control system computers.
+The start and stop commands are logged to the carma logging facilities. 
+
+example usage:
+  controlSystem --acc acc.carma.pvt --imr corba.carma.pvt --file imr/carma.xml restart  
+commands:
+  start
+  stop
+  restart stop then start
+  alive   checks to see if any system processes are running on any system hosts  
+  status  checks status of system processes on system hosts  
+EOF
+}
+
+# Enter outputDescription as the help text
+FLAGS_HELP=`outputDescription`
+# Use the shflags package to process the input parameters
+FLAGS "$@" || exit $?
+# The following line puts the arguments into the script input variables, e.g.
+# the options and values are removed.
+#eval set -- "${FLAGS_ARGV}"
+
+fail() { 
+    echo -e "$@"
+    logcarmanotice "End control system start"
+    exit 1
+}
+
+# Source logging functions
+source "${CARMA_RUN}/scripts/logging" || fail "Can't source ${CARMA}/scripts/logging"
+
+LOGGING_NDC="[Carma RTS Process Management]" 
+LOGGING_FACILITY=$CONTROL_LOGGING_FACILITY
+
+# Process input
+ACC=$FLAGS_acc
+IMR=$FLAGS_imr
+if [ ! -z $FLAGS_imracc ]; then
+    ACC=$FLAGS_imracc
+    IMR=$FLAGS_imracc
+fi
+
+[[ -z $ACC || -z $IMR ]] && fail "\nERROR: imr and acc must both be set."
+
+CONFIG_FILE=$FLAGS_file
+[[ -n $CONFIG_FILE ]] || fail "\nERROR: config file must be specified using."
+
+if [ $FLAGS_verbose -eq 0 ];  then VERBOSE=1;  else VERBOSE=0;  fi    
+if [ $FLAGS_debug -eq 0 ];    then DEBUG=1;    else DEBUG=0;    fi 
+
+DIR=
+if [ ! -z $FLAGS_dir ]; then
+    DIR="--dir $FLAGS_dir"
+fi
+    
+# Specify remote login type and command designator
+# The -x bypasses x11 forwarding and should eliminate errors locking .Xauthority
+# The -4 forces IPV4 addresses, rather than the default IPV6
+#  IPV6 forces a root server lookup (offsite) which will timeout when link is down
+# StrictHostKeyChecking is disabled to allow ssh to run in background without
+# prompting users to type 'yes' whenever host keys change.
+# ServerAliveCountMax and ServerAliveInterval will cause ssh to exit if the 
+# server fails to respond in the indicated amount of time.
+SSH="ssh -n -x -4  -o ServerAliveCountMax=3 -o ServerAliveInterval=5 -o StrictHostKeyChecking="no""
+
+# Simple function to echo verbose statements.
+# Courtesy of Ira.
+vecho() {
+    [[ $VERBOSE -eq 1 ]] && echo -e $@
+}
+
+# Function to echo status messages.
+# Status messages are ALWAYS echoed and should be used sparingly.
+status() {
+    echo $@
+}
+    
+function dumpParams
+{
+    echo "ACC:           $ACC"
+    echo "IMR:           $IMR"
+    echo "CONFIG_FILE:   $CONFIG_FILE"
+    echo "VERBOSE:       $VERBOSE"
+    echo "CARMA_RUN:     $CARMA_RUN"
+    echo "COMMAND:       ${COMMAND}"
+    echo "DIR:           ${DIR}"
+}
+
+function getOADs {
+
+    local hosts=`${CARMA_RUN}/bin/imrconfig hosts=yes file=${CONFIG_FILE}`
+
+    vecho "Conf file oads: $hosts"
+
+    OADS=
+    # Make the list of oads, exclude the acc if it is the same as the imr,
+    # otherwise, include it in the list.
+    for OAD in $hosts; do
+	    if [[  $OAD != $ACC && $OAD != $IMR  ]]; then
+	       OADS="${OADS} $OAD"
+  	    fi
+    done
+    vecho "Oads (w/o acc&imr):" $OADS
+}
+
+REACHABLE_OADS=
+NONREACHABLE_OADS=
+COMMAND=
+
+# Determine which redirection must be used in the ssh commands.
+# Although this is a bash script, the ssh will give your default shell
+REDIRECT="&> /dev/null"
+SHELLNAME=`basename $SHELL`
+if [ "$SHELLNAME" == "csh" -o "$SHELLNAME" == "tcsh" ]; then
+    REDIRECT=">& /dev/null"
+fi
+
+vecho Remote shell:$SHELLNAME Redirection string:$REDIRECT
+
+# Function to check if a host is reachable.
+# Modifies no global variables and thus is safe to be called
+# in parallel.
+# Input: Hostname 
+# Input: Timeout-in-seconds
+# Return: 0 if reachable, error code otherwise.
+function checkHostReachability () {
+    local host=$1
+    local timeout=$2
+    local startctime=`date +%s`
+
+    ping -c 1 $host > /dev/null 2>&1 || return $?
+
+    # Host is pingable but still may not be 'reachable'
+
+    # Use ssh to check if host is actually reachable by spawning off 
+    # ssh and waiting for it to write to this local filesystem (not remote one)
+    local sshfile="/tmp/carma-ssh-$host"
+
+    # First delete local file if it already exists.
+    if [[ -a "$sshfile" ]]; then 
+        rm "$sshfile" || (echo "Unable to delete $sshfile" ; exit 1) 
+    fi
+
+    $SSH $host 'date' > $sshfile 2>&1 &
+    local sshpid=$!
+
+    # Now wait for ssh to complete subject to timeout.
+    local endctime=`date +%s`
+    while [[ $(($endctime - $startctime)) -lt $timeout ]]; do
+        sleep 0.5 
+
+        if [[ -s $sshfile ]]; then
+            break;
+        fi
+            
+        endctime=`date +%s`
+    done
+        
+    local result=0
+
+    # Kill ssh if it hasn't yet given us a result.
+    # Note I used to wait on ssh to complete if the file was found but
+    # this can only cause us problems by waiting indefinitely if ssh
+    # were to subsequently hang or otherwise not return.  Rather,
+    # consider a non-zero file 'good enough' and continue on.
+    if [[ ! -s "$sshfile" ]]; then 
+        kill $sshpid
+        result=1
+    fi
+
+    rm -f "$sshfile" || echo "Unable to delete $sshfile"; 
+    return $result
+}
+
+# Function to check connectivity of input machines in parallel.
+function checkConnectivityInParallel () {
+    # Don't repeat this if we've already done it.
+    if [ "$REACHABLE_OADS" ]; then
+        vecho "Already determined reachability of $REACHABLE_OADS."
+        return
+    fi
+
+    vecho "Will check the following computers:"
+    vecho $OADS
+    REACHABLE_OADS=
+    NONREACHABLE_OADS=
+    local maxwait=15
+    status -n "Checking reachability of machines (takes 3 - $maxwait seconds)"
+    
+    vecho ""
+    
+
+    # Kick off checkHostReachability in background while saving PIDs
+    local pids
+    local -a pidHostMap
+    for OAD in $OADS; do
+        checkHostReachability $OAD $maxwait &
+        checkpid=$!
+        pidHostMap[checkpid]="$OAD"
+        pids="$pids $checkpid"
+    done
+
+    # Rip through PIDS and wait for completion afterwards reaping return status
+    for pid in $pids; do
+
+        OAD=${pidHostMap[pid]}
+
+        if [ $VERBOSE -eq 1 ]; then
+            echo -n "  $OAD reachable: "
+        else
+            status -n "."
+        fi
+
+        wait $pid
+        local waitresult=$?
+        
+        if [ $waitresult -eq 0 ]; then
+            REACHABLE_OADS="${REACHABLE_OADS} $OAD"
+            vecho "yes!"
+        else
+            NONREACHABLE_OADS="${NONREACHABLE_OADS} $OAD"
+            vecho "no!"
+        fi
+    done 
+
+    status ""
+    
+    vecho reach:$REACHABLE_OADS
+    if [ "$NONREACHABLE_OADS" ]; then
+        status Could not reach:$NONREACHABLE_OADS
+    else
+        status All systems reachable
+    fi
+}
+
+start() {
+    logcarmanotice "Beginning control system start"
+
+    START_COMMAND="$COMMAND start"
+
+    # Sudo needs to run exactly as described in sudoers file
+    # if not, command will fail.  Thus in the service case,
+    # start sudo command in a subshell, and redirect that 
+    # shells output rather than the ssh output directly
+    function ssh_start_command () {
+        local command="$SSH $1 $START_COMMAND"
+        vecho "Connecting to $1 executing: ${command}"
+
+        # $command >& /dev/null || fail "Failed to executed ${command}"
+        $command || fail "Failed to execute ${command}"
+    }
+    
+    # Start CORBA services on the IMR first.
+    status "Starting CORBA services on imr $IMR"
+    START_CORBA="${CARMA_RUN}/scripts/taoimrsetupNoSu --imr ${IMR} --noapps --file ${CONFIG_FILE} start"
+    $SSH $IMR $START_CORBA
+
+    # Then the acc if necessary.
+    if [ $IMR != $ACC ]; then
+        START_CORBA="${CARMA_RUN}/scripts/taoimrsetupNoSu --imr ${IMR} --oad ${ACC} --noapps --file ${CONFIG_FILE} start"
+        status "Starting CORBA services on acc $ACC"
+        $SSH $ACC $START_COBRA
+    fi
+
+    # Now start core monitor services on the ACC machine
+    status "Starting core monitor processes on acc ($ACC)"
+    $SSH $ACC ${CARMA_RUN}/bin/imrconfig imr=${IMR} oad=${ACC} start=true priority=0-1 wait=0 file=${CONFIG_FILE}
+
+    # Find out who's up and adjust oad list
+    checkConnectivityInParallel
+
+    # Start the OADs 
+    status ""
+    status "Starting carma on subsystem machines"
+    ($SSH $ACC ${CARMA_RUN}/bin/imrconfig imr=${IMR} oad=${ACC} start=true priority=2-9 wait=0 file=${CONFIG_FILE})&
+    WAITPIDS=$!
+    for OAD in $REACHABLE_OADS; do
+      (ssh_start_command $OAD)&
+      WAITPIDS="$WAITPIDS $!"
+    done
+
+    # Wait for subsystem machines to startup...
+    for pid in $WAITPIDS; do
+        wait $pid
+    done
+
+    status "Carma has been started"
+    logcarmanotice "End control system start"
+}
+
+
+QUIET_ALIVE=""
+
+# Stop a server using imradmin.
+# Usage: stopServer <serverName> <stopfile>
+# stopfile is created when the command returns.
+# (Return says nothing about success).
+stopServer() {
+    IMRADMIN=${CARMA_RUN}/bin/imradmin
+    STOPCMD="$IMRADMIN --imr $IMR --stop-server "
+    IMRINFOCMD="$IMRADMIN --imr $IMR --get-server-info "
+
+    server=$1
+    stopfile=$2
+
+    KMD="$STOPCMD $server"
+    RMTKMD="$STOPCMD $server $REDIRECT"
+
+    TMPF=$stopfile.tmp
+    ${CARMA_RUN}/bin/imrconfig file=${CONFIG_FILE} verbose=1  > $TMPF 2>&1
+    grep $server $TMPF 1>/dev/null 2>&1
+    serverExists=$?
+    rm -f $TMPF
+
+    if [[ $serverExists -eq 0 ]]; then
+        if [ $HOSTNAME != $IMR ]; then
+            vecho	"Executing: ${SSH} ${IMR} ${KMD}"
+            $SSH $IMR $RMTKMD
+        else
+            vecho "Executing: ${KMD}"
+            $KMD > /dev/null 2> /dev/null
+        fi
+    fi
+
+    # Let caller know we're done.
+    echo "$?"  > $stopfile
+}
+
+# Stop a number of servers
+# Usage: stopServers <list of servers to stop>
+# Calls stopServer for each server and waits a few seconds for the
+# commands to finish.
+stopServers() {
+    servers="$*"
+    stopfiles=
+
+    vecho -n "Stopping $servers"
+
+    # Make sure the IMR variable is set.
+    if [ "$IMR" == "" ]; then
+        echo "$servers can not be stopped because IMR is not set."
+        return 1
+    fi
+
+    # Issue stop requests for each server
+    for server in ${servers}; do
+        stopfile=/tmp/$server.stopfile
+        rm -f $stopfile
+        stopfiles="${stopfiles} $stopfile"
+        # Issue the command in the background in case it hangs.
+        stopServer $server $stopfile&
+    done
+
+    # Now wait for them to finish
+    # Max # of seconds to wait for imradmin to finish.
+    timetostop=10
+
+    # Wait until the commands have finished or the timer expires.
+    while [ $timetostop -gt 0 ]; do
+        timetostop=`expr $timetostop - 1`
+        files=
+        for stopfile in ${stopfiles}; do
+            if [ -f $stopfile ]; then
+                rm -f $stopfile
+            else
+                files="$files $stopfile"
+            fi
+        done
+        stopfiles="$files"
+        if [ "${stopfiles}" == "" ]; then
+	    break
+        fi
+        vecho -n "."
+        sleep 1
+    done
+    vecho ""
+}
+
+stop() {
+    logcarmanotice "Beginning control system stop"
+    
+    local coreservers="FaultSystem ProjectDatabaseManagerHost Subarray1 Subarray2 Subarray3 Subarray4"
+    status "Checking for core servers - will stop if found ($coreservers)."
+
+    # Attempt to stop servers that MUST shutdown gracefully.
+    # Shutdown subarray controllers to prevent them from restarting servers
+    # via asynchronous commands.
+    stopServers $coreservers
+
+    # Now attempt to stop all servers - use a stopfile to 
+    # check if imradmin has hung
+
+    # Stop the OADS 
+    
+    # Find out who's up and adjust oad list
+    checkConnectivityInParallel
+
+    status -n "Stopping carma on all subsystem machines"
+    WAITPIDS=
+    for OAD in $REACHABLE_OADS; do
+        vecho "Connecting to ${OAD}, running ${COMMAND}"
+        (${SSH} ${OAD} ${COMMAND} stop &) &> /dev/null 
+        WAITPIDS="$WAITPIDS $!"
+        status -n "."
+    done
+
+    status ""
+
+    # Finally stop the IMR 
+    status "Stopping imr on $IMR"
+    if [ $HOSTNAME != $IMR ]; then
+        vecho "Connecting to imr ${IMR} running ${COMMAND} stop"
+        ${SSH} ${IMR} ${COMMAND} stop  
+    else
+        vecho "Running ${COMMAND} stop on ${IMR}"
+        ${COMMAND} stop
+    fi
+    
+    status -n "Waiting for all background subshells to exit"
+    for pid in $WAITPIDS; do 
+        wait $WAITPIDS &> /dev/null
+        status -n "."
+    done
+    status ""
+   
+    QUIET_ALIVE="YES"
+    aliveInParallel
+    
+    status "Carma has been stopped"
+    logcarmanotice "End control system stop"
+}
+
+getstatus() {
+    # Get status of everything in no particular order
+    checkConnectivityInParallel
+    ALL="$REACHABLE_OADS $IMR"
+    for HOST in $ALL; do
+     echo "Connecting to $HOST running $COMMAND status"
+    $SSH $HOST  $COMMAND status || echo "Unable to connect to ${OAD}"
+     echo
+    done
+}
+
+# Check for imr procs on input host
+# Input: host
+# Return: 0 if live procs exist on host, error otherwise.
+checkForLiveImrProcs() {
+    $SSH $1 ps -efww | grep -v grep | grep "\-ORBServerId" 
+    return $?
+}
+    
+aliveInParallel() {
+    # Get status of everything in no particular order
+    local checkpid=
+    local WAITPIDS=
+    local ALL="$REACHABLE_OADS $IMR"
+    local -a pidHostMap
+
+    if [ $ACC != $IMR ]; then
+        ALL="$ALL $ACC"
+    fi
+    for HOST in $ALL; do
+
+        if [ -z $QUIET_ALIVE ]; then
+            echo "Connecting to ${HOST} and checking for any live imr processes"
+        fi
+
+        (checkForLiveImrProcs $HOST &> /dev/null)& 
+        
+        checkpid=$!
+        pidHostMap[checkpid]="$HOST"
+        WAITPIDS="$WAITPIDS $checkpid"
+    done
+
+    for pid in $WAITPIDS; do
+        vecho "aliveInParallel() - Waiting on PID $pid to return."
+        wait $pid
+        local waitresult=$?
+        vecho "PID $pid returned with status $waitresult"
+        if [ $waitresult -eq 0 ]; then
+            echo "${pidHostMap[pid]} still has live imr processes - kill with" 
+            echo "  stop or a pkill - may need proper permissions"
+        fi
+    done
+}
+
+# Checks and extracts the command from FLAGS_ARGV and puts it into
+# the variable ACTION
+function checkCommand
+{
+    eval set -- "${FLAGS_ARGV}"
+    numArgs=$#
+
+    if [[ ${numArgs} == 0 || ${numArgs} != 1 ]]; then
+        flags_help
+        fail "\n***ERROR***\n Only one command allowed, not $numArgs." 
+    fi    
+
+    ACTION="$1"
+}
+
+function doCommand
+{
+    checkCommand
+    vecho "Doing command [$ACTION]"
+    case $ACTION in
+        start)
+            time start
+            return 
+            ;;
+        stop)
+            stop
+            return 
+            ;;
+        restart)
+            stop
+            status ""
+            time start
+            return 
+            ;;
+        status)
+            getstatus
+            exit 0
+            ;;
+        alive)
+            checkConnectivityInParallel
+            aliveInParallel
+            exit 0
+            ;;
+        *)  echo "Unrecognized command: ${1}"
+            printUsage
+            exit 1
+            ;;
+    esac
+}
+
+
+COMMAND="$CARMA_RUN/scripts/rc.carma --nosu --imr ${IMR} --file ${CONFIG_FILE} ${DIR}"
+if [ $VERBOSE -eq 1 ]; then 
+    COMMAND="$COMMAND --verbose"
+fi
+
+getOADs
+
+if [ $VERBOSE -eq 1 ]; then dumpParams; fi
+
+# Execute the command
+doCommand
+
+exit $?

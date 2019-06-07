@@ -1,0 +1,6 @@
+A Cedarflat Generator has experienced an overtemperature event.
+
+Check the fan on the radiator immediately. If the fan is not running, switch
+to the standby generator. Directions are on the wiki page shown below.
+
+http://cedarflat.mmarray.org/wiki/Generator_Cooling_System

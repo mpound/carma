@@ -1,0 +1,355 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>SubarrayControl WorkerPool Statistics Help</title>
+	<style>
+table {
+	width:100%;
+	border-spacing:0px;
+	border-collapse:collapse;
+	border:1px solid black;
+}
+th {
+	color:#ffffff;
+	background-color:#555555;
+	padding:3px;
+	vertical-align:top;
+	text-align:left;
+	border:1px solid black;
+}
+td {
+	padding:7px 5px 7px 5px;
+	border:1px solid black;
+}
+tr#zebra {
+	background-color:#dedede;
+}
+h1 {
+	border-bottom: 2px solid black;
+}
+h2 {
+	border-bottom: 1px solid gray;
+}
+div#top {
+	width: 95%;
+}
+	</style>
+</head>
+<body>
+
+<div id="top">
+
+<h1>Help for the Monitor System Transport Window</h1>
+
+<h2>How the Monitor System works</h2>
+
+<p>
+The monitor system is broken into subsystems which represent independent
+functional parts of the system, such as an antenna. Subsystems are usually,
+but not always, run on an independent computer and may consist of a single
+program or several programs (processes).
+</p>
+
+<p>
+Each process does the low level work of talking to hardware (e.g. CAN bus
+modules or correlator CPUs) and generating the associated monitor data.
+</p>
+
+<p>
+The aggregate of all of the subsystems is the full CARMA monitor system and it
+is available only on the central array control computer, known as the ACC. On
+the ACC, the data are available to the subarray control programs for their use
+and for display in the RTD monitor display windows. The subarray control
+programs also make the data available to the python user interface programs
+for their use.
+</p>
+
+<p>
+The monitoring of hardware and the flow of the monitor system data is done on
+half second intervals (500 msec), synchronized to the absolute second, which
+is called a frame.
+</p>
+
+<h2>Internal Details of the Monitor System</h2>
+
+<p>
+The monitor data from each subsystem is sent by the subsystem's
+<tt>FrameScriberPublisher</tt> (FSP) to the <tt>FrameCollator</tt> process
+running on the ACC. This is accomplished using CORBA monitor packets, and
+happens every 500 milliseconds.
+</p>
+
+<p>
+The <tt>FrameCollator</tt> process assembles and publishes the aggregate
+monitor system.
+</p>
+
+<p>
+At the subsystem level, it is a two step process to generate the monitor
+packet that is sent to the <tt>FrameCollator</tt>. The monitor data are
+gathered by the subsystem process(es) that are interacting with the hardware
+(e.g. reading the CAN bus). When the control process(es) have finished
+gathering their monitor data, or at a fixed time after the half-second tick,
+the data are sent to a <tt>FrameScriberPublisher</tt> (FSP) process that is
+dedicated to that specific subsystem.
+</p>
+
+<p>
+There is only one FSP per subsystem and it is usually located on the same host
+computer as the process(es) that are collecting the monitor data. Only data
+that have been updated for the current frame are sent to the FSP.
+</p>
+
+<p>
+The time of the last process to send data to the FSP is taken as the
+<tt>DataWrite</tt> time, and is relative to the integral half second. The FSP
+assembles the received data into a complete monitor subsystem and, at a fixed
+interval after the half second boundary, sends the monitor packet to the
+<tt>FrameCollator</tt> process on the ACC via the CORBA notification service.
+</p>
+
+<p>
+The delay after the frame boundary for sending the FSP data is defined by a
+command line parameter and must be chosen to allow for all the new data to be
+received. The FSP publication delays are also chosen to spread out the system
+load for efficiency.
+</p>
+
+<h3><tt>FrameCollator</tt> Details</h3>
+
+<p>
+The <tt>FrameCollator</tt> processes the subsystem monitor data packets from
+the FSP's as they are delivered by the notification service, filling in the
+received time and putting the data into the buffer containing the complete
+monitor system.
+</p>
+
+<p>
+The <tt>FrameCollator</tt> runs at a specific delay from the half second and
+marks the selected subsystems as <tt>Missed</tt> if a monitor packet is not
+received within the target frame.
+</p>
+
+<p>
+If a packet is not missed, then its timestamp (written by the subsystem) is
+compared to see if it corresponds to the half second frame being assembled.
+
+<p>
+If its timestamp is for a frame in the past, then the packet was either
+published late or delayed in delivery and it is marked as <tt>Late</tt> and
+not included in the monitor system that will be written.
+</p>
+
+<p>
+If the subsystem's timestamp is in the future compared to the target frame
+then it is marked as <tt>Early</tt> and removed. Early frames should only
+happen if the <tt>FrameCollator</tt> is resource starved and can't complete
+the frame processing in a timely way, or if the subsystem's time is incorrect.
+</p>
+
+<p>
+Once all the frames are marked and assembled, the <tt>FrameCollator</tt>
+writes out the monitor system to a queue.
+</p>
+
+<h2>Multiple Monitor Systems: Raw, Intermediate, and Final</h2>
+
+<p>
+The aggregate monitor system (the sum of all subsystems) is called a <em>Carma
+Monitor System</em>, with a formal datatype of <tt>CarmaMonitorSystem</tt>.
+There are three distinct versions of the carma monitor system produced as the
+data are refined.
+</p>
+
+<p>
+A new monitor system is created for each frame and passed between processes
+until all data are final.
+</p>
+
+<h3>Raw Monitor System</h3>
+
+<p>
+The carma monitor system written by the <tt>FrameCollator</tt> is called the
+<em>raw monitor system</em>. The raw monitor system contains all threshold and
+validity information.
+</p>
+
+<p>
+The raw monitor system is missing all data produced by the
+<tt>FaultSystem</tt> and <tt>Pipeline</tt> processes. These are added in a
+later stage.
+</p>
+
+<h3>Intermediate Monitor System</h3>
+
+<p>
+The raw monitor system is subsequently read by the <tt>FaultSystem</tt> which
+adds blanking and flagging information and then writes it out as the
+<em>intermediate monitor system</em>. The intermediate monitor system is used
+as input for the RTD displays and for the pipeline.
+</p>
+
+<p>
+The <tt>Pipeline</tt> needs the blanking and flagging information from the
+<tt>FaultSystem</tt> to apply to the correlator visibility data.
+</p>
+
+<h3>Final Monitor System</h3>
+
+<p>
+The <tt>Pipeline</tt> reads the intermediate monitor system and synchronizes
+it with the correlator visibility data for processing.
+</p>
+
+<p>
+The pipeline monitor data, including selfcal results over integrated records,
+are written to the pipeline subsystem.
+</p>
+
+<p>
+The <tt>monitorPipelineSync</tt> process then merges the intermediate monitor
+system and the pipeline subsystem and writes out the <em>final monitor
+system</em>.  The final monitor system is used as input to the
+<tt>monitorAverageWriter</tt> process.
+</p>
+
+<p>
+The <tt>monitorAverageWriter</tt> averages all monitor points into three
+different timescales: One Minute, Spectral Line Correlator Integrations, and
+Wideband Correlator Integrations. When these averages are complete, they are
+written as <tt>mpdat</tt> files which are used to construct the data header
+for the astronomical data.
+</p>
+
+<h2>Detailed Descriptions of various RTD fields</h2>
+
+<h3>Summary Tab</h3>
+
+<p>
+The RTD window contains either offset times or counters. The offset times are
+in msec with respect to the half second boundary for the frame. The Summary
+tab in this RTD window contains the following:
+</p>
+
+<table>
+	<tbody>
+		<tr>
+			<th>Monitor Point</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td>RawWrite</td>
+			<td>Offset when <tt>FrameCollator</tt> wrote the Raw monitor system</td>
+		</tr>
+		<tr id="zebra">
+			<td>RawRead</td>
+			<td>Offset when <tt>FrameCollator</tt> read the Raw monitor system as input</td>
+		</tr>
+		<tr>
+			<td>FinalWrite</td>
+			<td>Offset when <tt>FaultSystem</tt> wrote Intermediate monitor system</td>
+		</tr>
+		<tr id="zebra">
+			<td>OutOfOrderFrames</td>
+			<td>Cumulative count of out of order frames seen by the <tt>FrameCollator</tt> when processing subsystem packets</td>
+		</tr>
+		<tr>
+			<td>DupFrames</td>
+			<td>Cumulative count of duplicate frames seen by the <tt>FrameCollator</tt> when processing subsystem packets</td>
+		</tr>
+		<tr id="zebra">
+			<td>BadNotifications</td>
+			<td>Cumulative count of bad notifications seen by the <tt>FrameCollator</tt> when processing subsystem packets</td>
+		</tr>
+		<tr>
+			<td>TotFrames</td>
+			<td>The total number of frames since the <tt>FrameCollator</tt> was started</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>
+These values are followed by totals of various errors across all subsystems.
+Because these totals are the sum across all subsystems, they can exceed the
+<tt>TotFrames</tt> count if there are continuous errors in multible subsystems.
+</p>
+
+<p>
+MissedData refers to the data that are sent by the low level process(es) to
+the FSP. If no data are received before the FSP publish time then a MissedData
+event is recorded. Note that subsystems that send data to the FSP from
+multiple sources can have a partial 'MissedData' event when one of the data
+sources does not send or sends late, but another data source sends within the
+correct window. This type of error is not detected by the monitor system
+transport. The Early, Late, and Missed counts refer to the packets from the
+FSP to FrameCollator.
+</p>
+
+<table>
+	<tbody>
+		<tr>
+			<th>Monitor Point</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td>TotMissedData</td>
+			<td>Cumulative total of <tt>MissedData</tt> events recorded across all subsystems</td>
+		</tr>
+		<tr id="zebra">
+			<td>TotEarly</td>
+			<td>Cumulative total of early packets received by the <tt>FrameCollator</tt></td>
+		</tr>
+		<tr>
+			<td>TotLate</td>
+			<td>Cumulative total of late packets received by the <tt>FrameCollator</tt></td>
+		</tr>
+		<tr id="zebra">
+			<td>TotMissed</td>
+			<td>Cumulative total of missed packets received by the <tt>FrameCollator</tt></td>
+		</tr>
+	</tbody>
+</table>
+
+<h3>Subsystems Tab</h3>
+
+<p>
+The Subsystem tab displays times and events for each subsystem.
+</p>
+
+<table>
+	<tbody>
+		<tr>
+			<th>Monitor Point</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td>DataWrite</td>
+			<td>Offset of last data received by FSP. This can be negative if no data were received for this frame.</td>
+		</tr>
+		<tr id="zebra">
+			<td>FSPwrite</td>
+			<td>Offset when the FSP data was sent to the <tt>FrameCollator</tt></td>
+		</tr>
+		<tr>
+			<td>CollatorRx</td>
+			<td>Offset when the <tt>FrameCollator</tt> received the FSP data</td>
+		</tr>
+		<tr id="zebra">
+			<td>Valid</td>
+			<td>Data was received for this frame and DataWrite time is positive</td>
+		</tr>
+	</tbody>
+</table>
+
+</p>
+The other columns are counters for the various dropouts along the chain. If
+data are not received along the way a time will often contain a '?'.
+</p>
+
+</div>
+
+</body>
+</html>
+<!-- vim: set tw=78 ts=4 sts=4 sw=4: -->

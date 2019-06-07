@@ -1,0 +1,26 @@
+# HIA-191.tab
+# 29 apr 08 
+# 28 jul 13 - added 5.5 K lines, removed blank line that followed rapid tuning parameters
+#   for some reason sofware was not using the rapid tuning parameters (the blank line??);
+#   then tuning failed at current high temperatures
+#
+#|loGHz   |t    |v     |i    |dvm  |dvp  |
+#|r       |r    |r     |r    |r    |r    |
+  110.000  3.50  10.10  135.  -.5   +.5
+  110.000  4.50  10.10  135.  -.5   +.5
+  110.000  5.50   9.5  135.  -.5   +.5
+
+   90.000  3.50  10.4   133.  -.5   +.5
+   90.000  4.50  10.4   133.  -.5   +.5
+   90.000  5.50   9.5   133.  -.5   +.5
+
+   77.000  3.50  10.4   120.  -.5   +.5
+   77.000  4.50  10.4   120.  -.5   +.5
+   77.000  5.50   9.5   120.  -.5   +.5
+
+# --- rapid tuning parameters, based on tests [944b] ---
+
+    0.000  0.00  11.17  180.   0.    0.   
+   80.000  0.00  10.3   120.   0.    0.
+   90.000  0.00  10.3   130.   0.    0.
+  115.000  0.00  10.1   130.   0.    0.

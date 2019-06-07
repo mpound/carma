@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global">
+       <MonitorPoint name="receivedTime" type="absTime" >
+            <description>
+            Time at which the data were received.
+            </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="astrobandNo">
+           <description>
+             AstroBand number to associated with the correlator data.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="string" name="publishedObject">
+           <description>
+             Name of the direct object on which these data will be 
+             published for the catchData process.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="bool" name="conjugated">
+           <description>
+             True if the corr data remapper will conjugate these data.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="numValidBaselines">
+           <description>
+             Number of valid baselines in received data.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="publishedTime" type="absTime" >
+            <description>
+            Time at which the data were published to catchData.
+            </description>
+       </MonitorPoint>
+</Common>

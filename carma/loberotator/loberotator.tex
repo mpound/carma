@@ -1,0 +1,350 @@
+%$Id: loberotator.tex,v 1.7 2003/12/10 02:03:06 colby Exp $
+\documentclass[preprint]{aastex}
+\usepackage{mathrsfs}
+\usepackage{epsf}
+% ----------------------DEFINITIONS USED IN THIS PAPER --------------------
+\newcommand{\xlam}{
+   \ifmmode{X_\lambda}
+   \else{$X_\lambda$}
+   \fi}
+\newcommand{\ylam}{
+   \ifmmode{Y_\lambda}
+   \else{$Y_\lambda$}
+   \fi}
+\newcommand{\zlam}{
+   \ifmmode{Z_\lambda}
+   \else{$Z_\lambda$}
+   \fi}
+\newcommand{\rearth}{  % Earth radius
+   \ifmmode{r_\oplus}
+   \else{$r_\oplus$}
+   \fi}
+\newcommand{\scrL}{ % script L for path length
+   \ifmmode{{\mathscr L}}
+   \else{${\mathscr L}$\/}
+   \fi}
+\def\degree{\ifmmode{^\circ} \else{$^\circ$}\fi}
+\def\nexpo#1#2{\ifmmode{#1 \times 10^{#2}}\else{$#1 \times 10^{#2}$}\fi}
+\def\expo#1{\ifmmode{10^{#1}}\else{$10^{#1}$}\fi}
+\def\msun{\ifmmode{\rm M_\odot}\else{M$_\odot$}\fi}
+\def\esat{\ifmmode{\rm e_{sat}}\else{e$_{sat}$}\fi}
+\def\etal           {{\rm et~al}.\ }
+\def\eg             {{\rm e.g.}\/}
+\def\ie             {{\rm i.e.}\/}
+\def\uv{{\it uv}}
+\def\cmm {\ifmmode{{\rm cm^{-3}}}\else{{${\rm cm^{-3}}$}}\fi}
+\def\cmtwo {\ifmmode{{\rm cm^{-2}}}\else{{${\rm cm^{-2}}$}}\fi}
+\def\invpc{\ifmmode{\,{\rm pc^{-1}}}\else{\thinspace {\rm pc$^{-1}$}}\fi}
+\def\invsec{\ifmmode{\,{\rm s^{-1}}}\else{\thinspace {\rm s$^{-1}$}}\fi}
+\def\invyr{\ifmmode{\,{\rm yr^{-1}}}\else{\thinspace {\rm yr$^{-1}$}}\fi}
+\def\psec           {$.\negthinspace^{s}$}
+\def\pmin           {$.\negthinspace^{m}$}
+\def\pasec           {$.\negthinspace^{\prime\prime}$}
+\def\pdeg           {$.\kern-.25em ^{^\circ}$}
+\def\kms{\ifmmode{\,km\,s^{-1}}\else{\thinspace km\thinspace s$^{-1}$}\fi}
+%
+% Greater than or approximately equal to and less than or
+% approximately equal to signs, using macros defined in PLAIN.TEX
+%
+\catcode`\@=11 \def\gapprox{\mathrel{\mathpalette\@versim>}}
+\def\lapprox{\mathrel{\mathpalette\@versim<}}
+\def\@versim#1#2{\lower2.9truept\vbox{\baselineskip0pt\lineskip0.5truept
+    \ialign{$\m@th#1\hfil##\hfil$\crcr#2\crcr\sim\crcr}}}
+\catcode`\@=12
+% --------------------------------------------------------------------------
+\begin{document}
+\title{CARMA Lobe Rotator Software Design}
+\author{Colby Kraybill}
+\slugcomment{$Revision: 1.7 $}
+
+
+\section{Introduction}
+\subsection{Functionality and Scope}
+
+The primary purpose of the Lobe Rotator subsystem is to control
+and monitor the lobe rotator hardware.  This system is interconnected
+with the interferometry engine and the correlator.
+
+The Lobe Rotator Server (LRS) sends information to the Lobe Rotator
+Boards (LRB) that in turn generate a 50MHz reference signal for the 1st
+Local Oscillator phaselocks.  This base tone is modified to follow fringe
+pattern changes due to the dynamically changing geometry between the
+telescopes and the source being observed and other changes in the
+electrical path length inbetween the telescopes and the correlator.
+
+The LRS also loads phase shift patterns (Walsh sequences) to the
+LRB and tells the LRB to use a particular sequence at the next integral second
+frame.  
+
+The interferometry subsystem (Interferometry Engine or IE) drives the LRS
+by passing in phase and frequency information for computing the modified 50MHz
+signal.
+
+The walsh patterns are chosen well ahead of time and based on
+individual array configurations.  Additional modifications to the walsh
+sequence are made to handle sideband separation. 
+
+I recommend having the following documents on hand while reading this one:
+www.mmarray.org/project/WP/LobeRotator/hw/pdr/LobeRotatorCANbusAPI.pdf
+www.mmarray.org/project/docs/SystemDesign/PhaseDelayUpdates.pdf
+
+\subsection{Lobe Rotator Board}
+The LRB mixes a 40MHz base tone with a ~10MHz one to generate
+a dynamically modified 50MHz reference signal.  This reference
+signal is then distributed to individual antennas.  
+
+The ~10MHz tone is generated using Direct Digital Synthesis (DDS) chips.
+Each DDS chip is told a particular phase and phase rate (frequency) for generating
+a waveform by the LRS (see below).  There is one DDS chip per
+antenna.  Each LRB has four DDS chips and there will be six boards
+for a total of 24 DDS channels.
+
+These waveforms are only valid for each second observing frame.
+Each waveform is aligned to other subsystems by starting at a
+one second timing heartbeat sent to each LRB over the CANbus cable.
+
+It is the job of the LRS to load the pre-defined walsh sequences 
+as a table into each LRB at LRS initialization (when first powered
+up).  The tables take the form of a 4-bit pattern sequence, with
+values of 0,1,2,3 corrisponding to phase shifts of 0, 90, 180 and 270 degrees.
+
+The LRS then supplies information about which sequence
+to use and when (via an MJD time-stamp).  The LRS will also
+supply the phase and phase rate (frequency) loaded into each DDS chip.
+
+Finer details of LRB hardware are discussed in the Lobe Rotator
+CANBus API document (LobeRotatorCANbusAPI.pdf).
+
+\subsection{Lobe Rotator Server}
+The server consists of a standard cPCI crate with a single CPU board
+running the CARMA standard Linux distribution, NFS mounted
+disks and a CORBA DO (or LRS DO).  It has a CANBus card for
+communicating with the LRB's.
+
+CANbus communications will occur via the standard CARMA CANBus
+classes (i.e. not directCAN).
+
+The LRS DO is fed information by the IE to compute the proper phase and frequency each DDS chip
+should be set to at the next absolute second.  The IE is continuously 
+computing delay information every thirty seconds, based on phase and pointing centers
+and source position and sky observing frequency (base frequency + doppler shift).  These
+delays are passed to the LRS every 30 seconds, each update comes with a time stamp
+for which the delays are applicable.  The LRS then uses the
+delay (in nanoseconds) and frequency information to determine the proper
+phase and frequency to be sent to the LRBs.  The LRS will keep track of the
+30 second updates and interpolate a smooth changing phase and frequency 
+for loading into the LRBs.
+
+This system will re-use the CARMA::util package for interpolation routines.
+
+See the PhaseDelayUpdates document for detailed information on how the 30 second update
+was determined to fit accuracy requirements.  These requirements are primarily
+driven by how fast the gemometry between source and instrument change.  These values
+must be updates at least once every 41 seconds.  The IE design has been simplified
+to update once every 30 seconds to stay well within the changing geometry.
+(PhaseDelayUpdates.pdf)
+
+After interpolation of the delay information supplied by the IE, proper phase and phase
+rate (frequency) are computed once each second and loaded into the DDS chips
+via the lobe rotator CANBus API, see LobeRotatorCANbusAPI.pdf).  These values will
+be loaded 400-500ms before the next integral second.  The LRS will have to
+monitor which DDS registers are free for the new values to be utilized.  This
+information can be sniffed off the monitor stream on the next half second update frame.
+
+The LRS DO is also fed information about which walsh sequences to
+use by the Sub-Array Controller (SAC).  These sequences are pre-generated
+patterns, stored in tables that are read from a main configuration
+database and loaded into the LRB's (what about the correlator and
+anything else that needs these tables to be loaded, where's the code
+reuse?)  It is up to the SAC to keep track of which walsh sequence is being
+used to modify signals from individual antennas.
+
+\section{Code Testing}
+The LRS core code will have have a small testing harness to
+generate false monitor information and be excersized by a
+sub-array controller that just loads configuration information
+from a file and feeds it into the LRS.  This also applies
+to inputs from the interferometry engine.  An idealized set of values
+will be also read from a file for reporting the false monitor
+information.  This will provide cross checking for monitor
+correctness.  (Other testing modes?)
+
+\clearpage
+
+\section{Revised FTE Estimate and Milestones}
+The original work package had many guesses for the schedule
+based on incomplete information about hardware design.  A
+revised estimate follows:
+
+\begin{tabular}{lrcl}
+\hline
+Stage & & Months & \\
+\hline
+Design  & & 1.0 & \\
+Implementation& & & \\
+  & IDL interface & 0.125 & \\
+  & Program interface & 0.125 & \\
+  & Core LRS code & 0.25 & \\
+  &       \cline{1-2}
+  & Total             & 1.0 & \\
+Integration & &  0.5 & \\
+Testing & & 1.0 & \\
+\hline
+Package Total & & 3.5 & FTE months  \\
+\end{tabular}
+
+\bigskip
+The schedule for completion is as follows:
+
+\begin{tabular}{lc}
+\hline
+Task & When \\
+\hline
+API defined                          & Completed (PDR depending). \\
+IDL interface coded                  & Dec 3, 2003 \\
+Program interface completed          & Dec 15, 2003  \\
+Core LRS code                        & Dec 30, 2003 \\
+Unit Tests written                   & Dec 30, 2004 \\
+Integration                          & Jan 15, 2004 (depends on Interf Engine)\\
+\end{tabular}
+
+\clearpage
+\section{Monitor Points}
+The lobe rotator engine has the following monitor points:
+
+\begin{tabular}{lrcl}
+\hline
+Monitor Point & per each DDS channel or LRB & Type & Units \\
+\hline
+
+WalshColumn             & DDS & Integer & \\
+ActiveFrequency         & DDS & double & Hz \\
+LastFreqWrite           & DDS & Boolean & \\
+LRB5VPS1                & LRB & Single & mV \\
+LRB5VPS2                & LRB & Single & mV \\
+LRB5VPS3                & LRB & Single & mV \\
+LRB24VPS1               & LRB & Single & mV \\
+BoardTemp               & LRB & Single & C \\
+TimeStatus              & LRB & Integer & \\
+TimeSync                & LRB & Integer & \\
+ExternalClock           & LRB & Integer & \\
+PhaseSwitching          & LRB & Boolean & \\
+ModuleID                & LRB & Integer & \\
+ModuleType              & LRB & Integer & \\
+InitRequest             & LRB & Integer & \\
+CANRxErrs               & LRB & Integer & \\
+CANTxErrs               & LRB & Integer & \\
+MemErrs                 & LRB & Integer & \\
+SysErrs                 & LRB & Integer & \\
+SchedulerOverflow       & LRB & Integer & \\
+TimedSchedulerOverflow  & LRB & Integer & \\
+SoftwareMajorVersion    & LRB & Integer & \\
+SoftwareMinorVersion    & LRB & Integer & \\
+SoftwareVersionTest     & LRB & Integer & \\
+CommErrs                & LRB & Integer & \\
+TimeErrs                & LRB & Integer & \\
+SoftErrs                & LRB & Integer & \\
+HardErrs                & LRB & Integer & \\
+AverageTimeOffset       & LRB & Integer & ms \\
+TimeStampInt            & LRB & Integer & ms \\
+TimeDelta               & LRB & Integer & ms \\
+\hline
+\end{tabular}
+
+The WalshColumn is the selected column for walsh values in the pre-supplied
+table, for each individual DDS channel (Antenna).
+
+ActiveFrequency is the current active frequency being used at the
+integral one second.
+
+LastFreqWrite will be true if the last frequency update was made
+in time.
+
+LRB5VPS1-3, LRB24VPS1 are power supply voltages for each board.
+
+BoardTemp, temperatures of individual boards.
+
+TimeStatus is a bit pattern for coarse notification of timer related
+problems (such as time sync error/module time OK, time sync PK/module time error...).
+
+TimeSync is a bit pattern for relaying information on what timing period
+is in use (non, 100ms, 1 s...).
+
+ExternalClock is a bit pattern for information on the phase switching clock
+(none, 1ms, 6.25ms...).
+
+PhaseSwitching is a coarse indicator of whether or not phase switching
+has been turned on.
+
+ModuleID is the serial number for each LRB.
+
+ModuleType is the module type for each LRB.
+
+InitRequest the LRB is requesting to be initialized.
+
+CANRxErrs number of Rx errors on the CANBus for this LRB.
+
+CANTxErrs number of Tx errors on the CANBus for this LRB.
+
+MemoryErrs number of memory errors on this LRB.
+
+SysErrs number of system errors on this LRB.
+
+SchedulerOverflow 0x0000 - 0xFFFF
+
+TimedSchedulerOverflow 0x0000 - 0xFFFF
+
+SoftwareMajorVersion, major version.
+
+SoftwareMinorVersion, minor version.
+
+SoftwareTestVersion, ??
+
+CommErrs overall communication error count.
+
+TimeErrs overall timer error count.
+
+SoftErrs overall software error count.
+
+HardErrs overall hardware error count.
+
+AverageTimeOffset (<t{internal} - t{system}>).
+
+TimeStampInt is the interval between receiving time stamps.
+
+TimeDelta is the instantaneous difference, (t{internal} - t{system})
+
+\section{Questions/Open issues}
+
+\begin{enumerate}
+\item Should the Sub-Array Controller handle the downloading of walsh
+tables via the LRS DO and the correlator DO's?
+
+\item Note engineering vs normal operations methods in API.  Should
+a method be created to download new program code to the LRBs?
+
+\item Walsh tables will primary come from flat files until
+we decide who/what controls the walsh table info
+
+\item How to best synchronize phase switching tables?  What about
+walsh rows that include variable length sequences? (determine
+it dynamically via computing length of walsh sequence...)
+
+\item How best to test without hardware?
+
+\end{enumerate}
+
+\clearpage
+
+\section{Lobe Rotator API}
+
+The following is the raw IDL of the LRS DO.  It can be found in
+\begin{verbatim}
+$CARMA/carma/loberotator/LobeRotatorControl.idl
+\end{verbatim}
+
+\verbatiminput{LobeRotatorControl.idl}
+
+\end{document}
+
+

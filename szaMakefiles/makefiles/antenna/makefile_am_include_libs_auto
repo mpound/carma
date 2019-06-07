@@ -1,0 +1,3 @@
+include szaMakefiles/makefiles/antenna/makefile_am_include_antenna_canbus
+include szaMakefiles/makefiles/antenna/makefile_am_include_antenna_control
+include szaMakefiles/makefiles/antenna/makefile_am_include_antenna_corba

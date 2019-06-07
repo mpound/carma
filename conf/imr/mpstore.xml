@@ -1,0 +1,39 @@
+<!-- Monitor Point Store -->
+
+
+<oad hostname="&ACC;">
+        <server name="carmaMonitorSystemServer"
+                path="&BIN_DIR;/tCmss"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB;"
+                startup-priority="&monitor;"/>
+
+        <server name="carmaMonitorSystemRtdServer"
+                path="&BIN_DIR;/tRtdServerTask"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; host=acc3.carma.pvt clientPort=5665"
+                startup-priority="&control;"/>
+</oad>
+
+
+<oad hostname="storage.carma.pvt">
+<!--
+        <server name="carmaFastMonitorSystemReserver"
+                path="&BIN_DIR;/tCmsr"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; host=acc3.carma.pvt"
+                startup-priority="&control;"/>
+-->
+        <server name="carmaMonitorSystemArchiverOneMinute"
+                path="&BIN_DIR;/tCmsa"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; host=acc3.carma.pvt clientPort=5665 arcdir=/opt/archive/mpstore/oneMinute"
+                startup-priority="&other;"/>
+
+        <server name="carmaMonitorSystemArchiverHalfSecond"
+                path="&BIN_DIR;/tCmsa"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; host=acc3.carma.pvt clientPort=5665 nframe=1 arcdir=/opt/archive/mpstore/halfSecond"
+                startup-priority="&other;"/>
+
+</oad>

@@ -1,0 +1,76 @@
+/**
+ * @author Erik Leitch
+ */
+#ifndef CARMA_ANTENNA_SZA_CONTROL_SZALOCONTROL_IDL
+#define CARMA_ANTENNA_SZA_CONTROL_SZALOCONTROL_IDL
+
+#include "carma/antenna/common/LOControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+  module antenna {
+    module sza {
+      module control {
+
+	/**
+	 * SZA antenna-specific LO control interface.
+	 */
+	interface LOControl : carma::antenna::common::LOControl {
+
+	  /**
+	   * Set the yig voltage, in CAN units: 0.01 V
+	   */
+	  void setYigVoltage(in unsigned short voltage)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set the yig loop gain, in CAN units: 0.01 %
+	   */
+	  void setYigLoopGain(in unsigned short voltage)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set the yig damping resistance (Ohms)
+	   */
+	  void setYigDampingResistance(in unsigned short resistance)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set the varactor loop gain, in CAN units: 0.01 %
+	   */
+	  void setVaractorLoopGain(in unsigned short voltage)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set the gunn voltage, in CAN units: 0.01 V
+	   */
+	  void setGunnVoltage(in unsigned short voltage)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set the gunn loop gain, in CAN units: 0.01 %
+	   */
+	  void setGunnLoopGain(in unsigned short voltage)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set the default gunn voltage to be asserted when selectRx
+	   * is issued
+	   */
+	  void setDefaultGunnVoltage(in unsigned short voltage)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Direct access to the LO terminator setPresetPower()
+	   * method
+	   */
+	  void setPresetPower()
+	    raises (carma::util::UserException);
+
+	}; // End LOControl interface
+      };
+    };
+  };
+}; // End carma::antenna::sza::control module
+
+#endif

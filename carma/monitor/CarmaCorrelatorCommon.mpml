@@ -1,0 +1,260 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global" author="Marc Pound">
+    <!-- =================================================================== -->
+    <!-- CARMA Digitizer Specific Monitor Points                             -->
+    <!-- =================================================================== -->
+
+    <Container name="DigitizerStatistics">
+
+      <MonitorPoint name="gain" type="int" priority="useful">
+        <description>
+          Multiplicative scale factor for thresholding.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="offset" type="int" priority="useful">
+        <description>
+          Additive offset for thresholding.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="numSamplesIn" type="int" priority="useful">
+        <description>
+          Number of input samples of digitizer quantization.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="meanIn" type="float" priority="useful">
+        <description>
+          Input sample mean of quantization.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="varianceIn" type="float" priority="useful">
+        <shortName>varianceIn</shortName>
+        <description>
+          Input sample variance of quantization.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="chiSquaredIn" type="float" priority="useful">
+        <shortName>chiSquaredIn</shortName>
+        <description>
+           Input sample reduced chi-squared of quantization.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="qStateIn" type="int" count="4" priority="useful">
+        <description>
+          Input quantization levels for the digitizer.
+          Two values are kept on either side of the mean.
+          For 2-bit quantization, this is all the values. For 3- or
+          4-bit, it is just the center part of the histogram.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="numSamplesOut" type="int" priority="useful">
+        <shortName>numSamplesOut</shortName>
+        <description>
+          Number of output samples of digitizer quantization.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="meanOut" type="float" priority="useful">
+        <shortName>meanOut</shortName>
+        <description>
+          Output sample mean of quantization.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="varianceOut" type="float" priority="useful">
+        <shortName>varianceOut</shortName>
+        <description>
+          Output sample variance of quantization. This value shoud
+          be equal to unity within about 5%.
+        </description>
+        <errLo>0.90</errLo>
+        <warnLo>0.95</warnLo>
+        <warnHi>1.05</warnHi>
+        <errHi>1.10</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="chiSquaredOut" type="float" priority="useful">
+        <shortName>chiSquaredOut</shortName>
+        <description>
+          Output sample reduced chi-squared of quantization.
+        </description>
+      </MonitorPoint>
+
+
+      <MonitorPoint name="qStateOut" type="int" count="4" priority="useful">
+        <description>
+          Output quantization levels for the digitizer.
+          Two values are kept on either side of the mean.
+          For 2-bit quantization, this is all the values. For 3- or
+          4-bit, it is just the center part of the histogram.
+        </description>
+      </MonitorPoint>
+
+    </Container> <!-- Container DigitizerStatistics -->
+
+    <!-- =================================================================== -->
+    <!-- CARMA and CARMA3G board common monitor points                       -->
+    <!-- =================================================================== -->
+
+    <Container name="CorrelatorPowerSupply">
+      <MonitorPoint name="CpciVoltage" type="float" count="&NUM_CORR_CPCI;" priority="useful">
+        <shortName>CPCI Voltage</shortName>
+        <description>
+          Compact PCI voltages in the CARMA correlator boards,
+          in this order: 1.2V, 2.5V, 3.3V, 12V
+        </description>
+        <units>V</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="CpciCurrent" type="float" count="&NUM_CORR_CPCI;" priority="useful">
+        <shortName>CPCI Current</shortName>
+        <description>Compact PCI currents in the CARMA correlator boards</description>
+        <units>A</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="SysVoltage" type="float" count="&NUM_CORR_SYS;" priority="useful">
+        <shortName>SysControl Voltage</shortName>
+        <longName>System Controller Voltage</longName>
+        <description>System controller voltages in the CARMA correlator boards</description>
+        <units>V</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="SysCurrent" type="float" count="&NUM_CORR_SYS;" priority="useful">
+        <shortName>SysControl Current </shortName>
+        <longName>System Controller current</longName>
+        <description>System controller currents in the CARMA correlator boards</description>
+        <units>A</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="DigitizerVoltage" type="float" count="&NUM_CORR_DIG;" priority="useful">
+        <shortName>Dig Voltage</shortName>
+        <longName>Digitizer Voltage</longName>
+        <description>
+          Digitizer voltages in the CARMA correlator boards,
+          in this order: 1.8V, 2.25V, 3.3V
+        </description>
+        <units>V</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="FpgaVoltage" type="float" count="&NUM_CORR_FPGA;" priority="useful">
+        <shortName>FPGA Voltage</shortName>
+        <description>
+          FPGA voltages in the CARMA correlator boards,
+          in this order: 12V, 1.2V, 2.5V, 3.3V
+        </description>
+        <units>V</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="FpgaCurrent" type="float" count="&NUM_CORR_FPGA;" priority="useful">
+        <shortName>FPGA Current</shortName>
+        <description>
+          FPGA supply currents in the CARMA correlator boards
+          in this order: 12V, 1.2V, 2.5V, 3.3V
+        </description>
+        <units>A</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="PowerSupplyStatus" type="enum" priority="vital">
+        <shortName>PwrSupplyStat</shortName>
+        <longName>Power Supply Status</longName>
+        <description>
+          Aggregate status of the 3 power supplies on the CARMA boards
+          (if one goes bad they all go bad).
+        </description>
+        <enum name="ENABLED"/>
+        <enum name="DISABLED"/>
+        <enum name="BAD"/>
+        <errHi>BAD</errHi>
+        <warnHi>DISABLED</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="PowerFailureReason" type="enum" priority="vital">
+        <shortName>PwrFail</shortName>
+        <longName>Power Failure Reason</longName>
+        <description>Reason for failure of a power supply.</description>
+        <enum name="OK"/>
+        <enum name="OVERCURRENT_1V2"/>
+        <enum name="POWERBAD_1V2"/>
+        <enum name="OVERCURRENT_2V5"/>
+        <enum name="POWERBAD_2V5"/>
+        <enum name="OVERCURRENT_3V3"/>
+        <enum name="POWERBAD_3V3"/>
+        <enum name="OVERCURRENT_12V"/>
+        <enum name="OVERVOLTAGE_12V"/>
+        <enum name="UNDERVOLTAGE_12V"/>
+        <enum name="POWERBAD_12V"/>
+        <enum name="OVERTEMPERATURE_FPGA0"/>
+        <enum name="OVERTEMPERATURE_FPGA1"/>
+        <enum name="OVERTEMPERATURE_FPGA2"/>
+        <enum name="OVERTEMPERATURE_FPGA3"/>
+        <enum name="UNKNOWN"/>
+        <errHi>OVERCURRENT_1V2</errHi>
+        <errHi>POWERBAD_1V2</errHi>
+        <errHi>OVERCURRENT_2V5</errHi>
+        <errHi>POWERBAD_2V5</errHi>
+        <errHi>OVERCURRENT_3V3</errHi>
+        <errHi>POWERBAD_3V3</errHi>
+        <errHi>OVERCURRENT_12V</errHi>
+        <errHi>OVERVOLTAGE_12V</errHi>
+        <errHi>UNDERVOLTAGE_12V</errHi>
+        <errHi>POWERBAD_12V</errHi>
+        <errHi>OVERTEMPERATURE_FPGA0</errHi>
+        <errHi>OVERTEMPERATURE_FPGA1</errHi>
+        <errHi>OVERTEMPERATURE_FPGA2</errHi>
+        <errHi>OVERTEMPERATURE_FPGA3</errHi>
+        <errHi>UNKNOWN</errHi>
+      </MonitorPoint>
+    </Container> <!-- Container PowerSupply -->
+
+    <Container name="CorrelatorTemperature" priority="useful">
+
+      <MonitorPoint name="Ppc" type="float" priority="useful">
+        <shortName>PPC</shortName>
+        <description>Power PC board temperature in the CARMA correlator boards</description>
+        <units>C</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="Digitizer" type="float" priority="useful">
+        <description>Digitizer board temperature in the CARMA correlator boards</description>
+        <units>C</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="Sys" type="float" priority="useful">
+        <description>System controller temperature in the CARMA correlator boards</description>
+        <units>C</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="Fpga" type="float" count="&NUM_CORR_FPGA;" priority="useful">
+        <description>FPGA temperature in the CARMA correlator boards</description>
+        <units>C</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="Sensor" type="float" count="3" priority="useful">
+        <description>
+          Board sensor temperature in the CARMA correlator boards.
+          sensor[0] - FPGA#1,#2; sensor[1] - FPGA#3,#4 sensor[2] - SYS/PPC
+        </description>
+        <units>C</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="TemperatureStatus" type="enum" priority="useful">
+        <shortName>TempStat</shortName>
+        <longName>Temperature Status</longName>
+        <description>Board temperature indicator, to trigger alarm in case of overheating.
+        </description>
+        <enum name="OK"/>
+        <enum name="WARNING"/>
+        <enum name="CRITICAL"/>
+        <errHi>CRITICAL</errHi>
+        <warnHi>WARNING</warnHi>
+      </MonitorPoint>
+    </Container> <!-- Temperature -->
+</Common>

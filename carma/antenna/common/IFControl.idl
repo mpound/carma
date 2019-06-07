@@ -1,0 +1,91 @@
+/**
+ * @file
+ *
+ * IDL for the carma::antenna::IFControl subsystem interface.
+ *
+ * @author Erik Leitch
+ */
+#ifndef ControlFIDL
+#define ControlFIDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+
+  module antenna {
+
+    module common {
+
+      /**
+       * IFControl nameserver name.
+       */
+      const string IF1_NAME = "IF1";
+      const string IF2_NAME = "IF2";
+
+      /**
+       ** Antenna IF subsystem control
+       */
+      interface  IFControl {
+        /**
+         * Controls the switch to select requested receiver as the IF
+         * input This interface is normally invoked by the higher level
+         * %Receiver interface, but is available here for debugging.
+         * @see RxControl
+         */
+        void selectRx()
+                raises (carma::util::UserException);
+
+        /**
+         * Controls the switch to select requested receiver as the IF
+         * input This interface is normally invoked by the higher level
+         * %Receiver interface, but is available here for debugging.
+         * @param band IF Switch Position (1,2,3 or 4).
+         * @see RxControl
+         */
+        void selectBand( in unsigned short band )
+               raises (carma::util::UserException);
+
+        /**
+         * Set the IF attenuation for this receiver
+         * @param atten Attenuation in dB, range 0-63 in 0.5 dB steps.
+         */
+        void setAtten(in float atten)
+                raises (carma::util::UserException);
+
+        /**
+         * Iterate to a target power [alternative to the setAtten() method] 
+         * @param power level in mW
+         */
+        void setPower(in float power)
+                raises (carma::util::UserException);
+
+        /**
+         * Iterate to a saved target power, without having to know what
+         * that power is.  This command takes as its default target the
+         * power level saved on the last call to saveCurrentPower().
+         */
+        void setPresetPower()
+                raises (carma::util::UserException);
+
+        /**
+         * Reset module.
+         * This performs a software reset of the internal XAC module.
+         */
+        void reset() raises ( carma::util::UserException );
+
+        /**
+         * @todo The AntennaIF module has two additional commands which
+         * have no counterparts in this interface.  These are the 'Query
+         * total power detector' command and the 'Independently set IF
+         * attenuators' command - determine if these should be added here.
+         */
+
+      }; // End IF interface
+
+    }; // End common module
+
+  }; // End antenna module
+
+}; // End carma module
+
+#endif  // ControlFIDL

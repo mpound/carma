@@ -1,0 +1,65 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE dag SYSTEM "blankflag.dtd" [
+	<!ENTITY SCI1 "1">
+	<!ENTITY SCI2 "2">
+	<!ENTITY SLCBANDS "8">
+	<!ENTITY WBCBANDS "16">
+	<!ENTITY SLCINPUTS "15">
+	<!ENTITY WBCINPUTS "8">
+]>
+
+<dag type="blankflag">
+
+	<range var="carmaAntNo" first="1" last="23">
+		<mp canon="(antSubsys:carmaAntNo).AntennaCommon.Drive.state" bit="DRIVE" />
+
+		<mp canon="(antSubsys:carmaAntNo).AntennaCommon.LO.yigState" bit="PHASELOCK">
+			<mp canon="(antSubsys:carmaAntNo).AntennaCommon.LO.loState" bit="PHASELOCK" />
+		</mp>
+	</range>
+
+	<!-- blanking and flagging outputs (astroband numbered) -->
+	<range var="bandNoVar" first="1" last="24">
+		<range var="inputNoVar" first="1" last="32">
+			<bf_output astroband="(bandNoVar)" astroinput="(inputNoVar)">
+
+				<varmap_scope var="antennaNo" canon="SignalPath.Mapping.Astroband(bandNoVar).Input(inputNoVar).antennaNo">
+				<varmap_scope var="corrBandNo" canon="SignalPath.Mapping.Astroband(bandNoVar).Input(inputNoVar).corrBandNo">
+				<varmap_scope var="corrBandInputNo" canon="SignalPath.Mapping.Astroband(bandNoVar).Input(inputNoVar).corrBandInputNo">
+
+
+				<!--
+					 This variable is used during the traversal of the per-antenna state
+					 to choose which subarray transient state(s) to pick.
+				-->
+				<varmap_scope var="corrSubarrayNo" canon="SignalPath.Mapping.Astroband(bandNoVar).subarrayNo">
+
+					<!--
+						 If this antenna is not being controlled by the same subarray as
+						 the correlator band to which it is connected, we must blank it
+						 for the pipeline.
+
+						 This handles the special case where the hardware is all physically wired
+						 together (antenna receiver, switchyard, dcons, correlator) however the
+						 antenna is not being controlled by the same subarray controlling the
+						 correlator. In this case, the antenna may be pointed at a completely
+						 different place on the sky.
+					-->
+					<if canon="Control.Antenna(antennaNo).subarrayNumber" val="(corrSubarrayNo)" negate="true">
+						<bad bit="OFFLINE" />
+					</if>
+
+					<!-- drive system -->
+					<mp_ref canon="(antSubsys:antennaNo).AntennaCommon.Drive.state" />
+
+				</varmap_scope>
+				</varmap_scope>
+				</varmap_scope>
+				</varmap_scope>
+
+			</bf_output>
+		</range>
+	</range>
+
+</dag>
+<!-- vim: set ts=4 sts=4 sw=4 noet: -->

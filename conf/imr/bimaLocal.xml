@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+	<!ENTITY BIN_DIR "/carma/build/bin">
+	<!ENTITY DEFAULT_DIR "/carma/build">
+	<!ENTITY DBMS "useDBMS=false">
+        <!ENTITY TRACE "traceFile=syslog traceLevel=0">
+]>
+
+<!-- @version -->
+<domain>
+ 
+    
+
+    <oad hostname="ain.carma.pvt">
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args="&TRACE; &DBMS;" />
+
+        <server name="controlFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&TRACE; &DBMS; subsystem=control"/>
+
+        <server name="alarmFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; subsystem=alarm"/>
+
+        <server name="Subarray1" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="subarrayNo=1 runSAT=true &TRACE; &DBMS;"
+                system="control" />
+
+	<server name="delayEngineFSP" path="&BIN_DIR;/frameScriberPublisher"
+	        directory="&DEFAULT_DIR;" 
+		args="&TRACE; &DBMS; subsystem=delayEngine"/>
+
+	<server name="phaseMonitorFSP" path="&BIN_DIR;/frameScriberPublisher"
+	        directory="&DEFAULT_DIR;" 
+		args="&TRACE; &DBMS; subsystem=phaseMonitor"/>
+
+    </oad>
+
+    <oad hostname="a1.carma.pvt">
+              
+        <server name="OTa1" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1 emulate=true forcetype=bima" />
+
+        <server name="FSPa1" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; subsystem=bima1" />
+    
+        <server name="THa1" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1" />
+
+        <server name="DMa1" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1" />
+
+        <server name="RMa1" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1" />
+
+        <server name="MHa1" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1" />
+
+        <server name="IFa1" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1" />
+
+        <server name="DRa1" path="&BIN_DIR;/bimaDewarReg"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1 reg=true" />
+
+        <server name="FSPloref" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; subsystem=loref" />
+    
+        <!-- This applies to the 8662 in the 444 lab rack -->
+        <server name="LOref" path="&BIN_DIR;/carmaLORefHost"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; emulate=false synth1_8662=true synth1_gpib=19" />
+
+        <server name="CHa1" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1" />
+    </oad>
+
+</domain>
+    

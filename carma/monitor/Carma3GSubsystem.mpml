@@ -1,0 +1,182 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+<!-- vim: set ts=2 sts=2 sw=2 et: -->
+
+<!-- CARMA3G Spectral correlator band subsystem monitor point definitions -->
+<!-- at present this is a near clone of CARMA subsystem, except digitizer statistics are left out --> 
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<!-- although NUM_C3G_BAND is 8 in the DTD, we need 16 here to cover the full range of possible astrobands -->
+<Subsystem name="Carma3GBand" count="&NUM_C3G_ASTROBANDS;" indexName="band" priority="normal">
+
+  <?common MonitorStats.mpml?>
+  <CommonContainer ref="MonitorSubsystemStats" />
+
+  <?common CorrelatorCommon.mpml?>
+  <?common OnlineCommon.mpml?>
+  <?common CarmaCorrelatorCommon.mpml?>
+  <CommonMonitorPoint ref="online" />
+
+  <!-- a local common scope for CARMA board specific monitor points -->
+  <Common scope="local" author="Marc Pound">
+
+
+    <!-- =================================================================== -->
+    <!-- CARMA3G Digitizer Specific Monitor Points                           -->
+    <!-- =================================================================== -->
+    <!-- none yet -->
+
+  </Common>
+
+  <!-- =================================================================== -->
+  <!-- Band monitor points                                                 -->
+  <!-- =================================================================== -->
+
+  <!-- header -->
+  <CommonMonitorPoint ref="received" />
+  <CommonMonitorPoint ref="timestamp" />
+  <CommonMonitorPoint ref="bandNumber" />
+  <CommonMonitorPoint ref="mode" />
+  <CommonMonitorPoint ref="sourceName" />
+  <CommonMonitorPoint ref="numberOfPhaseSwitchesIntegrated" />
+  <CommonMonitorPoint ref="phaseSwitchPeriod" />
+  <CommonMonitorPoint ref="phaseSwitchIntegrationTime" />
+  <CommonMonitorPoint ref="totalTimeSpan" />
+  <CommonMonitorPoint ref="totalIntegrationTime" />
+  <CommonMonitorPoint ref="bandwidth" />
+  <CommonMonitorPoint ref="centerFrequency" />
+  <CommonMonitorPoint ref="dconFrequency" />
+  <CommonMonitorPoint ref="dconSideband" />
+  <CommonMonitorPoint ref="lobeResidualFrequency" />
+  <CommonMonitorPoint ref="lobeTrackSideband" />
+  <CommonMonitorPoint ref="bdcEnabled" />
+  <CommonMonitorPoint ref="scaling" />
+  <CommonMonitorPoint ref="BitMode" />
+  <CommonMonitorPoint ref="astroBandMode" />
+  <CommonMonitorPoint ref="CorrStatus" />
+  <CommonMonitorPoint ref="corrSeqNo" />
+  <CommonMonitorPoint ref="commandStatusBitPattern" />
+  <CommonMonitorPoint ref="commandStatus" />
+
+  <!-- interpolator samples -->
+  <CommonContainer ref="CorMonitorInterpSamps" name="InterpolatorSamples" count="&NUM_ASTRO_BAND_INPUTS;" />
+
+  <!-- =================================================================== -->
+  <!-- CARMA Correlator Boards                                             -->
+  <!-- =================================================================== -->
+
+  <Container name="Correlator" count="&NUM_CARMA_CORS;">
+    <CommonMonitorPoint ref="received" />
+
+    <!-- header -->
+    <CommonMonitorPoint ref="timestamp" />
+    <CommonMonitorPoint ref="bandNumber" />
+    <CommonMonitorPoint ref="mode" />
+    <CommonMonitorPoint ref="sourceName" />
+    <CommonMonitorPoint ref="numberOfPhaseSwitchesIntegrated" />
+    <CommonMonitorPoint ref="phaseSwitchPeriod" />
+    <CommonMonitorPoint ref="phaseSwitchIntegrationTime" />
+    <CommonMonitorPoint ref="totalTimeSpan" />
+    <CommonMonitorPoint ref="totalIntegrationTime" />
+    <CommonMonitorPoint ref="bandwidth" />
+    <CommonMonitorPoint ref="centerFrequency" />
+    <CommonMonitorPoint ref="dconFrequency" />
+    <CommonMonitorPoint ref="dconSideband" />
+    <CommonMonitorPoint ref="lobeResidualFrequency" />
+    <CommonMonitorPoint ref="lobeTrackSideband" />
+    <CommonMonitorPoint ref="bdcEnabled" />
+    <CommonMonitorPoint ref="scaling" />
+    <CommonMonitorPoint ref="BitMode" />
+    <CommonMonitorPoint ref="astroBandMode" />
+    <CommonMonitorPoint ref="CorrStatus" />
+    <CommonMonitorPoint ref="corrSeqNo" />
+    <CommonMonitorPoint ref="commandStatusBitPattern" />
+    <CommonMonitorPoint ref="commandStatus" />
+
+    <!-- correlator monitor common -->
+    <CommonMonitorPoint ref="boardNumber" />
+    <CommonMonitorPoint ref="slotNumber" />
+    <CommonMonitorPoint ref="boardType" />
+    <CommonMonitorPoint ref="boardRevision" />
+    <CommonMonitorPoint ref="boardSerialNumber" />
+    <CommonMonitorPoint ref="versionDspSoftware" />
+    <CommonMonitorPoint ref="versionSysHdl" />
+    <CommonMonitorPoint ref="versionFpgaHdl" />
+    <CommonMonitorPoint ref="osTaskCounter" />
+    <CommonMonitorPoint ref="osCpuUsage" />
+    <CommonMonitorPoint ref="osLoadAverage" />
+    <CommonMonitorPoint ref="osContextSwitchCounter" />
+    <CommonMonitorPoint ref="osFreeRam" />
+    <CommonMonitorPoint ref="osEccErrors" />
+    <CommonMonitorPoint ref="timeReferenceStatus" />
+    <CommonMonitorPoint ref="phaseReferenceStatus" />
+    <CommonMonitorPoint ref="uptime" />
+
+    <!-- carma monitor common -->
+    <CommonContainer ref="CorrelatorPowerSupply" name="Power" />
+    <CommonContainer ref="CorrelatorTemperature" name="Temperature"/>
+  </Container>
+
+  <!-- =================================================================== -->
+  <!-- CARMA Digitizer Boards                                              -->
+  <!-- =================================================================== -->
+
+  <Container name="Digitizer" count="&NUM_CARMA_DIGS;">
+    <CommonMonitorPoint ref="received" />
+
+    <!-- header -->
+    <CommonMonitorPoint ref="timestamp" />
+    <CommonMonitorPoint ref="bandNumber" />
+    <CommonMonitorPoint ref="mode" />
+    <CommonMonitorPoint ref="sourceName" />
+    <CommonMonitorPoint ref="numberOfPhaseSwitchesIntegrated" />
+    <CommonMonitorPoint ref="phaseSwitchPeriod" />
+    <CommonMonitorPoint ref="phaseSwitchIntegrationTime" />
+    <CommonMonitorPoint ref="totalTimeSpan" />
+    <CommonMonitorPoint ref="totalIntegrationTime" />
+    <CommonMonitorPoint ref="bandwidth" />
+    <CommonMonitorPoint ref="centerFrequency" />
+    <CommonMonitorPoint ref="dconFrequency" />
+    <CommonMonitorPoint ref="dconSideband" />
+    <CommonMonitorPoint ref="lobeResidualFrequency" />
+    <CommonMonitorPoint ref="lobeTrackSideband" />
+    <CommonMonitorPoint ref="bdcEnabled" />
+    <CommonMonitorPoint ref="scaling" />
+    <CommonMonitorPoint ref="BitMode" />
+    <CommonMonitorPoint ref="astroBandMode" />
+    <CommonMonitorPoint ref="CorrStatus" />
+    <CommonMonitorPoint ref="corrSeqNo" />
+    <CommonMonitorPoint ref="commandStatusBitPattern" />
+    <CommonMonitorPoint ref="commandStatus" />
+
+    <!-- correlator monitor common -->
+    <CommonMonitorPoint ref="boardNumber" />
+    <CommonMonitorPoint ref="slotNumber" />
+    <CommonMonitorPoint ref="boardType" />
+    <CommonMonitorPoint ref="boardRevision" />
+    <CommonMonitorPoint ref="boardSerialNumber" />
+    <CommonMonitorPoint ref="versionDspSoftware" />
+    <CommonMonitorPoint ref="versionSysHdl" />
+    <CommonMonitorPoint ref="versionFpgaHdl" />
+    <CommonMonitorPoint ref="osTaskCounter" />
+    <CommonMonitorPoint ref="osCpuUsage" />
+    <CommonMonitorPoint ref="osLoadAverage" />
+    <CommonMonitorPoint ref="osContextSwitchCounter" />
+    <CommonMonitorPoint ref="osFreeRam" />
+    <CommonMonitorPoint ref="osEccErrors" />
+    <CommonMonitorPoint ref="timeReferenceStatus" />
+    <CommonMonitorPoint ref="phaseReferenceStatus" />
+    <CommonMonitorPoint ref="uptime" />
+
+    <!-- carma monitor common -->
+    <CommonContainer ref="CorrelatorPowerSupply" name="Power" />
+    <CommonContainer ref="CorrelatorTemperature" name="Temperature"/>
+
+
+    <!-- digitizer specific -->
+     <!-- nb these are not yet filled in by cobra code for C3G-->
+    <CommonContainer ref="DigitizerStatistics" name="DigA" />
+    <CommonContainer ref="DigitizerStatistics" name="DigB" />
+  </Container>
+
+</Subsystem>

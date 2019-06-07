@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!-- The ENTITY tags below are not required and simply allow for environment
+     variable-like syntax for subsequent tags.  
+     Note that the RUN_DIR (formerly DEFAULT_DIR) should be the directory
+     where applications run from.  If you are using a CARMA build directory
+     (vs. install directory) then this must point to that build directory
+     in order for applications to properly find their libraries!  This is 
+     a common mistake when first using the IMR.
+ -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "/opt/rt/bin">
+        <!ENTITY RUN_DIR "/home/control">
+        <!ENTITY EMULATE "true">
+        <!ENTITY ANT "ovro4">
+]>
+
+<!-- This file is an example XML configuration file for the imrconfig program.
+     The imrconfig program is responsible for reading and parsing this file, 
+     and then registering the CARMA servers defined below with the IMR.  -->
+
+<!-- @version: -->
+<!-- The domain tag defines the root element and encompasses an IMR domain -->
+<domain>
+    <!-- The OAD tag (Object Activation Daemon) specifies which machines are
+     included in the domain (and are running OADs).  OADs are responsible for
+     communicating with the IMR and starting servers.                     -->
+
+        <!-- The server tag defines carma applications (or CORBA services) that
+          will be ran from a particular oad host machine and use the IMR.
+          The name must be unique for the oad but can be anything descriptive.
+          The path attribute is the path name to the executable. The directory
+          tag specifies which directory the executable is ran from. 
+          The args attribute specifies CARMA keywords and values, they should
+          all occur in one attribute.  The optargs attribute specifies 
+          additional parameters which will be appended to the command line 
+          following a double dash.  It should be used for uncommon ORBacus
+          options such as -ORBInitRef NameService=.... type args.  If there
+          are no optional args, you don't need to specify the optarg attribute. 
+          There are several more parameters that can be specified, but for 
+          the most part the defaults suffice.   
+          The first server shows how to use substitution for the entities
+          defined in the DOCTYPE tag at the top of this file. The second
+          server uses hardcoded values. Use of entity substitution will make
+          the file easier to use and modify in most cases as the same values
+          are repeated over and over.   
+        -->
+    <oad hostname="canlab">
+        <server name="WbdcHost" path="&BIN_DIR;/carmaWbdcHost"
+                args="board=0 canbus=0"
+                directory="&RUN_DIR;" >
+        </server>
+        <server name="FrameScriberPublisher" 
+                args="name=wbdc"
+                optargs="-ORBDefaultInitRef corbaloc::acc"
+                path="/opt/rt/bin/frameScriberPublisher" 
+                directory="/home/control" >
+        </server>
+    </oad>
+</domain>

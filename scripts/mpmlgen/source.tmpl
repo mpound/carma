@@ -1,0 +1,733 @@
+#from MPMLUtils import empty, monitorpoint_typename, need_extended_header
+#from MPMLUtils import reference_accessorname, reference_instancename
+#from MPMLUtils import uppercase_first, lowercase_first
+#from MPMLUtils import fix_scope, commonreference_scope
+
+################################################################################
+## Monitor Point
+################################################################################
+
+## Function to get a MonitorPoint ctor initializer
+##
+## This function takes a MonitorPointInternal object and gets the correct
+## constructor initialization element for it.
+#def mp_ctor_init_helper($mp, $accessorname, $instancename, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#set typename = $monitorpoint_typename($mp.name, $mp.type)
+#if $count > 1
+	, ${accessorname}_()
+#else
+	, ${accessorname}_(new ${scope}${typename}("$instancename"))
+#end if
+#end def
+
+#def get_mp_ctor_init($mp)
+#set accessorname = $lowercase_first($mp.name)
+$mp_ctor_init_helper($mp, $accessorname, $mp.name, $mp.count)#slurp
+#end def
+
+#def get_commonmp_ctor_init($reference)
+#set mp = $reference.real_reference_object
+#set accessorname = $reference_accessorname($reference)
+#set instancename = $reference_instancename($reference)
+#set scope = $commonreference_scope($reference)
+$mp_ctor_init_helper($mp, $accessorname, $instancename, $reference.count, $scope)#slurp
+#end def
+
+#def mp_add_helper($mp, $accessorname, $instancename, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#set typename = $monitorpoint_typename($mp.name, $mp.type)
+#if $count > 1
+	for (int i = 0; i < $count; i++) {
+		${accessorname}_.push_back(new ${scope}${typename}(MonitorSubsystem::makeName("$instancename", i + 1)));
+		add(*${accessorname}_[i]);
+	}
+#else
+	add(*${accessorname}_);
+#end if
+#end def
+
+#def get_mp_add($mp)
+#set accessorname = $lowercase_first($mp.name)
+$mp_add_helper($mp, $accessorname, $mp.name, $mp.count)#slurp
+#end def
+
+#def get_commonmp_add($reference)
+#set mp = $reference.real_reference_object
+#set accessorname = $reference_accessorname($reference)
+#set instancename = $reference_instancename($reference)
+#set scope = $commonreference_scope($reference)
+$mp_add_helper($mp, $accessorname, $instancename, $reference.count, $scope)#slurp
+#end def
+
+#def mp_delete_helper($mp, $accessorname, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#if $count > 1
+	for (unsigned int i = 0; i < ${accessorname}_.size(); i++) {
+		delete ${accessorname}_[i];
+	}
+#else
+	delete ${accessorname}_;
+#end if
+#end def
+
+#def get_mp_delete($mp)
+#set accessorname = $lowercase_first($mp.name)
+$mp_delete_helper($mp, $accessorname, $mp.count)#slurp
+#end def
+
+#def get_commonmp_delete($reference)
+#set mp = $reference.real_reference_object
+#set accessorname = $reference_accessorname($reference)
+$mp_delete_helper($mp, $accessorname, $reference.count)#slurp
+#end def
+
+#def mp_local_attributes_helper($mp, $accessorname, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#set typename = $monitorpoint_typename($mp.name, $mp.type)
+#if $count > 1
+#set mpname = '\t' + $accessorname + '_[i]'
+	for (int i = 0; i < $count; i++) {
+#else
+#set mpname = $accessorname + '_'
+#end if
+#if not $empty($mp.shortName)
+	$mpname->setShortName("$mp.shortName");
+#end if
+#if not $empty($mp.longName)
+	$mpname->setLongName("$mp.longName");
+#end if
+#if not $empty($mp.description)
+	$mpname->setDescription("$mp.description");
+#end if
+#if not $empty($mp.units)
+	$mpname->setUnits("$mp.units");
+#end if
+#if not $empty($mp.width)
+	$mpname->setWidth($mp.width);
+#end if
+#if $mp.sampling != 1
+	$mpname->setNumSamples($mp.sampling);
+#end if
+#if not $empty($mp.update)
+	$mpname->setUpdateInterval($mp.update);
+#end if
+#if not $empty($mp.spectrum)
+	$mpname->setTimeSeries(false);
+#end if
+#if not $empty($mp.persistent)
+	$mpname->setPersistent(true);
+#end if
+#if not $empty($mp.priority)
+	$mpname->setArchivePriority($mp.priority);
+#end if
+#if not $empty($mp.precision)
+	$mpname->setPrecision($mp.precision);
+#end if
+## enumerations have a special way of doing this
+#if $mp.type == 'enum'
+#for $lim in $mp.warnHi
+	$mpname->addEnumWarnHighDefault($scope$typename::$lim);
+#end for
+#for $lim in $mp.warnLo
+	$mpname->addEnumWarnLowDefault($scope$typename::$lim);
+#end for
+#for $lim in $mp.errHi
+	$mpname->addEnumErrorHighDefault($scope$typename::$lim);
+#end for
+#for $lim in $mp.errLo
+	$mpname->addEnumErrorLowDefault($scope$typename::$lim);
+#end for
+#else ## not an enumeration
+#for $lim in $mp.warnHi
+	$mpname->setWarnHighDefault($lim);
+#end for
+#for $lim in $mp.warnLo
+	$mpname->setWarnLowDefault($lim);
+#end for
+#for $lim in $mp.errHi
+	$mpname->setErrorHighDefault($lim);
+#end for
+#for $lim in $mp.errLo
+	$mpname->setErrorLowDefault($lim);
+#end for
+#end if
+#if $count > 1
+	}
+#end if
+#end def
+
+#def get_commonmp_local_attributes($reference)
+#set mp = $reference.real_reference_object
+#set accessorname = $reference_accessorname($reference)
+#set scope = $commonreference_scope($reference)
+$mp_local_attributes_helper($mp, $accessorname, $reference.count, $scope)#slurp
+#end def
+
+#def get_mp_local_attributes($mp)
+#set accessorname = $lowercase_first($mp.name)
+$mp_local_attributes_helper($mp, $accessorname, $mp.count)#slurp
+#end def
+
+#def get_mpenum_source($mp, $scope=None)
+#set scope = $fix_scope($scope)
+#if $mp.type != 'enum'
+#return
+#end if
+#set $typename = $monitorpoint_typename($mp.name, $mp.type)
+#set $mycountvar = $mp.name.upper() + '_COUNT'
+#set $enumtype = $mp.name.upper()
+// ---------- $typename ----------
+
+${scope}$typename::${typename}(const std::string& name)
+#if not $empty($mp.bitmask)
+	: MonitorPointEnum(name, $mp.bitmask)
+#else
+	: MonitorPointEnum(name)
+#end if
+{
+	setNumEnumerations($mycountvar);
+}
+
+${scope}$typename::~${typename}() { }
+
+std::string ${scope}$typename::getValueToString(int sampleIndex) const
+{
+	return valueToString(getValue(sampleIndex));
+}
+
+std::string ${scope}$typename::valueToString($enumtype v)
+{
+#if $mp.bitmask == 'true'
+	// more than a single bit set gets a hex value
+	const std::bitset<32> bs(static_cast<unsigned long>(v));
+	if (bs.count() > 1) {
+		std::ostringstream oss;
+		oss << "0x" << std::setw(8) << std::setfill('0') << std::hex << v;
+		return oss.str();
+	}
+
+#end if
+	switch (v) {
+#if $mp.bitmask == 'true'
+	case NONE:
+		return "NONE";
+#end if
+#for $ev in $mp.enums
+	case $ev.name:
+		return "$ev.name";
+#end for
+	default:
+		return "undefined $enumtype";
+	}
+}
+
+std::string ${scope}$typename::getAverageToString() const
+{
+	return valueToString(getAve());
+}
+
+std::string ${scope}$typename::convertToString(int v) const
+{
+	return valueToString(static_cast<$enumtype>(v));
+}
+#end def
+
+################################################################################
+## Helpers for common tasks
+################################################################################
+
+## These routines eliminate the need to copy-paste this sequence several times:
+## once for each top level generated class type
+
+## Get the constructor initialization list for all direct subobjects
+#def get_subobject_ctor_init($obj)
+#for $c in $obj.containers
+$get_container_ctor_init($c)#slurp
+#end for
+#for $mp in $obj.monitorpoints
+$get_mp_ctor_init($mp)#slurp
+#end for
+#for $ref in $obj.commoncontainer_refs
+$get_commoncontainer_ctor_init($ref)#slurp
+#end for
+#for $ref in $obj.commonmonitorpoint_refs
+$get_commonmp_ctor_init($ref)#slurp
+#end for
+#end def
+
+## Get the add function calls for all direct subobjects
+##
+## NOTE: This uses a specially created list which keeps objects in the order
+## NOTE: they appeared in the XML source file. This is required because the
+## NOTE: CARMA infrastructure (primarily RTD) relies on the objects being found
+## NOTE: in this order to create "good looking" displays.
+#def get_subobject_add($obj)
+#for $o in $obj.subobjects_ordered
+#if $o.tag == 'Container'
+$get_container_add($o)#slurp
+#elif $o.tag == 'MonitorPoint'
+$get_mp_add($o)#slurp
+#elif $o.tag == 'CommonContainer'
+$get_commoncontainer_add($o)#slurp
+#elif $o.tag == 'CommonMonitorPoint'
+$get_commonmp_add($o)#slurp
+#else
+#raise RuntimeError('BUG: bad object type in subobjects_ordered list')
+#end if
+#end for
+#end def
+
+## Get the delete function calls for all direct subobjects
+#def get_subobject_delete($obj)
+#if len($obj.containers) > 0
+
+#for $c in $obj.containers
+$get_container_delete($c)#slurp
+#end for
+#end if
+#if len($obj.monitorpoints) > 0
+
+#for $mp in $obj.monitorpoints
+$get_mp_delete($mp)#slurp
+#end for
+#end if
+#if len($obj.commoncontainer_refs) > 0
+
+#for $ref in $obj.commoncontainer_refs
+$get_commoncontainer_delete($ref)#slurp
+#end for
+#end if
+#if len($obj.commonmonitorpoint_refs) > 0
+
+#for $ref in $obj.commonmonitorpoint_refs
+$get_commonmp_delete($ref)#slurp
+#end for
+#end if
+#end def
+
+## Get the MonitorPoint local attributes for all direct subobjects
+#def get_subobject_mp_attributes($obj)
+#if len($obj.monitorpoints) > 0
+
+#for $mp in $obj.monitorpoints
+$get_mp_local_attributes($mp)
+#end for
+#end if
+#if len($obj.commonmonitorpoint_refs) > 0
+
+#for $ref in $obj.commonmonitorpoint_refs
+$get_commonmp_local_attributes($ref)
+#end for
+#end if
+#end def
+
+## Get Local Attributes of a container/subsystem type
+#def get_local_attributes_helper($obj)
+#if not $empty($obj.shortName)
+	setShortName("$obj.shortName");
+#end if
+#if not $empty($obj.longName)
+	setLongName("$obj.longName");
+#end if
+#if not $empty($obj.description)
+	setDescription("$obj.description");
+#end if
+#if not $empty($obj.persistent)
+	setPersistent(true);
+#end if
+#if not $empty($obj.priority)
+	setArchivePriority($obj.priority);
+#end if
+#end def
+
+################################################################################
+## Monitor Container
+################################################################################
+
+#def container_ctor_init_helper($typename, $accessorname, $instancename, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#if $count > 1
+	, ${accessorname}_()
+#else
+#if empty($instancename)
+	, ${accessorname}_(new ${scope}${typename}())
+#else
+	, ${accessorname}_(new ${scope}${typename}("$instancename"))
+#end if
+#end if
+#end def
+
+#def get_container_ctor_init($container)
+#set accessorname = $lowercase_first($container.name)
+$container_ctor_init_helper($container.name, $accessorname, None, $container.count)#slurp
+#end def
+
+#def get_commoncontainer_ctor_init($reference)
+#set typename = $reference.ref
+#set accessorname = $reference_accessorname($reference)
+#set instancename = $reference_instancename($reference)
+#set scope = $commonreference_scope($reference)
+$container_ctor_init_helper($typename, $accessorname, $instancename, $reference.count, $scope)#slurp
+#end def
+
+#def container_add_helper($typename, $accessorname, $instancename, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#if $count > 1
+
+	// instantiate elements of the $typename container array
+	for (int i = 0; i < $count; i++) {
+#if empty($instancename)
+		${accessorname}_.push_back(new ${scope}${typename}(i + 1));
+#else
+		${accessorname}_.push_back(new ${scope}${typename}(i + 1, "$instancename"));
+#end if
+		add(*${accessorname}_[i]);
+	}
+#else
+	add(*${accessorname}_);
+#end if
+#end def
+
+#def get_container_add($container)
+#set accessorname = $lowercase_first($container.name)
+$container_add_helper($container.name, $accessorname, None, $container.count)#slurp
+#end def
+
+#def get_commoncontainer_add($reference)
+#set typename = $reference.ref
+#set accessorname = $reference_accessorname($reference)
+#set instancename = $reference_instancename($reference)
+#set scope = $commonreference_scope($reference)
+$container_add_helper($typename, $accessorname, $instancename, $reference.count, $scope)#slurp
+#end def
+
+#def container_delete_helper($typename, $accessorname, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#if $count > 1
+	for (unsigned int i = 0; i < ${accessorname}_.size(); i++) {
+		delete ${accessorname}_[i];
+	}
+#else
+	delete ${accessorname}_;
+#end if
+#end def
+
+#def get_container_delete($container)
+#set accessorname = $lowercase_first($container.name)
+$container_delete_helper($container.name, $accessorname, $container.count)#slurp
+#end def
+
+#def get_commoncontainer_delete($reference)
+#set typename = $reference.ref
+#set accessorname = $reference_accessorname($reference)
+$container_delete_helper($typename, $accessorname, $reference.count)#slurp
+#end def
+
+#def get_containerext_source($container, $scope=None)
+#set scope = $fix_scope($scope)
+#set classname = $container.name
+#set extendname = $container.name + $container.extendFrom
+#set indexName = $container.indexName
+#set isCommon = $container.isLocalCommon or $container.isGlobalCommon
+#if not $empty($container.extendFrom)
+// ---------- ${classname} ----------
+#if $container.count > 1 or $isCommon is True
+
+${scope}${classname}::${classname}(ushort $indexName, const std::string &name)
+	: ${extendname}($indexName, name)
+{
+}
+#end if
+#if $container.count <= 1 or $isCommon is True
+
+${scope}${classname}::${classname}(const std::string &name)
+	: ${extendname}(name)
+{
+}
+#end if
+
+${scope}${classname}::~${classname}()
+{
+}
+
+// add additional functionality for $classname here
+
+#end if
+## this enables common container subelements to have correct scope
+#if $container.isGlobalCommon is True
+#set scope = $extendname
+#end if
+#for $c in $container.containers
+$get_containerext_source($c, $scope)#slurp
+#end for
+#end def
+
+#def get_container_source($container, $scope=None)
+#set scope = $fix_scope($scope)
+#set indexName = $container.indexName
+#set classname = $container.name + $container.extendFrom
+#set isCommon = $container.isLocalCommon or $container.isGlobalCommon
+// ---------- ${classname} ----------
+#if $container.count > 1 or $isCommon is True
+
+${scope}${classname}::${classname}(ushort $indexName, const std::string &name)
+	: MonitorContainer(MonitorSubsystem::makeName(name, $indexName))
+	, ${indexName}_($indexName)
+$get_subobject_ctor_init($container)#slurp
+{
+$get_subobject_add($container)#slurp
+}
+#end if
+#if $container.count <= 1 or $isCommon is True
+
+${scope}${classname}::${classname}(const std::string &name)
+	: MonitorContainer(name)
+#if $isCommon is True
+	, ${indexName}_(-1)
+#end if
+$get_subobject_ctor_init($container)#slurp
+{
+$get_subobject_add($container)#slurp
+}
+#end if
+
+${scope}${classname}::~${classname}()
+{
+$get_subobject_delete($container)#slurp
+}
+
+void ${scope}${classname}::setLocalMonitorPointAttributes()
+{
+$get_local_attributes_helper($container)#slurp
+$get_subobject_mp_attributes($container)#slurp
+}
+
+## this enables common container subelements to have correct scope
+#if $container.isGlobalCommon is True
+#set scope = $classname
+#end if
+## generate Container classes for the children of this container
+#for $c in $container.containers
+$get_container_source($c, $scope)#slurp
+#end for
+## generate MonitorPointEnum classes for the children of this container
+#for $mp in $container.monitorpoints
+$get_mpenum_source($mp, $scope)#slurp
+#end for
+#end def
+
+################################################################################
+## Subsystem
+################################################################################
+
+#def get_subsystemext_source($subsystem)
+#set include = '#include'
+#set hdrname = os.path.splitext($srcfilename)[0]
+#set basename = $subsystem.name + 'Subsystem'
+#set classname = $subsystem.name + 'Subsystem'
+#set extendname = $subsystem.name + 'Subsystem' + $subsystem.extendFrom
+/**
+ * Implementation for $subsystem.name monitor subsystem.
+ *
+ * This is an auto-generated stub to which a developer may have added
+ * additional implementation manually.
+ *
+ * @author: $subsystem.author
+ *
+#raw
+ * $CarmaCopyright$
+#end raw
+ */
+
+$include <carma/monitor/${hdrname}Ext.h>
+
+using namespace std;
+using namespace carma::monitor;
+using namespace carma::util;
+
+namespace CM = carma::monitor;
+#if not $empty($subsystem.extendFrom)
+
+// ---------- ${classname} ----------
+
+#if $subsystem.count > 1
+${classname}::${classname}(ushort $indexName, SystemFrameBuffer * const buffer)
+	: ${extendname}($indexName, buffer)
+#else
+${classname}::${classname}(SystemFrameBuffer * const buffer)
+	: ${extendname}(buffer)
+#end if
+{
+}
+
+${classname}::~${classname}()
+{
+	if (debug_)
+		std::cout << "${classname} destructor" << std::endl;
+}
+
+// add additional functionality for $classname here
+#end if
+
+#for $c in $subsystem.containers
+$get_containerext_source($c, $extendname)
+#end for
+#end def
+
+## Generate the source code for a subsystem
+#def get_subsystem_source($subsystem)
+#set include = '#include'
+#set hdrname = os.path.splitext($srcfilename)[0]
+#set basename = $subsystem.name + 'Subsystem'
+#set classname = $subsystem.name + 'Subsystem' + $subsystem.extendFrom
+#set indexName = $subsystem.indexName
+/**
+ * Warning: this code has been generated by $generator, do not edit
+ *
+ * Implementation for $subsystem.name monitor subsystem.
+ *
+ * @author: $subsystem.author
+ *
+#raw
+ * $CarmaCopyright$
+#end raw
+ */
+
+$include <carma/monitor/${hdrname}.h>
+#if $need_extended_header($subsystem)
+$include <carma/monitor/${hdrname}Ext.h>
+#end if
+
+$include <iostream>
+$include <iomanip>
+$include <bitset>
+
+using namespace std;
+using namespace carma::monitor;
+using namespace carma::util;
+
+namespace CM = carma::monitor;
+
+const long ${classname}::MAX_MONITOR_POINTS;
+const long ${classname}::MAX_SAMPLES;
+const long ${classname}::COUNT;
+
+// ---------- ${classname} ----------
+
+#if $subsystem.count > 1
+${classname}::${classname}(ushort $indexName, SystemFrameBuffer * const buffer)
+	: MonitorSubsystem(MonitorSubsystem::makeName("$subsystem.name", $indexName), buffer, $classname::MAX_MONITOR_POINTS, $classname::MAX_SAMPLES)
+	, ${indexName}_($indexName)
+#else
+${classname}::${classname}(SystemFrameBuffer * const buffer)
+	: MonitorSubsystem(std::string("$subsystem.name"), buffer, $classname::MAX_MONITOR_POINTS, $classname::MAX_SAMPLES)
+#end if
+$get_subobject_ctor_init($subsystem)#slurp
+{
+$get_subobject_add($subsystem)#slurp
+
+	// now configure the memory
+	configure();
+}
+
+${classname}::~${classname}()
+{
+	if (debug_)
+		std::cout << "${classname} destructor" << std::endl;
+$get_subobject_delete($subsystem)#slurp
+}
+
+void $classname::createHierarchy() { }
+
+void $classname::setLocalMonitorPointAttributes()
+{
+$get_local_attributes_helper($subsystem)#slurp
+$get_subobject_mp_attributes($subsystem)#slurp
+}
+
+## generate Container classes for the children of this subsystem
+#for $c in $subsystem.containers
+$get_container_source($c, $classname)#slurp
+#end for
+## generate MonitorPointEnum classes for the children of this subsystem
+#for $mp in $subsystem.monitorpoints
+$get_mpenum_source($mp, $classname)#slurp
+#end for
+## generate locally re-usable classes for the commons in the subsystem
+#for $common in $subsystem.commons
+#for $c in $common.containers
+$get_container_source($c, $classname)#slurp
+#end for
+#for $mp in $common.monitorpoints
+$get_mpenum_source($mp, $classname)#slurp
+#end for
+#end for
+#end def
+
+################################################################################
+## Common Template
+################################################################################
+
+#def get_commonext_source($common)
+#set include = '#include'
+#set hdrname = os.path.splitext($srcfilename)[0]
+/**
+ * Semi hand-forged extentions to common auto-generated classes. This file
+ * was originally created by $generator, then modified manually by the author.
+ *
+ * @author: $common.author
+ *
+#raw
+ * $CarmaCopyright$
+#end raw
+ */
+
+$include <carma/monitor/${hdrname}Ext.h>
+
+using namespace std;
+using namespace carma::monitor;
+using namespace carma::util;
+
+#for $c in $common.containers
+$get_containerext_source($c, None)#slurp
+#end for
+#end def
+
+#def get_common_source($common)
+#set include = '#include'
+#set hdrname = os.path.splitext($srcfilename)[0]
+/**
+ * Warning: this code has been generated by $generator, do not edit
+ *
+ * Implementation for common container and monitor point types.
+ *
+ * @author: $common.author
+ *
+#raw
+ * $CarmaCopyright$
+#end raw
+ */
+
+$include <carma/monitor/${hdrname}.h>
+#if $need_extended_header($common)
+$include <carma/monitor/${hdrname}Ext.h>
+#end if
+$include <iostream>
+$include <iomanip>
+$include <bitset>
+
+using namespace std;
+using namespace carma::monitor;
+using namespace carma::util;
+
+#for $c in $common.containers
+$get_container_source($c, None)#slurp
+#end for
+
+#for $mp in $common.monitorpoints
+$get_mpenum_source($mp, None)#slurp
+#end for
+#end def
+
+## vim: set ts=4 sts=4 sw=4 noet:

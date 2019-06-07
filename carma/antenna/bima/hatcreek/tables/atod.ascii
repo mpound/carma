@@ -1,0 +1,114 @@
+
+	THE A/D ADDRESS ASSIGNMENTS FOR TDUMP (file: $HATTABS/atod.ascii)
+
+ INDEX   ant 4-9  ant 1-3      Name             Location
+  1000	   80	   	       +15 mon		IF plate
+  1001	   C0	   	       +5 mon		IF plate
+  1002	   A0	   	       -15 mon		IF plate
+  1003	   E8	   	       He return	He manifold
+  1004	   C8	   	       He supply	He manifold
+  1005	   B2	   d6	       Iheater		dewar control
+  1006	   72	   	       Imxr A		dewar control
+  1007	  100	   82	       Lband IF lev	rcvr mon panel
+  1008	   E0	   86	       Lband err V	rcvr mon panel
+  1009	  118	   d8	       T 2nd IF 	IF plate
+  1010	  12A	   84	       T VME		VME chassis
+  1011	  130	   	       T ad		LO plate AD
+  1012	   8A	   d4	       T amb		cal/pol
+  1013	   98	   	       T bc		LO plate BC
+  1014	   9C	   	       T bp/bs		IF plate
+  1015	  124	   72	       T gas disch	He compressor
+  1016	   7C	   	       T harm gen	IF plate
+  1017	   88	   	       T heat exch	He compressor
+  1018	   AA	   	       T hot		cal/pol
+  1019	  104	   78	       T inlet air	He compressor
+  1020	   A8	   	       T oil sump	He compressor
+  1021	   F8	   d2	       T plate		IF plate
+  1022	   8C	   80	       T water in	water flometer
+  1023	   AC	   	       T water out	water flometer
+  1024	  116	   	       T1 		east leg
+  1025	  136	   	       T2		north leg
+  1026	   7A	   	       T3		therm fanout 1
+  1027	   9A	   	       T4		west leg
+  1028	   BA	   	       T5		conduit top
+  1029	   DA	   	       T6		conduit mid
+  1030	   FA	   	       T7		conduit bot
+  1031	  11A	   	       T8		Secondary
+  1032	   7E	   	       T9		therm fanout 1
+  1033	   9E	   	       T10		therm fanout 1
+  1034	   BE	   	       T11		therm fanout 1
+  1035	   DE	   	       T12		therm fanout 1
+  1036	   FE	   	       T13		therm fanout 2
+  1037	  11E	   	       T14		therm fanout 2
+  1038	   82	   	       T15		therm fanout 2
+  1039	   A2	   	       T16		therm fanout 2
+  1040	   C2	   	       T17		therm fanout 2
+  1041	   E2	   	       T18		therm fanout 2
+  1042	  102	   	       T19		therm fanout 2
+  1043	  122	   	       T20		therm fanout 2
+  1044	   86	   	       T21		therm fanout 2
+  1045	   A6	   	       T22		therm fanout 2
+  1046	   C6	   	       T23		therm fanout 2
+  1047	   E6	   	       T24		therm fanout 2
+  1048	  112	   ca	       V schottky	dewar control
+  1049	   92	   	       VmxrA		dewar control
+  1050	   74	   	       Vop A		LO plate AD
+  1051	   B8	   da	       Vop B		LO plate BC
+  1052	   D8	   	       Vop C		LO plate BC
+  1053	   B0	   	       atten A		LO plate AD
+  1054	   F4	   c0	       atten B		LO plate BC
+  1055	   78	   	       atten C		LO plate BC
+  1056	  110	   	       atten D		LO plate AD
+  1057	  106	   	       calib		cal/pol
+  1058	  11C	   	       echo level mon	IF plate
+  1059	   CC	   76	       extra 1		P extra 1
+  1060	   EC	   7a	       extra 2		P extra 1
+  1061	  10C	   7e	       extra 3		P extra 1
+  1062	  12C	   dc	       extra 4		P extra 1
+  1063	   CE	   de	       extra 5		P extra 2
+  1064	   EE	   	       extra 6		P extra 2
+  1065	  10E	   	       extra 7		P extra 2
+  1066	  12E	   	       extra 8		P extra 2
+  1067	  128	   	       flowrate 	water flometer
+  1068	   C4	   88	       mm IF lev	rcvr mon panel
+  1069	   A4	   8c	       mm err V 	rcvr mon panel
+  1070	   FC	   	       mm lp gain mon	IF plate
+  1071	   90	   	       mmbck A		LO plate AD
+  1072	   D4	   c4	       mmbck B		LO plate BC
+  1073	  134	   	       mmbck C		LO plate BC
+  1074	   70	   	       mmosc A		LO plate AD
+  1075	   B4	   c8	       mmosc B		LO plate BC
+  1076	  114	   c6	       mmosc C		LO plate BC
+  1077	   CA	   	       mod A Imon	VME chassis
+  1078	   EA	   	       mod B Imon	VME chassis
+  1079	  10A	   	       mon C Imon	VME chassis
+  1080	   DC	   d6	       plate htr mon	IF plate
+  1081	  126	   	       pol		cal/pol
+  1082	   96	   cc	       sensor 1 	dewar control
+  1083	   B6	   ce	       sensor 2 	dewar control
+  1084	   D6	   	       sensor 3 	dewar control
+  1085	   F6	   	       sensor 4 	dewar control
+  1086	   D2	   	       sensor 5		dewar control
+  1087	   F2	   	       sensor 6		dewar control
+  1088	   D0	   	       spare 1		LO plate AD
+  1089	   76	   	       spare 1          dewar control
+  1090	   F0	   	       spare 2		LO plate AD
+  1091	  132	   	       spare 2		dewar control
+  1092	   8E	   72	       tilt 1		tiltmeter 1
+  1093	   AE	   	       tilt 2		tiltmeter 2
+  1094	   E4	   d0	       totpwr		rcvr mon panel
+  1095	   94	   	       tripler		LO plate AD
+  1096	  108	   	       vac gauge	He manifold
+  1097	   84	   82	       xband IF lev	rcvr mon panel
+  1098	  120	   8e	       xband err V	rcvr mon panel
+  1099	   BC	   	       xband tune mon	IF plate
+  1100             70          Subreflt1 in/out ant 1
+  1101             74          Subreflt1 up/dwn ant 1
+  1102             c2          Cavity B		ant 1 & 3
+  1103                         YIG mon		no known use
+  1104             D4          T_upper		ant 3 only - upper cabin air temp
+  1105             F6          mxrbck_b         ant 3 only - resolver readout
+  1106     08                  totpwr           quad v/f slot 1
+  1107     0A                  sensor 2         quad v/f slot 2
+  1108     0C                  sensor 4         quad v/f slot 3
+  1109     0E                  imxrvf           quad v/f slot 4         

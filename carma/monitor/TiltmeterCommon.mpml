@@ -1,0 +1,279 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global">
+
+<?common CanbusCommon.mpml?>
+
+<Container name="TiltmeterModule" >
+
+    <CommonMonitorPoint ref="state" />
+
+    <!-- Tiltmeter Blanking Frame Monitor Packet 1  -->
+    <MonitorPoint name="lrTilt" type="float">
+        <shortName>LR Tilt</shortName>
+        <longName>Left Right Tilt</longName>
+        <precision>3</precision>
+        <units>arcmin</units>
+        <description>
+            Tilt of the telescope perpendicular to the elevation axis
+            (tilt to the right is positive).  Also known as the X axis.
+            This is a raw value without zero subtraction.
+        </description>
+        <errHi>1.0</errHi>
+        <warnHi>0.5</warnHi>
+        <warnLo>-0.5</warnLo>
+        <errLo>-1.0</errLo>
+    </MonitorPoint>
+
+    <MonitorPoint name="afTilt" type="float">
+        <shortName>AF Tilt</shortName>
+        <longName>Aft Forward Tilt</longName>
+        <precision>3</precision>
+        <units>arcmin</units>
+        <description>
+            Tilt of the telescope perpendicular to the elevation direction
+            (forward tilt is positive). Also know as the Y axis.
+            This is a raw value without zero subtraction.
+        </description>
+        <errHi>1.0</errHi>
+        <warnHi>0.5</warnHi>
+        <warnLo>-0.5</warnLo>
+        <errLo>-1.0</errLo>
+    </MonitorPoint>
+
+    <MonitorPoint name="modTemp" type="float">
+        <shortName>ModTemp</shortName>
+        <longName>Module Temperature</longName>
+        <units>C</units>
+        <description>Module temperature</description>
+    </MonitorPoint>
+
+    <!-- Tiltmeter Blanking Frame Monitor Packet 2  -->
+    <MonitorPoint name="tiltTemp" type="float">
+        <shortName>Tilt Temp</shortName>
+        <longName>Tiltmeter Temperature</longName>
+        <units>C</units>
+        <description>Temperature of the tiltmeter</description>
+    </MonitorPoint>
+
+    <MonitorPoint name="structTemp" type="float">
+        <shortName>Struct Temp</shortName>
+        <longName>Structure Temperature</longName>
+        <units>C</units>
+        <description>Temperature of the structure</description>
+    </MonitorPoint>
+
+    <MonitorPoint name="heaterVoltage" type="float">
+        <shortName>HeatVoltage</shortName>
+        <longName>Heater voltage</longName>
+        <description>Voltage of the heater</description>
+        <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="heaterCurrent" type="float">
+        <shortName>Heat Current</shortName>
+        <longName>Heater Current</longName>
+        <description>Current of the heater</description>
+        <units>A</units>
+    </MonitorPoint>
+
+    <!-- Tiltmeter Blanking Frame Monitor Packet 3  -->
+    <MonitorPoint name="loopState" type="enum">
+        <shortName>Loop State</shortName>
+        <longName>Temp Loop State</longName>
+        <description>Temperature control feedback loop state</description>
+        <enum name="HEATER_OFF"/>
+        <enum name="NOMINAL">
+            <description>Loop error is less than 0.1C</description>
+        </enum>
+        <enum name="HI_BAD_RANGE">
+            <description>
+                Temperature too high, heater out of range.
+            </description>
+        </enum>
+        <enum name="HI_OK_RANGE">
+            <description>
+                Temperature too high, heater in range.
+            </description>
+        </enum>
+        <enum name="LO_BAD_RANGE">
+            <description>
+                Temperature too low, heater out of range.
+            </description>
+        </enum>
+        <enum name="LO_OK_RANGE">
+            <description>
+                Temperature too low, heater in range.
+            </description>
+        </enum>
+        <enum name="MANUAL_PWM">
+            <description>
+                Manual Pulse Width Modulation (PWM) mode.
+            </description>
+        </enum>
+    </MonitorPoint>
+
+    <MonitorPoint name="maxPowerFrac" type="float">
+        <shortName>Frac Max Power</shortName>
+        <longName>Fraction Max Power</longName>
+        <description>Fraction of maximum power</description>
+        <units>%</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="tempDiff" type="float">
+        <shortName>Temp Diff</shortName>
+        <longName>Temperature Difference</longName>
+        <description>Temperature difference between set point and actual
+            temperature </description>
+        <units>K</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="integDiff" type="float">
+        <shortName>Integ Diff</shortName>
+        <longName>Integrated Temperature Difference</longName>
+        <description>
+            Integrated temperature difference between set point and
+            actual temperature
+        </description>
+        <units>K s</units>
+    </MonitorPoint>
+
+    <!-- Tiltmeter Blanking Frame Monitor Packet 4  -->
+    <MonitorPoint name="loopGain" type="float">
+        <shortName>Loop Gain</shortName>
+        <longName>Loop gain</longName>
+        <units>%MaxPower/K</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="loopIntegGain" type="float">
+        <shortName>Loop Integ Gain</shortName>
+        <longName>Loop Integration Gain</longName>
+        <description>Loop gain for integrator</description>
+        <units>%MaxPower x K/S</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="loopDiffGain" type="float">
+        <shortName>Loop Diff Gain</shortName>
+        <longName>Loop Difference Gain</longName>
+        <description>Loop rate constant</description>
+        <units>%MaxPower x S/K</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="loopBandwidth" type="float">
+        <shortName>Loop Bandwidth</shortName>
+        <longName>Loop Bandwidth</longName>
+        <units>Hz</units>
+    </MonitorPoint>
+
+    <!-- Tiltmeter Blanking Frame Monitor Packet 5  -->
+    <MonitorPoint name="ps24v" type="float">
+        <shortName>+24V</shortName>
+        <longName>+24 V Power Supply Voltage</longName>
+        <warnLo>20.0</warnLo>
+        <warnHi>28.0</warnHi>
+        <errLo>18.0</errLo>
+        <errHi>30.0</errHi>
+        <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="psTiltPos12v" type="float">
+        <shortName>+12V (tilt)</shortName>
+        <longName>Tiltmeter Positive 12V Power Supply Voltage</longName>
+        <units>V</units>
+        <warnLo>11.5</warnLo>
+        <warnHi>12.5</warnHi>
+        <errLo>11.0</errLo>
+        <errHi>13.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="psTiltNeg12v" type="float">
+        <shortName>-12V (tilt)</shortName>
+        <longName>Tiltmeter Negative 12 V Power Supply Voltage</longName>
+        <units>V</units>
+        <warnLo>-12.5</warnLo>
+        <warnHi>-11.5</warnHi>
+        <errLo>-13.0</errLo>
+        <errHi>-11.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="psTilt5v" type="float">
+        <shortName>+5V (tilt)</shortName>
+        <longName>Tiltmeter Positive 5 V Power Supply Voltage</longName>
+        <units>V</units>
+        <warnLo>4.85</warnLo>
+        <warnHi>5.15</warnHi>
+        <errLo>4.75</errLo>
+        <errHi>5.25</errHi>
+    </MonitorPoint>
+
+    <!-- Tiltmeter Blanking Frame Monitor Packet 6  -->
+    <MonitorPoint name="psThermPos12v" type="float">
+        <shortName>+12V (therm)</shortName>
+        <longName>Thermal Control +12V Power Supply Voltage</longName>
+        <units>V</units>
+        <warnLo>11.5</warnLo>
+        <warnHi>12.5</warnHi>
+        <errLo>11.0</errLo>
+        <errHi>13.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="psThermNeg12v" type="float">
+        <shortName>-12V (therm)</shortName>
+        <longName>Thermal Control -12V Power Supply Voltage</longName>
+        <units>V</units>
+        <warnLo>-12.5</warnLo>
+        <warnHi>-11.5</warnHi>
+        <errLo>-13.0</errLo>
+        <errHi>-11.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="psTherm5v" type="float">
+        <shortName>+5V (therm)</shortName>
+        <longName>Thermal Control 5V Power Supply Voltage</longName>
+        <units>V</units>
+        <warnLo>4.85</warnLo>
+        <warnHi>5.15</warnHi>
+        <errLo>4.75</errLo>
+        <errHi>5.25</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="teepeeTemp" type="float">
+        <shortName>Teepee Temp</shortName>
+        <longName>Teepee Temperature</longName>
+        <description>
+            Temperature in the teepee.
+        </description>
+        <units>C</units>
+    </MonitorPoint>
+
+    <CommonContainer ref="Xac" />
+
+    <!-- Additional tiltmeter monitor points -->
+    <MonitorPoint name="tiltMag" type="float">
+        <shortName>Tilt Mag</shortName>
+        <longName>Tilt Magnitude</longName>
+        <description>
+            Inclination of the azimuth axis from vertical.
+            Computed from tiltmeter readings with zeros removed.
+        </description>
+        <precision>2</precision>
+        <units>arcmin</units>
+        <warnHi>0.5</warnHi>
+        <errHi>1.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="tiltDirection" type="float">
+        <shortName>Tilt Dir</shortName>
+        <longName>Tilt Direction</longName>
+        <description>
+            Direction of inclination of the azimuth axis from vertical, 0=north. 
+            Computed from tiltmeter readings with zeros removed.
+        </description>
+        <precision>0</precision>
+        <units>deg</units>
+    </MonitorPoint>
+
+</Container>
+</Common>
+

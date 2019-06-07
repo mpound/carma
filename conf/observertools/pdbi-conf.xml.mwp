@@ -1,0 +1,95 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+
+<!-- <!DOCTYPE Carma:xml-config> -->
+
+<Carma:xml-config xmlns:Carma = "http://www.mmarray.org"> 
+
+  
+	<!-- Specific Configuration Information for PDBI -->
+	  
+	<Carma:pdbi>    
+		<!-- List of machines which serve as NameServices where
+         CORBA objects are registered -->
+		    
+		<Carma:nameServers>      
+			<Carma:nameServer>        
+				<Carma:identifier>localhost</Carma:identifier>      
+			</Carma:nameServer>
+			<Carma:nameServer>        
+				<Carma:identifier>corba.carma.pvt</Carma:identifier>      
+			</Carma:nameServer>
+			<Carma:nameServer>        
+				<Carma:identifier>labacc.correlator.pvt</Carma:identifier>
+			</Carma:nameServer>      
+			<Carma:nameServer>        
+				<Carma:identifier>inyo.ovro.caltech.edu</Carma:identifier>
+			</Carma:nameServer>      
+			<Carma:nameServer>        
+				<Carma:identifier>cdvserv.ncsa.uiuc.edu</Carma:identifier>
+			</Carma:nameServer>    
+			<Carma:nameServer>        
+				<Carma:identifier>bima2.astro.uiuc.edu</Carma:identifier>      
+			</Carma:nameServer>      
+			<Carma:nameServer>        
+				<Carma:identifier>birch</Carma:identifier>      
+			</Carma:nameServer>      
+			<Carma:nameServer>        
+				<Carma:identifier>bear.ovro.caltech.edu</Carma:identifier>
+			</Carma:nameServer>      
+			<Carma:nameServer>        
+				<Carma:identifier>lupus.astro.umd.edu</Carma:identifier>      
+			</Carma:nameServer>    
+			<Carma:nameServer>        
+				<Carma:identifier>desk3.ovro.caltech.edu</Carma:identifier>  
+			</Carma:nameServer>
+
+		</Carma:nameServers>    
+		<Carma:nameServerPorts>      
+			<Carma:nameServerPort>        
+				<Carma:pidentifier>20000</Carma:pidentifier>      
+			</Carma:nameServerPort>    
+			<Carma:nameServerPort>        
+				<Carma:pidentifier>4000</Carma:pidentifier>      
+			</Carma:nameServerPort>    
+		</Carma:nameServerPorts>
+		<!-- Initial Look And Feel for the Application -->
+		    
+		<!--<Carma:LookAndFeel>com.sun.java.swing.plaf.motif.MotifLookAndFeel </Carma:LookAndFeel>    -->
+		<!-- Initial cache size for ObsRecord quantities -->
+		<Carma:CacheSize>64</Carma:CacheSize>    
+		<!-- Initial NameComponent to start -->
+		<Carma:NameComponent start = "1">      
+			<Carma:item id = "carma" kind = ""/>      
+		</Carma:NameComponent>    
+		<!-- Additional Properties for ORB -->
+		    
+		<Carma:properties>      
+			<Carma:prop key = "org.omg.CORBA.ORBClass" value = "com.ooc.CORBA.ORB"/>      
+			<Carma:prop key = "org.omg.CORBA.ORBSingletonClass" value = "com.ooc.CORBA.ORBSingleton"/>      
+			<Carma:prop key = "ooc.orb.service.NameService" value = "corbaloc::localhost:20000/NameService"/>      
+			<Carma:prop key = "ooc.orb.service.EventService" value = "corbaloc::localhost:4001/DefaultEventChannel"/>      
+			<Carma:prop key = "ooc.orb.service.EventChannelFactory" value = "corbaloc::localhost:4001/DefaultEventChannelFactory"/>    
+		</Carma:properties>
+		<Carma:scriptDirectory>/tmp</Carma:scriptDirectory>
+		<Carma:webDirectory>/tmp/summary.txt</Carma:webDirectory>
+		    
+	</Carma:pdbi>  
+	<!-- Specific Configuration Information for Event Servers -->
+	  
+	<Carma:server>    
+		<!-- List of machines which serve as EventServers where
+         CORBA Event Channels are running -->
+		    
+		<Carma:eventServers>      
+			<Carma:eventServer>        
+				<!--<Carma:identifier>inyo.ovro.caltech.edu</Carma:identifier>      -->
+				<Carma:identifier>localhost</Carma:identifier>
+			</Carma:eventServer>    
+		</Carma:eventServers>    
+		<Carma:eventServerPorts>      
+			<Carma:eventServerPort>        
+				<Carma:pidentifier>4001</Carma:pidentifier>      
+			</Carma:eventServerPort>    
+		</Carma:eventServerPorts>    
+	</Carma:server>
+</Carma:xml-config>

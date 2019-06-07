@@ -1,0 +1,59 @@
+lib_libcarmaSzaAntennaControl_la = lib/libcarmaSzaAntennaControl.la
+
+lib_LTLIBRARIES += $(lib_libcarmaSzaAntennaControl_la)
+
+lib_libcarmaSzaAntennaControl_la_SOURCES = \
+	carma/antenna/sza/antenna/control/AntennaControl.cc \
+	carma/antenna/sza/antenna/control/AntennaDrive.cc \
+	carma/antenna/sza/antenna/control/AntennaMaster.cc \
+	carma/antenna/sza/antenna/control/AntennaMonitor.cc \
+	carma/antenna/sza/antenna/control/AntennaRx.cc \
+	carma/antenna/sza/antenna/control/AntNetCmdForwarder.cc \
+	carma/antenna/sza/antenna/control/Atmosphere.cc \
+	carma/antenna/sza/antenna/control/Axis.cc \
+	carma/antenna/sza/antenna/control/AxisPos.cc \
+	carma/antenna/sza/antenna/control/AxisPositions.cc \
+	carma/antenna/sza/antenna/control/AzTilt.cc \
+	carma/antenna/sza/antenna/control/Board.cc \
+	carma/antenna/sza/antenna/control/CameraBoard.cc \
+	carma/antenna/sza/antenna/control/Collimation.cc \
+	carma/antenna/sza/antenna/control/DataType.cc \
+	carma/antenna/sza/antenna/control/Date.cc \
+	carma/antenna/sza/antenna/control/ElTilt.cc \
+	carma/antenna/sza/antenna/control/Encoder.cc \
+	carma/antenna/sza/antenna/control/EquatOffset.cc \
+	carma/antenna/sza/antenna/control/Flexure.cc \
+	carma/antenna/sza/antenna/control/FrameBoard.cc \
+	carma/antenna/sza/antenna/control/GpsBoard.cc \
+	carma/antenna/sza/antenna/control/Model.cc \
+	carma/antenna/sza/antenna/control/MountOffset.cc \
+	carma/antenna/sza/antenna/control/MsgOperators.cc \
+	carma/antenna/sza/antenna/control/OffsetBase.cc \
+	carma/antenna/sza/antenna/control/PmacAxis.cc \
+	carma/antenna/sza/antenna/control/PmacBoard.cc \
+	carma/antenna/sza/antenna/control/PmacCommand.cc \
+	carma/antenna/sza/antenna/control/PmacComms.cc \
+	carma/antenna/sza/antenna/control/PmacTarget.cc \
+	carma/antenna/sza/antenna/control/Pointing.cc \
+	carma/antenna/sza/antenna/control/PointingCorrections.cc \
+	carma/antenna/sza/antenna/control/PolarEncoderPos.cc \
+	carma/antenna/sza/antenna/control/Position.cc \
+	carma/antenna/sza/antenna/control/QuadShiftBoard.cc \
+	carma/antenna/sza/antenna/control/Refraction.cc \
+	carma/antenna/sza/antenna/control/Scanner.cc \
+	carma/antenna/sza/antenna/control/Site.cc \
+	carma/antenna/sza/antenna/control/SkyOffset.cc \
+	carma/antenna/sza/antenna/control/SlowWalsh.cc \
+	carma/antenna/sza/antenna/control/SzaShare.cc \
+	carma/antenna/sza/antenna/control/SzaTask.cc \
+	carma/antenna/sza/antenna/control/TrackerBoard.cc \
+	carma/antenna/sza/antenna/control/Tracker.cc \
+	carma/antenna/sza/antenna/control/TrackerOffset.cc \
+	carma/antenna/sza/antenna/control/TvOffset.cc \
+	carma/antenna/sza/antenna/control/UmacControl.cc
+
+lib_libcarmaSzaAntennaControl_la_CXXFLAGS = -fPIC
+
+lib_libcarmaSzaAntennaControl_la_CPPFLAGS = $(AM_CPPFLAGS) -DTOP="\"$(TOP)"\" -D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 -DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 -DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0 -DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated
+
+lib_libcarmaSzaAntennaControl_la_LIBADD = $(lib_libcarmaSzaAntennaCanbus_la)

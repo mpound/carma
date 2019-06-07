@@ -1,0 +1,48 @@
+# Place this file in /etc/udev/rules.d 
+# audio devices
+KERNEL=="dsp*",			MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="audio*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="midi*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="mixer*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="sequencer*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="sound/*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="snd/*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="beep",			MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="admm*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="adsp*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="aload*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="amidi*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="dmfm*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="dmmidi*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="sndstat",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+
+# alsa devices
+KERNEL=="controlC[0-9]*",	MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="hw[CD0-9]*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="pcm[CD0-9cp]*",	MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="midi[CD0-9]*",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="timer",		MODE="0660",GROUP="prgrmrs",OWNER="control"
+KERNEL=="seq",			MODE="0660",GROUP="prgrmrs",OWNER="control"
+
+# Udev rules specific to device attached to ports on the keyspan hub on environment.carma.pvt
+DRIVER=="keyspan_4", SYSFS{port_number}=="0", SYMLINK+="keyspan/port1"
+DRIVER=="keyspan_4", SYSFS{port_number}=="1", SYMLINK+="keyspan/port2"
+DRIVER=="keyspan_4", SYSFS{port_number}=="2", SYMLINK+="keyspan/port3"
+DRIVER=="keyspan_4", SYSFS{port_number}=="3", SYMLINK+="keyspan/port4"
+
+# Rename devices on the SYBA 6x serial port card (environment.carma.pvt)
+#
+# The silkscreened labels are in a funny order:
+# SILKSCREEN LABEL		DEVICE NODE		PURPOSE
+# 1				/dev/ttyS4		weather station
+# 2				/dev/ttyS5		dew point sensor
+# 3				/dev/ttyS6		phase monitor
+# 4				/dev/ttyS7		tipper
+# 5				/dev/ttyS2		unused
+# 6				/dev/ttyS3		unused
+SYSFS{vendor}=="0x9710", SYSFS{device}=="0x9865", KERNEL=="ttyS2", SYMLINK+="syba/port5"
+SYSFS{vendor}=="0x9710", SYSFS{device}=="0x9865", KERNEL=="ttyS3", SYMLINK+="syba/port6"
+SYSFS{vendor}=="0x9710", SYSFS{device}=="0x9865", KERNEL=="ttyS4", SYMLINK+="syba/port1"
+SYSFS{vendor}=="0x9710", SYSFS{device}=="0x9865", KERNEL=="ttyS5", SYMLINK+="syba/port2"
+SYSFS{vendor}=="0x9710", SYSFS{device}=="0x9865", KERNEL=="ttyS6", SYMLINK+="syba/port3"
+SYSFS{vendor}=="0x9710", SYSFS{device}=="0x9865", KERNEL=="ttyS7", SYMLINK+="syba/port4"

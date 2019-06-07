@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+# Handle the hotplug of a CARMA board PCINet ethernet device
+#
+# This waits for the correct ethernet bridge to appear,
+# then adds the device to the bridge
+#
+# This should be called via udev, with a rule similar to:
+# ACTION=="add", KERNEL=="eth*", SYSFS{mtu}=="65522", SUBSYSTEM="net", RUN+="scripts/pcinet-dev-setup"
+#
+
+IP="/sbin/ip"
+BRCTL="/usr/sbin/brctl"
+IFCONFIG="/sbin/ifconfig"
+
+# The bridge to use.
+# This should be set appropriately for the desired mode.
+#
+# br0 -- simple mode
+# br1 -- fast mode
+BRIDGE="br0"
+
+stderr() {
+	echo -e "$@" >&2
+	logger -t "udev" "$0: $@"
+}
+
+netdev_exists() {
+	if $IP link show "$@" &>/dev/null ; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+if [[ -z $INTERFACE ]]; then
+	stderr "ethernet interface not in environment"
+	exit 1
+fi
+
+if [[ $ACTION = "add" ]]; then
+	# Wait for the bridge to appear
+	for i in `seq 60`; do
+		if netdev_exists "$BRIDGE" ; then
+			break
+		fi
+
+		stderr "waiting for bridge $BRIDGE"
+		sleep 1
+	done
+
+	if ! netdev_exists "$BRIDGE" ; then
+		stderr "ERROR: bridge $BRIDGE never became available"
+		exit 1
+	fi
+
+	$BRCTL addif "$BRIDGE" "$INTERFACE"
+	$IP link set "$INTERFACE" up
+else
+	$IP link set "$INTERFACE" down
+	$BRCTL delif "$BRIDGE" "$INTERFACE"
+fi

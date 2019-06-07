@@ -1,0 +1,13 @@
+Author: Andy Beard
+Removed Event/event_skel_export.h from one of the two nobase_include_HEADERS 
+including it.  Including it twice causes install to fail.
+--- ACE_wrappers/TAO/orbsvcs/orbsvcs/Makefile.am	2009-10-19 05:18:00.000000000 -0700
++++ ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Makefile.am	2010-09-04 08:14:34.000000000 -0700
+@@ -3872,7 +3872,6 @@ libTAO_RTEvent_Skel_la_LIBADD = \
+   $(ACE_BUILDDIR)/ace/libACE.la
+ 
+ nobase_include_HEADERS += \
+-  Event/event_skel_export.h \
+   RtecDefaultEventDataS.h \
+   RtecDefaultEventDataS.inl \
+   RtecEventChannelAdminS.h \

@@ -1,0 +1,167 @@
+#!/bin/bash
+#
+# $Id: labcarma,v 1.1 2010/11/15 21:41:53 abeard Exp $
+#
+# chkconfig: 2345 99 01
+# description: CARMA start/exit script
+#
+#   Heavily modeled after the redhat startup scripts
+# ------------------------------------------------------------------------------
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+DEBUG=0
+INSTALL="/opt/rt"
+RCCARMA="$INSTALL/scripts/rc.carma"
+CONFDIR="$INSTALL/conf/imr"
+CONFFILE="lab.xml"
+FQHN=$(hostname)
+IMRCONFIG="$INSTALL/bin/imrconfig"
+RETVAL=0
+IMR="labacc.correlator.pvt" 
+RCCARMAOPTS="--file imr/$CONFFILE --clean --imr $IMR" 
+
+# Check that rc.carma script exists
+[ -f $RCCARMA ] || exit 1
+
+# Check that script is being ran by root only
+if [ $EUID -ne 0 ]; then
+	echo "You must be root." 
+	exit 1
+fi
+
+function debug { 
+    if [ $DEBUG -eq 1 ]; then
+        echo $@
+    fi
+}
+
+function dump_vars {
+    debug "INSTALL=$INSTALL"
+    debug "RCCARMA=$RCCARMA"
+    debug "CONFDIR=$CONFDIR"
+    debug "CONFFILE=$CONFFILE"
+    debug "FQHN=$FQHN"
+    debug "IMR=$IMR"
+    debug "RCCARMAOPTS=$RCCARMAOPTS"
+}
+
+start () {
+    RETVAL=0
+
+    echo -n "Starting carma: "
+
+    # First check and see if this machine has any carma services to start.
+    if $IMRCONFIG file=imr/$CONFFILE hosts=true | grep -q -e "$FQHN"; then
+
+	    if [ -f /var/lock/subsys/carma ]; then # Maybe already running
+            PIDS=`pidofproc imr`
+            if [ "$PIDS" == "" ]; then
+                debug "Stale subsystem lock found - removing it."
+                rm -f /var/lock/subsys/sadc
+            else
+                debug "Service carma already running." 
+                echo -n "service already running."
+                failure
+                echo
+                RETVAL=1
+                return
+            fi
+        fi
+
+    else  
+        debug "Oad \'$FQHN\' not found in $CONFFILE."
+        echo "oad \'$FQHN\' not found in $CONFFILE."
+        failure
+        echo
+        RETVAL=1
+        return
+    fi
+
+    # Things look OK at this point - start carma
+    $RCCARMA $RCCARMAOPTS start > /dev/null 2>&1
+    RETVAL=$?
+
+    if [ $RETVAL = "0" ] && touch /var/lock/subsys/carma ; then
+        debug "$RCCARMA start returned successfully." 
+        echo_success; echo
+    else
+        debug "$RCCARMA start failed." 
+        echo_failure; echo
+    fi
+}
+    
+stop () {
+    echo -n "Stopping carma: "
+
+    $RCCARMA $RCCARMAOPTS stop > /dev/null 2>&1
+    RETVAL=$?
+
+    if [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/carma ; then
+        debug "$RCCARMA stop returned successfully."
+        echo_success; echo
+    else
+        debug "$RCCARMA stop failed - pkilling oad and imr servers."
+        /usr/bin/pkill -f ORBServerId
+        /usr/bin/pkill -f bin/imr
+        rm -f /var/lock/subsys/carma
+        if /bin/ps -ef | grep ORBServerId; then
+            debug "Yet, carma programs still exist?!"
+            echo -n "carma programs still exist"
+            failure; 
+            echo
+            RETVAL="1"
+        else
+            debug "Pkilled remaining carma programs."
+            echo -n "carma programs pkilled" 
+            rm -f /var/lock/subsys/carma
+            success; echo
+            RETVAL="0"
+        fi
+
+    fi
+}
+
+status () {
+    if [ -f /var/lock/subsys/carma ]; then
+        echo "Carma is running"
+    else
+        echo "Carma is not running"
+    fi
+}
+
+restart () {
+    stop
+    start
+}
+
+condrestart () {
+    [ ! -f /var/lock/subsys/carma ] && restart || :
+}
+
+dump_vars
+
+# See how we were called.
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    restart|reload)
+        restart
+        ;;
+    condrestart)
+        condrestart
+        ;;
+    *)
+        echo "Usage: carma {start|stop|status|restart|condrestart}"
+        RETVAL=1
+esac
+
+exit $RETVAL

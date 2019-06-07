@@ -1,0 +1,733 @@
+% Note: This file uses eps graphics. pdfLatex will not work so you must
+% do the following:
+% latex <filename.tex>
+% dvipdf <filename.dvi>
+
+\documentclass[11pt]{article}
+
+\usepackage{color}
+
+\usepackage{graphicx}
+\usepackage{lscape}
+\usepackage{epsfig}
+
+% PS fonts
+\usepackage{mathptmx,courier,pifont,helvet}
+\usepackage[T1]{fontenc}
+
+\addtolength{\textheight}{1.75truein}
+\addtolength{\topmargin}{-1truein}
+\addtolength{\textwidth}{1.5truein}
+\addtolength{\oddsidemargin}{-0.75truein}
+\addtolength{\evensidemargin}{-0.75truein}
+
+\begin{document}
+\title{\LARGE\bf Digital Correlator}
+\author{Dave Hawkins~(OVRO), Rick Hobbs~(OVRO), Kevin P. Rauch~(UMD)}
+\date {\it $ $Revision: 3.7 $ $ \\ $ $Date: 2005/04/11 22:09:01 $ $}
+\maketitle
+
+%
+%
+\section{Functionality and Scope}
+%
+%
+\subsection{Overview}
+%
+%
+The Digital Correlator package provides the high-level software interface
+between the correlator crate hardware (digitizer and correlator cPCI cards)
+and subsystems such as the Correlator Pipeline and the array control computer
+(ACC) that process and store its output. It includes a control API satisfying
+the needs of both the SZA (`wideband') and CARMA first-light (`spectral')
+correlators. It also receives monitoring data and time-integrated auto- and
+cross-correlation spectra at 500~ms intervals (the blanking frame timescale),
+which it publishes at the same rate via a distributed object (DO)
+incorporating CORBA notifications. 
+
+For both SZA and CARMA, `wideband' refers to configurations with 500~MHz of
+bandwidth per band. The SZA correlator (8-station, 28 baselines) uses 16 such
+bands to obtain 8~GHz of total bandwidth. The CARMA first-light correlator
+(15-station, 105 baselines) is currently planned to utilize 8 bands, for a
+total bandwidth of 4~GHz in wideband mode. The CARMA correlator will also
+support `spectral' configuration modes, with independent bandwidth and
+frequency placement for each band. (Spectral line capability may eventually be
+added to the SZA correlator; however, that possibility does not affect the
+design of this package.) The new OVRO and upcoming SZA and CARMA first-light
+correlators are all based on COBRA digital hardware and differ mainly in the
+total number of bands, spectral configurability, and channel resolution. 
+In addition, the OVRO system utilizes analog delay lines whereas SZA and CARMA
+will use digital delays.
+
+The CARMA
+first-light correlator will contain 3 bands (1.5 GHz in wideband mode) of
+reused COBRA hardware. An additional 5 bands (2.5 GHz) of correlator hardware
+must be purchased to cover the full 4 GHz IF planned for first-light. A
+hardware revision is currently underway and the new hardware is expected to
+provide substantially improved channel resolution compared to COBRA. The
+presence of heterogeneous hardware between bands has very little impact on
+the Digital Correlator work package---the revised hardware will be backward
+compatible with the current driver API (perhaps with a few additions or minor
+changes). Differences in channel resolution between bands are already 
+accounted for to support the spectral line modes, so no effort will be 
+required to support the new hardware in this regard. Note that since users
+will want to specify the type of correlator hardware (COBRA or revised) to 
+which a specific band should be assigned (e.g., continuum observations are 
+best assigned to COBRA-based bands and spectral observations to the 
+more powerful revised hardware), the high-level control system will need to 
+account for these differences. By contrast, this work package can largely
+ignore them, as the APIs described here operate within a {\it single}
+band.
+
+There is nothing special about the wideband mode in terms of digital hardware
+or the Digital Correlator software architecture---it is simply the spectral
+mode with the largest bandwidth (and coarsest resolution).
+Thus a single API can be used for all
+correlators, although the implementation is somewhat simpler for the
+(wideband-only) SZA correlator.
+
+SZA survey operations will commence on the valley floor sometime in 2004. 
+Until the SZA moves to the high site and is integrated into the CARMA array, 
+however, use of an `interim' control and monitoring
+system is planned; consequently, only a critical subset of Digital Correlator
+functionality needs to be implemented in this time frame.
+Both the BIMA and OVRO dishes will move
+to the high site during Fall/Winter 2004, though it remains
+unclear what new hardware will be available when the antennas are reassembled
+and ready for testing at the high site---and hence what demands it will place 
+on the completion schedule for this package.
+Since BIMA will use
+the first-light correlator upon relocation to the high site, full
+implementation of this package is required by that time---about 6 months prior
+to CARMA first-light (Spring 2005).
+The previously proposed ``OVRO spectral'' system will not be implemented and
+has been removed as a schedule line item for this package.
+
+%
+%
+\subsection{Coding Requirements}
+%
+%
+The interim SZA functionality will be satisfied through minimal reworking of
+the existing COBRA code. This effort mainly entails integrating the current
+COBRA code into the CARMA framework and providing the adapters needed to
+provide essential functionality to SZA. Most of this porting has already been completed and is
+also a natural first step in transferring the COBRA code base to CARMA---there
+is little new `throw-away' code. Extensive reuse of COBRA software is
+possible.
+
+The primary original coding tasks are (1) implementation of the new control
+API; (2) upgrade of CDV and the current ObsRecord format to improve scaling to
+large numbers of baselines; and (3) conversion from event channels to CORBA
+notification service protocol for publishing the visibility and monitoring
+data. As the current use of event channels is well encapsulated, the switch to
+notification service will not require major changes to the existing design.
+Control implementation will consist largely of passing commands on to a
+lower-level hardware API (not part of this package). The CARMA monitoring API
+should (in principle) make our corresponding implementation straightforward,
+if not mechanical. A detailed breakdown of effort can be found in
+\S~\ref{sec_fte}.
+
+Effort to configure the crate computers has also been included in this
+package. The SZA will use 8 crates and 8 CPUs (1 CPU and 2 bands per crate)
+and the CARMA first-light correlator will require 16 crates and 8 CPUs (1 CPU
+and 2 crates per band).
+
+%
+%
+\subsection{Resolved Issues}
+%
+%
+\begin{enumerate}
+
+\item
+Should noise statistics be computed and if so, should they be sent back in
+the monitor or data stream?
+\\
+{\bf Resolution:\/}
+Implementation will be straightforward whatever is
+provided, since both information channels are already populated, and statistics
+would be passed to this package using existing mechanisms.
+
+\item
+An explicit link to Dave Hawkins' hardware ICD document describing his low
+level driver library calls (the ``externally-provided API'') needs to be done.
+\\
+{\bf Resolution:\/}
+A note referring to this API has been added to the Visio diagram for the
+Digital Correlator component, and will be changed to a direct link once
+available.
+
+\item
+The ObsRecord structure is missing a number of data fields as it leaves the
+crate---where are they filled in? What amount of data are in the monitor
+database only?
+\\
+{\bf Resolution:\/}
+The updated ObsRecord2 structure will only include
+information known at the correlator crate level.
+
+\end{enumerate}
+%
+%
+\subsection{Administrative Summary}
+%
+%
+\subsubsection{Estimated FTE Effort\label{sec_fte}}
+%
+%
+The tasks include purchasing and configuring the hardware. The OVRO
+contribution (Rick Hobbs) focuses on implementing those methods required by
+the SZA wideband (digital delays, uniform configuration) correlator, and
+amounts to roughly 75\% of the FTE total. Initially, only those methods in the
+Control API necessary for SZA will be fully implemented; the others will be
+made functional when needed. The UMD effort (Kevin Rauch) completes support
+for the CARMA first-light correlator (non-uniform configuration).
+The estimated schedule, effort allocations, and status of
+the primary tasks are given in Table~\ref{tab_sched}. Effort is given in FTE
+months.
+
+\begin{table}[thb]
+\caption{Schedule and FTE Breakdown\label{tab_sched}}
+\begin{center}
+\begin{tabular}{lcrrrr} \hline
+\multicolumn{1}{c}{Task}& Lead& \multicolumn{1}{c}{Coding}&
+  Effort& Completion& Closing Date\\
+\hline
+Computer purchase/setup&    ??&  few lines&  1.0&  15\%&  [extended] \\
+Interim SZA package&     Hobbs& 2000 lines&  1.0& 100\%&  Jan 2004 \\
+CORBA Notification&      Hobbs&  500 lines&  1.0& 100\%&  May 2004 \\
+SZA control API&         Hobbs&  300 lines&  1.0&  80\%&  Aug 2004 \\
+CDV/ObsRecord2 upgrade&  Hobbs& 2000 lines&  1.0&   5\%&  Aug 2004 \\
+CARMA control API&       Rauch&  300 lines&  1.0&   5\%&  Nov 2004 \\
+Integration testing&      both&  few lines&  2.0&   0\%&  Mar 2005 \\
+\hline
+\noalign{\vspace{0.5em}}
+TOTALS:&                      & 5000 lines&  8.0& 38\%&   {\it open}
+\end{tabular}
+\end{center}
+\end{table}
+%
+%
+\subsubsection{Package Status}
+%
+%
+\begin{tabular}{lll}
+Package status:& open&\\
+Conceptual design:& {\bf completed}& 2003/06/04\\
+Preliminary design:&{\bf completed}& 2003/12/04\\
+Critical design:&   {\bf completed}& 2004/07/15\\
+\end{tabular}
+
+\bigskip\noindent
+The work for this package is on schedule. No obstacles currently exist
+to delay completion past its nominal closing date.
+
+
+%
+%
+\section{Design}
+%
+%
+Control of the Digital Correlator will be handled via the following API and
+implemented using CORBA. A single CORBA object will be instantiated for each
+band regardless of the number of crates it takes to make a band. The proposed
+object names are carma.correlator.Band1 - carma.correlator.BandN. These
+distributed objects will handle the Control Input API as well as the Data
+Output API.
+
+The correlator hardware pushes its data into the Linux crate computer by way
+of a kernel driver. This process (not part of the Digital Correlator package)
+calls an API for constructing a CorrelatorData object and a CorrProducer.
+A CorrProducer interface exposes an API for sending correlator data in a
+somewhat generic fashion. Sending data via a CORBA Notification channel is
+handled by a CorbaCorrProducer object.
+
+Monitor data will be published using the CARMA monitoring API instead of
+explicitly creating a DO.
+
+\subsection{Control Input}
+Control for all Correlator Bands will be made through a Proxy class
+which will resend the commands to all currently connected Bands. This
+class will also poll for missing Bands and reconnect them if possible.
+The proxy correlator band object will implement the following methods:
+\begin{itemize}
+\item setBandWidth(BandWidthType bandWidth)\\
+      BandWidthType will be a set of known bandwidths which map into
+      configuration files for the correlator. This method should also
+      be called if the downconverter power is ever reset or the
+      downconverters are brought up after the correlator.
+\item setSim(bool isSimMode) \\
+      Have the DSP's output a fixed spectral pattern.
+\item setNoiseSourceState(bool isOn) \\
+      Correlator must be told when noise source in on so that the delay
+      can be turned off.
+\item doDiagnostics() \\
+      This method will result in a boolean being set in the monitor stream
+      indicating pass/fail and a timestamp when it was completed.
+\item flattenPhase() \\
+      Must be issued after noise source is turned on.
+\item setMode(ModeType mode) \\
+      ModeType is {\tt MODE\_IDLE} or {\tt MODE\_NORMAL}.
+\item setInputDelay(vector<int> inputNumber,
+                    vector<double> delay,
+                    vector<double> timestamp,
+                    vector<bool> discontinuity) \\
+      Set delay for Antennas. Use this for production code.
+\item setInputDelay(int inputNumber,
+                    double delay,
+                    double timestamp,
+                    bool discontinuity) \\
+      Set delay for Antennas. Slower than vector form.
+\item setWalshTable(WalshTable walshTable) \\
+      Object to be specified by package responsible for calculating table.
+\item setDownconverterSideband(SidebandType sb) \\
+      Needed for Delay Algorithm. SidebandType is either
+      {\tt UPPER\_SB} or {\tt LOWER\_SB}.
+\item setDownconverterFrequency(double freq) \\
+      Needed for Delay Algorithm. Input frequency is in GHz.
+
+\end{itemize}
+
+\subsubsection{Control input use-cases}
+
+The control system will use the control input API to implement user-visible
+commands. Some of these user-visible commands have a sequencing requirement as
+demonstrated by the following use-cases;
+
+\vskip5mm
+\noindent {\bf Power-up}
+
+When system-level power is cycled, the correlator hardware needs to initialize
+`from scratch'. The following sequence of events will ensure correct
+correlator bring-up;
+%
+\begin{itemize}
+\item Quad-mod noise source is turned on (to ensure adequate
+power is received at the downconverters, irrespective of the
+antenna signal status). setNoiseSourceState() should then be issued to the correlator to indicate that the noise source is on.
+
+\item The downconverters need to have their equivalent setBandWidth() command
+issued so that the output signal
+is appropriate for the correlator.
+
+\item Issue command to the downconverters to set their output power to 6dBm,
+appropriate for the digitizer boards, then wait for completion.
+
+\item After any power-cycle, the correlator system will
+power-up and run diagnostics. These diagnostics check that
+FPGAs work correctly, external time references are present,
+and that the front-panel cabling is correct. The correlator
+system is expected to produce monitor packets that indicate
+its status.
+
+\item Assuming the correlator status is ok, the control system will issue the
+setBandWidth() command to the correlator subsystem. This command contains a
+bandwidth argument which informs the correlator which FPGA configurations to
+load. The correlator crate CPUs will
+setup the thresholds, check clock-alignment, and 
+then because the noise source is on, it will fine-trim
+the clocks to flatten phase.
+
+\item Each correlator Band must know the downconverter frequency and whether
+the data was upper or lower sideband downconverted. This information is
+necessary for proper application of delays. These parameters can be set
+using the following methods: \\
+setDownconverterFrequency(float freq) \\
+setDownconverterSideband(enum sidebandtype)
+
+\item The monitor packets will indicate when the
+correlator setup has complete and a new track can then begin.
+\end{itemize}
+
+\vskip5mm
+\noindent {\bf Bandwidth configuration}
+
+When the bandwidth of the correlator system is changed, the
+downconverters insert a new filter, and the correlator hardware download new FPGA configurations. The following sequence of events will ensure correct correlator bandwidth change;
+%
+\begin{itemize}
+\item Quad-mod noise source is turned on.
+ setNoiseSourceState() should then be issued to the correlator to indicate that the noise source is on.
+\item The downconverters need to have their equivalent setBandWidth() command issued so that the output signal
+is appropriate for the correlator.
+\item Issue the command to the downconverters to set their output power to 6dBm, appropriate for the digitizer boards.
+\item The control system issues the setBandWidth() command to the correlator subsystem. The correlator crate CPUs will
+then setup the thresholds, check clock-alignment, and 
+then because the noise source is on, it will fine-trim
+the clocks to flatten phase. It is likely that in the
+case of a configuration change that most of these operations
+are simply checks to make sure values are in range.
+\item The control system issues the setDownconverterFrequency() and
+setDownconverterSideband() for future use when delays are applied.
+\item The monitor packets will indicate when the
+correlator setup has complete and a new track can then begin.
+\end{itemize}
+
+\vskip5mm
+\noindent {\bf Engineering}
+
+During COBRA Correlator bring-up it was useful to be able to have the
+correlator system put out a known data set, i.e., a simulated data set. This simulated data set can originate
+at the Linux crate, or down in the DSPs on each board.
+The setSim() API function is provided to implement this
+functionality.
+
+
+\subsection{Data Output}
+Processes which need the correlator data will use a CorbaCorrConsumer object
+which implements the CorrConsumer interface. The data transport implementation
+will be CORBA based. The data will be passed in the new ObsRecord
+format. See the doxygen documentation for this API.
+
+The current data catcher is designed to listen for the maximum number of
+published bands, 1 thread for each band. If a band has not yet come online,
+the thread will check every 5 seconds for the life of the process. Only
+those bands arriving on time will be passed along for further processing.
+
+
+\subsection{Correlator Data API\label{sec_hwapi}}
+Data from the hardware drivers will be passed into a CorrelatorData object
+via the API described at:  \\
+http://www.mmarray.org/project/system/API/carma/cplusplus/html/ \\
+classcarma\_1\_1correlator\_1\_1lib\_1\_1CorrelatorData.html
+
+Tables~\ref{tab:corrData} show Correlator Data Packet size vs channel number as
+well as times to serialize, deserialize and copy the data on a 1.9GHz Athlon
+single processor. Similar times are reported for a Hyperthreaded dual processor
+3.0GHz processors
+
+\begin{table}
+\caption{Correlator Data Packet}
+\label{tab:corrData}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+\hline
+\multicolumn{3}{|c|}{Times correspond to 1 Band}  & \multicolumn{3} {|c|}{Single 1.9GHz Athlon} & \multicolumn{3} {|c|}{HT dual 3.0GHz Intel} \\
+\hline
+channels    & 1 Band  & 16 Bands & Serialize & Deserialize & Copy & Serialize & Deserialize & Copy \\
+            & [Bytes] & [Bytes]  & [ms]      & [ms]        & [ms] & [ms]      & [ms]        & [ms] \\
+&&&&&&&& \\
+\hline\hline
+  8 &  10648 &  170368 &  .136 &  .158 & .195 & .132 & .153 & .224 \\
+ 16 &  17560 &  280960 &  .202 &  .213 & .253 & .194 & .208 & .285 \\
+ 25 &  23704 &  379264 &  .251 &  .263 & .287 & .236 & .253 & .332 \\
+128 & 102808 & 1644928 &  .952 &  .882 & .671 & .918 & .826 & .935 \\
+400 & 311704 & 4987264 & 2.797 & 2.5   &3.060 & 2.787 & 2.419 & 3.038 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsubsection{Monitor Points API}
+\begin{itemize}
+\item    void setHeadAsmMJD(double mjd); \\
+         Timestamp when this record begins to be filled
+\item    void setHeadTxMJD(double mjd); \\
+         Timestamp when this record is transmitted
+\item    void setHeadRxMJD(double mjd); \\
+         Timestamp when this record is received
+\item    void setHeadSeqNum(long seqNum);
+\item    void setDataStartMJD(double mjd);
+\item    void setSim(int antennaNumber1, int antennaNumber2, bool b);
+\item    bool isSim(int antennaNumber1, int antennaNumber2);
+\item    void setSelfTest(bool b);
+\item    bool isSelfTest();
+\item    void setPhaseSwitchTic(double );
+\item    double getPhaseSwitchTic();
+\item    void setNoiseSourceState(bool on/Off);
+\item    void setBandNumber(int bandNum);
+\item    void setCorAuxMJD(int boardIdx, double mjd);
+\item    void setCorAuxSeqNum(int boardIdx, long seqn);
+\item    void setCorAuxBoardId(int boardIdx,long bid);
+\item    void setCorAuxBoardSN(int boardIdx,long bsn);
+\item    void setCorAuxTemp(int boardIdx, int tempNum, double t1);
+\item    void setCorAuxPs5v(int boardIdx, double v);
+\item    void setCorAuxPs3pt3v(int boardIdx, double v);
+\item    void setCorAuxPs2pt5v(int boardIdx, double v);
+\item    void setCorAuxSelfTestStatus(int boardIdx, bool b);
+\item    void setCorAuxSelfTestTime(int boardIdx, double t);
+\item    void setCorAuxPPSstatus(int boardIdx, bool b);
+\item    void setCorAuxTimeSyncStatus(int boardIdx, bool b);
+\item    void setCorClockPhase(int boardIdx, int phaseNum, double cp);
+\item    void setCorIntegType(int boardIdx, IntegrationType it);
+\item    void setCorNumberOfBaselinesPerBoard(int boardIdx, int numBaselines);
+\item    void setCorAntennas(int boardIdx, int baselineIdx, int ant1Number, int ant2Number);
+\item    void setCorDelayLine(int boardIdx, int baselineIdx, double delay); \\
+         Actual delay value [sub-ns resolution] used for this baseline.
+\item    void setDigAuxMJD(int boardIdx, double mjd);
+\item    void setDigAuxSeqNum(int boardIdx, long seqn);
+\item    void setDigAuxBoardId(int boardIdx,long bid);
+\item    void setDigAuxBoardSN(int boardIdx,long bsn);
+\item    void setDigAuxTemp(int boardIdx, int tempNum, double t1); \\
+         Temperature in degrees C
+\item    void setDigAuxPs5v(int boardIdx, double v);
+\item    void setDigAuxPs3pt3v(int boardIdx, double v);
+\item    void setDigAuxPs2pt5v(int boardIdx, double v);
+\item    void setDigAuxSelfTestStatus(int boardIdx, bool b);
+\item    void setDigAuxSelfTestTime(int boardIdx, double t);
+\item    void setDigAuxPPSstatus(int boardIdx, bool b);
+\item    void setDigAuxTimeSyncStatus(int boardIdx, bool b);
+\item    void setDigClockPhase(int boardIdx, double cp);
+\item    void setDigAntNumber(int boardIdx, int antIdx, int antNum);
+\item    void setDigDelayLine(int boardIdx, int antIdx, double delay); \\
+         Actual delay value [nanoseconds] usd for this antenna
+\item    void setDigAntQuanCount(int boardIdx, int antNum, int stateIdx, long value);
+\item    void setDigAntVplus(int boardIdx, int antNum, double value);
+\item    void setDigAntVZero(int boardIdx, int antNum, double value);
+\item    void setDigAntVminus(int boardIdx, int antNum, double value);
+\item    void setDigAntVoffset(int boardIdx, int antNum, double value);
+\end{itemize}
+
+\subsection{Monitor Output}
+Monitor Data from the Digital Correlator will occur at the standard 2 Hz rate
+and will be organized by bands ({\tt carma.bandM.corrlcardN.temp1}).
+
+\vskip5mm
+
+\subsubsection{Common Board Monitor Points}
+\begin{itemize}
+\item MJD \\
+      double: TimeStamp representing start of Data packet
+\item sequenceNumber \\
+      long: Integer increasing by 1 for every packet sent
+\item boardId \\
+      int: Representing board location in crate
+\item boardSN \\
+      int: Representing unique board ID
+\item temp1 \\
+      float: Temperature in degrees C on board
+\item temp2 \\
+      float: Temperature in degrees C on board
+\item ps5volt \\
+      float: 5 volt power supply value
+\item ps3pt3volt \\
+      float: 3.3 volt power supply value
+\item ps2pt5volt \\
+      float: 2.5 volt power supply value
+\item simulation \\
+      bool: true if correlator is producing simulated data
+\item diagnosticStatus \\
+      bool: true/false indicating selftests
+\item diagnosticTime \\
+      double: Timestamp of last selftests
+\item noiseSourceStatus \\
+      bool: Status of setNoiseSource command
+\item ppsStatus \\
+      bool: Status of 1 sec heartbeat
+\item timeSyncStatus \\
+      bool: DSP time status
+\end{itemize}
+
+\subsubsection{Correlator Board Monitor Points}
+\begin{itemize}
+\item bandNumber \\
+      int: Actual band this board is processing
+\item numberOfBoards
+      int:
+\item clockPhase1 \\
+      float: Phase detector voltage.
+\item clockPhase2 \\
+      float: Phase detector voltage.
+\item clockPhase3 \\
+      float: Phase detector voltage.
+\item clockPhase4 \\
+      float: Phase detector voltage.
+\item delay \\
+      float: One for each baseline [sub-nanoseconds]
+\item integrationType \\
+      enum: (NORMAL, SELFTEST, IDLE, SIM)
+\end{itemize}
+
+\subsubsection{Digitizer Board Monitor Points}
+\begin{itemize}
+\item bandNumber \\
+      int: Actual band this board is processing
+\item numberOfBoards \\
+      int:
+\item numberOfAntennasPerBoard \\
+      int:
+\item antennaNumber \\
+      int:
+\item delay \\
+      float: One for each antenna [nanoseconds]
+\item clockPhase \\
+      float: Phase detector voltage
+\item vPlus \\
+      float: Threshold voltage
+\item vZero \\
+      float: Threshold voltage
+\item vMinus \\
+      float: Threshold voltage
+\item vOffset \\
+      float: Threshold voltage
+\item quantizationCount[4] \\
+      int: Normalized number of times signal fell in each of the 4 quantized
+           voltage bins.
+\end{itemize}
+
+%
+%
+\section{Implementation}
+%
+%
+The process maintaining the Control/Data DO will run on a Linux crate CPU card
+associated with the corresponding band. 
+These (diskless) Linux hosts will all boot over the network.
+All of the crates should be interfaced to a single switch. The
+aggregate data bandwidth will require a gigabit output to the pipeline
+computer.  Although the digital hardware for a particular band may
+require more than one CPU card and/or span multiple cPCI crates, such
+details will be hidden from the Digital Correlator
+and lies outside the scope of this package.
+
+The implementation will largely copy the COBRA correlator work.
+The initial implementation as a 6-station correlator for OVRO will use
+the COBRA hardware and software with very few modifications, assuming
+analog delay lines. The upgraded Control API
+must handle the significant new constructs of phase-switching and
+digital delay.
+The use of digital delays requires the new CARMA control system complete
+with interferometry package---it will not work with the old OVRO VaxStation
+control program. Note that this has profound schedule implications!
+The data will be available for viewing using the CARMA Data Viewer
+(upgraded to use a new format), but bandwidth restrictions
+may limit this to the LAN.
+The upgrade of CDV to handle a new format is included in this
+package.
+
+Tables~\ref{tab:corrDOCPUresource}-~\ref{tab:pipeDOCPUresource2} show resource utilization for 3 correlator configurations using a simulator. A large
+improvement can be seen by the use of transporting the correlator data as one
+long byte array(the new ObsRecord format).
+
+\begin{table}
+\caption{DO resource utilization}
+\label{tab:corrDOCPUresource}
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+& COBRA & SZA   & CARMA \\
+& 6 Ant & 8 Ant & 15 Ant \\
+&&& \\
+\hline\hline
+CPU \% & 3.8 & 4.0 & 16.0 \\
+\hline
+MEM \% & 7.0 & 7.0 & 7.8  \\
+\hline
+\end{tabular}
+\end{center}
+%\end{table}
+\vskip 5mm
+
+%\begin{table}
+\caption{Catcher (pipeline) resource utilization (dual 800MHz)[Event Service]}
+\label{tab:pipeDOCPUresource}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+& SZA  \\
+& 16 Bands\\
+& 8 Ant\\
+& \\
+\hline\hline
+CPU1 \% & 30.0(catcher)  \\
+CPU2 \% & 30.0(eventserv)  \\
+\hline
+MEM \% & 1.0(catcher)  \\
+MEM \% & 0.7(eventser) \\
+\hline
+\end{tabular}
+\end{center}
+%\end{table}
+\vskip 5mm
+
+%\begin{table}
+\caption{Catcher(New Paradigm) (pipeline) resource utilization (dual 800MHz)[Event Service]}
+\label{tab:pipeDOCPUresource2}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+& SZA    \\
+& 16 Bands \\
+& 8 Ant  \\
+& \\
+\hline\hline
+CPU1 \% & 10.0(catcher)   \\
+CPU2 \% &  3.0(eventserv) \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}
+\caption{Catcher(New Paradigm) (pipeline) resource utilization (dual 800MHz)[Notify Service]}
+\label{tab:pipeDOCPUresource3}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+& SZA \\
+& 16 Bands \\
+& 8 Ant \\
+& \\
+\hline\hline
+CPU1 \% & 12.0(catcher)  \\
+CPU2 \% &  9.0(notserv)  \\
+\hline
+\end{tabular}
+\end{center}
+%\end{table}
+\vskip 5mm
+
+\caption{Catcher(New Paradigm) (pipeline) resource utilization [Notify Service]}
+\label{tab:pipeDOCPUresource4}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+CPU    & SZA       & \\
+       & 16 Bands  & \\
+       & 8 Ant     & \\
+       & optimized & w/debug \\
+       & (\%)      &  (\%) \\
+\hline\hline
+single 600MHz           & 19 & \\
+single 1GHz             &  8 & \\
+single 1.9GHz           &  5 & 13 \\
+dual   3GHz(SZA)        & 13 & \\
+dual   3GHz(OVRO)       & 14 & \\
+\hline
+\end{tabular}
+\end{center}
+%\end{table}
+\vskip 5mm
+
+%\begin{table}
+\caption{Correlator Delay Timing}
+\label{tab:corrDOdelay}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Resolve Running DO & Resolve Not Running DO   & CORBA Method Call \\
+&& \\
+\hline\hline
+250ms & 330ms & 2.4ms \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+Table~\ref{tab:corrDOdelay} drove the design for the implementation of setting
+delays in the Correlator. Due to the long resolving time, a 
+multi-threaded caching design is being used. One thread periodically checks
+to see if new bands have been registered and if so adds them to a
+cached list while another thread uses the cache to make the remote calls
+for setting the delays. This design had 2 orders of magnitude speed
+improvement. Figure~\ref{fig:delay} shows a comparison between a simple
+sinusoidal delay input and the interpolator output for 1 antenna. This
+plot is shown merely to validate the scripts that will be used analyze the
+interpolated delays for an astronomical source during the final integration.
+\begin{figure}[!ht]
+\hfil\epsfig{figure=CorrelatorDelayPlot.eps,width=6in}\hfil
+\caption{Input-Interpolated Delay Comparison}
+\label{fig:delay}
+\end{figure}
+
+\end{document}

@@ -1,0 +1,13 @@
+VisIo.cc
+20a21
+>   firstTelescopeNum_ = 0;
+28a30,37
+>  * Set index number of the first telescope
+>  */
+> void VisIo::setFirstTelescopeNum(unsigned iTel)
+> {
+>   firstTelescopeNum_=iTel;
+> }
+> 
+> /**.......................................................................
+Wavelength.cc

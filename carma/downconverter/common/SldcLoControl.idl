@@ -1,0 +1,40 @@
+/**
+ * @file
+ * carma::downconverter::SpectralLoControl interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.3 $
+ * $Date: 2011/05/17 16:27:46 $
+ * $Id: SldcLoControl.idl,v 1.3 2011/05/17 16:27:46 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_DOWNCONVERTER_SLDCLOCONTROL_IDL
+#define CARMA_DOWNCONVERTER_SLDCLOCONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module downconverter {
+
+    /**
+     * Carma Spectral Line Downconverter LO Control interface.
+     */
+    interface SldcLoControl {
+
+        /**
+         * Set the LO frequency for the specified band to the specified
+         * frequency.  The frequency resolution is approximately 38.15 Hz
+         * thus the input frequency will be rounded.  The actual frequency
+         * used is reflected back in the monitor system.
+         * @param band Band number to set frequency on.
+         * @param freq Desired frequency in GHz.
+         */
+        void setLoFrequency( in unsigned short band,
+                             in double freq )
+            raises ( carma::util::UserException );
+
+    }; // interface SpectralLoControl
+}; // module downconverter
+}; // module carma
+#endif

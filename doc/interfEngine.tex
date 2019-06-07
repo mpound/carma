@@ -1,0 +1,1025 @@
+%$Id: interfEngine.tex,v 1.11 2005/01/12 13:56:25 mpound Exp $
+\documentclass[preprint]{aastex}
+\usepackage{mathrsfs}
+\usepackage{epsf}
+%\usepackage{makeidx}
+%\usepackage{fancyhdr}
+%\usepackage{graphicx}
+%\usepackage{float}
+%\usepackage{alltt}
+%\usepackage{doxygen}
+% ----------------------DEFINITIONS USED IN THIS PAPER --------------------
+\newcommand{\xlam}{
+   \ifmmode{X_\lambda}
+   \else{$X_\lambda$}
+   \fi}
+\newcommand{\ylam}{
+   \ifmmode{Y_\lambda}
+   \else{$Y_\lambda$}
+   \fi}
+\newcommand{\zlam}{
+   \ifmmode{Z_\lambda}
+   \else{$Z_\lambda$}
+   \fi}
+\newcommand{\rearth}{  % Earth radius
+   \ifmmode{r_\oplus}
+   \else{$r_\oplus$}
+   \fi}
+\newcommand{\scrL}{ % script L for path length
+   \ifmmode{{\mathscr L}}
+   \else{${\mathscr L}$\/}
+   \fi}
+\def\degree{\ifmmode{^\circ} \else{$^\circ$}\fi}
+\def\nexpo#1#2{\ifmmode{#1 \times 10^{#2}}\else{$#1 \times 10^{#2}$}\fi}
+\def\expo#1{\ifmmode{10^{#1}}\else{$10^{#1}$}\fi}
+\def\msun{\ifmmode{\rm M_\odot}\else{M$_\odot$}\fi}
+\def\esat{\ifmmode{\rm e_{sat}}\else{e$_{sat}$}\fi}
+\def\etal           {{\rm et~al}.\ }
+\def\eg             {{\rm e.g.}\/}
+\def\ie             {{\rm i.e.}\/}
+\def\uv{{\it uv}}
+\def\cmm {\ifmmode{{\rm cm^{-3}}}\else{{${\rm cm^{-3}}$}}\fi}
+\def\cmtwo {\ifmmode{{\rm cm^{-2}}}\else{{${\rm cm^{-2}}$}}\fi}
+\def\invpc{\ifmmode{\,{\rm pc^{-1}}}\else{\thinspace {\rm pc$^{-1}$}}\fi}
+\def\invsec{\ifmmode{\,{\rm s^{-1}}}\else{\thinspace {\rm s$^{-1}$}}\fi}
+\def\invyr{\ifmmode{\,{\rm yr^{-1}}}\else{\thinspace {\rm yr$^{-1}$}}\fi}
+\def\psec           {$.\negthinspace^{s}$}
+\def\pmin           {$.\negthinspace^{m}$}
+\def\pasec           {$.\negthinspace^{\prime\prime}$}
+\def\pdeg           {$.\kern-.25em ^{^\circ}$}
+\def\kms{\ifmmode{\,km\,s^{-1}}\else{\thinspace km\thinspace s$^{-1}$}\fi}
+%
+% Greater than or approximately equal to and less than or
+% approximately equal to signs, using macros defined in PLAIN.TEX
+%
+\catcode`\@=11 \def\gapprox{\mathrel{\mathpalette\@versim>}}
+\def\lapprox{\mathrel{\mathpalette\@versim<}}
+\def\@versim#1#2{\lower2.9truept\vbox{\baselineskip0pt\lineskip0.5truept
+    \ialign{$\m@th#1\hfil##\hfil$\crcr#2\crcr\sim\crcr}}}
+\catcode`\@=12
+% --------------------------------------------------------------------------
+\begin{document}
+\title{CARMA Interferometry Subsystem Design}
+\author{Marc Pound, Colby Kraybill}
+\slugcomment{Version 1.6 (\today)}
+
+
+\section{Introduction}
+\subsection{Functionality and Scope}
+
+The primary purpose of the Interferometry subsystem (aka Delay  
+Engine) is the calculation of delays, which are sent on to the correlator
+crates and lobe rotator controller.  The delays consist of the fixed
+(per array configuration) delay line offset plus corrections for geometry,
+thermal expansion, and atmospheric propogation.  The Delay Engine
+requires for each antenna source position, observation frequency, station
+coordinates, latitude, elevation, yoke height, structural temperature(s),
+and axis misalignment.  These are provided from the Control SubArray
+Tracker (or perhaps in the future, a Configuration Database).  In addition local
+pressure, temperature, and relative humidity are needed from the weather
+station via Control.  Also needed is LST to compute the hour angle 
+from RA.  To realize the 30 femtosecond delay accuracy needed by CARMA,
+all input to, outputs from, and calculations within the delay 
+engine will be double precision.
+
+This package has been descoped somewhat since the WP analysis.
+The selection of Walsh sequences and communication of them to the
+Lobe Rotator is done by the Control Subsystem.  The water line monitor
+phase correction is between the WLM DO and the Correlator Pipeline--the
+Delay Engine is not involved. Similary, phase corrections for
+changing subreflector focus are done in the Correlator Pipeline rather
+than focus delays calculated by the Delay Engine.
+
+This document uses a lot of mathematical symbols; they are defined
+in Table \ref{t-symbols}.
+
+
+\subsection{Antenna Coordinate Systems}
+There are a number of ways to represent the antenna locations.  It has
+been decided that CARMA will present antenna coordinates to the user in
+the convenient (East,North,Up) system, which is also used in the array
+configuration memo, with conversion routines provided by the Auxiliary
+Services system.  However, in order to conform to standard equations in TMS,
+in this document and in the Delay Engine Control API (and of course in the
+code itself), 
+we will use Equatorial coordinates in meters: (\xlam,
+\ylam, \zlam) with \xlam in the plane defined by the terrestrial poles
+and the reference point of the array, \ylam toward the east and \zlam
+toward the NCP.  A future enhancement will allow input of ENU coordinates
+in the API, which will be converted to XYZ internally 
+(SZA conversion code will be migrated to Auxiliary Services).
+
+\section{Refraction, Refractivity, and Path Length\label{s-refraction}}
+Astronomical refraction is the difference between the true and apparent
+elevation of an object in the sky. Because of the changing index of
+refraction in the earth's atmosphere, the object appears higher than
+its true elevation.  This must be taken into account when pointing an
+antenna. The correction is not small: the typical value at mid-elevations
+is about an arcminute and increases to many arcminutes near the horizon.
+At radio wavelengths, a large component of the refraction is due to
+water vapor, where it is some 20 times greater than in the optical.
+An excellent summary of the refraction pointing correction as it is used
+in radio astronomy is given by Mangum (2001).
+
+Because refraction increases the signal travel time, it also comes in as
+an additive propagation delay correction.  This is commonly referred to
+as ``differential refraction'' since the antennas at different locations
+will not observe the source at identical elevation and hence experience
+differential delays.  It should not be confused with the commonly
+used term for refraction that varies at a function of wavelength
+(an important effect in the optical regime).  To keep things clear,
+in this document, we will use the term atmospheric propagation delay.
+Atmospheric propagation delay is derived in Section \ref{s-atmosdelay}.
+First, we turn our attention to astronomical refraction, which will
+lay the groundwork for deriving the delay.
+
+Formally, the astronomical refraction is the integral of the
+index of refraction, $n$, over the signal path:
+
+\begin{equation}
+R = \int_{1}^{n_0} dn \frac{\cot E(n)}{n}
+\label{e-Rdef}
+\end{equation}
+
+\noindent where $E$ is the source elevation.  Using Snell's Law a general
+formula for refraction in a spherically symmetric atmosphere can be obtained
+(Smart 1972)
+
+\begin{equation}
+R = \int_{1}^{n_0} dn \frac{n_0 r_0 \cos E_0}
+{n \sqrt{n^2 r^2 - n_0^2 r_0^2 \cos^2 E_0} }
+\label{e-smart}
+\end{equation} 
+
+\noindent where $r$ is the geocentric distance to the layer with index of
+refraction $n$, and $n_0$, $r_0$, and $E_0$ are the measured index of
+refraction, geocentric distance, and apparent elevation at the antenna 
+location.  The general prescription
+for treating refraction involves an analytical form (usually a series expansion)
+of $R$ with separable
+terms that depend on elevation and local atmospheric conditions.
+
+\begin{equation}
+ R(P,T,RH,E) = R_0(P,T,RH) f(P,T,RH,E_0), 
+\label{e-Rsep}
+\end{equation}
+
+\noindent where $P$, $T$, and $RH$ are the local atmospheric pressure,
+temperature, and relative humidity.  At some telescopes, this is
+simplified even further:
+\begin{equation}
+ R(P,T,RH,E) = R_0(P,T,RH) f(E_0).
+\label{e-Rsepsimple}
+\end{equation}
+\noindent Since departures of $n$ from
+unity are small, the refractivity $N_0$ 
+(again at the antenna location) is typically used instead:
+
+\begin{eqnarray}
+N_0 &\equiv& 10^6~(n - 1)\\
+  &=& 10^6~R_0 (radians)\\
+  &=& \frac{R_0 (arcsec)}{0.206265}.
+\label{e-Ndef}
+\end{eqnarray}
+
+\noindent The refractivity is an important component in calculation of
+atmospheric propogation delay; the delay is directly proportional to the
+refractivity integrated through the atmosphere (i.e., the pathlength \scrL). It may be broken into
+two parts: the optical refractivity due to induced dipole ultraviolet
+transitions of dry air and water vapor, and the infrared refractivity
+due to permanent dipole infrared rotational transitions of water vapor.
+The weather-dependent formula given by Smith \& Weintraub (1953) and Thayer
+(1974) is used by both BIMA and OVRO (see TMS equations 13.6 and 13.70):
+
+\begin{eqnarray}
+N_{opt} &=& N_{opt,D} + N_{opt,V} \\
+	&=& 77.6 \frac{p_D}{T} +~64.8 \frac{p_V}{T} \\
+\label{e-dry}
+N_{IR} &=& 3.776\times10^5 \frac{p_V}{T^2}\\
+\label{e-wet}
+N_0 &=& N_{opt} + N_{IR}
+\label{e-sw}
+\end{eqnarray}
+
+\noindent where $p_D$ is the partial pressure of the dry air and $p_V$
+is the partial pressure of water vapor, both in millibars and $T$ is
+in Kelvin.  BIMA ignores the second optical term $N_{opt,V}$ (by
+design or accident?), which is small compared with the IR refractivity.
+For CARMA, we will keep all terms.\footnote{The International Association of Geodesy
+website suggests coefficients for equation \ref{e-sw} which include
+a contribution from CO$_2$ and differ by a few tenths of a percent from
+those given here. Of course, our code will be written such that changes
+in the formula for $N_0$ due to new research can be accomodated.}
+It is not uncommon to see the components of $N_0$ split up with
+the terms containing $p_V$ being together called the ``wet refractivity''
+($N_V$) and the $p_D$ term call the ``dry refractivity'' ($N_D$).
+
+The atmospheric pressure measured by the on-site barometer is the sum
+of the partial pressures $P = p_D + p_V$, and $p_V$ is calculated from
+the relative humidity in percent and the surface saturated water vapor
+pressure (millibars):
+
+\begin{equation}
+p_V = RH \frac{\esat}{100}.
+\label{e-pv}
+\end{equation}
+
+\noindent The formula for \esat\/ used by both BIMA and OVRO is that given
+by Crane (1976) (see TMS eqn 13.15):
+
+\begin{equation}
+\esat = 6.105~\exp \Bigl[ 25.22~\Bigl({T~-~273.2 \over T }\Bigr)~-~5.31 
+~\ln \Bigl(\frac{T}{273.2}\Bigr) \Bigr] .
+\label{e-esat}
+\end{equation}
+\noindent (OVRO writes it as a function of dewpoint temperature, 
+but the result is the same). Substituting into 
+equation \ref{e-sw} and rewriting in terms of total pressure:
+\begin{equation}
+N_0 = 77.6~\frac{P}{T}~-~0.128~\frac{RH~\esat}{T}~+~3.776\times10^3~\frac{RH~\esat}{T^2}
+\label{e-fullN}
+\end{equation}
+
+Note that $N_0$ is the refractivity at the earth's surface and looking
+towards the zenith.  To compute the refractivity integrated through the earth's
+atmosphere and towards the source (that is, the path length \scrL) 
+we must take into account the differing scale heights of
+the neutral atmosphere and the water vapor (i.e., of  the wet and dry
+refractivities) as well as the fact that the atmosphere is spherical.
+Below, we take the neutral scale height to be $h_D$ and water vapor scale
+height to be $h_V$.
+
+At both BIMA and OVRO the sphericity is approximated by assuming
+the atmosphere consists of spherical layers with differing indices
+of refraction.  OVRO does an iterative spherical shell approximation to 
+a full ray-tracing solution at the source elevation assuming a
+scale height that is the weighted sum of the scale heights
+\begin{equation}
+h_{OVRO} = \frac{h_D~N_D + h_V~N_V + h_{IR}~N_{IR}}{N_D + N_V + N_{IR} } 
+\end{equation}
+\noindent 
+OVRO takes the infrared water vapor scale height $h_{IR} \approx 1.05 h_V$.
+BIMA assumes $h_{IR} = h_V$ and 
+opts for the approximation, good for 
+short baselines ($D<<\rearth$)
+and moderate zenith angles ($E_0 \gapprox 20\degree$; TMS equation 13.33):
+
+{\bf FIX: missing a length term -- check jack's notes }
+\begin{equation} 
+\Delta\scrL_{BIMA} =  \expo{-6} \left( N_{opt,D}~h_D + N_{IR}~h_V \right)~
+\left(\frac{1}{\rearth~\sin^2~E_0}\right) .
+\label{e-BIMApathlength}
+\end{equation}
+\noindent In this case $\Delta\scrL$ is the pathlength difference between the 
+antenna location and the array reference position.
+For CARMA, we will follow the prescription given by TMS equation 13.38--13.41:
+\begin{equation}
+\scrL = 10^{-6} 
+\frac{N_0~h_0}{\sin E_0} \left(1 - \frac{h_0}{\rearth} \cot^2 E_0 \right),
+\end{equation}
+
+\noindent where $h_0$ is the atmospheric scale height. Substituting in from equations \ref{e-sw} and \ref{e-fullN}:
+
+\begin{equation}
+\scrL  = 10^{-6} 
+\left\{
+\frac{N_D~h_D}{\sin E_0} \left(1 - \frac{h_D}{\rearth} \cot^2 E_0 \right) 
+ +~\frac{N_{opt,V}~h_V}{\sin E_0} \left(1 - \frac{h_V}{\rearth} \cot^2 E_0 \right) 
+ +~\frac{N_{IR}~h_{IR}}{\sin E_0} \left(1 - \frac{h_{IR}}{\rearth} \cot^2 E_0 \right)
+\right\}
+ \label{e-pathlength}
+\end{equation}
+
+\begin{eqnarray*}
+{\mathscr L} &=& \left(\frac{10^{-6}}{T \sin E_0}\right) 
+  \left\{ 
+    77.6~P~h_D \left[ 1 - \frac{h_D}{\rearth} \cot^2 E_0 \right]
+ -~0.128~RH~\esat~h_V \left[ 1 - \frac{h_V}{\rearth} \cot^2 E_0 \right]
+\right. \\
+ & & \left. 
+ +~\nexpo{3.776}{3}~RH~\esat~h_{IR}~T^{-1} \left[ 1 - \frac{h_{IR}}{\rearth} \cot^2 E_0 \right]
+  \right\}. 
+\end{eqnarray*}
+
+\noindent This formula is accurate to better than 0.4\% at
+$E_0 \ge 10\degree$ and better than 2\% at $ 7\degree \le E_0 < 10\degree$.
+Since equation \ref{e-pathlength} is singular at $E_0 = 0$, we must have
+a safeguard at low elevations. We suggest that for $E_0 < E_{min}$, we
+set $\scrL = \scrL_{max}$ as defined in TMS equation 13.40.
+The interferometry DO will also need to keep reasonable default values
+for atmospheric pressure, air temperature, and relative humidity in case these
+are unavailable or otherwise corrupted (e.g. weather station inoperative).
+Note $E_0$ correponds to the pointing center of the antenna, which
+may be different than the phase center (although likely not too different).
+
+\subsubsection{Antennas at Differing Heights\label{s-zheight}}
+Implicit in equation \ref{e-pathlength} is the assumption that all antennas
+in the array are coplanar.  This is certainly not the case for Cedar Flat,
+where the station heights differ by as much as 53 m.  So equation 
+\ref{e-pathlength} needs a correction to take this into account. 
+The correction is negative, so that antennas at higher stations have
+a shorter pathlength (less delay).
+With the installation of the A-array stations, which are off the ``T'',
+BIMA solved this by adding a term to equation 
+\ref{e-BIMApathlength}:
+\begin{equation}
+\delta\scrL_z = -\frac{R_0~\Delta h}{\sin~E_0}
+\label{e-zbima}
+\end{equation}
+\noindent where $\Delta h$ is the
+additional height of the antenna above the reference plane of the array.
+Equation \ref{e-zbima} implicitly assumes the bottom of the atmosphere
+is a uniform slab.  A more correct prescription would be simply to
+replacing \rearth\ with $(\rearth + \Delta h)$ in equation 
+\ref{e-pathlength}; this is what we will do for CARMA.
+%In equatorial antenna coordinates, this becomes
+%\begin{eqnarray}
+%\delta\scrL_z & = & -\frac{R_0}{\sin E_0} \left( \xlam \cos L + \zlam \sin L \right) \\
+%% & = & -\frac{10^{-6}}{\sin E_0} 
+%\left\{ 77.6~\frac{P}{T}~-~0.128~\frac{RH~\esat}{T}~+~3.776\times10^3~\frac{RH~\esat}{T^2} \right\}~
+%\left( \xlam \cos L + \zlam \sin L \right).
+%\end{eqnarray}
+
+\subsection{Frequency Dependence of the Refractivity}
+
+The IR refractivity has a frequency dependence due to the effects of the
+wings of the infrared emission that is not accounted for in equation
+\ref{e-sw} (Clifford \& Hill 1981). Because of this, the accuracy of
+equation \ref{e-sw} is limited to about 1.5\% at 100 GHz and 3\% at
+230 GHz.  The accuracy can be improved by adding a frequency dependence
+to the IR refractivity.
+
+An example plot the $N$ as a function of frequency taken from Clifford
+\& Hill in shown in Figure \ref{f-hcrefrac}.  Note this curve is for
+weather conditions significantly worse than we would expect at Cedar Flat.
+What is currently unknown (but knowable) is how this curve changes with
+weather conditions.  But the general features of the curve are nonetheless
+relevant.  As the figure shows, $N$ is roughly constant up to about 50 GHz,
+then slowly increases with frequency, except for a dip at 183 GHz due to
+the atmospheric water line. (There are larger dips above 320 GHz, but we
+have not shown them since they are outside CARMA's nominal operating range).
+
+\subsubsection{A Possible Implementation for CARMA}
+
+The data in Figure \ref{f-hcrefrac} can be fit well up to 300 GHz by
+a second-order polynomial (shown as a dashed line).  The deviation of
+the fit from the data in the 3 mm operating range is negligible and in
+the 1 mm range is less than 0.3\%.  (A fourth-order polynomial does even
+better above 200 GHz).  The largest deviation is at the 183 GHz dip and
+is only 0.8\%.  However, CARMA does not have receivers in this operating
+range so it is not a problem.  Therefore, given a refractivity curve that
+represents average weather conditions at Cedar Flat, an adequate expression 
+for the refractivity that meets CARMA's requirements is
+
+\begin{eqnarray}
+N(\nu,E_0) & = & N_0 ~ f(\nu) \\
+  & = & N_0 ~ (1 + A~\nu + B\nu^2)
+\end{eqnarray}
+\noindent with $N_0$ as determined from Equation \ref{e-fullN} and 
+\[
+  A,B = \left\{ \begin{array}{ll}
+                   0 & \mbox{$\nu \leq 50$ GHz} \\
+                   \mbox{from fit} & \mbox{$\nu > 50$ GHz}
+                 \end{array} 
+          \right. 
+\]
+\noindent 
+Thus, \scrL and therefore the tropospheric delay would 
+have to be multiplied by $f(\nu)$.
+If the average Cedar Flat conditions do not provide sufficient accuracy
+for $f(\nu)$, then the Liebe atmospheric code (which UMD has) could be
+used to improve the correction.   This investigation would fall to
+Auxiliary Services (see below).
+
+\subsection{Refraction Pointing Correction}
+
+While the refraction pointing correction $R$ is formally part of Auxiliary
+Services, it is related to the refractivity $N_0$ and so we comment upon
+it here.  The Requirements document states the commanded antenna positions
+need to be accurate to 1$\arcsec$, which translates to knowing $N$ to
+1.7\% (assuming typical $R_0$ is 60\arcsec).  Since CARMA will operate
+primarily at 230 GHz, we would need to include this frequency dependence
+to stay within the required tolerance.  Since we have a valid equation
+for $N_0$ and thus $R_0$, determining the refraction pointing correction
+$R$ comes down to finding a good formula for the function $f$ in equation
+\ref{e-Rsep} or \ref{e-Rsepsimple}.  There is a lot of literature on the
+subject (e.g. Marini 1972; Davis et al. 1985; Yan 1996). A review of what
+different observatories do is provided by Mangum (2001).
+
+Neither BIMA nor OVRO use an analytical function $f(E_0)$ for the elevation
+dependence of $R$.  When fitting pointing data, BIMA includes an
+weather-independent elevation term in the pointing model of the form
+$\cot E_0$ to account for refraction (Wright 1990).  OVRO does a ray-tracing
+approximation like the one it uses for \scrL (for optical pointing 
+the IR terms are removed).
+
+For CARMA, we can calculate $R$ from $N_0$ and some to-be-determined
+function $f(E_0)$, or use someone else's routines.  For instance,
+The SLALIB library has refraction routines (e.g., SLA\_REFRO), to
+determine the apparent elevation given true elevation and weather
+information.  These use an expansion formula for the elevation
+dependence of $R$ and an IR refractivity that is perhaps out of
+date, but claims to give accurate results to $E_0 \ge 15\degree$.
+However, CARMA needs $N_0$ for two separate calculations, the
+refraction angle and the tropospheric propagation delay and there
+is no SLALIB routine to calculate the $N_0$ separately from $R$.
+So, if we use a canned routine we wind up essentially having two
+different methods of determining $N_0$.
+
+In conjunction with the Auxiliary Services package authors,
+we have decided that the class \\
+{\tt carma::environment::Atmosphere} will calculate
+refraction-related quantities \scrL and $N_0$, and Auxiliary Services
+will provide $R$ for antenna pointing correction using the ALMA
+prescription (Mangum 2001).
+
+Finally, we note once the water line monitors are fully integrated,
+\scrL and $R$ could in principal be calculated from WLM data using
+an appropriate mapping function (see e.g. Davis et al. 1985)
+
+\section{Interferometric Delay Corrections\label{s-delay}}
+The total delay correction is the sum of several components 
+\begin{equation}
+\delta\tau_{total} = \delta\tau_g + \delta\tau_{atmos} + \delta\tau_{therm} 
+%%+ \delta\tau_{focus} 
++ \delta\tau_{adj}
+\label{e-delay}
+\end{equation}
+\noindent and for a given antenna station added to its fixed delay 
+line offset, $\tau_0$, to arrive at the total delay
+\begin{equation}
+\tau_{total} = \tau_0 + \delta\tau_{total}. 
+\label{e-totaldelay}
+\end{equation}
+\noindent The quantity $\tau_0$ is determined through observations after
+each array reconfiguration.  The last term in Equation \ref{e-delay},
+$\delta\tau_{adj}$ is an ``adjustable'' delay that can be used for
+``peaking up'' the delays after an antenna move or as an artificial delay
+for engineering tests.  We derive the rest of the terms below.
+In practice, we difference the derived delay term
+for a given antenna and for the array reference position, so that
+the applied delay term is $\delta\tau_{ant} - \delta\tau_{ref}$.
+
+
+\subsection{Geometric\label{s-geometric}}
+The geometric delay correction is the simply the $w$ coordinate times $-1$,
+\begin{equation}
+ \delta\tau_g = - \frac{1}{c} \left( \xlam~\cos\delta~\cos H - 
+                    \ylam~\cos\delta~\sin H +
+                    \zlam~\sin\delta \right) +
+                    \frac{D_a}{c}~\cos E_0
+\end{equation}
+\noindent where \xlam, \ylam, and \zlam\ are the antenna position
+in equatorial coordinates, $H$ is the phase center hour angle (which
+may be different than the pointing center hour angle), and 
+$D_a$ is the distance between the antenna azimuth and elevation axes, 
+measured perpendicular to the azimuth axis and in the same units 
+as the antenna positions (see TMS equation 4.15). This last term takes 
+into account axis misalignment (Wade 1970; TMS Section 4.7).
+
+\subsection{Atmospheric Propagation\label{s-atmosdelay}}
+During its journey from the radio source to the antennas, the
+radio wave must of course pass through the Earth's atmosphere.  Both the
+ionosphere and the troposphere modify the propagation speed, resulting in
+an overall delay relative to propagation in vacuum.  The parts of the wave
+front pass through different atmospheric regions, causing a differential
+delay in arrival at two antennas.  This differential delay must
+be removed on a per antenna basis.
+
+\subsubsection{Ionosphere\label{s-ionosphere}}
+Composed of charged particles, the ionosphere has a plasmatic 
+refractive index at frequency $\nu$
+\begin{equation}
+n = {\left[ 1 - {\left( \frac{\nu_p}{\nu} \right)}^2
+           {\left(1 \pm \frac{\nu_g}{\nu}~\cos~\Theta \right)}^{-1}
+    \right]}^{\frac{1}{2}}
+\end{equation}
+\noindent where $\nu_p$ is the plasma frequency, $\nu_g$ is the
+electron gyrofrequency, and $\Theta$ is the angle between the
+magnetic field and the propagation direction (See Spitzer 1978).  
+The associated delay
+is the integral of the refractive index over the path through
+the ionosphere
+\begin{equation}
+\delta\tau_{ion} = \frac{1}{c} \int dS (n - 1).
+\end{equation}
+\noindent Various approximations (Sovers et al. 1998; TMS Section 13.2)
+allow the delay to be expressed as a function of frequency and 
+zenith distance, $\zeta = 90 - E_0$. 
+\begin{eqnarray}
+\delta\tau_{ion} &=& -\left(\frac{q}{\nu^2}\right) \sec \zeta_i \\
+           q &=& \frac{c r_e}{2 \pi} N_e\\
+           \zeta_i &=& \sin^{-1} \left[ \frac{\rearth}{\rearth+h_i} \sin \zeta \right] 
+\end{eqnarray}
+\noindent where $r_e = \nexpo{2.818}{-13}~{\rm cm}$ is the classical electron 
+radius, $N_e \approx \nexpo{6}{13}~\cmtwo$ is the total column
+density of electrons at zenith, and $h_i \approx 350$ km is the height of the
+ionospheric layer.  Note this additional delay is negative.
+At millimeter wavelengths, $\delta\tau_{ion}$ is small due to the inverse-square
+frequency dependence; for instance
+at 100 GHz it is \nexpo{8}{-3} ns at zenith.  Although $\delta\tau_{ion}$ 
+is traditionally ignored at mm wavelengths, this value is comparable to the
+antenna misalignment term for the BIMA antennas.  The problem is that
+$N_e$ is varies diurnally and with the Solar cycle, making $\delta\tau_{ion}$
+difficult to determine.  Point source observations
+at widely separated frequencies can be used to remove $\delta\tau_{ion}$
+(Sovers et al. 1998; TMS Section 13.2) and we might consider a
+regular program for CARMA+SZA to do so (\eg, simultaneous quasar measurements
+at 230 GHz and 30 GHz at various times of the day and year could
+be used to construct a model for $\delta\tau_{ion}$), but
+for first light, we will follow convention and set $\delta\tau_{ion} \equiv 0$.
+
+\subsubsection{Troposphere\label{s-troposphere}}
+
+Unlike the ionosphere, the troposphere--the first few tens of kilometers of
+the Earth's atmosphere--is electrically neutral. Because the tropospheric
+index of refraction is not the vacuum value, radio signals will experience
+delay, about 8\thinspace ns at zenith and 80\thinspace ns at $E_0=6\degree$.
+The tropospheric delay is just 
+\begin{equation}
+\delta\tau_{tr} = \frac{\scrL}{c},
+\end{equation}
+\noindent 
+with \scrL as determined from equation \ref{e-pathlength} (including
+modification for antennas at differing heights). The full 
+atmospheric propogation delay is then 
+\begin{equation}
+\delta\tau_{atmos} = \delta\tau_{tr}+\delta\tau_{ion}.
+\end{equation}
+
+\subsection{Thermal Delay\label{s-thermal}}
+A further geometric delay is due to temperature variations which cause
+a vertical displacement of the antenna reference point.  The magnitude
+of the displacement at a height $h$ above the ground is proportional to
+the change in temperature $\Delta r = \alpha\Delta T~h$ with $\alpha \sim 12
+{\rm ppm/K}$ (Sovers et al. 1998). Note $\Delta T$ here is the
+temperature of the antenna structure, not the air temperature.
+Diurnal variations in temperature of 10 to 20 K are not uncommon,
+so the total displacement could be as much as 0.36 mm for $h = 3$m, 
+corresponding to a delay
+
+\begin{equation}
+\delta\tau_{therm} = \frac{\Delta r}{c} = \nexpo{1.2}{-3}~{\rm ns}.
+\label{e-thermal}
+\end{equation}
+
+For a homogeneous array, the thermal delay is not an issue, since
+all antennas should respond similarly to temperature changes.
+Since CARMA is a heterogeneous array however, this correction becomes
+important. What is required to implement this correction is 
+a good determination of $\alpha$ and $h(T_0)$ for each antenna type and
+temperature sensors on the antenna structure to measure $\Delta T$ (which
+might be some average of several sensors).
+The BIMA antennas have sensors on the feed legs, the OVRO antennas currently
+have no sensors on the antenna structure.  We will stub out the method
+for the thermal delay correction, but it will be turned off until
+the above requirements are met.
+
+\section{Hardware Limits}
+
+The digitizer board FPGAs provide for delays up to 20~$\mu$s
+(a baseline of about 6 km).  The delay engine will make
+a best effort to ensure the delays it passes to the lobe rotator
+are between 0 and 20~$\mu$s inclusive.  The delays will
+always be non-negative, as the delay engine will subtract the
+smallest delay (positive or negative) from all delays. So one
+antenna should always have a zero delay.  If the resultant
+maximum delay is larger than 20~$\mu$s, the delay engine will
+reset the ``overflowed'' delay to 20~$\mu$s, log the error, and
+set the {\tt outOfRange} monitor point to true.  The fault system should
+track this monitor point.
+
+
+\section{Update Rates}
+As outlined in Steve Scott's document ``Phase and Delay Update
+Rates,'' phase and delay will be expressed in units of time.
+All quantities will be antenna-based. This makes for straightforward
+computational loops over antennas, since all subarrays will
+share the same array reference position.  The interferometry
+engine will calculate a new delay value every 30 seconds and
+distribute that information to the lobe rotator controller and
+correlator subsystems.  These values are time tagged (as defined
+in the Control Subsystem design) with a discontinuity flag for
+source change, frequency change, etc. The receiver of the delays
+will do quadratic interpolation over the most recent three values.
+The update rates have been chosen to track the fastest astronomical
+sources (comets; see Pound's ``Suggested Tracking Update Rate for
+CARMA''), but not artificial satellites.
+
+\section{Code Testing}
+Correctness of the delay values is, of course, very important. We will
+test the Delay Engine against the codes of both BIMA and OVRO.
+Test harness will be written around the current code bases to produce
+tables of UT, sky position, frequency, pressure, temperature, and delay
+for several sources around the sky.  The output of the Interferometry
+Engine will be compared against these tables with the requirement that
+the phase difference at the highest frequency be less than 1\degree.
+We will also test simple array configurations, such as a cross, where
+the (geometric) delays are easily hand-calculable.  Performance
+testing will also be done.
+
+\section{Design Details \protect \footnote{The Delay Engine API is contained
+in a separate doxygen-generated document: {\sl The Delay Engine Reference
+Manual}} }
+
+In order to keep the Delay Engine up to date on the latest positions,
+the Subarray Tracker will call {\tt setAntennaRaDec()} followed
+by {\tt computeDelays()} at 30-second intervals.  This interval eliminates
+the need for the Delay Engine to do any interpolation on positions.
+Upon completion of {\em all} parameter setting for the current
+cycle, the SAT must call the Delay Engine {\tt computeDelays()} method to
+initiate the delay calculation.
+The {\tt computeDelays()} method allows the SAT to make all the
+changes it needs before signalling the Delay Engine that a self-consistent
+set of delays may now be calculated.
+In response to the {\tt computeDelays()} call, the Delay Engine will 
+calculate either one value or three, depending on the previous state 
+of the system.  The Delay Engine always keeps the 3 most recent
+delay states in memory as {\tt DelayInfo} objects. 
+
+For observing the transmitter or drift scans of a planet, an alternative
+method for setting positions, {\tt setAntennaAzEl()} is available.
+
+\subsection{Case 1: No state change (``steady-state'')}
+If the state has not changed since the last
+{\tt computeDelays()} call, the Delay Engine will calculate delays for
+the timestamp indicated by the {\tt mjd} given, {\em not} the 
+current time.  The timestamp provided by the SAT should be 60
+seconds in the future.  Individual antennas do not 
+need to use the same timestamp, all though in practice all
+antennas in the same subarray probably will.
+Example SAT usage:
+
+\begin{verbatim}
+#include "carma/interferometry/DelayEngineControl.h"
+#include "carma/services/AstroTime.h"
+
+// get the current time
+double mjd = Time::MJD(); 
+
+// add one minute. (1 Day)/1440 = one minute.
+mjd += ( 1.0/AstroTime::MINUTES_PER_DAY );   
+
+// Imaginary magic call to calculate the correct positions at 
+// the given time
+calculatePositions(mjd);
+
+// loop over all antennas in the selected subarray and
+// set their positions and other parameters
+for(int antNo = subarray1.firstAnt; antNo < subarray1.lastAnt; i++ ) {
+    delayEngine.setAntennaRaDec(
+                                     antNo, mjd,
+                                     pntRa[antNo], pntDec[antNo],
+                                     phsRa[antNo], phsDec[antNo],
+                                     frequency, 
+                                     pntDistance, phsDistance, 
+                                     false
+                                    );
+}
+
+// Since weather generally varies smoothly, it should not
+// be necessary to set a discontinuity flag when updating the
+// weather.   The set of weather parameters from the most
+// recent call to setWeatherParameters() is always used
+// in the tropospheric delay calculation.
+delayEngine.setWeatherParameters(airTemp, atmPressure, dewPoint, relHumid);
+
+// Now signal the Delay Engine to do its thing.
+delayEngine.computeDelays();
+\end{verbatim}
+
+In this case, the Delay Engine calculates the values the delays 
+would have at the timestamp {\tt mjd}, about 60 seconds from ``now''
+(``now+30'', ``now'',``now-30'' will be
+on the client subsystems' quadratic interpolator stacks; 
+``now-30'' gets pushed off).
+The new values are passed along to client subsystems.
+In steady-state, none of the three DelayInfo objects should have
+discontinuity set to true.
+
+\subsection{Case 2: State change}
+If some fundamental parameter has changed, as indicated by either
+the {\tt setAntennaRaDec} discontinuity flag or a change in
+any of the delay status flags, the previous delays become invalid
+and a new triplet must be calculated.  If a state change occurs,
+the delay engine will set its {\tt NeedsInitialization} monitor
+point until it has the three DelayInfo objects required for
+client interpolation.
+Example SAT usage:
+
+\begin{verbatim}
+#include "carma/interferometry/DelayEngineControl.h"
+#include "carma/services/AstroTime.h"
+
+bool discontinuity;
+double mjd = Time::MJD(); // get the current time
+
+for(int i = 0; i < 3; i++)  {
+    // add i * 30 seconds to generate next
+    // timestamp. (1 Day)/2880 = 30 seconds.
+    mjd += ( (float)i * 0.5 / AstroTime::MINUTES_PER_DAY );  
+
+    // discontinuity is set first time through only.
+    discontinuity = ( i == 0 ? true : false ); 
+
+    // Imaginary magic call to calculate the correct positions at 
+    // the given time
+    calculatePositions(mjd);
+
+    // loop over all antennas in the selected subarray and
+    // set their positions and other parameters
+    for(int antNo = subarray1.firstAnt; antNo < subarray1.lastAnt; i++ ) {
+         delayEngine.setAntennaRaDec(
+                                     antNo, mjd,
+                                     pntRa[antNo], pntDec[antNo],
+                                     phsRa[antNo], phsDec[antNo],
+                                     frequency, 
+                                     pntDistance, phsDistance, 
+                                     false
+                                    );
+    }
+}
+
+
+// Now signal the Delay Engine to do its thing.
+delayEngine.computeDelays();
+\end{verbatim}
+
+
+In this case, all previous delays become invalid.  Therefore the
+Delay Engine must calculate three sets of delay values at the
+given timestamps (``now'', ``now+30'', ''now+60'') to be passed
+along in rapid succession to the client subsystems with the
+appropriate discontinuity flags.  When the first discontinuity
+flag is encountered the three DelayInfo objects are cleared and
+{\tt NeedsInitialization} is set to true.  Once the three DelayInfo
+objects are reset, {\tt NeedsInitialization} is set to false, and a
+call to {\tt computeDelays()} will initiate the delay calculation.
+A call to {\tt computeDelays()} when {\tt NeedsInitialization}
+is true will do nothing and return immediately.
+
+Finally, it is possible to change delay status flags or
+fixed values without changing the antenna parameters. In
+this case the Delay Engine will recompute the delays for
+the 3 existing DelayInfo objects and resend them. Example SAT usage:
+
+\begin{verbatim}
+#include "carma/interferometry/DelayEngineControl.h"
+
+delayEngine.setAdjustableDelay(subarray.firstAnt, 0.123);
+delayEngine.useAdjustableDelay(subarray.firstAnt, true);
+delayEngine.computeDelays();
+\end{verbatim}
+
+
+\subsection{Consequences of the Design}
+
+Because we are not distinguishing between subarrays, a call to {\tt
+computeDelays()} will cause new delay values to be calculated for
+all subarrays regardless of which one just changed source.  This is
+a little added overhead for the Delay Engine (calculating new delays
+for antennas that might not need it) and for the client subsystems
+(flushing their quadratic interpolator buffers and reinitializing
+their interpolations).  However, we regard this as a small price
+to pay for the simplicity gained by ignoring subarray membership.
+
+The SAT must wait for {\tt computeDelays()} to return.  Timing tests
+indicate this is not a problem.  On a 1GHz/PIII/512MB laptop running the
+IMR, notification and name services, monitor system, lobe rotator simulator,
+and the correlator simulator with 23 antennas and 16 correlator bands,
+{\tt computeDelays()} takes about 2.5 seconds. Most of this time is
+spent communicating with the correlator bands.
+
+\subsection{Class List}
+\begin{tabular}{ll}
+\hline
+Class & Description \\
+\hline
+carma.interferometry.DelayEngineControl & The IDL class. \\
+carma.interferometry.DelayEngineImpl & The DO implementation, 
+subclass of DelayEngineControl \\
+carma.interferometry.DelayInfo       & Holds self-consistent delay information.\\
+carma.interferometry.DelayEngine     & The Program class. \\
+carma.environment.Atmosphere         & Contains refraction, weather related
+routines. (Hides gory details).\\
+carma.services.constants.Physical    & Physical constants \\
+carma.services.constants.Astro       & Astronomical constants\\
+carma.services.Units                 & Unit conversion utilities \\
+\hline
+\end{tabular}
+
+
+\section{Monitor Points}
+The interferometry engine has the following monitor points:
+
+\begin{tabular}{lcrclcc}
+\hline
+Monitor Point & \# samples & Per Antenna & Type & Units & Persistent? & Fault Node?\\
+\hline
+adjustableDelay       & 3  & yes & Double  & nanosec & yes & no\\
+adjustableDelayStatus & 3  & yes & Boolean &         & yes & no\\
+axisDelay             & 3  & yes & Double  & nanosec & yes & no\\
+calculatedAt          & 3  & yes & Double  & MJD     & yes & yes\\
+calculatedFor         & 3  & yes & Double  & MJD     & yes & no\\
+delayOffset           & 3  & yes & Double  & nanosec & yes & no\\
+discontinuity         & 3  & no  & Boolean &         & yes & no \\
+emulate               & 1  & no  & Boolean &         & yes & yes\\
+geometricDelay        & 3  & yes & Double  & nanosec & yes & no\\
+geometricDelayStatus  & 3  & yes & Boolean &         & yes & no\\
+ionosphericDelay      & 3  & yes & Double  & nanosec & yes & no\\
+ionosphericDelayStatus& 3  & yes & Boolean &         & yes & no\\
+needsInitialization   & 1  & yes & Boolean &         & yes & yes\\
+outOfRange            & 3  & no  & Boolean &         & yes & yes\\
+pathLength            & 3  & yes & Double  & meter   & yes & no\\
+refractivity (zenith) & 3  & yes & Double  & radian  & yes & no\\
+thermalDelay          & 3  & yes & Double  & nanosec & yes & no\\
+thermalDelayStatus    & 3  & yes & Boolean &         & yes & no\\
+totalDelay            & 3  & yes & Double  & nanosec & yes & no\\
+troposphericDelay     & 3  & yes & Double  & nanosec & yes & no\\
+troposphericDelayStatus& 3 & yes & Boolean &         & yes & no\\
+validUntil            & 3  & yes & Double  & MJD     & yes & yes\\
+\hline 
+\end{tabular}
+
+\noindent Monitor points with 3 sample points correspond to the three
+time-tagged values for interpolation.  The delay for the most recent
+time is the first sample. To provide smooth interpolation, old
+values are recomputed in the next cycle if a status variable has changed.
+If Emulate is true, the delay engine is in emulation mode and is calculating
+delays but is {\em not} communicating with the lobe rotator and correlator
+bands.  
+
+The monitor point names should follow the hierarchy
+{\tt carma.delayengine.antennaN.[name]} for per-antenna points
+and {\tt carma.delayengine.[name]} for others.
+The delay status monitor points show if a particular delay
+correction is or is not being used for calculations made by the
+interferometry engine. Note there is no TotalDelayStatus. The
+total delay is controlled only through the individual delay
+corrections.  The MPs will be produced once every 30 seconds.
+The {\tt CalculatedAt} is the time the {\em at} which delays were
+calculated; {\tt CalculatedFor} is the time {\em for} which they
+were calculated; {\tt ValidUntil} is the time when they expire; 
+{\tt NeedsInitialization} indicates the Delay Engine does not have
+enough information to calculate the current delays (e.g. doesn't know the
+source RA and DEC).
+
+\subsection{Fault Nodes}
+There are a few monitor points that may be used as nodes for the fault
+system.  Because the Delay Engine does not run on the standard half-second
+cycle, there are two timestamp monitor points to indicate data validity
+( {\tt calculatedAt, validUntil}), one to indicate the Delay Engine is
+in a happy state ({\tt needsInitialization}), and one that indicates the
+delay value is within hardware limits.  These are all ``per antenna''
+monitor points, so for each category there will be as many as there are
+active antennas.  A tru value for the {\tt emulate} monitor point indicates
+that the delay engine is in emulation mode and not communicating with
+its client DOs.  This may or may not signal a fault.
+
+\section{FTE Estimate and Milestones}
+The FTE estimate is as follows:
+
+\begin{tabular}{lrcl}
+\hline
+Stage & & Months & Responsible \\
+\hline
+Design  & & 2.0 & both\\
+Implementation& & & \\
+  & IDL interface & 0.25 & Kraybill \\
+  & refractivity  & 0.5 & Pound \\
+  & delays        & 0.5 & Pound \\
+  & Monitor system interface & 0.5 & Pound \\
+  & Program interface & 0.25 & Pound \\
+  &       \cline{1-2}
+  & Total             & 2.0  & \\
+Testing & & 1.0 & both\\
+Integration & &  1.0 & both\\
+\hline
+Package Total & & 6.0 & FTE months  \\
+\end{tabular}
+
+\clearpage
+The schedule for completion is as follows:
+
+\begin{tabular}{ll}
+\hline
+Task & Completion Date\\
+\hline
+Conceptual Design Review  & 08/20/2003\\
+Preliminary Design Review & 11/06/2003\\
+Critical Design Review    & 01/26/2004\\
+API defined                          & completed \\
+IDL interface coded                  & completed \\
+Program interface roughed out        & completed \\
+Delay methods coded                  & completed \\
+Monitor system mpml coded            & completed \\
+Refractivity and pathlength coded    & completed\\
+Program interface completed          & completed \\
+Monitor system interface completed   & completed \\
+Unit Tests coded                     & completed \\
+Integration                          & completed \\
+\end{tabular}
+
+\begin{thebibliography}{}
+\bibitem[]{} Crane, R.K. 1976, Methods of Experimental Physics, 12B, 186
+\bibitem[]{} Davis, J.L., Herring, T.A., Shapiro, I.I., Rogers, A.E.E., \& Elgered, G. 1985, Radio Science, 20, 1593
+\bibitem[]{} Hill, R.J. \& Clifford, S.F.  1981, Radio Science, 16, 77
+\bibitem[]{} Mangum, J. 2001, ALMA Memo 366
+\bibitem[]{} Marini, J.W. 1972, Radio Science, 7, 223
+\bibitem[]{} Ulich, B.L.  1981, Int. J. Infrared and Millimeter Waves, 2, 293
+\bibitem[]{} Smart, W. M. 1977, \underline{Textbook on Spherical Astronomy} 
+\bibitem[]{} Smith, E.K. \& Weintraub, S. 1953, Proc. IRE, 41, 1035
+\bibitem[]{} Spitzer, L. 1978, \underline{Physical Processes in the Interstellar Medium}, 61{\it ff}
+\bibitem[]{} Thayer, G.D. 1974, Radio Science, 9, 803
+\bibitem[]{} Thompson, Moran, \& Swenson, 1st edition, chapters 4 and 13
+\bibitem[]{} Wright, M.C.H.W 1990, BIMA Memo 2
+\bibitem[]{} Yan, H. 1996, AJ, 112, 1312
+\end{thebibliography}
+
+\begin{deluxetable}{cl}
+\tablecaption{Symbol definitions}
+\tablehead{
+\colhead{Symbol} &
+\colhead{Definition} 
+}
+\startdata
+$c$ & speed of light \\
+$D_a$ & antenna axis misalignment \\
+$\Delta h$ & antenna altitude displacement from array reference plane\\ 
+$\delta$ & declination\\
+$\delta\tau_{0}$ & fixed delay line offset\\
+$\delta\tau_{adj}$ & adjustable delay\\
+$\delta\tau_{atmos}$ & total atmospheric delay \\
+$\delta\tau_{ion}$ & ionospheric delay\\
+$\delta\tau_{tr}$ & tropospheric delay \\
+$\delta\tau_g$ & geometric delay \\
+$\delta\tau_{therm}$ & thermal delay due to structural expansion\\
+$e_{sat}$ & saturated water vapor pressure \\
+$E_0$ & antenna elevation \\
+$E_{min}$ & minimum elevation at which to compute full refractivity \\ 
+$h_D$ & atmospheric scale height of dry air\\ 
+$h_V$ & atmophseric scale height of water vapor\\
+$h_{IR}$ & infrared scale height \\
+$H$ & hour angle\\
+\scrL & pathlength (integrated refractivity towards source) \\
+$n$ & index of refraction \\
+$N_0$ & total zenith refractivity \\
+$N_{IR}$ & infrared zenith refractivity \\
+$N_{opt}$ & optical zenith refractivity \\
+$N_{opt,D}$ & optical zenith refractivity due to dry air\\
+$N_{opt,V}$ & optical zenith refractivity due to water vapor\\
+$\nu$ & observing frequency, band center \\
+$\nu_g$ & ionospheric electron gyrofrequency\\
+$\nu_p$ & ionospheric plasma frequency \\
+$P$   & atmospheric pressure\\
+$p_D$ & partial pressure of dry air \\
+$p_V$ & partial pressure of water vapor \\
+\rearth & radius of Earth \\
+$R$     & refraction \\
+$R_0$ & total zenith refraction \\
+$RH$  & relative humidity, measured at ground \\
+$T$   & ambient temperature, measured at ground \\
+$X_{\lambda}$   & antenna $X$ position, equatorial coordinates \\
+$Y_{\lambda}$   & antenna $Y$ position, equatorial coordinates \\
+$Z_{\lambda}$   & antenna $Z$ position, equatorial coordinates \\
+\enddata
+\label{t-symbols}
+\end{deluxetable}
+
+\begin{deluxetable}{cc}
+\tablecaption{Values To Be Used for Constants}
+\tablehead{
+\colhead{Symbol} &
+\colhead{Value} 
+}
+\startdata
+$E_{min}$ & 1$^{\circ}$\\ 
+$h_D$ & 9.48 km \\ 
+%(ovro) 7 km (bima)\\
+$h_V$ & 2.103 km \\
+%(ovro) \dots (bima)\\
+$h_{IR}$ & 2.216 km \\
+\rearth & 6378.14 km \\
+%(ovro) 2.5 km (bima)\\
+%$A$   & first-order coefficient of refractivity frequency dependence\tablenotemark{1} & -2.84E-5 \\
+%$B$   & second-order coefficient of refractivity frequency dependence\tablenotemark{1} & 5.40E-7\\
+\enddata
+%\tablenotetext{a}{Values for for frequency in GHz.}
+\end{deluxetable}
+
+
+\begin{figure}[!ht]
+\epsscale{0.8}
+\plotone{refractivity.ps}
+\caption{Frequency dependence of refractivity from Hill \& Clifford (1981),
+calculated for $T = 300$ K, $P = 1$ atm, $RH = 80\%$, and $p_V = 28.2$ mbar
+(solid line). We have normalized the refractivity by its value at 
+50 GHz. Dashed line shows a quadratic fit to the data that should be
+adequate for CARMA's purposes.
+}\label{f-hcrefrac}
+\end{figure}
+\clearpage
+
+\end{document}
+
+

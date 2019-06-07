@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DATAFLOW WINDOW HELP </title>
+</head>
+<body>
+<center>
+<h1>Dataflow Window Help</h1>
+</center>
+
+<h2>Overview</h2>
+<p>
+This window gives an overview of the status of some of the dataflow 
+processing for CARMA. 
+The dataflow involves these main steps:
+<ul>
+<li> Monitor point data file creation
+<li> Astroheader file creation
+<li> Visbrick file creation
+<li> Monitor data loading
+<li> Data transfer
+<li> Monitor data deletion
+</ul>
+
+   
+<h2>AstroHeaderWriter</h2>
+The astroHeaderWriter program (AHW) reads text monitor data files 
+and produces xml astroheader files.
+The astroheader files contain sufficient information to 
+create a miriad dataset when combined with the visibilities in a visbrick file.
+<p>
+The input files for the AHW program are all symlinks in the 
+/opt/dbIngest/sdp/monitorData/slcorrel/  directory 
+structure that point to astronomical integration time 
+integrated monitor point data in 
+the /opt/dbIngest/monitorData/slcorrel/ directory structure. 
+The names on the symlinks are changed to indicate the various stages of
+processing and are displayed on the in this tab of the RTD page.
+The astroheader files that are produced go into the 
+/opt/sdp/astroheader/SLCorrelIntegrated/ directory structure. 
+Each astroheader file spans an entire obsblock trial (track)
+and the files are named accordingly, such as <br>
+astrohdr_cx255.1B_97Clover.1.xml.
+<br>
+The flow of the processing can be followed by the file status 
+as indicated by the symlink file extensions in the 
+/opt/dbIngest/sdp/monitorData/slcorrel/ directory.
+<ul>
+<li>
+MPDAT: Input monitor point data files that need to be processed into an
+astroheader.
+<li>
+READ: These input monitor point data files have been read into
+an astroheader file that is not yet complete.
+<li>
+DONE: Input monitor point data files  have been completely 
+processed by the AHW and can be deleted.
+Deletion also depends on the files being loaded into 
+the monitor point database and being transferred to the archive.
+Files may accummulate in this state if they cannot be deleted because
+they have not been loaded or transferred, or if the data deleter is down.
+<li>
+ERROR: Files marked as being in error. What can cause this?
+<li>
+OTHER: These have filename extensions that are not part of the set
+for normal processing 
+but are sometimes resident in the dbIngest/sdp directory structure.
+</ul>
+
+<h2>MonitorDataDeleter </h2>
+
+
+</body>
+</html>
+

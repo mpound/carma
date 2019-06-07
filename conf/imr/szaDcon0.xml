@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "/opt/rt/bin">
+        <!ENTITY DEFAULT_DIR "/home/control">
+        <!ENTITY EMULATE "true">
+        <!ENTITY LOG "traceFile=syslog traceLevel=0">
+        <!ENTITY USE_DB "useDBMS=true">
+        <!ENTITY EML_DIR "/home/eml/newCarmaDevel/Carma-i686-5.3/build/bin">
+]>
+
+<!-- Single machine config for the sza dcon0 machine.         -->
+<!-- Intended for use on dcon0 while running under the sza    -->
+<!-- control system only.  As such, no carma monitor system   -->
+<!-- applications are used.                                   -->
+<!--                                                          -->
+<!-- $Id: szaDcon0.xml,v 1.6 2013/04/09 22:48:04 abeard Exp $  -->
+<!--                                                          -->
+
+<domain>
+
+<!-- Wideband downconverter -->
+<oad hostname="wbdc.carma.pvt" system="correlator">
+
+    <server name="Wbdc" path="&BIN_DIR;/carmaWbdcHost"
+            args="&LOG; &USE_DB; echo=true board=1 nomon=true"
+            directory="&DEFAULT_DIR;" />
+
+    <server name="RemoteCanWbdc" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+ 
+    <server name="SzaLoberotator" path="&BIN_DIR;/szaLoberotatorHost"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB;  board=0 bus=0 objectName=carma.loberotator.szaLoberotatorControl"/>
+
+</oad>
+
+</domain>

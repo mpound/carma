@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Run delay engine integration test.  This test does not require
+# the IMR or CORBA.
+# Functions copied from Dave Mehringer.  Thanks, Dave!
+
+echo  "=========== DELAY ENGINE INTEGRATION TEST START ===================="
+
+. `dirname $0`/lib/functions.sh
+
+setupCrossTest
+
+cmd="carma/interferometry/Test/DelayEngineTestHarness useDBMS=false traceLevel=0 antparam=$antparam decstart=$decstart decend=$decend decstep=$decstep harange=$harange timestep=$timestep nanosec=true maxants=8 traceFile=/dev/null logfile=/dev/null" 
+
+echo "Running Cross Test: $cmd"
+$cmd &
+pid=$!
+watch $pid 20 &
+wait $pid
+
+res1=$?
+
+if [ $res1 -eq 0 ] ; then
+    pass
+    echo  "PASSED CROSS TEST"
+else
+    fail
+    echo  "FAILED CROSS TEST"
+    echo  "=========== DELAY ENGINE INTEGRATION TEST END ================="
+    exit 1
+fi
+      
+setupSourceTest 
+
+cmd="carma/interferometry/Test/DelayEngineTestHarness useDBMS=false traceLevel=0 harange=$harange timestep=$timestep nanosec=true maxants=13 traceFile=/dev/null logfile=/dev/null config=FL source=$source dra=$dra ddec=$ddec padtest=true selftest=true"
+
+echo "Running Source Test: $cmd"
+$cmd &
+pid=$!
+watch $pid 30 &
+wait $pid
+
+res2=$?
+
+if [ $res2 -eq 0 ] ; then
+    pass
+    echo  "PASSED SOURCE TEST"
+else
+    fail
+    echo  "FAILED SOURCE TEST"
+    echo  "=========== DELAY ENGINE INTEGRATION TEST END ================="
+    exit 1
+fi
+
+echo  "=========== DELAY ENGINE INTEGRATION TEST END ================="
+exit 0

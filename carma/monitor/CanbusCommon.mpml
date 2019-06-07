@@ -1,0 +1,493 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Monitor point enumerations that are common to CANbus Devices.  -->
+<!-- Note that these are included on a per-monitor-point basis thus -->
+<!-- you can pick and choose which ones to use.  Some monitor point -->
+<!-- enums are only shared among a couple different Devices, while  -->
+<!-- others, such as 'state' should be shared by most all CAN       -->
+<!-- devices.                                                       -->
+<Common scope="global" author="Andy Beard">
+
+    <MonitorPoint name="state" type="enum" priority="useful" >
+        <shortName>State</shortName>
+        <longName>State</longName>
+        <description>Status of module
+        </description>
+        <enum name="OFFLINE"/>
+        <enum name="STARTING"/>
+        <enum name="ONLINE"/>
+        <enum name="SIM"/>
+        <errHi>OFFLINE</errHi>
+        <errHi>SIM</errHi>
+        <warnHi>STARTING</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="timeStat" type="enum" priority="useful" >
+        <shortName>timeStat</shortName>
+        <longName>Time status</longName>
+        <description>Time control system status
+        </description>
+
+        <!-- Don't assume clarivoyance (damn) -->
+        <enum name="OK">
+          <description>No time system errors/Module time ok
+          </description>
+        </enum>
+        <enum name="COARSE_ERROR">
+          <description>Coarse time sync error/ Module time ok
+          </description>
+        </enum>
+        <enum name="MODULE_ERROR">
+          <description>Coarse time sync ok/ Module time error
+          </description>
+        </enum>
+        <enum name="ALL_ERROR">
+          <description>Coarse time sync error / Module time error
+          </description>
+        </enum>
+    </MonitorPoint>
+
+    <MonitorPoint name="timeSync" type="enum" priority="useful" >
+       <shortName>timeSync</shortName>
+       <longName>Time Sync Source</longName>
+       <description>Status/source of the time synce pulses</description>
+       <enum name="NO_CLOCK">
+         <description>No time sync pulses present</description>
+       </enum>
+       <enum name="_100MS">
+         <description>Time sync clock with a period of 100ms is present
+         </description>
+       </enum>
+       <enum name="_1S">
+         <description>Time sync clock with a period of 1s is present
+         </description>
+       </enum>
+    </MonitorPoint>
+
+
+    <!-- Common Xac Device class... -->
+  <Container name="Xac" >
+      <description>
+        The Xac device contains monitor points common to all CAN modules
+        including time related information, CAN errors, system errors and
+        overall microprocessor health.
+      </description>
+
+      <!-- Monitor points common to all CAN modules. -->
+      <MonitorPoint name="busId" type="short" persistent="true">
+        <shortName>Bus ID</shortName>
+        <longName>CAN Bus Identifier</longName>
+        <description>
+            Contains the unique identifier for the CAN bus this module resides
+            on.
+        </description>
+      </MonitorPoint>
+
+      <!-- ************************************************* -->
+      <!--             System monitor packet 1               -->
+      <!-- ************************************************* -->
+      <MonitorPoint name="serialNo" type="serialNo" persistent="true" priority="useful" >
+         <shortName>Serial #</shortName>
+          <longName>Serial number</longName>
+          <description>Hardware board serial number
+          </description>
+      </MonitorPoint>
+      <MonitorPoint name="modType" type="short" persistent="true">
+        <shortName>Module Type</shortName>
+        <longName>Module type</longName>
+        <description>Specific module type (See CANbus documentation for description)
+        </description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="init" type="bool" persistent="true">
+        <shortName>Needs Init</shortName>
+        <longName>Initialization request</longName>
+        <description>Flag indicating if board needs initialized
+        </description>
+        <errHi>true</errHi>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="nCanRxErrs" type="int" persistent="true" priority="useful" >
+        <shortName>CAN Rx Errs</shortName>
+        <longName>CAN Rx error count</longName>
+        <description>Number of CAN receive errors</description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="nCanTxErrs" type="int" persistent="true" priority="useful" >
+        <shortName>CAN Tx Errs</shortName>
+        <longName>CAN Tx error count</longName>
+        <description>Number of CAN transmit errors</description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="nMemErrs" type="int" persistent="true" priority="useful" >
+        <shortName>Mem Errs</shortName>
+        <longName>XAC memory errors</longName>
+        <description>Number of XAC memory errors
+        </description>
+        <units></units>
+      </MonitorPoint>
+
+      <!-- ************************************************* -->
+      <!--             System monitor packet 2               -->
+      <!-- ************************************************* -->
+      <MonitorPoint name="nSchedOverflows" type="int" persistent="true" priority="useful" >
+        <shortName>Sched Overflows</shortName>
+        <longName>Scheduled Overlflow Count</longName>
+        <description>Number of XAC scheduler overflows
+        </description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="nTimeOverflows" type="int" persistent="true" priority="useful" >
+        <shortName>Time Overflows</shortName>
+        <longName>Timed Schedule Overlflow Count</longName>
+        <description>Number of XAC timed scheduler overflows
+        </description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="fwVersion" type="string" persistent="true">
+        <shortName>FW Version</shortName>
+        <longName>Firmware Version</longName>
+        <description>XAC firmware version ID
+        </description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="testMode" type="short" persistent="true">
+        <shortName>Test Mode</shortName>
+        <longName>Test mode id</longName>
+        <description>Test mode identifier for engineering use only
+        </description>
+        <units></units>
+      </MonitorPoint>
+
+      <!-- ************************************************* -->
+      <!--             System monitor packet 3               -->
+      <!-- ************************************************* -->
+      <MonitorPoint name="nCommErrs" type="int" persistent="true" priority="useful" >
+        <shortName>Comm Errs</shortName>
+        <longName>Communication Error Count</longName>
+        <description>Count of XAC communication errors
+        </description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="nTimeErrs" type="int" persistent="true" priority="useful" >
+        <shortName>Time Errs</shortName>
+        <longName>Time Error Count</longName>
+        <description>Count of XAC time synchronization errors
+        </description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="nSwErrs" type="int" persistent="true" priority="useful">
+        <shortName>SW Errs</shortName>
+        <longName>Software Error Count</longName>
+        <description>Count of XAC software errors
+        </description>
+        <units></units>
+      </MonitorPoint>
+      <MonitorPoint name="nHwErrs" type="int" persistent="true" priority="useful" >
+        <shortName>HW Errs</shortName>
+        <longName>Hardware Error Count</longName>
+        <description>Count of module hardware errors
+        </description>
+        <units></units>
+      </MonitorPoint>
+
+      <!-- ************************************************* -->
+      <!--             System monitor packet 4               -->
+      <!-- ************************************************* -->
+      <MonitorPoint name="timeJitter" type="int" persistent="true" priority="useful">
+        <shortName>Time Jitter</shortName>
+        <longName>Average Time Jitter</longName>
+        <description>Average time offset between internal time and host time.
+        Average is over last 32 timestamps.
+        </description>
+        <units>ms</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="timeSinceLastTs" type="int" persistent="true" priority="useful">
+        <shortName>Time Since Last TS</shortName>
+        <longName>Time Since Last Timestamp</longName>
+        <description>The amount of time elapsed since the last timestamp was
+        received.
+        </description>
+        <units>s</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="tsDelta" type="int" persistent="true" priority="useful">
+        <shortName>TS Delta</shortName>
+        <longName>Instantaneous Time Offset</longName>
+        <description>Instantaneous difference between system and host time
+        </description>
+        <units>ms</units>
+      </MonitorPoint>
+      <MonitorPoint name="apiVer" type="char" persistent="true">
+        <shortName>Api Ver</shortName>
+        <longName>Firmware API Version</longName>
+        <description>Version of API which was used to make implement firmware
+        </description>
+        <units></units>
+      </MonitorPoint>
+
+      <!-- ********************************************** -->
+      <!-- System Monitor Packet 5                        -->
+      <!-- ********************************************** -->
+      <MonitorPoint name="uptime" type="int" persistent="true" priority="useful" >
+        <shortName>Uptime</shortName>
+        <longName>Uptime</longName>
+        <description>Time since module was last reset (not host application).
+        </description>
+        <units>s</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="bootloader" type="enum" persistent="true">
+        <shortName>Bootloader</shortName>
+        <longName>Bootloader Status</longName>
+        <description>
+            Flag indicating if the xac firmware bootloader exists in high memory
+        </description>
+        <enum name="ABSENT">
+            <description>
+                Bootloader is not present - firmware can not be uploaded over
+                the CANbus.
+            </description>
+        </enum>
+        <enum name="PRESENT">
+            <description>
+                Bootloader is present - firmware can be uploaded over
+                the CANbus.
+            </description>
+        </enum>
+        <errHi>ABSENT</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="buildDate" type="string" persistent="true">
+        <shortName>Build Date</shortName>
+        <longName>Build Date</longName>
+        <description>
+            Date the firmware was built.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="buildTime" type="string" persistent="true">
+        <shortName>Build Time</shortName>
+        <longName>Build Time</longName>
+        <description>
+            Time the firmware was built.
+        </description>
+      </MonitorPoint>
+
+  </Container>
+
+  <!-- Canbus Host process monitor point container...              -->
+  <!-- The below container contains common CANbus host related     -->
+  <!-- Monitor points...  Each CANBus system should include this   -->
+  <!-- container and populate these.                               -->
+  <Container name="Host" priority="normal">
+    <description>
+      Monitor points which are specific to the CAN Host process.
+      These include points pertaining to the health of the CANbus(ses),
+      number of online modules, hostname, etc...
+    </description>
+
+    <MonitorPoint name="nActiveNodes" type="int" >
+        <shortName>ActiveNodes</shortName>
+        <longName>Active Nodes</longName>
+        <description>
+            The number of CAN nodes communicating with
+            the host application.
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="nOfflineNodes" type="int">
+        <shortName>OfflineNodes</shortName>
+        <longName>Offline Nodes</longName>
+        <description>
+            The number of CAN nodes currently in the OFFLINE
+            state.
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="nLatePackets" type="int">
+        <shortName>LatePackets</shortName>
+        <longName>Late CAN message count</longName>
+        <description>
+            Count of monitor packets received outside of the
+            designated timeout window beginning at frame time.
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="nDonglelessPackets" type="int">
+        <shortName>DonglelessPackets</shortName>
+        <longName>Dongleless Packet Count</longName>
+        <description>
+            Dongleless packets are CAN messages with an address
+            containing a node id of 511.  This indicates that a module cannot
+            properly read its dongle id and is resorting to the default value.
+            If the count is persistently increasing, it signals an error.
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="nUnknownPackets" type="int">
+        <shortName>UnknownPackets</shortName>
+        <longName>Unknown packet count</longName>
+        <description>
+            Unknown packets are CAN messages which are either
+            addressed with a node and/or api which the canHost does not know
+            about or represent engineering messages.  If the number is
+            consistently increasing it most likely indicates that an engineer
+            is debugging on the bus but could also indicate a programming error.
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="hostname" type="string">
+        <shortName>Hostname</shortName>
+        <longName>Hostname</longName>
+        <description>
+            The hostname of the machine this CANhost process is running on.
+        </description>
+        <!-- 11 Characters holds any short hostname on the RTS -->
+        <width>11</width>
+    </MonitorPoint>
+  </Container>
+
+  <Container name="Bus" priority="normal">
+
+    <MonitorPoint name="busState" type="enum" priority="useful" >
+      <shortName>BusState</shortName>
+      <longName>CANbus Error State</longName>
+      <description>Contains the error state of the CANbus</description>
+      <enum name="NO_ERRORS"/>
+      <enum name="ERROR_ACTIVE">
+        <description>The Rx and/or Tx error count has exceeded 96 but normal
+        communication will continue</description>
+      </enum>
+      <enum name="ERROR_PASSIVE">
+        <description>Th Rx and/or Tx error count has exceeded 127 and the
+        controller will now wait before trying to send/receive messages
+        </description>
+      </enum>
+      <enum name="BUS_OFF">
+        <description>An error count has exceeded 255 and the bus is switched
+        off - this generally signals a fatal error.
+        </description>
+      </enum>
+    </MonitorPoint>
+
+    <MonitorPoint name="busId" type="int">
+        <shortName>BusId</shortName>
+        <longName>Bus Id</longName>
+        <description>Unique Id for referencing a physical CANbus</description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="terminationState" type="enum">
+        <shortName>TermState</shortName>
+        <longName>Termination State</longName>
+        <description>
+            Bus termination state.  Janz CAN cards have termination
+            which can be controlled in software.
+        </description>
+        <enum name="TERMINATED" />
+        <enum name="OPEN" />
+        <errHi>TERMINATED</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="halfSecRxMsgRate" type="float">
+        <shortName>FrameRxMsgRate</shortName>
+        <longName>1/2 Sec Rx Msg Rate</longName>
+        <description>
+            The per-frame CAN rx msg rate for this bus.
+        </description>
+        <units>msg/s</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="halfSecTxMsgRate" type="float">
+        <shortName>FrameTxMsgRate</shortName>
+        <shortName>1/2 Sec Tx Msg Rate</shortName>
+        <description>
+            The per-frame CAN tx msg rate for this bus.
+        </description>
+        <units>msg/s</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="avgRxMsgRate" type="float">
+        <shortName>AvgRxMsgRate</shortName>
+        <longName>Average Rx Msg Rate</longName>
+        <description>
+            One minute averaged CAN rx msg rate for this bus.
+        </description>
+        <units>msg/s</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="avgTxMsgRate" type="float">
+        <shortName>AvgTxMsgRate</shortName>
+        <longName>Average Tx Msg Rate</longName>
+        <description>
+            One minute averaged CAN tx msg rate for this bus.
+        </description>
+        <units>msg/s</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="nRxErrors" type="int">
+        <shortName>RxErrors</shortName>
+        <longName>Rx Error Count</longName>
+        <description>
+            Number of rx errors reported by the CAN controller for this bus.
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="nTxErrors" type="int">
+        <shortName>TxErrors</shortName>
+        <longName>Tx Error Count</longName>
+        <description>
+            Nummber of tx errors reported by the CAN controller for this bus.
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="nLostFastMsgs" type="int">
+        <shortName>LostFastMsgs</shortName>
+        <longName>Lost Fast Msgs</longName>
+        <description>
+            The number of fast (CAN) messages lost by the Janz card
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="nLostSlowMsgs" type="int">
+        <shortName>LostSlowMsgs</shortName>
+        <longName>Lost Slow Msgs</longName>
+        <description>
+            Count of slow (CAN card control) messages lost by the janz card.
+        </description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="maxTsLatency" type="int" priority="useful">
+        <shortName>TimestampLatency</shortName>
+        <longName>Max Timestamp Latency</longName>
+        <description>
+            Rough upper limit on timestamp latencies.  This is obtained by
+            echoing CAN timesyncs back to the host once they are sent to the
+            XAC.  The echoed timestamp is then decoded and the timestamp is
+            compared to the current time.  The difference is this value.  It
+            should generally be below 1ms but higher values don't necessarily
+            indicate a problem.  Note that the XAC should always receive and
+            process timestamps considerably faster than the Linux host can
+            process the echoed timestamps.
+        </description>
+        <warnHi>5000</warnHi>
+        <errHi>10000</errHi>
+        <units>us</units>
+    </MonitorPoint>
+
+  </Container>
+
+</Common>
+

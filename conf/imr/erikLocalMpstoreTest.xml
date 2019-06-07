@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "./bin/">
+    <!ENTITY RUN_DIR "/home/eml/projects/carma/Carma/devel/build/">
+    <!ENTITY DEFAULT_DIR "/home/eml/projects/carma/Carma/devel/build/">
+    <!ENTITY DBMS "useDBMS=false">
+    <!ENTITY USE_DB "useDBMS=false">
+    <!ENTITY LOG "">
+]>
+
+<domain>
+
+
+    <oad hostname="s3.carma.pvt">
+
+       <server name="FrameCollator" 
+                path="&BIN_DIR;frameCollator"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; delay=600" 
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                system="monitor"
+                critical="true"
+                startup-priority="&monitor-core;"/>
+        
+       <server name="FaultSystem" 
+                path="&BIN_DIR;faultSystem"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; outputCMS=intermediate"
+                system="monitor"
+                startup-priority="&monitor;"/>
+
+        <server name="signalPathFSP" 
+                path="&BIN_DIR;/frameScriberPublisher"
+	        directory="&RUN_DIR;" 
+	        args="&LOG; &DBMS;  
+                subsystem=signalpath delay=145"
+                startup-priority="&monitor;" />
+    
+        <server name="SignalPathMapper" 
+                path="&BIN_DIR;/carmaSignalPathMapper"
+	        directory="&RUN_DIR;" 
+                args="&LOG;"
+                startup-priority="&subsystem;"/>
+
+        <server name="Subarray1" 
+                path="&BIN_DIR;/subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=1 runSAT=true &LOG; &DBMS;"
+                optargs="-ORBSvcConf &BIN_DIR;/../conf/tao/fc.conf"
+                system="control" critical="true" 
+                startup-priority="&control;"/>
+
+        <server name="Subarray2" 
+                path="&BIN_DIR;/subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=2 runSAT=true &LOG; &DBMS; " 
+                optargs="-ORBSvcConf &BIN_DIR;/../conf/tao/fc.conf"
+                system="control" critical="true"
+                startup-priority="&control;"/>
+
+        <server name="ControlState" path="&BIN_DIR;/carmaControlState"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; statedir=&RUN_DIR;"
+                system="control" critical="false" />
+
+        <server name="ControlFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=control"
+                system="monitor"
+                startup-priority="&monitor;"/>
+        
+        <server name="carmaMonitorSystemServer" 
+                path="&BIN_DIR;/tCmss"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;"
+                startup-priority="&monitor;"/>
+
+        <server name="carmaFastMonitorSystemReserver" 
+                path="&BIN_DIR;/tCmsr"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; host=build.ovro.pvt"
+                startup-priority="&monitor;"/>
+
+        <server name="carmaMonitorSystemArchiverOneMinute" 
+                path="&BIN_DIR;/tCmsa"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; host=localhost clientPort=5666 arcdir=/tmp/mpstore/oneMinute"
+                startup-priority="&monitor;"/>
+
+        <server name="carmaMonitorSystemArchiverHalfSecond" 
+                path="&BIN_DIR;/tCmsa"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; host=localhost clientPort=5666 nframe=1 arcdir=/tmp/mpstore/halfSecond"
+                startup-priority="&monitor;"/>
+
+        <server name="carmaSlowMonitorSystemReserver" 
+                path="&BIN_DIR;/tCmsr"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; host=build.ovro.pvt serverPort=5667"
+                startup-priority="&monitor;"/>
+
+        <server name="carmaMonitorSystemArchiverWbcorr" 
+                path="&BIN_DIR;/tCmsa"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; host=localhost clientPort=5666 corr=wb arcdir=/tmp/mpstore/wbcorr"
+                startup-priority="&monitor;"/>
+
+        <server name="carmaMonitorSystemArchiverSlcorr" 
+                path="&BIN_DIR;/tCmsa"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; host=localhost clientPort=5666 corr=sl arcdir=/tmp/mpstore/slcorr"
+                startup-priority="&monitor;"/>
+
+    </oad>
+
+</domain>

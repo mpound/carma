@@ -1,0 +1,30 @@
+# $Id: 31-016-4.tab,v 1.6 2008/04/12 00:23:38 control Exp $
+# 31-011-4.tab
+# copied from 31-011-9.tab, since junction was transferred
+#   to this block on 27oct06
+# created 09apr97 using learntune/08apr97/maketab.csh
+# using dewar 5
+#
+# TUNINGMODE: ymax (bias at highest y-factor)
+#
+# incremented all mixer currents by 1.5 uA in this block,
+#  28jun02; this seems to improve the gain
+# 22jan07 - incremented all currents by 3 uA - rp
+# 19jun07 - changed bias currents to 20 uA for 85-100 GHz - rp
+# 11apr08 - changed bias currents from 16.5 to 18.5 uA for 113 GHz - rp
+#
+#
+#|loGHz   |t    |v     |i    |dvm  |dvp  |
+#|r       |r    |r     |r    |r    |r    |
+# 
+  113.000  3.20  2.120  18.5  -.15  +.15
+  113.000  4.00  2.120  18.5  -.15  +.15
+# 
+  100.000  3.20  2.220  20.4  -.15  +.15
+  100.000  4.00  2.220  20.5  -.15  +.15
+#   
+   90.000  3.19  2.280  20.0  -.15  +.15
+   90.000  4.00  2.280  20.0  -.15  +.15
+#  
+   85.000  3.21  2.300  20.1  -.15  +.15
+   85.000  4.00  2.300  20.1  -.15  +.15

@@ -1,0 +1,585 @@
+<!-- For inclusion by carma.xml only - this is not separately valid XML -->
+
+
+
+<!-- Wideband downconverter -->
+<oad hostname="wbdc.carma.pvt" system="correlator">
+
+    <server name="wbdcFSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB;  subsystem=wbdc"
+            startup-priority="&monitor;" />
+
+    <server name="Wbdc" path="&BIN_DIR;/carmaWbdcHost"
+            args="&LOG; &USE_DB; echo=true board=1"
+            directory="&DEFAULT_DIR;" />
+
+    <server name="RemoteCanWbdc" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"   
+            args="&LOG; &USE_DB;  "/>
+
+</oad>
+
+<!-- Wideband correlators -->
+<oad hostname="wbcor1.carma.pvt" system="correlator">
+
+    <server name="WbcBand9FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand1"
+            startup-priority="&monitor;"/>
+        
+    <!-- astroband 9 -->
+    <server name="WbcBandData9" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=9 f=correlator/wbcorrelator.conf p=19001 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer9" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=9 i=correlator/sza.ini s=SZA"
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker9" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=9 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow9FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow1"
+                system="correlator"  />
+
+    <!-- astroband 10 -->
+    <server name="WbcBand10FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand2"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData10" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=10 f=correlator/wbcorrelator.conf p=19002 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer10" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=10 i=correlator/sza.ini s=SZA"
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker10" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=10 s=SZA i=correlator/sza.ini" />
+
+
+        <server name="WbDataFlow10FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow2"
+                system="correlator"  />
+
+</oad>
+
+
+<oad hostname="wbcor2.carma.pvt" system="correlator">
+
+    <!-- astroband 11 -->
+    <server name="WbcBand11FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand3"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData11" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=11 f=correlator/wbcorrelator.conf p=19003 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer11" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=11 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker11" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=11 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow11FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow3"
+                system="correlator"  />
+
+
+    <!-- astroband 12 -->
+    <server name="WbcBand12FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand4"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData12" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=12 f=correlator/wbcorrelator.conf p=19004 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer12" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=12 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker12" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=12 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow12FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow4"
+                system="correlator"  />
+
+</oad>
+
+<oad hostname="wbcor3.carma.pvt" system="correlator">
+
+    <!-- astroband 13 -->
+    <server name="WbcBand13FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand5"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData13" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=13 f=correlator/wbcorrelator.conf p=19005 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer13" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=13 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker13" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=13 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow13FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow5"
+                system="correlator"  />
+
+    <!-- astroband 14 -->
+    <server name="WbcBand14FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand6"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData14" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=14 f=correlator/wbcorrelator.conf p=19006 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer14" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=14 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker14" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=14 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow14FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow6"
+                system="correlator"  />
+
+</oad>
+
+<oad hostname="wbcor4.carma.pvt" system="correlator">
+
+    <!-- astroband 15 -->
+    <server name="WbcBand15FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand7"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData15" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=15 f=correlator/wbcorrelator.conf p=19007 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer15" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=15 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker15" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=15 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow15FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow7"
+                system="correlator"  />
+
+    <!-- astroband 16 -->
+    <server name="WbcBand16FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand8"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData16" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=16 f=correlator/wbcorrelator.conf p=19008 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer16" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=16 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker16" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=16 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow16FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow8"
+                system="correlator"  />
+
+</oad>
+
+<oad hostname="wbcor5.carma.pvt" system="correlator">
+
+    <!-- astroband 17 -->
+    <server name="WbcBand17FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand9"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData17" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=17 f=correlator/wbcorrelator.conf p=19009 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer17" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=17 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker17" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=17 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow17FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow9"
+                system="correlator"  />
+
+
+    <!-- astroband 18 -->
+    <server name="WbcBand18FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand10"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData18" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=18 f=correlator/wbcorrelator.conf p=19010 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer18" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=18 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker18" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=18 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow18FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow10"
+                system="correlator"  />
+
+</oad>
+
+<oad hostname="wbcor6.carma.pvt" system="correlator">
+
+    <!-- astroband 19 -->
+    <server name="WbcBand19FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand11"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData19" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=19 f=correlator/wbcorrelator.conf p=19011 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer19" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=19 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker19" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=19 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow19FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow11"
+                system="correlator"  />
+
+    <!-- astroband 20 -->
+    <server name="WbcBand20FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand12"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData20" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=20 f=correlator/wbcorrelator.conf p=19012 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer20" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=20 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker20" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=20 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow20FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow12"
+                system="correlator"  />
+
+</oad>
+
+<oad hostname="wbcor7.carma.pvt" system="correlator">
+
+    <!-- astroband 21 -->
+    <server name="WbcBand21FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand13"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData21" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=21 f=correlator/wbcorrelator.conf p=19013 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer21" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=21 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker21" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=21 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow21FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow13"
+                system="correlator"  />
+
+
+    <!-- astroband 22 -->
+    <server name="WbcBand22FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand14"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData22" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=22 f=correlator/wbcorrelator.conf p=19014 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer22" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=22 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker22" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=22 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow22FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow14"
+                system="correlator"  />
+
+
+</oad>
+
+<oad hostname="wbcor8.carma.pvt" system="correlator">
+
+    <!-- astroband 23 -->
+    <server name="WbcBand23FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand15"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData23" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=23 f=correlator/wbcorrelator.conf p=19015 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer23" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=23 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker23" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=23 s=SZA i=correlator/sza.ini" />
+
+        
+        <server name="WbDataFlow23FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow15"
+                system="correlator"  />
+
+    <!-- astroband 24 -->
+    <!-- 2012-02-13: offline indefinitely due to hardware failure -->
+    <!--
+    <server name="WbcBand24FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=wbcBand16"
+            startup-priority="&monitor;"/>
+        
+    <server name="WbcBandData24" path="&BIN_DIR;/CorrelatorCarmaServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; b=24 f=correlator/wbcorrelator.conf p=19016 d=10 m=20 "
+            startup-priority="&pre-subsystem;"/> 
+
+    <server name="WbcBandServer24" path="&BIN_DIR;/CorrelatorBandServer"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=24 i=correlator/sza.ini s=SZA" 
+            startup-priority="&subsystem;"/> 
+
+    <server name="WbcTimeChecker24" path="&BIN_DIR;/CorrelatorBandTimeChecker"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG;  b=24 s=SZA i=correlator/sza.ini" />
+
+        <server name="WbDataFlow24FSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow16"
+                system="correlator"  />
+
+
+    -->
+
+</oad>
+
+<oad hostname="&ACC;">
+
+<!-- CorrDataRemapper FSPs. These run on acc with the remapper server -->
+ 
+         <server name="WbRemapper9FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper1"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper10FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper2"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper11FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper3"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper12FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper4"
+                 system="correlator"  />
+
+         <server name="WbRemapper13FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper5"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper14FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper6"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper15FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper7"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper16FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper8"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper17FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper9"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper18FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper10"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper19FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper11"
+                 system="correlator"  />
+         
+         <server name="WbRemapper20FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper12"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper21FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper13"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper22FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper14"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper23FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper15"
+                 system="correlator"  />
+ 
+         <server name="WbRemapper24FSP"
+                 path="&BIN_DIR;/frameScriberPublisher"
+                 directory="&DEFAULT_DIR;"
+                 args="&LOG; &USE_DB; subsystem=WbRemapper16"
+                 system="correlator"  />
+ 
+</oad>
+

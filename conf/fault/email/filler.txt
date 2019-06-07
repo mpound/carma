@@ -1,0 +1,2 @@
+The sdpFiller has encountered an error in the processing of the data.
+It is continuing on however, this needs to be investigated by Doug Friedel.

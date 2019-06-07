@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# chkconfig: 2345 90 01
+# description: load gpib and comedi start/exit script
+#
+#   Heavily modeled after the redhat startup scripts
+# ------------------------------------------------------------------------------
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Check that script is being ran by root only
+if [ $EUID -ne 0 ]; then
+	echo "You must be root."
+	exit 1
+fi
+
+lockfile=/var/lock/subsys/gpib_comedi
+
+CARMA_TOOLS="/opt/carmaTools"
+
+linelength_config() {
+	# Test for presence and configure comedi drivers
+	if [ -c /dev/comedi0 -a -c /dev/comedi1 ]; then
+		echo -n "Configuring comedi drivers (linelength): "
+
+		${CARMA_TOOLS}/sbin/comedi_config -v /dev/comedi0 ni_pcimio 0x01,0x0e
+		RET0="$?"
+		${CARMA_TOOLS}/sbin/comedi_config -v /dev/comedi1 ni_pcimio 0x01,0x0c
+		RET1="$?"
+
+		if [ "$RET0" = "0" -a "$RET1" = "0" ] && touch "$lockfile"; then
+			echo_success; echo
+		else
+			echo_failure; echo
+		fi
+	fi
+}
+
+sldc_config() {
+	# Test for presence and configure comedi drivers
+	if [ -c /dev/comedi0 ]; then
+		echo -n "Configuring comedi drivers (sldc): "
+
+		${CARMA_TOOLS}/sbin/comedi_config -v /dev/comedi0 ni_pcimio
+		RET0="$?"
+
+		if [ "$RET0" = "0" ] && touch "$lockfile"; then
+			echo_success; echo
+		else
+			echo_failure; echo
+		fi
+	fi
+}
+
+start() {
+	# Test for presence and configure linux-gpib drivers
+	if [ -c /dev/gpib0 ]; then
+		echo -n "Configuring gpib drivers: "
+		${CARMA_TOOLS}/sbin/gpib_config --minor 0
+
+		if [ "$?" = "0" ] && touch "$lockfile"; then
+			echo_success; echo
+		else
+			echo_failure; echo
+		fi
+	fi
+
+	# Linelength configuration
+	if [[ "$(lspci | grep -c 'National')" = "2" ]]; then
+		linelength_config
+	elif [[ "$(lspci | grep -c 'National')" = "1" ]]; then
+		sldc_config
+	fi
+}
+
+stop() {
+	# Nothing to be done
+	rm -f "$lockfile"
+}
+
+status() {
+	if [ -f "$lockfile" ]; then
+		echo "gpib and comedi drivers are configured"
+		return 0
+	else
+		echo "gpib and comedi drivers are not configured"
+		return 3
+	fi
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart|force-reload)
+		restart
+		;;
+	reload)
+		;;
+	condrestart)
+		[ -f "$lockfile" ] && restart
+		;;
+	status)
+		status
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart}"
+		exit 1
+esac
+
+# This will hold the return value from the last command run
+# during the switch statement above
+RETVAL="$?"
+exit $RETVAL

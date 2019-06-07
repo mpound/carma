@@ -1,0 +1,236 @@
+<!-- $Id: simCarma3GBand.xml,v 1.5 2014/06/04 17:09:54 mpound Exp $ -->
+<!-- For inclusion only by sandboxes that are simulating carma hardware (e.g. lab.xml) - this is not separately valid XML -->
+
+    <oad hostname="&SIMBANDSERVER;">
+<!---  #################### C3GMAX23 SERVER #####################  -->
+    <!-- need 8 of each per array server. These are for C3GMAX23 -->
+        <server name="Sim3GBand25FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand1"
+                system="correlator"  />
+
+        <server name="Sim3GBand26FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand2"
+                system="correlator"  />
+
+        <server name="Sim3GBand27FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand3"
+                system="correlator"  />
+
+        <server name="Sim3GBand28FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand4"
+                system="correlator"  />
+
+        <server name="Sim3GBand29FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand5"
+                system="correlator"  />
+
+        <server name="Sim3GBand30FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand6"
+                system="correlator"  />
+
+        <server name="Sim3GBand31FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand7"
+                system="correlator"  />
+        
+        <server name="Sim3GBand32FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand8"
+                system="correlator"  />
+
+        <server name="Sim3GBandDataFlow25FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gDataflow1"
+                system="correlator"  />
+
+        <server name="Sim3GRemapper25FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gRemapper1"
+                system="correlator"  />
+
+        <server name="Sim3GBandDataFlow26FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gDataflow2"
+                system="correlator"  />
+
+        <server name="Sim3GRemapper26FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gRemapper2"
+                system="correlator"  />
+
+        <server name="Sim3GBandDataFlow27FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gDataflow3"
+                system="correlator"  />
+
+        <server name="Sim3GRemapper27FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gRemapper3"
+                system="correlator"  />
+
+        <server name="Sim3GBandDataFlow28FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gDataflow4"
+                system="correlator"  />
+
+        <server name="Sim3GRemapper28FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gRemapper4"
+                system="correlator"  />
+
+        <server name="Sim3GBandDataFlow29FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gDataflow5"
+                system="correlator"  />
+
+        <server name="Sim3GRemapper29FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gRemapper5"
+                system="correlator"  />
+
+        <server name="Sim3GBandDataFlow30FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gDataflow6"
+                system="correlator"  />
+
+        <server name="Sim3GRemapper30FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gRemapper6"
+                system="correlator"  />
+
+        <server name="Sim3GBandDataFlow31FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gDataflow7"
+                system="correlator"  />
+
+        <server name="Sim3GRemapper31FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gRemapper7"
+                system="correlator"  />
+
+        <server name="Sim3GBandDataFlow32FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gDataflow8"
+                system="correlator"  />
+
+        <server name="Sim3GRemapper32FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=C3gRemapper8"
+                system="correlator"  />
+
+        <server name="Sim3GBandCarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=0 p=19031 f=correlator/slcorrelator.conf hwtype=c3gmax23 &LOG;"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+<!-- this will simulate 8 bands -->
+<!-- nb delay=false will cause core dump. leave at false until debugged -->
+        <server name="Sim3GMax23Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; delay=false y=false b=1 a=1 simulate=true i=/opt/rt/conf/correlator/carma3g-2pol.ini s=CARMA3G"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+<!---  #################### C3GMAX8 SERVER #####################  -->
+    <!-- need 8 of these per array server. These are for C3GMAX23 -->
+<!--
+        <server name="Sim3GBand33FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand9"
+                system="correlator"  />
+
+        <server name="Sim3GBand34FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand10"
+                system="correlator"  />
+
+        <server name="Sim3GBand35FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand11"
+                system="correlator"  />
+
+        <server name="Sim3GBand36FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand12"
+                system="correlator"  />
+
+        <server name="Sim3GBand37FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand13"
+                system="correlator"  />
+
+        <server name="Sim3GBand38FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand14"
+                system="correlator"  />
+
+        <server name="Sim3GBand39FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand15"
+                system="correlator"  />
+        
+        <server name="Sim3GBand40FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=Carma3GBand16"
+                system="correlator"  />
+
+        <server name="Sim3GBandCarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=0 p=19031 f=correlator/slcorrelator.conf hwtype=c3gmax8 &LOG;"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+-->
+
+<!-- this will simulate 8 bands -->
+<!-- nb delay=false will cause core dump. leave at false until debugged -->
+<!--
+        <server name="Sim3GMax8Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; delay=false y=false b=1 a=2 simulate=true i=/opt/rt/conf/correlator/carma3g-2pol.ini s=CARMA3G"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+-->
+     </oad>

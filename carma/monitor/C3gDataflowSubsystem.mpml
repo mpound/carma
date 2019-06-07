@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+<!-- Spectral Correlator data flow Subsystem monitor point definitions
+   - $Id: C3gDataflowSubsystem.mpml,v 1.2 2014/06/03 19:45:15 mpound Exp $
+  -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="C3gDataflow" author="Marc Pound" priority="normal" count="&NUM_C3G_ASTROBANDS;">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+    <?common OnlineCommon.mpml?>
+    <CommonMonitorPoint ref="online" />
+    <?common CorrDataflowCommon.mpml?>
+
+    <CommonMonitorPoint ref="bandNo" />
+    <CommonMonitorPoint ref="bandValidity" />
+    <CommonMonitorPoint ref="consecutiveErrors" />
+    <CommonMonitorPoint ref="consecutiveDroppedFrames"/>
+    <CommonMonitorPoint ref="seqNo"/>
+    <CommonMonitorPoint ref="numInputs"/>
+    <CommonMonitorPoint ref="numValidBaselines"/>
+    <CommonMonitorPoint ref="numInvalidBaselines"/>
+    <CommonMonitorPoint ref="controlHost"/>
+    <CommonMonitorPoint ref="controlPort"/>
+    <CommonMonitorPoint ref="controlObject"/>
+    <CommonMonitorPoint ref="eventChannel"/>
+    <CommonMonitorPoint ref="receivedTime"/>
+    <CommonMonitorPoint ref="publishedTime"/>
+    
+
+</Subsystem>

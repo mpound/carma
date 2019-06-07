@@ -1,0 +1,82 @@
+#!/bin/bash
+# 
+# Start the control system for the lab at ovro. 
+# This is a simple wrapper script for the controlSystem script.
+#
+
+# Define CARMA environment variable for the root of the build/install
+# Figure out the root of the build/install directory
+# The assumption and requirement is that this script is located
+# one level below the build/install root
+# Fixes case where a relative path is given
+INPUT_PATH=`/usr/bin/dirname "$0"`
+ABSPATH=`/bin/sh -c "cd ${INPUT_PATH} > /dev/null; pwd"`
+export CARMA_RUN=`/usr/bin/dirname ${ABSPATH}`
+
+IMRACC="--imracc labacc.ovro.caltech.edu"
+FILE="--file imr/lab.xml"
+CONTROL_SYSTEM="sudo -u control $CARMA_RUN/scripts/taoControlSystem $IMRACC $FILE"
+ 
+
+function printUsage {
+	echo $"Usage: $0 {start|stop|restart|status}"
+}
+
+function printHelp {
+    echo Starts and stops the lab control system. See the controlSystem
+    echo 'script for more details (this is just a wrapper)'.
+    echo The command that is used is:
+    echo $CONTROL_SYSTEM
+	printUsage
+}
+
+
+function doCommand
+{
+    #echo doing command $1
+    case "$1" in
+        --help)
+            printHelp
+	        exit 1
+            ;;
+        --usage)
+            printUsage
+	        exit 1
+            ;;
+        start)
+            $CONTROL_SYSTEM ${argList[*]}
+	        exit 1
+            ;;
+        stop)
+            $CONTROL_SYSTEM ${argList[*]} 
+	        exit 1
+            ;;
+        restart)
+            $CONTROL_SYSTEM ${argList[*]}
+	        exit 1
+            ;;
+        status)
+            $CONTROL_SYSTEM ${argList[*]}
+	        exit 1
+            ;;
+    esac
+}
+
+# Run first command found
+# arg1: number of arguments in argList to process
+function runCommand {
+
+    # run through arguments to check for options
+    for (( i=$1; i+1; i=i-1 ));
+    do
+        doCommand "${argList[$i]}"
+    done
+}
+
+# get list of arguments
+argList=($*)
+
+
+runCommand $#
+
+exit $?

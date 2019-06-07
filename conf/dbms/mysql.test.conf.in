@@ -1,0 +1,36 @@
+[mysqld]
+log-error=/tmp/mysqldtesterr.log
+pid-file=/tmp/carma_tests/dbmsTest/mysql_data/run/mysqld/mysqld.pid
+datadir=/tmp/carma_tests/dbmsTest/mysql_data/data
+socket=/tmp/mysql.9306.sock
+port=9306
+
+#tmpdir = /var/tmp
+plugin_dir=@carma_tools@/lib/plugin
+plugin-load=innodb=ha_innodb_plugin.so
+innodb_buffer_pool_size = 1000M
+innodb_log_buffer_size = 8M
+# Things for innoddb tables
+innodb_data_file_path = ibdata1:10M:autoextend
+innodb_data_home_dir=/tmp/carma_tests/dbmsTest/mysql_data/data
+# You can set .._buffer_pool_size up to 50 - 80 %
+# of RAM but beware of setting memory usage too high
+innodb_additional_mem_pool_size = 40M
+# Set .._log_file_size to 25 % of buffer pool size
+innodb_log_file_size = 32M
+innodb_log_buffer_size = 10M
+innodb_flush_log_at_trx_commit = 1
+innodb_lock_wait_timeout = 50
+    
+[mysql.server]
+#user=dmehring
+#basedir=/appl/beren/dmehring/appl/encap/mysql-4.0.20/lib
+
+
+[mysqld_safe]
+err-log=/tmp/carma_tests/dbmsTest/mysql_data/log/mysqld.log
+pid-file=/tmp/carma_tests/dbmsTest/mysql_data/run/mysqld/mysqld.pid
+
+[client]
+port=9306
+socket=/tmp/mysql.9306.sock

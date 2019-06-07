@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global" author="Andy Beard">
+
+<Container name="Switchyard" >
+    <description>
+        This container holds monitor points originating from the Switchyard
+        CANbus device defined in CAN API 12.  There are three instances of
+        the switchyard, all identical, for the IF, LO and Linelength systems.
+    </description>
+
+    <MonitorPoint name="switchPosition" type="short" count="38" >
+        <shortName>Position</shortName>
+        <longName>Switch Position</longName>
+        <description>
+            Contains the switch position for the specified switch number.
+            Not all switches are used on all implementations.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps24v" type="float">
+        <shortName>+24V</shortName>
+        <description>+24V Power Supply Voltage</description>
+        <units>V</units>
+        <warnLo>20.0</warnLo>
+        <warnHi>28.0</warnHi>
+        <errLo>18.0</errLo>
+        <errHi>30.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps5vDigital" type="float">
+        <shortName>+5V Digital</shortName>
+        <description>+5V Digital Power Supply Voltage</description>
+        <units>V</units>
+        <warnLo>4.85</warnLo>
+        <warnHi>5.15</warnHi>
+        <errLo>4.75</errLo>
+        <errHi>5.25</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps3_3v" type="float">
+        <shortName>+3.3V</shortName>
+        <description>+3.3V Digital Power Supply Voltage</description>
+        <units>V</units>
+        <warnLo>3.0</warnLo>
+        <warnHi>3.6</warnHi>
+        <errLo>2.7</errLo>
+        <errHi>3.9</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps5vAnalog" type="float">
+        <shortName>+5V Analog</shortName>
+        <description>+5V Analog Power Supply Voltage</description>
+        <units>V</units>
+        <warnLo>4.85</warnLo>
+        <warnHi>5.15</warnHi>
+        <errLo>4.75</errLo>
+        <errHi>5.25</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="moduleTemp" type="float">
+        <shortName>Mod Temp</shortName>
+        <description>
+            On-board module temperature.
+        </description>
+        <units>C</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="fpgaVersion" type="string">
+        <shortName>FPGA Ver.</shortName>
+        <description>
+            FPGA code version in major.minor format.
+        </description>
+    </MonitorPoint>
+
+</Container>
+
+</Common>
+

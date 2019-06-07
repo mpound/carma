@@ -1,0 +1,1239 @@
+#!/bin/csh -f
+#
+# SZA QUALITY script
+# adapted by Hsin-Fang Chiang and Nikolaus Volgenau from
+# CARMA quality script by Tony Wong (wongt@astro.uiuc.edu).
+#
+# NOTE: If you edit this script, make sure you get the latest version from
+# CARMA/scripts:  $Id: szaquality.in,v 1.2 2010/05/19 14:41:17 scott Exp $
+#
+# Unlike the BIMA script, this expects a single MIRIAD file which contains
+# all project data.  It takes advantage of new SMA plotting routines and
+# can handle multiple frequency settings for the passband calibrator.
+# It also estimates decorrelation by comparing scalar and vector averages
+# after doing a phase-only selfcal, whereas the previous script did an
+# amplitude & phase selfcal.  A new grading scheme is implemented, based
+# on the total effective opacity at the observed frequency.
+#
+# When running offsite, the script expects the miriad data file to be in
+# the current directory, and puts the results in the subdirectory quality/.
+# These can be overridden with keywords DATADIR and SCRATCH.  The CARMA
+# program meanmed should also be in the PATH; if not give its full path as a
+# keyword: meanmed=/home/bin/...
+#
+# Version history:
+#    19mar07   tw   grep out 0's from precipmm, rmspath; list sources found
+#    26mar07   tw   mselfcal/smavarplt options; selfcal gaincals separately
+#    09apr07   dnf  added reading of sdp.conf for directory data
+#    27apr07   tw   reduce usage of smavarplt
+#    11may07   tw   allow off-site use; switch from gawk to awk; tmax=0;
+#                   average gains by ~5 min before UVAMP plot on fluxcal
+#    26may07   mh   added the zenith opacity values (from the tipper data)
+#                   and its plot
+#    13jun07   tw   tidy up tipper code for offsite use; add linecal plot
+#    18jun07   tw   calculate opacity at LO1, not "Rest Freq"
+#    03jul07   tw   apply linelength; use tipper value if available
+#    17aug07   tw   check tipper output, print rmspath instead of tipper plot;
+#                   make 2 versions of Tsys plot, use max baseline for grade
+#    19aug07   dnf  added pdb interface to quality
+#    02oct07   tw   avoid double counting time if source and cal lists overlap
+#    04dec07   tw   Calculate gain solution interval based on quasar flux.  
+#                   Change several occurrences of wide,$buse,1 to wide,1,$buse.
+#                   Use a priori (tabulated) fluxes for amplitude gains.
+#    10dec07   tw   Eliminate cut commands for compatibility with new listobs.
+#                   Delete scratch directory by default.
+#    12dec07   tw   Further changes to accommodate further changes to listobs.
+#                   Better support for off-site use. (plus minor doc//pjt)
+#    05feb08   tw   Use purpose variable to set default source classification
+#                   REQUIRES 04-feb-2008 version of listobs
+#    27sep08   tw   Use csflag to flag shadowed data.
+#    16dec08   tw   Generate PDF; generate gains file; image the sources
+#    21dec08   tw   Some minor fixes to improve text output and plots
+#    22dec08   tw   MWC349 is a fluxcal by default
+#    27jan09   tw   Fix total time calculation to include NOISE; a couple typos
+#                   in gains block when determining hybrid mode
+#    31jan09   hfc  modified to be szaQuality, beta version  
+#_____________________________________________________________________________
+
+set version=31jan09
+
+# Required parameters (otherwise prompted)
+set proj=
+set sources=      #the pacs sources
+set gaincals=
+set passcals=
+set fluxcal=
+
+# Optional user parameters to enter on command line
+set see=n                # Display the plots onscreen?
+set prn=y                # Print the plots immediately?
+# Which spectral window to use for gain calibration.  Defaults to 1st widest.
+set banduse=             # avoid sza windows 1 and 2
+set wideavg=wide,1,3,14,14   # avg all 14 good sza bands
+set allwide=wide,14,3,1,1    # all 14 good sza bands
+set allchan=chan,210,31,1,1    # all channels in all good bands 
+# Value of 1mm opacity at zenith to override value in data file
+set tau230=
+
+# Default parameters (user can override on command line)
+set refant=21            # Default ref antenna (closest to the center) 
+set pdb=y                # Default is to update pdb
+set ovrorefant=17        # Default ref antenna for OVRO solution
+set solint=5             # Selfcal interval (mins) to estimate decorrelation
+set solintp=20           # Selfcal interval (mins) for PACScals 
+set bpsolint=$solint     # Selfcal interval (mins) for bandpass solution
+set ampgainsolint=5      # Selfcal interval (mins) to estimate antenna gains
+                         # (0 to calculate based on gaincal fluxes)
+set tmax=1000            # Max for 2nd set of Tsys plots
+set mselfcal=1           # Use Mike Regan's version of selfcal (1=true)
+set smavarplt=0 #1       # Use SMA version of varplt for tsys.ps (1=true)
+set dolinecal=1          # Apply the linelength phases to data (1=true)
+set edgeflag=2           # Number of edge channels to flag when imaging
+
+# If at CARMA, set up directory structure
+set scriptloc = `/usr/bin/dirname "$0"`
+set CONF = "${scriptloc}/../conf/sdp"
+if (-e $CONF/sdp.conf) then
+    #echo "a faked online quality for now..." 
+    set TOP=`awk '{if ($1 =="top") print $3}' $CONF/sdp.conf`
+    set SDP=`awk '{if ($1 =="sdp") {split($3,a,"/") ; print a[2]}}' $CONF/sdp.conf`
+#    set SCID=`awk '{if ($1 =="scienceDataFormatDir") {split($3,a,"/") ; print a[2]}}' $CONF/sdp.conf`
+    set SZID=`awk '{if ($1 =="szaDir") {split($3,a,"/") ; print a[2]}}' $CONF/sdp.conf`
+    set QDIR=`awk '{if ($1 =="qualityDir") {split($3,a,"/") ; print a[2]}}' $CONF/sdp.conf`
+    set TIPDIR=`awk '{if ($1 =="tipperDir") print $3}' $CONF/sdp.conf` 
+    set SCRATCH="/tmp/$QDIR"       # usually /tmp/quality
+#    set DATADIR="$TOP/$SDP/$SCID"  # usually /opt/sdp/sciencedata
+    set DATADIR="$TOP/$SDP/$SZID"  # usually /opt/sdp/sza
+    set REPORTS="$TOP/$SDP/$QDIR"  # usually /opt/sdp/quality
+    set pdb=n
+    alias gv ghostview
+else  # running off-site, presumably
+    set DATADIR=`pwd`
+    set SCRATCH=`pwd`/quality
+#    set SCRATCH="/tmp/quality"       # usually /tmp/quality
+#    set REPORTS="/home/obs/szaQuality/reports" # usually /opt/sdp/quality
+#    set REPORTS="/opt/sdp/quality" # usually /opt/sdp/quality
+#    set TARDIR="/misc/sdp/sza"     # where the sza miriad files are  
+#    set DATADIR="$TARDIR" 
+    set pdb=n
+#    alias gv ghostview
+endif
+
+alias skip 'echo ""; echo "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"'
+
+# Override above parameters if given on the command line
+foreach a ( $* )
+   set check=`echo $a | awk -F= '{print NF}'`
+   if ( "$check" == 2 ) set $a
+end
+
+# Make sure the directories are defined
+if ($?SCRATCH == 0 || $?DATADIR == 0) then
+    echo "*** FATAL: DATADIR= and SCRATCH= keywords must be specified."
+    exit 0
+endif
+if !(-e $DATADIR) then
+    echo "*** FATAL: DATADIR directory $DATADIR not found"
+    exit 0
+endif
+
+# Allow substitute routines
+if ($?meanmed) then
+    alias meanmed $meanmed
+endif
+if ($mselfcal == 1) alias selfcal mselfcal
+if ($smavarplt == 1) then
+    alias svarplt 'smavarplt dotsize=3'
+else
+    alias svarplt varplt
+endif
+
+# Generate filenames and directory structure
+if ($proj == '') then
+    if ($#argv == 1) then
+        set proj=$1
+    else
+        echo "*** FATAL: proj= keyword must be specified."
+        exit 0
+    endif
+endif
+if ($proj:e == 'mir' || $proj:e == 'miriad') then
+    set root = $proj:r       # removes .mir to form root
+else
+    set root = $proj
+endif
+set mirfile=$root.qual
+set logfile=$root.qq.log
+
+# project name will be in format: prjtag.obsBlock.mir
+#set pthtmp = `echo $proj | sed 's/\.mir[a-zA-Z]*//' | sed 's/\./\|/'`
+set pthtmp = `echo $proj | sed 's/\.mir[a-zA-Z]*//' | sed 's/\./\|/' | sed 's/zr//' `
+set prjtag = `echo $pthtmp | awk '{split($1,a,"|"); print a[1]}'`
+set obstag = `echo $pthtmp | awk '{split($1,a,"|"); print a[2]}'`
+if !(-e $SCRATCH/$prjtag/$obstag) mkdir -p $SCRATCH/$prjtag/$obstag
+cd $SCRATCH/$prjtag/$obstag
+echo "Working in directory $SCRATCH/$prjtag/$obstag"
+echo ""
+
+if !(-e $DATADIR/$proj.tar.gz) then 
+    echo "*** FATAL: miriad file not found" 
+    exit 0 
+else 
+    echo "miriad file $DATADIR/$proj.tar.gz found. Extracting the data..." 
+    tar -xzvf $DATADIR/$proj.tar.gz
+    set DATADIR="$SCRATCH/$prjtag/$obstag" 
+endif 
+
+goto start
+start:
+#------------------------ LISTOBS BLOCK ----------------------------------
+# Provides an observations summary and classifies the observed targets.
+
+skip;echo "*** Copying and listing the data"
+
+# Copy the cross-correlation data
+rm -rf $mirfile
+uvcat vis=$DATADIR/$proj out=$mirfile select='-auto'
+
+# Output some useful diagnostics, including UT, LST, and weather data
+# this is the new 11-dec-2007 listobs with both UT,LST cols, no more BW/mode from bima times
+echo $mirfile
+listobs vis=$mirfile log=listobs1
+#foreach var (rmspath tau230 precipmm)  # currently tau230 mirrors precipmm
+#   varplt vis=$mirfile yaxis=$var log=$var.log device=$var.ps/ps
+#end
+echo "No rmspath/tau230/precipmm in the SZA mir data"  
+
+# Get the number of NOISE integrations
+set beglin=`awk '/Sys Temps/ {print NR}' listobs1`
+@ beglin ++
+@ beglin ++
+set endlin=`wc listobs1 | awk '{print $1-1}'`
+sed -n "$beglin,${endlin}p" listobs1 > listobs.tab
+set nnoise=`grep NOISE listobs.tab | wc | awk '{print $1}'`
+
+# Get the date and frequency
+set CalDate=`awk '/Chronology/ {print $5}' listobs1`
+set lofreq=`awk '/First LO/ {print $10}' listobs1`
+set restfreq=`awk '/Rest Freq/ {print $6}' listobs1`
+echo "use restfreq (" $restfreq "GHz) instead of lofreq (" $lofreq "GHz)" 
+
+# Begin writing the logfile
+echo "PROJECT=$proj  DATE=$CalDate  Q_RUN_TIME($HOST,v.$version)=`date`" | tee $logfile
+echo -n '---------------------------------------------' | tee -a $logfile
+echo    '---------------------------------------------' | tee -a $logfile
+
+# Reload the data, this time eliminating the NOISE scans.
+rm -rf $mirfile
+uvcat vis=$DATADIR/$proj out=$mirfile select='-auto,-source(NOISE)'
+listobs vis=$mirfile log=listobs2
+
+# Include the listobs output
+set beglin=`awk '/Sys Temps/ {print NR}' listobs2`
+#sed -n "${beglin}p" listobs2 | sed "s/(K)/& near $lofreq GHz (LO1)/" | tee -a $logfile
+sed -n "${beglin}p" listobs2 | sed "s/(K)/& near $restfreq GHz (rest freq)/" | tee -a $logfile
+@ beglin ++
+set endlin=`wc listobs2 | awk '{print $1-1}'`
+sed -n "$beglin,${endlin}p" listobs2 | tee -a $logfile
+set ants=`sed -n "${beglin}p" listobs2 | sed 's/\(.*[deg,mode]\)//'`
+echo "------sza ants = " $ants 
+
+
+# Get the maximum and median baseline length
+#set lambda=`calc -f f8.6 "0.3/$lofreq"`
+set lambda=`calc -f f8.6 "0.3/$restfreq"` # meters
+grep Bsln listobs2 | sed 's/\(.*:\)//' | awk '{print sqrt($1^2 + $2^2 + $3^2)}' \
+    >! bsln.out
+set maxbsln=`sort -n bsln.out | tail -1`
+set medbsln=`/opt/rt/bin/meanmed infile=bsln.out | tail -1 | awk '{print $2}'`
+set baselen=`calc -f f8.2 "$lambda*$maxbsln"`
+
+# Get the source list and their intents
+set beglin2=`awk '/Observed Sources/ {print NR+2}' listobs2`
+set endlin2=`awk '/Frequency Set-up/ {print NR-2}' listobs2`
+set allobs=`sed -n "$beglin2,${endlin2}p" listobs2 | awk '{print $1}'`
+set purpose=`sed -n "$beglin2,${endlin2}p" listobs2 | awk '{print $2}'`
+set i=1
+set defsources=
+set defgaincals=
+set defpasscals=
+set deffluxcal=
+echo "" | tee -a $logfile
+while ($i <= $#allobs)
+#    if ($purpose[$i] =~ *B*) set defpasscals = ($defpasscals $allobs[$i])
+    if ($purpose[$i] =~ *B*) set defgaincals = ($defgaincals $allobs[$i])
+    if ($purpose[$i] =~ *G*) set defgaincals = ($defgaincals $allobs[$i])
+    if ($purpose[$i] =~ *S*) set defsources = ($defsources $allobs[$i])
+    if ($purpose[$i] =~ *F*) set deffluxcal = ($deffluxcal $allobs[$i])
+    if ($purpose[$i] =~ *A*) set defsources = ($defsources $allobs[$i])
+    if ($purpose[$i] =~ *O*) set defgaincals = ($defgaincals $allobs[$i])
+    echo "Source $allobs[$i] has purpose $purpose[$i]" | tee -a $logfile
+    set i = `expr $i + 1`
+end
+# if there is planet, consider as fluxcal 
+set i=1 
+while ($i <= $#allobs)
+    if ($allobs[$i] =~ {mercury,venus,mars,jupiter,saturn,uranus,neptune,MWC349}) then
+        if !($allobs[$i] =~ $deffluxcal ) set deffluxcal = ($deffluxcal $allobs[$i])
+    endif
+    set i = `expr $i + 1`
+end
+# If there are 2 or more passcals, remove planets:
+if ($#defpasscals > 1) then
+    foreach passcal ($defpasscals)
+        if ($passcal =~ {mercury,venus,mars,jupiter,saturn,uranus,neptune,MWC349}) then
+            if ($#defpasscals > 1) then
+                set defpasscals=`echo $defpasscals | sed "s/$passcal//"`
+            endif
+        endif
+    end
+endif
+# If there are 2 or more gaincals, remove planets:
+if ($#defgaincals > 1) then
+    foreach gaincal ($defgaincals)
+        if ($gaincal =~ {mercury,venus,mars,jupiter,saturn,uranus,neptune,MWC349}) then
+            if ($#defgaincals > 1) then
+                set defgaincals=`echo $defgaincals | sed "s/$gaincal//"`
+            endif
+        endif
+    end
+endif
+# If there are 2 or more fluxcals, choose a planet:
+if ($#deffluxcal > 1) then
+    foreach obj ($deffluxcal)
+        if ($obj !~ {MERCURY,VENUS,MARS,JUPITER,SATURN,URANUS,NEPTUNE,MWC349}) then
+            if ($#deffluxcal > 1) then
+                set deffluxcal=`echo $deffluxcal | sed "s/$obj//"`
+            endif
+        endif
+    end
+    if ($#deffluxcal > 1) set deffluxcal=$deffluxcal[1]
+endif
+# State the default classifications
+echo ""
+echo "Default assignments, based on source intent:"
+echo "pacs sources : $defsources"
+echo "gaincals: $defgaincals"
+echo "passcals: $defpasscals"
+echo "fluxcal: $deffluxcal"
+
+# Prompt for override if we're running without command-line arguments
+if ($sources == '' && $gaincals == '') then
+    echo -n "Do you wish to override these choices [n]? "
+    set resp="$<"
+    if ($resp == 'y') then
+        echo ""
+        echo -n "Enter names of program sources (pacs), comma-separated: "
+        set pacs sources=`echo "$<" | sed 's/ //g'`
+        echo -n "Enter names of gaincals, comma-separated: "
+        set gaincals=`echo "$<" | sed 's/ //g'`
+        echo -n "Enter names of passcals, comma-separated: "
+        set passcals=`echo "$<" | sed 's/ //g'`
+        echo -n "Enter name of the fluxcal (blank if none): "
+        set fluxcal="$<"
+    else
+        set sources=`echo $defsources | sed 's/ /,/g'`
+        set gaincals=`echo $defgaincals | sed 's/ /,/g'`
+        set passcals=`echo $defpasscals | sed 's/ /,/g'`
+        set fluxcal=$deffluxcal
+    endif
+else  # use the command-line parameters, with intent as fallback
+    if ($sources == '') set sources=`echo $defsources | sed 's/ /,/g'`
+    if ($gaincals == '') set gaincals=`echo $defgaincals | sed 's/ /,/g'`
+    if ($passcals == '') set passcals=`echo $defpasscals | sed 's/ /,/g'`
+    if ($fluxcal == '') set fluxcal=$deffluxcal
+endif
+
+# Compile lists of sources
+set sourcelis=`echo "$sources" | sed 's/,/ /g'`
+set gaincalis=`echo "$gaincals" | sed 's/,/ /g'`
+set passcalis=`echo "$passcals" | sed 's/,/ /g'`
+set allcals = ()
+set allobjs = ()
+foreach obj ($gaincalis $passcalis $fluxcal)
+    set val=`echo $allcals | grep $obj`
+    if ("$val" == "") set allcals = ($obj $allcals)
+end
+#foreach obj ($sourcelis $gaincalis $passcalis $fluxcal)
+#    set val=`echo $allobjs | grep $obj`
+#    if ("$val" == "") set allobjs = ($obj $allobjs)
+#end
+# below gets cals with & without J prefix
+foreach obj ($sourcelis $gaincalis $passcalis $fluxcal)
+    set val=""
+    foreach exiobj ($allobjs)
+      if("$exiobj" == "$obj") set val=$exiobj 
+    end
+    if ("$val" == "") set allobjs = ($obj $allobjs)
+end
+
+# Announce object classification
+echo "" | tee -a $logfile
+echo "pacs sources : $sources" | tee -a $logfile
+echo "gaincals: $gaincals" | tee -a $logfile
+echo "passcals: $passcals" | tee -a $logfile
+echo "fluxcal: $fluxcal" | tee -a $logfile
+
+# Choose a new reference antenna if default is unavailable
+set reffound = 0
+foreach ant ($ants)
+    if ($refant == $ant) then
+        set reffound = 1
+    endif
+end
+if ($reffound == 0) then
+    echo "*** WARNING: Requested reference antenna $refant not found"
+    set refant = $ants[1]
+endif
+echo "There were $nnoise NOISE integrations" | tee -a $logfile
+echo "Using $refant as the reference antenna" | tee -a $logfile
+
+# Get the elapsed project time, note this includes NOISE integrations
+head -1 listobs.tab > log1
+tail -1 listobs.tab > log2
+set starttime=`awk '{print $2}' log1`
+set stoptime=`awk '{print $2}' log2`
+set starthours=`echo $starttime | awk '{split ($1,h,""); print h[1] h[2]}'`
+set startminutes=`echo $starttime | awk '{split ($1,h,""); print h[3] h[4]}'`
+set stophours=`echo $stoptime | awk '{split ($1,h,""); print h[1] h[2]}'`
+set stopminutes=`echo $stoptime | awk '{split ($1,h,""); print h[3] h[4]}'`
+set addminutes=`awk '{print $4}' log2`
+
+set starttime = `calc -f f6.3 "$starthours+$startminutes/60.0"`
+set stoptime  = `calc -f f6.3 "$stophours+($stopminutes+$addminutes)/60.0"`
+set stoptime  = `echo $starttime $stoptime | awk '{if ($1 > $2) print ($2 + 24); else print $2}'`
+set totaltime = `calc -f f6.1 "$stoptime-$starttime"`
+# Total time is reported in the OBSTIME block
+#rm -f listobs1 log[1-2]
+
+#------------------------ SYSTEMP BLOCK ----------------------------------
+
+skip;echo "*** Plotting system temperatures"
+
+# Reload the data, this time eliminating the NOISE scans.
+rm -rf $mirfile
+uvcat vis=$DATADIR/$proj out=$mirfile select='-auto,-source(NOISE)'
+# For SZA data, Tsys are all the same, so these aren't necessary now.
+#svarplt vis=$mirfile yaxis=systemp nxy=3,5 device=tsys1.ps/cps
+#svarplt vis=$mirfile yaxis=systemp nxy=3,5 device=tsys2.ps/cps \
+#    yrange=0,$tmax
+#if (-X psselect) then
+##    psselect -p1 tsys1.ps tmp1.ps
+#    psselect -p2 tsys1.ps tmp1.ps
+#    mv tmp1.ps tsys1.ps
+#    psselect -p2 tsys2.ps tmp2.ps
+#    mv tmp2.ps tsys2.ps
+#endif
+#if ($see == 'y') then
+#    gv tsys1.ps &
+#endif
+
+#--------------------------- CSFLAG BLOCK -------------------------------
+
+skip;echo "*** Flagging shadowed data"
+
+csflag vis=$mirfile sza=True carma=False > tmp.csflag
+echo -n "csflag:" | tee -a $logfile
+tail -1 tmp.csflag | tee -a $logfile
+
+#--------------------------- UVFLAG BLOCK -------------------------------
+
+skip;echo "*** Flagging known bad baselines"
+
+uvflag vis=$mirfile select='ant(16)(17),win(4)' flagval=flag > tmp.uvflag
+#echo -n "uvflag:" | tee -a $logfile
+head -1 tmp.uvflag | tee -a $logfile
+tail -9 tmp.uvflag | head -2 | tee -a $logfile
+uvflag vis=$mirfile select='ant(20)(22),win(6)' flagval=flag > tmp.uvflag
+head -1 tmp.uvflag | tee -a $logfile
+tail -9 tmp.uvflag | head -2 | tee -a $logfile
+uvflag vis=$mirfile select='ant(20)(23),win(6)' flagval=flag > tmp.uvflag
+head -1 tmp.uvflag | tee -a $logfile
+tail -9 tmp.uvflag | head -2 | tee -a $logfile
+uvflag vis=$mirfile select='ant(21)(22),win(6)' flagval=flag > tmp.uvflag
+head -1 tmp.uvflag | tee -a $logfile
+tail -9 tmp.uvflag | head -2 | tee -a $logfile
+uvflag vis=$mirfile select='ant(21)(23),win(6)' flagval=flag > tmp.uvflag
+head -1 tmp.uvflag | tee -a $logfile
+tail -9 tmp.uvflag | head -2 | tee -a $logfile
+
+#--------------------------- LINECAL BLOCK -------------------------------
+
+skip;echo "*** Plotting the linelength phases"
+echo "--- no linelength "
+#rm -rf linecal.gains
+#linecal vis=$mirfile out=linecal.gains
+#gpplt vis=linecal.gains yaxis=phase yrange=-180,180 options=wrap,dots \
+#    device=linecal.ps/ps nxy=3,5
+#if ( $dolinecal != 0 ) then
+#    gpcopy vis=linecal.gains out=$mirfile
+#endif
+#if ($see == 'y') then
+#    gv linecal.ps &
+#endif
+
+#--------------------------- OBSTIME BLOCK--------------------------------
+
+skip;echo "*** Evaluating observing time statistics"
+
+echo "" | tee -a $logfile
+echo "Total project time $totaltime hrs from start to finish" | tee -a $logfile
+
+# Split the data in order to get time on each source
+set timesum=0
+foreach obj ($allobjs)
+    rm -rf $obj
+    uvcat vis=$mirfile out=$obj select="source($obj)" options=unflagged
+    uvindex vis=$obj log=tmp.uvindex
+    set obstime=`grep "Total observing time" tmp.uvindex | awk '{print $5}'`
+    echo "Total observe time $obstime hrs for $obj" | tee -a $logfile
+    set timesum=`echo "$timesum+$obstime" | bc -l`
+end
+echo "Total observe time $timesum hrs for entire track" | tee -a $logfile
+
+#---------------------------------------------------------------------------
+# Merge the calibrators into single datasets
+rm -rf gaincals.mir
+uvcat vis=$mirfile select="source($gaincals)" options=nopol,nopass \
+    out=gaincals.mir
+rm -rf pacscals.mir
+uvcat vis=$mirfile select="source($sources)" options=nopol,nopass \
+    out=pacscals.mir
+rm -rf passcals.mir
+uvcat vis=$mirfile select="source($passcals)" options=nopol,nopass \
+    out=passcals.mir
+
+#--------------------------- UVDISTANCE BLOCK------------------------------
+# Plot calibrated phases vs. uv-distance.
+# Calibrates the gaincal data and estimates decorrelation over 5 mins.
+
+skip;echo "*** Plotting calibrated phase vs. uvdistance"
+
+# Determine the correlator setup on gain calibrators
+prthd in=gaincals.mir options=full log=tmp.prthd 
+set beglin=`awk '/Bandwidth/ {print NR}' tmp.prthd`
+@ beglin ++
+set endlin=`awk '/J2000/ {print NR}' tmp.prthd`
+set endlin=`expr $endlin - 3`
+sed -n "$beglin,${endlin}p" tmp.prthd > tmp.corr1
+set corrno = `cat tmp.corr1 | awk '{print $1}'`
+set corfreq = `cat tmp.corr1 | awk '{print $2}'`
+set bandwcal = `cat tmp.corr1 | awk '{printf "%5d", 1000*sqrt($3*$3)}'`
+
+# Determine the correlator setup on sources
+# How can $sourcelis[1] be a miriad file? Is this an error?
+#prthd in=$sourcelis[1] options=full log=tmp.prthd 
+prthd in=pacscals.mir options=full log=tmp.prthd 
+set beglin=`awk '/Bandwidth/ {print NR}' tmp.prthd`
+@ beglin ++
+set endlin=`awk '/J2000/ {print NR}' tmp.prthd`
+set endlin=`expr $endlin - 3`
+sed -n "$beglin,${endlin}p" tmp.prthd > tmp.corr2
+set srcfreq = `cat tmp.corr2 | awk '{print $2}'`
+set bandwsrc = `cat tmp.corr2 | awk '{printf "%5d", 1000*sqrt($3*$3)}'`
+
+# Output information about the correlator setup
+echo "" | tee -a $logfile
+echo "Correlator setup for gain calibrators:" | tee -a $logfile
+cat tmp.corr1 | tee -a $logfile
+echo "Correlator setup for sources:" | tee -a $logfile
+cat tmp.corr2 | tee -a $logfile
+
+# Get the first 500 MHz window on phasecal, otherwise just use largest bw
+if ("$banduse" != "") then
+    set buse=$banduse
+    goto setbeuse
+endif
+set maxbw = 0
+foreach i ($corrno)
+    if ($i >= 3) then   # first 2 SZA bands are bad
+      if (`echo $bandwcal[$i] | awk '{print ($1>400)}'` == 1) then
+          set buse = $i
+          goto setbeuse
+      else if (`echo $bandwcal[$i] $maxbw | awk '{print ($1>$2)}'` == 1) then
+          set buse = $i
+          set maxbw = $bandwcal[$i]
+      endif
+    endif   # close check on first 2 SZA bands
+end
+setbeuse:
+#echo "Using window $buse, BW $bandwcal[$buse] MHz for gain calibration" \
+#    | tee -a $logfile
+echo "Using line=$wideavg with passband calibration prior to gain calibration"\
+    | tee -a $logfile
+
+#---------------------------------------------------------------------------
+
+# Like the CARMA quality script: use selfcal on a single good band.
+#selfcal vis=gaincals.mir line=wide,1,$buse interval=$solint refant=$refant \
+#    options=phase
+# Plot the phase vs uv-distance.
+#uvplt vis=gaincals.mir axis=uvd,phase line=wide,1,$buse nxy=1,1 inc=3 \
+#    options=nobase,2pass,source device=uvdvpha_b$buse.ps/ps yrange=-180,180 \
+#    size=1,2
+#if ($see == 'y') then
+#    gv uvdvpha_b$buse.ps &
+#endif
+
+# For the SZA quality script, first passband calibrate, excluding bad windows
+mfcal vis=passcals.mir interval=$bpsolint refant=$refant line=$allchan
+# Copy passband calibration to gain calibrator data.
+gpcopy vis=passcals.mir out=gaincals.mir mode=copy options=nocal
+rm -rf gaincals.pbcal.mir 
+uvcat vis=gaincals.mir out=gaincals.pbcal.mir options=nocal
+# Now selfcal on PBcal data
+selfcal vis=gaincals.pbcal.mir line=$wideavg interval=$solint refant=$refant \
+    options=phase
+# Plot phase vs uv-distance.
+uvplt vis=gaincals.pbcal.mir axis=uvd,phase line=$wideavg nxy=1,1 inc=3 \
+    options=nobase,2pass,source device=uvdvpha.gain.$solint-min.ps/ps \
+    yrange=-180,180 size=1,2
+if ($see == 'y') then
+    gv uvdvpha.gain.$solint-min.ps &
+endif
+
+# Copy passband calibration to PACS calibrator data.
+gpcopy vis=passcals.mir out=pacscals.mir mode=copy options=nocal
+rm -rf pacscals.pbcal.mir  
+uvcat vis=pacscals.mir out=pacscals.pbcal.mir options=nocal
+# Selfcal on PBcal data
+selfcal vis=pacscals.pbcal.mir line=$wideavg interval=$solintp refant=$refant \
+    options=phase
+# Plot the phase vs uv-distance.
+uvplt vis=pacscals.pbcal.mir axis=uvd,phase line=$wideavg nxy=1,1 inc=3 \
+    options=nobase,2pass,source device=uvdvpha.pacs.$solintp-min.ps/ps \
+    yrange=-180,180 size=1,2
+if ($see == 'y') then
+    gv uvdvpha.pacs.$solintp-min.ps &
+endif
+
+# Make an estimate of the time interval needed to obtain S/N ~ 8 on a 6m-6m
+# baseline.  This will be used to determine the default gain solution interval.
+set snr=8
+
+#---- scale the amplitude to 1 Jy or as in the database  
+#selfcal vis=gaincals.pbcal.mir interval=$solint refant=$refant \
+#        line=$wideavg options=amplitude,apriori,noscale 
+
+# Get the jyperk and median systemp on the reference antenna
+foreach var (systemp jyperka)
+#    varplt vis=gaincals.mir yaxis=$var log=$var.log1 options=compress
+    varplt vis=gaincals.pbcal.mir yaxis=$var log=$var.log1 options=compress
+    sed -e :a -e '$\!N;s/\n  / /;ta' -e 'P;D' $var.log1 > $var.log2
+    set colno=`expr $refant + 2`
+    cat $var.log2 | grep -v '#' | awk '{print $s}' s=$colno | \
+        grep -v '[:alpha:]' > $var.log3
+    /opt/rt/bin/meanmed infile=$var.log3 | tee $var.log4
+end
+set mtsys = `tail -1 systemp.log4 | awk '{print $2}'`
+set jyperk = `tail -1 jyperka.log4 | awk '{print $2}'`
+
+# Use the mean gaincal flux as the nominal flux value
+#calred vis=gaincals.mir line=wide,1,$buse > calred.log
+calred vis=gaincals.pbcal.mir line=$wideavg  > calred.log
+set beglin=`awk '/Source/ {print NR+1}' calred.log`
+set flux=`sed -n "$beglin,999p" calred.log | awk '{s += $3} END {printf "%5.2f\n", 1e-3*s/NR}'`
+
+# Get the default gain solution interval, quantized by 30s, bounded by 0.5 & 5 min
+#set t30=`calc -i "($jyperk*$mtsys*$snr)**2/(30*2*$bandwcal[$buse]*1e6*$flux**2)"`
+#if (`echo $t30 | awk '{print ($1<1)}'` == 1) then
+#    set defgainsolint=0.5
+#else if (`echo $t30 | awk '{print ($1>10)}'` == 1) then
+#    set defgainsolint=5
+#else
+#    set defgainsolint=`calc -f f4.1 "$t30*0.5"`
+#endif
+if ($ampgainsolint == 0) then
+    echo "Median T_sys for Ant $refant is $mtsys"  | tee -a $logfile
+    echo "Nominal Jy/K for Ant $refant is $jyperk" | tee -a $logfile
+    echo "Mean flux for gaincals is $flux pseudo-Jy" | tee -a $logfile
+    echo "Using flux-based gain solution interval of $defgainsolint min" \
+        | tee -a $logfile
+    set ampgainsolint=$defgainsolint
+else
+    echo "Using gain solution interval of $ampgainsolint min" \
+        | tee -a $logfile
+endif
+
+#echo "Using window $buse, BW $bandwcal[$buse] MHz"  | tee -a $logfile
+# Estimate decorrelation ratio using a 5 minute solution interval.
+#echo "" | tee -a $logfile
+echo "*******************************************************************" | \
+    tee -a $logfile
+echo "decorrelation estimated from the ratio of vector to scalar averaged" | \
+    tee -a $logfile
+echo "amplitudes following a phase-only selfcal with a $solint min interval." | \
+    tee -a $logfile
+echo "" | tee -a $logfile
+#selfcal vis=gaincals.mir interval=$solint refant=$refant line=wide,1,$buse options=phase 
+uvflux vis=gaincals.mir line=wide,1,$buse >! tmp.uvflux
+echo "  source       vec_avg    phase_coherence" | tee -a $logfile
+echo "----------     -------    ---------------" | tee -a $logfile
+# This is inelegant. Can it be changed?
+#egrep '(E-|E+)' tmp.uvflux | awk '{printf "%10s %13.4e %15.2f\n", $1, $4, $4/$7}' | tee -a $logfile
+set calname=`egrep '(E-|E+)' tmp.uvflux | awk '{print $1}'`
+set vecavg=`egrep '(E-|E+)' tmp.uvflux | awk '{print $4}'`
+set vecavg=`calc -f e9.2 "$mtsys*$jyperk*$vecavg"`
+set avgamp=`egrep '(E-|E+)' tmp.uvflux | awk '{print $7}'`
+set avgamp=`calc -f e9.2 "$mtsys*$jyperk*$avgamp"`
+set phacoh=`calc -f f9.2 "$vecavg/$avgamp"`
+echo $calname     $vecavg     $phacoh | tee -a $logfile
+#printf "%10s %10.2f %15.2f\n", $1, $vecavg, $vecavg/$avgamp} | tee -a $logfile
+#awk '{printf "%10s %10.2f %15.2f\n", $1, $4, $4/$7}' | tee -a $logfile
+
+##rm -rf gaincals.mir systemp.log[1-4] jyperka.log[1-4]
+
+#------------------------------ PASSBAND BLOCK ------------------------------
+# Calibrates the bandpass and copies bandpass gains to data.
+
+skip;echo "*** Calibrating the bandpass"
+
+# Skip this if no passband calibrators.
+if ( "$passcals" == "" ) then
+    echo "----- no passband calibrator" 
+    set nopasscals=1
+    goto flux
+else
+    set nopasscals=0
+endif
+
+## Select the appropriate passband data.
+#rm -rf passcals.mir
+#uvcat vis=$mirfile select="source($passcals)" options=nopol,nopass \
+#    out=passcals.mir
+##bwsel vis=passcals.mir out=passcals.nar bw="$bandwsrc"
+
+# Compute the passband solutions and plot.
+mfcal vis=passcals.mir interval=$bpsolint refant=$refant #line=chan,210,31,1,1
+smagpplt vis=passcals.mir options=bandpass,nofit device=bpamp.ps/cps \
+    xaxis=chan yrange=0,2 nxy=3,3 filelabel=1
+if ($see == 'y') then
+    gv bpamp.ps &
+endif
+smagpplt vis=passcals.mir options=bandpass,wrap,nofit device=bpph.ps/cps \
+    xaxis=chan yaxis=phase yrange=-180,180 nxy=3,3 filelabel=1
+if ($see == 'y') then
+    gv bpph.ps &
+endif
+
+# Estimate decorrelation ratio.  This requires selecting the wideband data
+# in the case of hybrid mode.
+rm -rf passcals.wid
+bwsel vis=passcals.mir out=passcals.wid bw="$bandwcal"
+#selfcal vis=passcals.wid line=wide,1,$buse interval=$solint refant=$refant \
+#    options=phase
+selfcal vis=passcals.wid line=$wideavg interval=$solint refant=$refant \
+    options=phase
+#uvflux vis=passcals.wid line=wide,1,$buse >! tmp.uvflux
+uvflux vis=passcals.wid line=$wideavg >! tmp.uvflux
+#egrep '(E-|E+)' tmp.uvflux | \
+#    awk '{printf "%10s %13.4e %15.2f\n",$1,$4,$4/$7}' > tmp.uvflux2
+set calname=`egrep '(E-|E+)' tmp.uvflux | awk '{print $1}'`
+set vecavg=`egrep '(E-|E+)' tmp.uvflux | awk '{print $4}'`
+set vecavg=`calc -f e9.2 "$mtsys*$jyperk*$vecavg"`
+set avgamp=`egrep '(E-|E+)' tmp.uvflux | awk '{print $7}'`
+set avgamp=`calc -f e9.2 "$mtsys*$jyperk*$avgamp"`
+set phacoh=`calc -f f9.2 "$vecavg/$avgamp"`
+echo $calname $vecavg $phacoh > tmp.uvflux2
+foreach gcal ($gaincalis)
+    grep -v $gcal tmp.uvflux2 > tmp.uvflux
+    mv tmp.uvflux tmp.uvflux2
+end
+cat tmp.uvflux2 | tee -a $logfile
+
+#----------------------------- FLUXCAL BLOCK -------------------------------
+flux:
+
+skip;echo "*** Examining flux calibrator"
+
+# Estimate decorrelation ratio
+if ($fluxcal != '') then
+#    selfcal vis=$fluxcal options=phase \
+#        line=wide,1,$buse refant=$refant interval=$solint
+    selfcal vis=$fluxcal options=phase \
+        line=$wideavg refant=$refant interval=$solint
+#    uvflux vis=$fluxcal line=wide,1,$buse >! tmp.uvflux
+    uvflux vis=$fluxcal line=$wideavg >! tmp.uvflux
+#    egrep '(E-|E+)' tmp.uvflux | \
+#        awk '{printf "%10s %13.4e %15.2f\n",$1,$4,$4/$7}' > tmp.uvflux2
+set calname=`egrep '(E-|E+)' tmp.uvflux | awk '{print $1}'`
+set vecavg=`egrep '(E-|E+)' tmp.uvflux | awk '{print $4}'`
+set vecavg=`calc -f e9.2 "$mtsys*$jyperk*$vecavg"`
+set avgamp=`egrep '(E-|E+)' tmp.uvflux | awk '{print $7}'`
+set avgamp=`calc -f e9.2 "$mtsys*$jyperk*$avgamp"`
+set phacoh=`calc -f f9.2 "$vecavg/$avgamp"`
+echo $calname $vecavg $phacoh > tmp.uvflux2
+    foreach cal ($gaincalis $passcalis)
+        grep -v $cal tmp.uvflux2 > tmp.uvflux
+        mv tmp.uvflux tmp.uvflux2
+    end
+cat tmp.uvflux2 | tee -a $logfile
+
+# Output absolute amplitude gains
+    echo "" | tee -a $logfile
+    echo -n "Calibrated antenna gains from $fluxcal" | tee -a $logfile
+    echo " (soln interval $ampgainsolint min)" | tee -a $logfile
+    set dofile=$fluxcal
+    if ($#passcalis == 1 && "$passcalis" != '') then
+        if ("$fluxcal" == "$passcalis[1]") set dofile=passcals.wid
+    endif
+#    selfcal vis=$dofile options=apriori,amplitude,noscale \
+#        line=wide,1,$buse refant=$refant interval=$solint 
+    selfcal vis=$dofile options=apriori,amplitude,noscale \
+        line=$wideavg refant=$refant interval=$solint 
+#    gpaver vis=$dofile interval=$solint options=scalar
+#    uvamp vis=$dofile line=wide,1,$buse bin=30,250,nsec device=fluxcal.ps/ps
+    uvamp vis=$dofile line=$wideavg bin=30,200,nsec device=fluxcal.ps/ps
+#    smauvamp vis=$dofile line=wide,1,$buse device=fluxcal.ps/ps \
+#        axis=uvd,amp nbin=20 options=zero
+    if ($see == 'y') then
+        gv fluxcal.ps &
+    endif
+    gpaver vis=$dofile interval=1000 options=scalar
+    gpplt vis=$dofile yaxis=amp log=ampgains.dat
+    tail +5 ampgains.dat | tee -a $logfile
+endif
+
+rm -rf passcals.wid
+
+#----------------------------- GAINS BLOCK -------------------------------
+gains:
+
+skip;echo "*** Calibrating the gains"
+# repeat the bandpass 
+#mfcal vis=passcals.mir interval=$bpsolint refant=$refant #line=chan,240,1,1,1 
+
+# Apply the bandpass to gain calibrators
+if ($nopasscals == 0) then
+    foreach cal ($gaincalis)
+        #gpcopy vis=passcals.mir out=$cal options=nocal
+        #echo "Passband gains copied to $cal"
+        #uvlist vis=$cal options=var,full log=tmp.uvlist
+        uvlist vis=gaincals.pbcal.mir select="source($cal)" options=var,full log=tmp.uvlist
+        set delf=`grep sdf tmp.uvlist | tail -1 | sed 's/.*sdf[ ]*://' | awk '{print 1e3*sqrt($1**2)}'`
+        set nchan=`grep nchan tmp.uvlist | sed 's/.*nchan[ ]*://' | awk '{print $1}'`
+        #set npass=`gethd in=$cal/nchan0`
+        set npass=`gethd in=gaincals.pbcal.mir/nchan0`
+        echo "nchan for data, bandpass: $nchan $npass"
+        if ($nchan < $npass) then
+            #bpsel vis=$cal fmhz=$delf tol=0.1
+            bpsel vis=gaincals.bpcal.mir fmhz=$delf tol=0.1
+            echo "Selected gains with freq resolution $delf MHz" | tee -a $log
+            echo ""
+            set hybrid=y
+        endif
+    end
+endif
+
+# Plot gains(time) using a short solution interval
+rm -rf refant$refant.gains
+foreach cal ($gaincalis)
+    #selfcal vis=$cal line=wide,1,$buse interval=$ampgainsolint \
+    #    refant=$refant options=amplitude,apriori,noscale
+    selfcal vis=gaincals.pbcal.mir select="source($cal)" line=$wideavg \
+      interval=$ampgainsolint refant=$refant options=amplitude,apriori,noscale
+    if ($cal == $gaincalis[1]) then
+        #gpcopy vis=$cal out=refant$refant.gains mode=create
+        gpcopy vis=gaincals.pbcal.mir out=refant$refant.gains mode=create
+    else
+        #gpcopy vis=$cal out=refant$refant.gains mode=merge
+        gpcopy vis=gaincals.pbcal.mir out=refant$refant.gains mode=merge
+    endif
+end
+#gpplt vis=refant$refant.gains nxy=3,3 yaxis=amp yrange=0,4 \
+#    device=bimagns_amp.ps/ps
+gpplt vis=refant$refant.gains nxy=3,3 yaxis=amp device=bimagns_amp.ps/ps
+gpplt vis=refant$refant.gains nxy=3,3 yaxis=phase yrange=-180,180 \
+    options=wrap device=bimagns_ph.ps/ps
+if ($see == 'y') then
+    gv bimagns_amp.ps &
+    gv bimagns_ph.ps &
+endif
+gpcopy vis=refant$refant.gains out=refant$refant.avgains mode=create
+puthd in=refant$refant.gains/senmodel value='GSV' type=ascii
+puthd in=refant$refant.gains/interval value=0.1 type=real
+
+# Plot the bandpass if there was no bandpass cal.
+#if ($nopasscals == 1) then
+#    mfcal vis=refant$refant.mir interval=$bpsolint refant=$refant
+#    smagpplt vis=refant$refant.mir options=bandpass,nofit filelabel=1 \
+#    device=bpamp.ps/cps xaxis=chan yrange=0,2 nxy=3,3
+#    smagpplt vis=refant$refant.mir options=bandpass,wrap,nofit filelabel=1 \
+#    device=bpph.ps/cps xaxis=chan yaxis=phase yrange=-180,180 nxy=3,3
+#    if ($see == 'y') then
+#        gv bpamp.ps &
+#        gv bpph.ps &
+#    endif
+#endif
+
+#HEREIAM (06feb09)
+
+# Average the amplitude gains and report to logfile
+gpaver vis=refant$refant.avgains interval=1000 options=scalar
+gpplt vis=refant$refant.avgains yaxis=amp log=ampgains.dat
+echo "" | tee -a $logfile
+echo -n "Calibrated antenna gains from $gaincals" | tee -a $logfile
+echo " (soln interval $ampgainsolint min)" | tee -a $logfile
+tail +5 ampgains.dat | tee -a $logfile
+
+# repeat with another antenna as reference (not ovro)
+## Use an OVRO antenna as reference; plot gains vs. time
+#set ovrofound = 0
+#foreach ant ($ants)
+#    if ($ovrorefant == $ant) then
+#        set ovrofound = 1
+#    endif
+#end
+#if ($ovrofound == 1) then
+#    rm -rf refant$ovrorefant.gains
+#    foreach cal ($gaincalis)
+#        selfcal vis=$cal line=wide,1,$buse interval=$ampgainsolint \
+#            refant=$ovrorefant options=amplitude,apriori,noscale
+#        if ($cal == $gaincalis[1]) then
+#            gpcopy vis=$cal out=refant$ovrorefant.gains mode=create
+#        else
+#            gpcopy vis=$cal out=refant$ovrorefant.gains mode=merge
+#        endif
+#    end
+#    gpplt vis=refant$ovrorefant.gains nxy=3,3 yaxis=amp device=ovrogns_amp.ps/ps
+#    gpplt vis=refant$ovrorefant.gains nxy=3,3 yaxis=phase yrange=-180,180 \
+#        options=wrap device=ovrogns_ph.ps/ps
+##    rm -rf refant$ovrorefant.mir
+#    mv refant$refant.mir refant$ovrorefant.mir
+##    selfcal vis=refant$ovrorefant.mir line=wide,1,$buse \
+##        interval=$ampgainsolint refant=$ovrorefant options=amplitude,apriori,noscale
+#    if ($see == 'y') then
+#        gv ovrogns_amp.ps &
+#        gv ovrogns_ph.ps &
+#     endif
+#endif
+
+#rm -rf refant$refant.mir refant$ovrorefant.mir
+#rm -f ampgains.dat
+
+#----------------------------- IMAGE BLOCK -------------------------------
+image:
+
+skip;echo "*** Imaging the sources"
+echo "-----  not imaging "
+#-------------------------------------------------------------------------
+goto cleanup 
+
+# Copy gains to sources and make images of each:
+foreach src ($sourcelis)
+    # Copy the bandpass gains
+    echo " " | tee -a $logfile
+    uvlist vis=$src options=spectra log=tmp.uvlist1
+    set ch0=`grep 'starting chan' tmp.uvlist1 | sed 's/.*:[ ]*//'`
+    set nch=`grep number tmp.uvlist1 | sed 's/.*:[ ]*//'`
+    uvlist vis=$src options=var,full log=tmp.uvlist
+    if ($nopasscals == 0) then
+        gpcopy vis=passcals.mir out=$src options=nocal
+        echo "Passband gains copied to $src" | tee -a $logfile
+        set delf=`grep sdf tmp.uvlist | tail -1 | sed 's/.*sdf[ ]*://' | awk '{print 1e3*sqrt($1**2)}'`
+        set nchan=`grep nchan tmp.uvlist | sed 's/.*nchan[ ]*://' | awk '{print $1}'`
+        set npass=`gethd in=$src/nchan0`
+        echo "nchan for data, bandpass: $nchan $npass"
+        if ($nchan < $npass) then
+            bpsel vis=$src fmhz=$delf tol=0.1
+            echo "Selected gains with resolution $delf MHz" | tee -a $logfile
+            set hybrid=y
+        endif
+    endif
+    # Apply bandpass gains, flag edge channels, copy gains
+    rm -rf $src.cal
+    uvcat vis=$src out=$src.cal
+    uvflag vis=$src.cal edge=$edgeflag flagval=f
+    gpcopy vis=refant$refant.gains out=$src.cal options=nopass
+    set nspect=$#srcfreq
+    # Loop through the spectral windows, generating maps.
+    set i=1
+    rm -f $src.olay
+    while ($i <= $nspect)
+        rm -rf $src.$i.map $src.$i.beam
+#        set pow=`calc -i "1+log(1e4/$baselen/$lofreq)/log(2)"`
+        set pow=`calc -i "1+log(1e4/$baselen/$restfreq)/log(2)"`
+        set cell=`echo $pow | awk '{print 2**$1}'`
+        if ($pow > 1) then
+            set imsize=128
+        else if ($pow < -1) then
+            set imsize=512
+        else
+            set imsize=`echo $pow | awk '{print 2**(8-$1)}'`
+        endif
+        invert vis=$src.cal map=$src.$i.map beam=$src.$i.beam imsize=$imsize \
+            cell=$cell line=chan,1,$ch0[$i],$nch[$i] options=systemp,mosaic \
+            robust=1 | tee tmp.invert
+        rm -rf $src.$i.sen $src.$i.gain
+        mossen in=$src.$i.map sen=$src.$i.sen gain=$src.$i.gain
+        rm -rf $src.$i.snr
+        set minval=`histo in=$src.$i.sen | grep Min | awk '{printf "%3.1e",$3}'`
+        echo "Normalizing $src.$i.sen by $minval"
+        maths exp="<$src.$i.map>/<$src.$i.sen>" out=$src.$i.snr
+        echo "Window $i has theoretical rms $minval Jy at map center" \
+            | tee -a $logfile
+        set xpos=0
+        set ypos=`gethd in=$src.$i.map/naxis2 | awk '{printf "%d",$1*0.88*0.25}'`
+        echo -n "clear relpix relpix " >> $src.olay
+        echo -n "$srcfreq[$i]/${bandwsrc[$i]}MHz/\gs=$minval " >> $src.olay
+        echo "yes $xpos $ypos $i $i" >> $src.olay
+        rm -rf $src.$i.map $src.$i.beam $src.$i.sen
+        set i=`expr $i + 1`
+    end
+    # Merge the maps (after noise normalization) and plot.
+    rm -rf $src.snr $src.gain
+    imcat in="$src.*.snr" out=$src.snr options=relax
+    puthd in=$src.snr/bunit value='SIGMA'
+    imcat in="$src.*.gain" out=$src.gain options=relax
+    set max=`histo in=$src.snr | grep Max | awk '{printf "%d",$3+0.5}'`
+    if ($max > 50) then
+        cgdisp in=$src.snr,$src.gain type=p,c range=0,$max,sqr,1 \
+        levs1=0.5 options=full,solneg2,black,wedge device=$src.map.ps/ps \
+        labtyp=arcsec lines=2,2,2 csize=0.8,0,0.9 olay=$src.olay \
+        region=quarter nxy=3,2 slev=a,1
+    else
+        cgdisp in=$src.snr,$src.snr,$src.gain type=p,c,c range=0,$max,lin,1 \
+        levs1=4 levs2=0.5 options=full,solneg2,black,wedge device=$src.map.ps/ps \
+        labtyp=arcsec lines=2,1,2,2 csize=0.8,0,0.9 olay=$src.olay \
+        region=quarter nxy=3,2 slev=a,1,a,1
+    endif
+    if ($see == 'y') then
+        gv $src.map.ps &
+    endif
+    rm -rf $src.*.gain $src.*.snr
+end
+
+# Create a final gains set for export.
+rm -rf $root.gains
+gpcopy vis=refant$refant.gains out=$root.gains options=nopass mode=create
+if ($nopasscals == 0) then
+    gpcopy vis=passcals.mir out=$root.gains options=nocal mode=copy
+endif
+rm -f README
+echo "" >> README
+echo "The file $root.gains contains the bandpass and" \
+    >> README
+echo "time-dependent gains computed by quality." >> README
+echo "Apply them with the following MIRIAD commands (n.b. make a backup" \
+    >> README
+echo "of the raw data first):" >> README
+echo "" >> README
+echo "1. linecal vis=$proj" >> README
+echo "2. gpcopy vis=$root.gains out=$proj options=nocal" >> README
+echo "3. uvcat vis=$proj out=$root.cal" >> README
+echo "4. gpcopy vis=$root.gains out=$root.cal options=nopass" >> README
+echo "" >> README
+echo "The linelength gains are created first (1), then the bandpass is copied (2)," \
+    >> README
+echo "then both are applied (3), and then the time-dependent gains are copied (4)." \
+    >> README
+echo "This sequence is necessary so that systemp weighting takes the" \
+    >> README
+echo "amplitude gains into account, via the senmodel parameter." \
+    >> README
+echo "" >> README
+echo "Hybrid mode: use bpsel to select out the bandpass windows that" \
+    >> README
+echo "correspond to your source, between steps 2 and 3." \
+    >> README
+echo "" >> README
+echo "Caveats: Only the astronomical bandpass is contained in this file" \
+    >> README
+echo "(not the noise source).  There has been no flagging of data/gains" \
+    >> README
+echo "(besides shadowing) and no baseline correction has been applied." \
+    >> README
+echo "Gains have NOT been bootstrapped using the flux calibrator." \
+    >> README
+echo "" >> README
+
+#----------------------------- GRADE BLOCK -------------------------------
+grading:
+
+skip;echo "*** Grading the project"
+
+echo " " | tee -a $logfile
+# Calculate mean and median values
+@ N = 1
+set value=(0 0 0)
+foreach var (rmspath precipmm tau230)
+    rm -f meanmed.out
+    echo "Track statistics for ${var}:" | tee -a $logfile
+    grep -v '#' $var.log | grep -v ' 0.000' | awk '{print $3}' > tmp.varplt
+    meanmed infile=tmp.varplt | tee -a meanmed.out $logfile
+    set median = `tail -1 meanmed.out | awk '{print $2}'`
+    set mean = `tail -1 meanmed.out | awk '{print $3}'`
+    set value[$N] = $median
+    @ N++
+    echo " " | tee -a $logfile
+end
+
+# Calculate the tau values from the tipper
+tipper:
+if ($?TIPDIR) then
+    if (-d $TIPDIR) then
+        tipper q $totaltime $CalDate $stoptime $see > TrackTipper
+        head -6 TrackTipper > HeadTipper
+        set tautip=`grep Mean HeadTipper | awk '{print $6}'`
+        # Check that tautip is defined and is a number (17aug07)
+        if ($tautip == '' || `echo $tautip | sed 's/[0-9]*\.*[0-9]*//g'` != '') then
+            unset tautip
+        endif
+        awk '{print $0}' HeadTipper | tee -a $logfile
+        rm -f HeadTipper TrackTipper
+    else
+        echo ""
+        echo "WARNING: directory $TIPDIR for Tipper data not found on $HOST" \
+            | tee -a $logfile
+        echo "WARNING: cannot do tipper calculation" | tee -a $logfile; echo ""
+    endif
+else
+    echo "Tipper calculation skipped; variable TIPDIR not defined" \
+        | tee -a $logfile
+endif
+
+echo "Using median values and a nominal elevation of 45 deg" | tee -a $logfile
+echo "The maximum baseline length for this track is $baselen m" | tee -a $logfile
+#echo "The median baseline length for this track is $baselen m" | tee -a $logfile
+
+# Rmspath score
+set rmstau = `calc "$value[1]*2*PI/($lambda*1e6)"`
+set rmstau = `calc -f f6.2 "0.5*($rmstau**2)*($baselen/100)**0.833"`
+#echo "Effective opacity at $lofreq GHz due to phase noise: $rmstau" \
+echo "Effective opacity at $restfreq GHz due to phase noise: $rmstau" \
+    | tee -a $logfile
+echo "" | tee -a $logfile
+
+# Precipmm score
+if ("$tau230" == '' && $?tautip == 0) then
+#    set pwv=`calc -f f6.2 "($value[3]-0.005)/0.06"`
+    set pwv=$value[2]
+    echo "Atmospheric opacity based on precipmm in the datafile" | tee -a $logfile
+else
+    if ($tau230 != '') then
+        echo "User-specified value of tau230 is: $tau230" | tee -a $logfile
+    else
+        echo "Tipper-derived value of tau230 is: $tautip" | tee -a $logfile
+        set tau230=$tautip
+    endif
+    set pwv=`calc -f f6.2 "($tau230-0.005)/0.06"`
+endif
+echo "Estimating a median precipmm value of $pwv" | tee -a $logfile
+#set tauz=`obstau altitude=2.2 freq=$lofreq mmh2o=$pwv | tail -1 | awk '{print $8}'`
+set tauz=`obstau altitude=2.2 freq=$restfreq mmh2o=$pwv | tail -1 | awk '{print $8}'`
+set pwvtau=`calc -f f6.2 "$tauz*1.414"`
+#echo "Opacity at $lofreq GHz due to atmospheric absorption: $pwvtau" | tee -a $logfile
+echo "Opacity at $restfreq GHz due to atmospheric absorption: $pwvtau" | tee -a $logfile
+
+# Composite score
+echo " " | tee -a $logfile
+set tottau = `calc -f f6.2 "$rmstau+$pwvtau"`
+echo "Total opacity: $tottau" | tee -a $logfile
+#set finscore = `calc -i "100-25*(exp($tottau)-1)"`
+#echo "COMPOSITE SCORE = 100-25*(exp(tau)-1) = $finscore" | tee -a $logfile
+set finscore = `calc -i "100-25*$tottau"`
+echo "COMPOSITE SCORE = 100-(25*tau) = $finscore" | tee -a $logfile
+
+# Calculate the letter grades
+set grade = (0)
+@ N = 1
+foreach score ($finscore)
+    if ($score >= 90) then
+        set grade[$N]='A'
+    else if ($score >= 80) then
+        set grade[$N]='B'
+    else if ($score >= 70) then
+        set grade[$N]='C'
+    else if ($score >= 60) then
+        set grade[$N]='D'
+    else 
+        set grade[$N]='F'
+    endif
+    if ($grade[$N] != 'D' && $grade[$N] != 'F' && $score < 100) then
+        @ remainder = $score % 10
+        if ($remainder >= 7) then
+            set sign='+'
+        else if ($remainder < 3) then
+            set sign='-'
+        else
+            set sign=' '
+        endif
+    else if ($score >= 100) then
+        set sign='+'
+    else
+        set sign=' '
+    endif
+    set grade[$N]="$grade[$N]$sign"
+    @ N++
+end
+
+echo "COMBINED GRADE: $grade[1]" | tee -a $logfile
+echo " " | tee -a $logfile
+echo "This is based on weather conditions only." | tee -a $logfile
+
+rm -f bsln.out meanmed.out
+
+#--------------------------- CLEANUP BLOCK -------------------------------
+cleanup:
+
+if ( $pdb == 'y') then
+    qualityGrade project=$prjtag.$obstag opacity=$pwvtau phase=$value[1] \
+        grade=$finscore obslen=$totaltime imr=acc.carma.pvt
+endif
+
+# Convert the log to ps
+enscript -r $root.qq.log -o listobs.ps
+
+# List of plots to archive, in order
+set list=()
+#foreach file (listobs rmspath precipmm tipper tsys1 tsys2 linecal uvphase bimagns_amp bimagns_ph ovrogns_ph bpamp bpph fluxcal)
+foreach file (listobs rmspath precipmm tipper uvphase.gain.$solint uvphase.pacs.$solintp bimagns_amp bimagns_ph ovrogns_ph bpamp bpph fluxcal)
+    if (-e $file.ps) set list=($list $file.ps)
+end
+#foreach file (*.map.ps)
+#    set list=($list $file)
+#end
+gs -q -dSAFER -dNOPAUSE -dBATCH -sOutputFile=$root.qq.pdf -sDEVICE=pdfwrite -c .setpdfwrite -f $list
+
+# Print the output if desired
+if ( "$prn" == "y" ) then
+    lp $root.qq.pdf
+endif
+
+# Archive the output
+if ($?REPORTS) then
+    set archpth = $REPORTS/$prjtag/$obstag
+    if (! -e $archpth) mkdir -p $archpth
+    echo "Archiving quality report ..." 
+    cp $logfile $archpth
+#    tar cvf $root.gains.tar $root.gains README
+#    cp $root.gains.tar $archpth
+    cp $root.qq.pdf $archpth
+    skip;echo "Scratch files in $SCRATCH/$prjtag/$obstag"
+    echo " will be DELETED in 5 sec - Ctrl-C to interrupt!"
+    onintr finish
+    sleep 5
+    rm -rf $SCRATCH/$prjtag/$obstag
+else
+    echo ""
+    echo "Scratch files in $SCRATCH/$prjtag/$obstag"
+    echo " -- please delete these when done"
+endif
+
+finish:
+onintr
+# Finish up
+if ($?REPORTS) then
+    echo "Archived report in $archpth"
+endif
+echo ""
+echo "If bandpass plots are empty, try repeating with bpsolint=60"
+echo "(or other large number) on the command line."
+echo ""
+echo "To repeat the script, just type:"
+echo "$0 proj=$proj sources=$sources gaincals=$gaincals passcals=$passcals fluxcal=$fluxcal"
+echo ""
+
+#rm -f tmp.*
+
+end:

@@ -1,0 +1,13 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE dag SYSTEM "blankflag.dtd" [
+	<!ENTITY SCI1 "1">
+	<!ENTITY SCI2 "2">
+	<!ENTITY SLCBANDS "8">
+	<!ENTITY WBCBANDS "16">
+	<!ENTITY SLCINPUTS "15">
+	<!ENTITY WBCINPUTS "8">
+]>
+
+<dag type="blankflag">
+</dag>
+<!-- vim: set ts=4 sts=4 sw=4 noet: -->

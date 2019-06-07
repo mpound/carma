@@ -1,0 +1,625 @@
+#----------------------------------------------------------------
+# WIP script to plot data for new planetary models in order
+# to check that interpolation is being done correctly.
+# Invoke with "wip planetTb.wip"
+# Will create planet.gif files with plots.
+#
+# $Id: planetTb.wip,v 1.2 2013/07/16 19:08:22 mpound Exp $
+#----------------------------------------------------------------
+
+# ================    MARS  ==============
+def doMarsModel
+    color 1
+    data /opt/rt/conf/data/marstb.tab
+    lines $1 $2
+    limits \5 \6 \7 \8
+    box bcnst1 bcnst
+    mtext T 1 0.5 0.5 $3
+    ylabel T\db\u (K)
+    xlabel MJD
+    xcol 1
+    lstyle 1
+    lwidth 3
+
+    ycol 2
+    color 2
+    connect
+    move \1 230
+    label 30 GHz (model)
+
+    ycol 3 
+    color 6
+    connect 
+    move \1 232.5
+    label 80 GHz (model)
+
+    ycol 4
+    color 3
+    connect
+    move \1 235
+    label 115 GHz (model)
+
+    ycol 7 
+    color 5
+    connect 
+    move \1 237.5
+    label 230 GHz (model)
+
+    color 1
+#    ycol 8 
+#    connect 
+#    move \1 235
+#    label 260 GHz (model)
+end
+
+def doMarsInterp
+    color \4
+    expand 1.2
+    data mars.interpdata
+    xcol 1
+
+    # 35 GHz
+    symbol 225
+    ycol 4
+    points
+#    connect
+    move \2 230
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 35 GHz (interp)
+
+    expand 1.2
+    # 85 GHz
+    filled_square
+    ycol 6
+    points
+#    connect
+    move \2 232.5
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 85 GHz (interp)
+    expand 1.2
+
+    # 100 GHz
+    ycol 7
+    filled_triangle
+    points
+#    connect
+    move \2 235.
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 100 GHz (interp)
+    expand 1.2
+
+    # 220 GHz
+    ycol 9
+    circle
+    points
+#    connect
+    move \2 237.5
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 220 GHz (interp)
+
+    # CHECK ONLY.
+    # 115 GHz
+    #ycol 4
+    #filled_circle
+    #points
+
+end
+
+
+def doBigMars
+    set \5 55197 # x left limit
+    set \6 59124 # x right limit
+    set \1 55300 # x location of left legend
+    set \2 58000 # x location of right legend
+    set \7 175   # y minimum
+    set \8 240   # y maximum
+    set \3 40     # legend<->point spacing
+    set \4 7
+# get around WIP limit of 20000 points in vector
+    doMarsModel 1 100000 Mars
+#    doMarsModel 20001 40000 Mars
+#    doMarsModel 40001 60000 Mars
+#    doMarsModel 60001 80000 Mars
+#    doMarsModel 80001 100000 Mars
+    doMarsInterp
+end
+
+def doSmallMars
+    set \5 55197 # x left limit
+    set \6 55260 # x right limit
+    set \1 55200 # x location of left legend
+    set \2 55242 # x location of right legend
+    set \7 175   # y minimum
+    set \8 240   # y maximum
+    set \3 1     # legend<->point spacing
+    set \4 7
+# get around WIP limit of 20000 points in vector
+    doMarsModel 1 20000 Mars
+    doMarsInterp
+end
+
+# ================  VENUS ==============
+
+def doVenusInterp
+    color \4
+    expand 1.2
+    data venus.interpdata
+    xcol 1
+
+    # 35 GHz
+    symbol 225
+    ycol 4
+    points
+#    connect
+    move \2 500
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 35 GHz (interp)
+
+    expand 1.2
+    # 85 GHz
+    filled_square
+    ycol 6
+    points
+#    connect
+    move \2 510
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 85 GHz (interp)
+    expand 1.2
+
+    # 100 GHz
+    ycol 7
+    filled_triangle
+    points
+#    connect
+    move \2 520
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 100 GHz (interp)
+    expand 1.2
+
+    # 220 GHz
+    ycol 9
+    circle
+    points
+#    connect
+    move \2 530
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 220 GHz (interp)
+
+    # CHECK ONLY.
+    # 115 GHz
+    #ycol 4
+    #filled_circle
+    #points
+
+end
+
+def doVenusModel
+    color 1
+    data /opt/rt/conf/data/venustb.tab
+    lines $1 $2
+    limits \5 \6 \7 \8
+    box bcnst1 bcnst
+    mtext T 1. 0.5 0.5 $3
+    ylabel T\db\u (K)
+    xlabel MJD
+    xcol 1
+    lstyle 1
+    lwidth 3
+
+    ycol 2
+    color 2
+    connect
+    move \1 500
+    label 30 GHz (model)
+
+    ycol 12
+    color 6
+    connect 
+    move \1 510
+    label 80 GHz (model)
+
+    ycol 19
+    color 3
+    connect
+    move \1 520
+    label 115 GHz (model)
+
+    ycol 42
+    color 5
+    connect 
+    move \1 530
+    label 230 GHz (model)
+
+    color 1
+#    ycol 8 
+#    connect 
+#    move \1 235
+#    label 260 GHz (model)
+end
+
+def doVenus
+    set \5 55197 # x left limit
+    set \6 55260 # x right limit
+    set \1 55200 # x location of left legend
+    set \2 55242 # x location of right legend
+    set \7 250   # y minimum
+    set \8 560   # y maximum 
+    set \3 1     # legend<->point spacing
+    set \4 7
+    doVenusModel 1 100 Venus
+    doVenusInterp 
+end
+
+# ================  JUPITER ==============
+
+def doJupiterModel
+    color 1
+    data /opt/rt/conf/data/jupitertb.tab
+    lines $1 $2
+    limits \5 \6 \7 \8
+    box bcnst1 bcnst
+    mtext t 1. 0.5 0.5 $3
+    ylabel T\db\u (k)
+    xlabel MJD
+    xcol 1
+    lstyle 1
+    lwidth 3
+
+    ycol 2
+    color 2
+    connect
+    move \1 180
+    label 30 GHz (model)
+
+    ycol 326
+    color 6
+    connect 
+    move \1 185
+    label 80 GHz (model)
+
+    ycol 364
+    color 3
+    connect
+    move \1 190
+    label 115.1 GHz (model)
+
+    ycol 843
+    color 5
+    connect 
+    move \1 195
+    label 230.1 GHz (model)
+
+    color 1
+#    ycol 8 
+#    connect 
+#    move \1 235
+#    label 260 GHz (model)
+end
+
+def doJupiterInterp
+    color \4
+    expand 1.2
+    data jupiter.interpdata
+    xcol 1
+
+    # 35 GHz
+    symbol 225
+    ycol 4
+    points
+#    connect
+    move \2 180
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 35 GHz (interp)
+
+    expand 1.2
+    # 85 GHz
+    filled_square
+    ycol 6
+    points
+#    connect
+    move \2 185
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 85 GHz (interp)
+    expand 1.2
+
+    # 100 GHz
+    ycol 7
+    filled_triangle
+    points
+#    connect
+    move \2 190
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 100 GHz (interp)
+    expand 1.2
+
+    # 220 GHz
+    ycol 9
+    circle
+    points
+#    connect
+    move \2 195
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 220 GHz (interp)
+end
+
+def doJupiter
+    set \5 55197 # x left limit
+    set \6 55260 # x right limit
+    set \1 55200 # x location of left legend
+    set \2 55242 # x location of right legend
+    set \7 120   # y minimum
+    set \8 200   # y maximum 
+    set \3 1     # legend<->point spacing
+    set \4 7
+    doJupiterModel 1 100 Jupiter
+    doJupiterInterp
+end
+
+# ================  URANUS ==============
+# Uranus model lower limit is 60GHz
+def doUranusModel
+    color 1
+    data /opt/rt/conf/data/uranustb.tab
+    lines $1 $2
+    limits \5 \6 \7 \8
+    box bcnst1 bcnst
+    mtext t 1. 0.5 0.5 $3
+    ylabel T\db\u (k)
+    xlabel MJD
+    xcol 1
+    lstyle 1
+    lwidth 3
+
+    ycol 2
+    color 2
+    connect
+    move \1 175
+    label 60 GHz (model)
+
+    ycol 9
+    color 6
+    connect 
+    move \1 180
+    label 80.9 GHz (model)
+
+    ycol 20
+    color 3
+    connect
+    move \1 185
+    label 113.9 GHz (model)
+
+    ycol 59
+    color 5
+    connect 
+    move \1 190
+    label 230.8 GHz (model)
+
+    color 1
+#    ycol 8 
+#    connect 
+#    move \1 235
+#    label 260 GHz (model)
+end
+
+def doUranusInterp
+    color \4
+    expand 1.2
+    data uranus.interpdata
+    xcol 1
+
+    # 35 GHz
+#    symbol 225
+#    ycol 4
+#    points
+#    connect
+#    move \2 175
+#    dot
+#    rmove \3 -.5 
+#    expand 1.0
+#    label 35 GHz (interp)
+
+    expand 1.2
+    # 85 GHz
+    filled_square
+    ycol 6
+    points
+#    connect
+    move \2 180
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 85 GHz (interp)
+    expand 1.2
+
+    # 100 GHz
+    ycol 8
+    filled_triangle
+    points
+#    connect
+    move \2 185
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 100 GHz (interp)
+    expand 1.2
+
+    # 220 GHz
+    ycol 9
+    circle
+    points
+#    connect
+    move \2 190
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 220 GHz (interp)
+end
+
+def doUranus
+    set \5 55197 # x left limit
+    set \6 55260 # x right limit
+    set \1 55200 # x location of left legend
+    set \2 55245 # x location of right legend
+    set \7 70   # y minimum
+    set \8 205   # y maximum 
+    set \3 1     # legend<->point spacing
+    set \4 7
+    doUranusModel 1 100 Uranus
+    doUranusInterp
+end
+
+# ================  NEPTUNE ==============
+# Uranus model lower limit is 60GHz
+def doNeptuneModel
+    color 1
+    data /opt/rt/conf/data/neptunetb.tab
+    lines $1 $2
+    limits \5 \6 \7 \8
+    box bcnst1 bcnst
+    mtext t 1. 0.5 0.5 $3
+    ylabel T\db\u (k)
+    xlabel MJD
+    xcol 1
+    lstyle 1
+    lwidth 3
+
+    ycol 12
+    color 2
+    connect
+    move \1 175
+    label 30 GHz (model)
+
+    ycol 62
+    color 6
+    connect 
+    move \1 180
+    label 80 GHz (model)
+
+    ycol 97
+    color 3
+    connect
+    move \1 185
+    label 115 GHz (model)
+
+    ycol 212
+    color 5
+    connect 
+    move \1 190
+    label 230 GHz (model)
+
+    color 1
+#    ycol 8 
+#    connect 
+#    move \1 235
+#    label 260 GHz (model)
+end
+
+def doNeptuneInterp
+    color \4
+    expand 1.2
+    data neptune.interpdata
+    xcol 1
+
+    # 35 GHz
+    symbol 225
+    ycol 4
+    points
+    move \2 175
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 35 GHz (interp)
+
+    expand 1.2
+    # 85 GHz
+    filled_square
+    ycol 6
+    points
+#    connect
+    move \2 180
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 85 GHz (interp)
+    expand 1.2
+
+    # 100 GHz
+    ycol 8
+    filled_triangle
+    points
+#    connect
+    move \2 185
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 100 GHz (interp)
+    expand 1.2
+
+    # 220 GHz
+    ycol 9
+    circle
+    points
+#    connect
+    move \2 190
+    dot
+    rmove \3 -.5 
+    expand 1.0
+    label 220 GHz (interp)
+end
+
+def doNeptune
+    set \5 55197 # x left limit
+    set \6 55260 # x right limit
+    set \1 55200 # x location of left legend
+    set \2 55245 # x location of right legend
+    set \7 70   # y minimum
+    set \8 205   # y maximum 
+    set \3 1     # legend<->point spacing
+    set \4 7
+    doNeptuneModel 1 100 Neptune
+    doNeptuneInterp
+end
+
+
+# === MAIN ===
+
+device marsShortTime.gif/gif
+doSmallMars
+device marsLongTime.gif/gif
+doBigMars
+device venus.gif/gif
+doVenus
+device jupiter.gif/gif
+doJupiter
+device uranus.gif/gif
+doUranus
+device neptune.gif/gif
+doNeptune
+end
+
+
+

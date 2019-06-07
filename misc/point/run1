@@ -1,0 +1,26 @@
+#! /bin/csh -f
+#
+#    run a standard benchmark for point
+#
+./point << EOI
+Y
+/xs
+/vps
+25jun05
+26jun05
+N
+N
+Y
+N
+Y
+Y
+N
+Y
+x
+Y
+N
+N
+N
+N
+N
+EOI

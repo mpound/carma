@@ -1,0 +1,22 @@
+#!/bin/csh
+
+#-----------------------------------------------------------------------
+# cd to the specified directory, create the list of dependency files,
+# and use emacs to edit the result to a Makefile.am-style include file
+#-----------------------------------------------------------------------
+
+set emacsMacroPath = `pwd`/scripts/emacs_macros
+
+# cd to the directory and create the file list
+
+cd $1
+\ls *.c *.cc > makefile_am_include
+
+# Use emacs to edit the filelist and turn it into a Makefile.am-style
+# include file that can be included from the main Makefile.am
+
+set arg = '"'$1'"'
+echo $arg
+
+emacs makefile_am_include -batch -l $emacsMacroPath --eval "(makefile-entry $arg)"
+

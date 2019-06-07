@@ -1,0 +1,31 @@
+#ifndef CARMA_OBSERVERTOOLS_ITEMVALUE_IDL
+#define CARMA_OBSERVERTOOLS_ITEMVALUE_IDL
+ 
+/**
+ * @file
+ *
+ * ItemValue definition.  
+ * @author: Douglas N. Friedel
+ */
+
+
+module carma {
+module observertools {
+
+/**
+ * Item name and its value
+ */
+struct ItemValue {
+    string name;
+    string value;
+};
+
+/**
+ * @brief Sequence of an Item name and value pairs 
+ */
+typedef sequence<ItemValue> ItemValueSequence; 
+
+}; // end observertools
+}; // end carma
+
+#endif  // end of conditional include

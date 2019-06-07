@@ -1,0 +1,97 @@
+This is the OVRO VAX "point" program, ported to linux:
+(skip to 8) to how to run it at CARMA)
+
+1) needs the intel compiler (8.1 was successfully used)
+   but with a GCC3 version somewhere.
+   This complicated life on FC4, you'll need to add the flag
+	  -gcc-name=gcc32
+   to the icc script at the bottom where the exec is done.
+   ifort does not seem to need it.
+
+2) the IMSL routine was replaced by matinv(), a miriad routine
+   [locally maintained]
+
+3) the C interface code,  uiptime.c, needed major major work
+   [no backwards compatibility maintained]
+
+4) a private version of PGPLOT (issues with intel compiler).
+
+   For this pgplot shared library you probably need
+
+	setenv LD_LIBRARY_PATH `pwd`/lib
+   or
+	setenv LD_LIBRARY_PATH `pwd`/lib:${LD_LIBRARY_PATH}
+   as well as
+        setenv PGPLOT_DIR `pwd`/lib
+   if you don't have a valid one already.
+
+5) Sample CARMA pointing data and results are saved, so comparison
+   can be made with the old VAX program.  This comparison won't
+   work anymore with the offset sign now redefined (as of July 4)
+
+6) INSTALLATION:
+
+   a) This program can be run decoupled from $CARMA, e.g.
+
+	astroload intel			(or some other way to get the intel 
+					compiler in your shell)
+
+        setenv CVSROOT :ext:$USER@cvs.ovro.caltech.edu:/sw/cvscarma
+	cvs co -d point carma/misc/point
+	cd point
+	make pgplot 			first time only to get the source
+                                        make sure you're on the public net
+	make libs                       first time only to compile pgplot
+
+
+	make 				this can be repeated during development
+
+
+    b) To integrate this in $CARMA, could copy the binary to /opt/rt/bin
+       and copy the essential things into a private /opt/rt/lib/point, but
+       until the pointing procedure is final (e.g. can we re-use miriad's
+       PNT program instead of the POINT program), this space is left open.
+
+
+
+7) TEST RUNNING:
+
+   The pointing software currently produces a file optical.data (see /home/obs),
+   it needs to be copied locally.  You also probably need to set the environment:
+
+
+	source point_csh
+
+	./point
+
+   See the 'run1' file for an example dialog. 
+   Also note you need the intel environment still for this section. For
+   industrial work, see the next section.
+
+   To locally run a test with the old OVRO data (from optical.data). It is best
+   to do this in a temporary directory, as files will be generated
+
+	set p=`pwd`
+	mkdir tmp
+	../runpoint p=$p data=$p/optical.data date=27Jun05
+	
+	
+8) CARMA RUNNING:
+
+   To run at the observatory, the script "runpoint" can be used. It has all
+   paths hardcoded for hiigh site work, and you can run it from your local
+   directory as follows:
+
+	mkdir point-02sep05
+	cd point-02sep05
+	/home/teuben/carma/carma/misc/point/runpoint
+
+   Note that it will use default values for date= and data=.
+
+
+History:
+28-jun-2005	Converted from VAX to Linux		Peter Teuben
+ 4-jul-2005     revert sign of offset for CARMA         PJT
+ 2-sep-2005     document the runpoint script            PJT
+24-apr-2006     Remove sign reverse of offsets; carma model convention has changed	Scott
+ 5-jun-2006     Add example, force plotting timeplot on single page			PJT

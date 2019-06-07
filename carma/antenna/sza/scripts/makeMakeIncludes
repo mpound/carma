@@ -1,0 +1,13 @@
+#!/bin/csh
+
+# Remove the auto-generated include file
+
+echo `pwd`
+
+\rm makefiles/makefile_am_include_auto
+
+foreach i (arrayutils util slalib antenna/canbus antenna/control antenna/corba)
+   scripts/makeFileList $i
+   echo "include carma/antenna/sza/$i/makefile_am_include" >> makefiles/makefile_am_include_auto
+end
+

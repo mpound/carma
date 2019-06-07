@@ -1,0 +1,103 @@
+c	routine to measure total power (old & new detectors)
+C	this one runs for 1 hr at a time.
+c									jrf - oct 95
+	character*80 error
+	character units*4, name*16
+	real atod,tp(9),tpi(9),tpwrtok(12)
+        integer*4 day,mon,year,ticks
+	integer iant(9),nants,nint,ncount,address
+        real*8 ut,lst,s(18),m(18),p(18)
+	data nants/12/,iant/1,2,3,4,5,6,7,8,9/,nint/32/,ncount/10250/
+
+	call mbusopen(error)
+	call comgetr('TPWRTOK',tpwrtok,nants,error)
+
+        OPEN(1,FILE='tpall.dat',err=98,ACCESS='APPEND',STATUS='UNKNOWN')
+
+	call get_times(ticks,2,mon,day,year,ut,lst,error)
+	write(1,900) mon,day,year,nint
+	write(1,905) tpwrtok
+	write(1,910)
+	type 900,mon,day,year,nint
+	type 905,tpwrtok
+	type 910
+  
+  900	format(' #  tp monitor (tpall.dat)  date = ',i2,'/',i2,'/',i2,' integration time = ', i3,' ticks')
+  905	format(' # TPWRTOK:  ',12f9.2)
+  910	format(' #     hour       tp1      tp2      tp3      tp4      tp5      tp6      tp7      tp8      tp9')
+
+	do i=1,ncount	! begin master loop
+
+c   zero arrays each major cycle
+	   do j=1,9
+		tp(j) = 0.
+		tpi(j) = 0.
+	   end do
+
+	   call get_times(ticks,2,mon,day,year,ut,lst,error)
+	   ut=ut*3.81972+16
+	   if(ut.ge.24.0) ut=ut-24
+
+c   tp (original a/d address 1094; non-ingegrating - use software integration over nint ticks)
+	   do k=1,nint
+	     do j=1,9
+		tp(j)=tp(j)+atod(iant(j),1094,iraw,units,name,error)
+	     end do
+	     call wait_ticks(1)
+	   end do
+
+c   TP msmt (integrating a/d address 1106) - measure once only each nint cycle
+c					(ants 1 & 3 don't have new cards)
+	     do j=1,9
+		address=1106
+		if((j.eq.1).or.(j.eq.3)) address=1094
+		tpi(j)=atod(iant(j),address,iraw,units,name,error)
+	     end do
+
+c   average above to form integrated values, and calculate statistical quantities needed later
+	   do j=1,9
+		tp(j)=tp(j)/nint
+		m(j)=m(j)+tp(j)
+		s(j)=s(j)+tp(j)*tp(j)
+		tp(j)=tp(j)
+	   end do
+	   do j=10,18
+		k = j - 9
+		m(j)=m(j)+tpi(k)
+		s(j)=s(j)+tpi(k)*tpi(k)
+		tpi(k)=tpi(k)
+	   end do
+c
+	   type 920,i,ut,tp
+	   write(1,920) i,ut,tp,tpi
+  920	   format(i4,x,f9.5,18f9.5)
+	end do
+					! over main loop
+c  calculate statistics
+	do j=1,18
+		m(j)=m(j)/ncount			! mean
+		s(j)=sqrt((s(j)/ncount)-m(j)*m(j))	! sigma
+		p(j)=s(j)*10000/m(j)			! % of mean
+	end do
+
+c
+
+           do j=1,9
+                m(j)=m(j)
+                s(j)=s(j)
+           end do
+           do j=10,18
+                k = j - 9
+                m(j)=m(j)
+                s(j)=s(j)
+           end do
+
+	type 930, m,s,p
+	write(1,930) m,s,p
+  930	format(' # mean= ',18f9.5,/,' # sig= ',18f9.5,/,' # %10-4= ',
+	1	18f9.1)
+
+	close(1)
+  98   	stop ' - tp2 ends - '
+
+	end

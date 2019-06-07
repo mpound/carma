@@ -1,0 +1,23 @@
+<P>
+<H1>CARMA Atmospheric Phase Monitor </H1>
+<a href=".">Back to Calibration Plots</a>
+<H2>Calibration Plots Description</H2>
+</P>
+<P>
+</P>
+<P>
+A known problem exists with the raw voltages output by the correlators for the phase monitor, for more information about this see: <a href="../help/index.html#Known%20problems%20/%20features">Known problems/features</a>.
+</P>
+<P>
+As the phase monitor software runs, it is recording the raw voltages returned by the two arms of the phase monitor correlators to disk.  At noon each day, the last 86400 data points (24 hours of data) are copied to the calibration area, then re-run through the phase monitor software twice.
+</P>
+<P>
+The first run, applies no correction to the voltages and produces the regular 1 second data normally produced by the copy of the regularly running phase monitor.  This is then used to produce a plot of the complex voltages.  This exposes the tilted ellipse with offset described in the <a href="../help/index.html#Known%20problems%20/%20features">Known problems</a> above.
+</P>
+<P>
+The second run, applies current correction parameters to the voltages and produces the regular 1 second data and a corrected plot is then produced.
+</P>
+<P>
+This can help diagnose problems with the system.  If an ellipse is smaller than it used to be, this means that the amplitudes are lower and action should be taken to correct this.  If the corrected version is not more or less circular and centered on the origin, this means the current parameters are not properly correcting and need to be recomputed.  As of 07 Dec 2007, there is a plan to automatically recompute these parameters once every 24 hours, but is not yet implemented.
+</P>
+<i>Colby Gutierrez-Kraybill 07 Dec 2007</i>

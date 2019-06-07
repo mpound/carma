@@ -1,0 +1,12 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE dag SYSTEM "blankflag.dtd" [
+]>
+
+<dag type="blankflag">
+	<!--
+	This is a real monitor point, but we should still be
+	catching true XML parse errors
+	-->
+	<mp canon="Sldc.Band1.Input1.state">
+	<!-- XML is bad, we don't have a </mp> here -->
+</dag>

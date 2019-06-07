@@ -1,0 +1,23 @@
+# Data file to generate baseline data used as input for self cal
+# Input file for genSelfcalData script
+#
+# Ant  Amp  Phase SNR
+    1  9.0   100  4.0
+    2  6.0    20  2.3
+    3  4.4    20  8.0
+    4  4.4    20  4.0    
+    5  4.4    20  4.0
+    6  4.4    20  4.0
+    7  4.4    20  4.0
+    8  4.4    20  4.0
+    9  4.4    20  4.0
+   10  4.4    20  4.0
+   11  4.4    20  4.0
+   12  4.4    20  4.0
+   13  4.4    20  4.0
+   14  4.4    20  4.0
+   15  3.0    20  4.0
+   
+ noise 0.50   
+   
+    

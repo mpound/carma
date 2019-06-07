@@ -1,0 +1,138 @@
+<HTML><HEAD><TITLE>CARMA How To Fix It Notes</TITLE></HEAD>
+<BODY BGCOLOR=white FGCOLOR=BLACK>
+<H1>Various notes for Observers regarding RTS problems</H1>
+<pre>$Id: howtofixit.html,v 1.1 2006/12/29 16:53:22 rick Exp $ </pre>
+
+<!-- put indices here -->
+<li><a href=#logparser>LogParser failure</a></li>
+<li><a href=#halfsec>/halfsec failure</a></li>
+<li><a href=#miriad>Miriad data flow</a></li>
+<li><a href=#sldc>Downconverter module freeze</a></li>
+
+<!-- add descriptions below with <a name> tag and divided by hr tag -->
+<hr>
+<a name=logparser>
+<b>Restarting LogParser</b> - This process can fail if
+its index file gets corrupted (program bug).  To restart it:
+<pre>
+rm /opt/dbIngest/logData/syslog2db.index
+imradmin --reset-server LogParser --imr corba
+imradmin --start-server LogParser --imr corba
+</pre>
+
+<a name=halfsec>
+<hr>
+<b>Notes relating to fixing a corrupted filesystem on ACC</b>
+<pre>
+- check which device is actually mounted on /halfsecAcc by type df -h
+  This device, listed on the left will be referred to as DEV below
+<<<<< Section 0 >>>>>>
+- try the following while the system is currently booted.
+- sudo /opt/rt/scripts/fixHalfSec
+  This takes about 3min, according to the time command(for 1.5TB)
+- If this succeeds, collect some data and verify.
+- If it fails, try booting in single user mode.(see grub screen on reboot)
+  and then type the following. DEV is the device mounted on /halfsecAcc. This
+  can be found by looking at the /etc/fstab file and searching for the line
+  containing /halfsecAcc.
+- /opt/rt/scripts/fixHalfSec DEV
+- exit from single user mode or reboot machine
+- After acc comes up. login to database as carmadba
+- ps axu | grep mysqld
+  check to see if mysqld is running. If not:
+- /opt/rt/scripts/mysqld start
+
+<<<<< Section 1 >>>>>>
+If the partion is hosed and you want to try to preserve your data:
+- boot single user mode(see grub screen on reboot)
+- type cat /etc/fstab and look for which device is mounted on /halfsecAcc
+  This will be referred to as DEV below
+- umount DEV
+- /usr/local/sbin/reiserfsck --fix-fixable DEV
+  This takes a minimum of 12min for 1.5TB
+- If this fails, it will tell you to do the following:
+- /usr/local/sbin/reiserfsck --rebuild-tree DEV
+  This takes about 2 - 2.5 hours for 1.5TB
+- Take a look at some of the files in the /opt/dbIngest trees. Look
+  for odd dates and or very large files(ie. > than the 1.5TB filesystem).
+  If these exists, we've found that the filesystem will not last long so
+  it's best to follow Section 0 above.
+  Otherwise, reboot the acc
+</pre>
+ 
+<a name=miriad>
+<hr>
+<b>Miriad science data flow</b>
+<pre>
+FLOW: 
+ -----------------------------------------------------------------------------  
+ MAW => monDataFiles => AHW => astroHeaderFiles -| 
+                                                 + Filler => sciencedataFiles
+                           SLP => visbrickFiles -|
+ ----------------------------------------------------------------------------- 
+ A diagram outlining the data flow is <a href="http://cedarflat2.mmarray.org/DataFlow.png">available here</a> <a href="http://cedarflat2.mmarray.org/DataFlow.pdf">[PDF]</a>.
+ astroHeaders and visbricks are inputs to the science data products(SDP)
+ Filler that creates the Miriad science data. The astroHeaders are created
+ by AstroHeaderWriter(AHW) from monitor data which are created by the 
+ monitorAverageWriter(MAW), while the Visbricks are created by the 
+ SpectralLinePipeline(SLP). The MAW and SLP must run in realtime to capture
+ the data, but the AHW and Filler can be run later.
+ Some of the monitorData created by the MAW is also used as input to the
+ database. The ingestion of monitorData into the dbms is not a realtime 
+ process and is completely decoupled from production of the science data -
+ the database need not be running to produce science data. 
+DISK PARTITIONS:
+- acc:/halfsecAcc, 1+TB,  holds frame, minute, astro monitor data.
+  Used to transfer data from acc to database; data have no long term use.
+  symlinks on acc: /halfsec => /misc/halfsec; /opt/dbIngest => /halfsec/dbIngest
+- database:/longterm1, 2.6TB, holds dbms
+    acc:/halfsecAcc mounted as /misc/halfsec
+    slpipeline:/visbrick  mounted as /misc/visbrick
+    sdp:/opt/sdp mounted as /misc/sdp
+    symlinks: /halfsec => /misc/halfsec; /opt/dbIngest => /halfsec/dbIngest;
+    /opt/visbrick => /misc/visbrick; /opt/sdp => /misc/sdp
+- slpipeline:/visbrick, 1+TB, holds visbricks
+- sdp:/opt/sdp (700+GB) holds astroheaders, sciencedata
+    slpipeline:/visbrick mounted as /misc/visbrick
+    acc:/halfsecAcc mounted as /misc/halfsec
+    symlinks: /opt/visbrick => /misc/visbrick; /opt/dbIngest => /halfsec/dbIngest; /halfsec => /misc/halfsec
+
+PROCESSES:
+- MonitorAverageWriter(MAW) runs on acc
+  Input: monitor system shared memory
+  Output: /opt/dbIngest/ 
+    Reads data from shared memory every half second, averages it, and writes
+    it out to disk files in /opt/dbIngest. 
+    It must run in realtime or data are lost.
+    The data are written on three different time scales, all of which go into
+    the dbms, but only the Astro is used for science data.
+    o Frame (half second)
+    o One minute
+    o Astro: matches interferometric data integrations, required
+      for Miriad header
+- SlPipeline(SLP) - Spectral line pipeline - runs on slpipeline
+  Input: Visibility data from correlators and monitor data for headers and
+    control from acc,transported over CORBA network connections
+  Output: /visbrick
+- AstroHeaderWriter(AHW) runs on sdp; the input are binary, output xml
+  Input: /opt/dbIngest/monitorData/slcorrel - astro monitor data
+  Output: /opt/sdp/astroheader/
+- sdpFiller(Filler) - runs on sdp
+  Input: /opt/sdp/astroheader/SLCorrelIntegrated/  /opt/visbrick/
+  Output: /opt/sdp/sciencedata/
+- mysqld: runs on database.
+- monitorDataLoader - runs on database
+</pre>
+ 
+<hr>
+<a name=sldc>
+<b>Downconverter module freeze or failure</b>
+<p>This problem is characterized by a single column in the RTD SpectralDownconverter page displaying '?' and or being unable to retrieve Psys values from the system.  In a nutshell, the solution is to reset the module, preferably by hand but optionally via <b>sac sldc.reset()</b> as well.  Detailed instructions follow below:</p> 
+<ol>
+<li>Do NOT reboot the Sldc crate!</li>
+<li>Locate the offending module in the downconverter rack.  Downconverters are arranged in the racks by band and input.  The uppermost left rack contains band 1 inputs 1-8 numbered left to right, the rack below it contains band 1 inputs 9 - 15, the rack below it contains band 2 inputs 1-8 and so on and so forth.  Thus band 3 input 8 is the rightmost module in the fifth rack from the top of the leftmost rack.  The rack on the right contains Band 5 Inputs 1-8 in the top rack.  I've requested that these racks be labeled.</li>
+<li>Take a look at the LEDs on the front of the module, they are labeled 'reset', 'boot', 'pacer', 'cantx', 'canrx', etc.  When the  module is working correctly, the pacer and cantx leds will blink in unison every half second, canrx should blink every ten seconds indicating receipt of timestamps from the linux crate.  If no leds are blinking the module is frozen.  At this stage, you can try hitting the "RESET" button on the module.</li>
+<li>Write a bug report or notify James L. and Brad W. that the module is acting up.</li>
+</ol>
+</BODY>
+</HTML>

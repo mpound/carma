@@ -1,0 +1,25 @@
+#! /bin/csh -f
+#
+#  check out a  mini CVS carma tree for IERS maintenance via crontab
+#
+
+
+#  set some default for CVSROOT
+
+if ($?CVSROOT == 0) then
+  setenv CVSROOT :ext:teuben@cvs.ovro.caltech.edu:/sw/cvscarma 
+else
+  echo re-using CVSROOT=$CVSROOT
+endif
+
+#  create the directories
+cvs co -d IERS.cron/catalogs carma/conf/catalogs/IERS.tab
+cvs co -d IERS.cron/scripts  carma/scripts/mk-iers.awk
+cvs co -d IERS.cron/scripts  carma/scripts/iers.cron
+
+
+set name=`pwd`/IERS.cron/scripts/iers.cron
+
+echo Now tell your crontab to periodically run $name
+echo e.g. weekly wednesday 3am would be:
+echo "0 3 * * 3 $name"

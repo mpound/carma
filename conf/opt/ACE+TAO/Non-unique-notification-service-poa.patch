@@ -1,0 +1,51 @@
+Author: Andy Beard
+The TAO IMR registers servers on a per-POA basis rather than on a per-Server 
+basis.  This has the side-effect that persistent POAs must use the same name
+when registering with the IMR.  If they do not, persistency is effectively 
+lost since a restarted server will not map to the same POA in the IMR.  
+
+The TAO notification service by default uses a unique id for the POA. This
+has repurcussions:
+    a) The Notification server won't be registered with the IMR using a 
+    consistent name, thus shutdown and restarting (or even monitoring) with 
+    the IMR isn't practical.
+    b) A restarted notification service would cause all notification clients
+    and servers to lose connections indefinitely becoming a single failure 
+    point.  
+
+Rather, we assign a particular poa name of NotificationService to give the 
+server a common easily identifiable name to the IMR.  
+
+A side effect of this is that two Notification servers would share the
+same name and create bad problems.
+Common subdirectories: ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/Any and ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/Any
+diff -upN ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/EventChannelFactory.cpp ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/EventChannelFactory.cpp
+--- ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/EventChannelFactory.cpp	2009-06-04 04:15:22.000000000 -0700
++++ ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/EventChannelFactory.cpp	2010-09-04 07:54:21.000000000 -0700
+@@ -104,7 +104,8 @@ TAO_Notify_EventChannelFactory::init (Po
+ 
+   ACE_Auto_Ptr<TAO_Notify_POA_Helper> auto_object_poa (object_poa);
+ 
+-  ACE_CString poa_name = object_poa->get_unique_id ();
++  // ACE_CString poa_name = object_poa->get_unique_id ();
++  ACE_CString poa_name = "NotificationService";
+ #if defined (CORBA_E_MICRO)
+   object_poa->init (poa, poa_name.c_str ());
+ #else
+Common subdirectories: ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/MonitorControl and ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/MonitorControl
+Common subdirectories: ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/MonitorControlExt and ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/MonitorControlExt
+diff -upN ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/POA_Helper.cpp ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/POA_Helper.cpp
+--- ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/POA_Helper.cpp	2009-04-28 01:53:12.000000000 -0700
++++ ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/POA_Helper.cpp	2010-09-04 07:54:46.000000000 -0700
+@@ -61,7 +61,8 @@ TAO_Notify_POA_Helper::init_persistent (
+ void
+ TAO_Notify_POA_Helper::init (PortableServer::POA_ptr parent_poa)
+ {
+-  ACE_CString child_poa_name = this->get_unique_id ();
++//   ACE_CString child_poa_name = this->get_unique_id ();
++  ACE_CString child_poa_name = "NotificationService";
+ 
+   this->init (parent_poa, child_poa_name.c_str ());
+ }
+Common subdirectories: ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/Sequence and ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/Sequence
+Common subdirectories: ACE_wrappers/TAO/orbsvcs/orbsvcs/Notify/Structured and ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/orbsvcs/Notify/Structured

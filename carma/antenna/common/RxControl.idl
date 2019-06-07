@@ -1,0 +1,208 @@
+/**
+ * @file
+ *
+ * IDL for the carma::antenna::common::RxControl (Receiver) interface.
+ *
+ * @author Erik Leitch
+ */
+#ifndef _RXIDL
+#define _RXIDL
+
+#include "carma/antenna/common/CalibratorControl.idl"
+#include "carma/antenna/common/FrontEndControl.idl"
+#include "carma/antenna/common/IFControl.idl"
+#include "carma/antenna/common/LOControl.idl"
+#include "carma/antenna/common/OpticsControl.idl"
+#include "carma/antenna/common/PolarizationControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+
+module antenna {
+
+module common {
+
+      /**
+       ** %Receiver interface.
+       ** The receiver is a logical construct that controls the
+       ** %antenna Local Oscillator, the %FrontEnd, the %IF,
+       ** the %Optics and %Polar interfaces.
+       */
+    interface RxControl {
+
+        /**
+         * Enumerate valid Receiver types
+         */
+        enum Type {
+            RX1CM,      /**< 1 cm */
+            RX1MM,      /**< 1 mm  - Polarization 1 only */
+            RX3MM,      /**< 3 mm  - Polarization 1 only */
+            RXANY       /**< Any? */
+        };
+
+        enum Pol_Type {
+            SINGLE,       // For single pol receiver only, kind doesn't matter.
+            LEFTCIRCULAR, // For dual pol receivers.
+            RIGHTCIRCULAR // For dual pol receivers.
+        };
+
+        enum IF_Type {
+            IF1,
+            IF2,
+            BOTH
+        };
+
+        /**
+         * Return a pointer to this Rx's LO subsystem
+         */
+        LOControl     LO()
+            raises (carma::util::UserException);
+
+        /**
+         * Return a pointer to this Rx's IF subsystem
+         * IF defaults to IFPol1 under the hood
+         * IF of BOTH is invalid for this routine.
+         */
+        IFControl     IF( in IF_Type ifoutput )
+            raises (carma::util::UserException);
+
+        /**
+         * Return a pointer to this Rx's FrontEnd subsystem
+         */
+        FrontEndControl     FrontEnd( in Pol_Type pol )
+            raises (carma::util::UserException);
+
+        /**
+         * Return a pointer to this Rx's Optics subsystem
+         */
+        OpticsControl       Optics() raises (carma::util::UserException);
+
+        /**
+         * Return a pointer to this Rx's Polarization subsystem
+         */
+        PolarizationControl Polarization() raises (carma::util::UserException);
+
+        /**
+         * Set up a receiver for a new frequency, including tuning.
+         * Automatically sets up the IF receiver selection,
+         * makes any necessary changes in the optics (moves mirrors),
+         * sets the LO frequency, waits for the LO to lock,
+         * and then sends the LO frequency to the %FirstStage, which
+         * initiates tuning. The tuning may include optimization,
+         * which may move the ambient load into the beam. 10m dishes move the
+         * absorber into the beam after all other tuning has completed.
+         * After tuning, the IF level is set to the optimal value.
+         * The sequence number is used to verify the remote system has
+         * completed the requested operation, including optics changes,
+         * optimization and IF level setup. The sequence number is stored
+         * locally on the remote system and once all operations are complete
+         * or failed, the corresponding monitor point for the tuning
+         * sequence number is set to the one passed as seqNo.
+         * @param yigFreq YIG oscillator output frequency in GHz
+         * @param LOfreq LO frequency in GHz, including any tripling
+         * @param endWithAbsorberInBeam Place (or keep) the absorber in the beam
+         *        following tuning.
+         * @param optimizeReceiver Optimize the receiver during or following
+         *        tuning.
+         * @see LocalOscillator, FirstStage, IF, Optics, Polarization
+         */
+        void setFrequency( in double yigFreq,
+                           in double LOfreq,
+                           in boolean endWithAbsorberInBeam,
+                           in boolean optimizeReceiver,
+                           in boolean forceRelock,
+                           in unsigned long seqNo )
+            raises (carma::util::UserException);
+
+        /**
+         * Set observing frequency.
+         * This is meant to provide a hint to the polarization subsystems,
+         * tuning algorithms or anything else that might need the observing
+         * frequency for optimization purposes.  Note this differs from the
+         * LoFreq by providing the exact sideband and frequency the observer
+         * is interested in.  This should be set before setFrequency is called.
+         * The sequence number is used to verify the remote system has completed
+         * the requested operation. The sequence number is stored locally on
+         * the remote system and once complete, the corresponding monitor
+         * point for this sequence number is set to the one passed as seqNo.
+         * This should be called before setFrequency is called.
+         * @param obsFreq Observing frequency in GHz.
+         * @see setFrequency
+         * @see setObservingFrequency
+         */
+        void setObservingFrequency( in double obsFreq, in unsigned long seqNo )
+            raises (carma::util::UserException);
+
+        /**
+         * Collect a total power reading on a calibration load.
+         *
+         * The total power used for Tsys is measured in the correlator
+         * downconverters that are continuously looking for the
+         * absorber to be in the beam and the IF power to be stable -
+         * they then read the total power in their band.
+         *
+         * This method initiates a state machine that:
+         * <ul>
+         *  <li> Moves the requested load (cal position) into beam
+         *  <li> Waits for one blanking frame with load in
+         *  <li> Moves the load out of beam
+         * </ul>
+         * <b>
+         * In the long term, the accuracy will be improved by setting
+         * the IF attenuation to keep the IF level in the linear region
+         * when the load is in place. In this case the IF attenuation
+         * must be sent to the pipeline for the calibration algorithm.
+         * The sequence number is used to verify the remote system has
+         * completed the requested operation. The sequence number is stored
+         * locally on the remote system and once complete, the corresponding
+         * monitor point for this sequence number is set to the one passed
+         * as seqNo.
+         */
+        void measureTotalPower( in CalibratorControl::Position pos,
+                                in unsigned long seqNo )
+            raises (carma::util::UserException);
+
+        /**
+         * Iterate to a saved target power, without having to know what
+         * that power is.  This command takes as its default target the
+         * power level saved on the last call to saveCurrentPower().
+         * This command is identical to the IFControl version except it
+         * operates simultaneously on both IFs if receiver is dual pol.
+         */
+        void setIFPresetPower( ) raises ( carma::util::UserException );
+
+        /**
+         * Set the IF attenuation for this receiver.
+         * @param atten Attenuation in dB, range 0-63 in 0.5 dB steps.
+         */
+        void setIFAtten(in float atten, in IF_Type ifType )
+            raises ( carma::util::UserException );
+
+        /**
+         * Iterate to a target power [alternative to the setIFAtten() method]
+         * This command is identical to the IFControl version except it
+         * operates simultaneously on both IFs if receiver is dual pol.
+         * @param power level in mW
+         */
+        void setIFPower(in float power)
+            raises (carma::util::UserException);
+
+        /**
+         * Start fast sampling for this receiver
+         *
+         * @param channel which channel?
+         * @param start start/stop
+         */
+        void toggleFastSampling(in unsigned long channel,
+                in boolean start)
+            raises (carma::util::UserException);
+
+    }; // End RxControl interface
+
+}; // End common module
+
+}; // End antenna module
+
+}; // End carma module
+
+#endif  // _RXIDL

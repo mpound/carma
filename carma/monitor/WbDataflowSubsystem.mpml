@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+<!-- Wideband Correlator data flow Subsystem monitor point definitions
+   - $Id: WbDataflowSubsystem.mpml,v 1.2 2013/06/25 18:54:25 mpound Exp $
+  -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="WbDataflow" priority="normal" count="&NUM_WBC_BANDS;">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+    <?common OnlineCommon.mpml?>
+    <CommonMonitorPoint ref="online" />
+    <?common CorrDataflowCommon.mpml?>
+
+    <CommonMonitorPoint ref="bandNo" />
+    <CommonMonitorPoint ref="bandValidity" />
+    <CommonMonitorPoint ref="consecutiveErrors" />
+    <CommonMonitorPoint ref="consecutiveDroppedFrames"/>
+    <CommonMonitorPoint ref="seqNo"/>
+    <CommonMonitorPoint ref="numInputs"/>
+    <CommonMonitorPoint ref="numValidBaselines"/>
+    <CommonMonitorPoint ref="numInvalidBaselines"/>
+    <CommonMonitorPoint ref="controlHost"/>
+    <CommonMonitorPoint ref="controlPort"/>
+    <CommonMonitorPoint ref="controlObject"/>
+    <CommonMonitorPoint ref="eventChannel"/>
+    <CommonMonitorPoint ref="receivedTime"/>
+    <CommonMonitorPoint ref="publishedTime"/>
+
+</Subsystem>

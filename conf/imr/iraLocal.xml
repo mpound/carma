@@ -1,0 +1,164 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "./bin/">
+    <!ENTITY RUN_DIR "/home/iws/devel/carma-git/build">
+    <!ENTITY DBMS "useDBMS=false">
+    <!ENTITY LOG "">
+]>
+
+<!-- $Id: iraLocal.xml,v 1.11 2013/04/09 23:06:23 abeard Exp $ -->
+<domain>
+
+    <oad hostname="reimu.ovro.pvt">
+
+        <!-- Core Monitor -->
+        <server name="FrameCollator"
+                path="&BIN_DIR;frameCollator"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; delay=600"
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                system="monitor"
+                critical="true"
+                startup-priority="&monitor-core;"/>
+
+        <server name="FaultSystem"
+                path="&BIN_DIR;faultSystem"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; alarmFile=fault/test/alarm_good.xml blankFlagFile=fault/test/bf_good.xml runEmailService=false"
+                startup-priority="&monitor-core;"/>
+
+        <server name="ControlFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=control"
+                critical="false" />
+
+        <server name="Subarray1"
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;"
+                args="runSAT=true &LOG; &DBMS;"
+                critical="true"
+                startup-priority="&control;" />
+
+        <server name="ControlState"
+                path="&BIN_DIR;/carmaControlState"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; statedir=/tmp/state "
+                critical="false"/>
+
+        <server name="DelayEngineFSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=delayEngine delay=250"
+                critical="false" />
+
+
+        <!-- Process Monitor -->
+        <server name="ProcessMonitorFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=Imr delay=150" />
+
+        <server name="ProcessMonitor" path="&BIN_DIR;/processMonitor"
+                directory="&RUN_DIR;" 
+                args="&LOG; useDBMS=true file=&RUN_DIR;/conf/imr/alarmLocal.xml  writedelay=0.110 poll=5"
+                system="monitor" critical="true" />
+
+        <server name="alarmFSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=alarm"/>
+
+        <server name="alarmControl"
+                path="&BIN_DIR;/carmaAlarm"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=control"/>
+
+        <!-- Pipeline -->
+        <server name="SlcDataCatcher"
+                path="&BIN_DIR;catchData"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS;  mode=sl"
+                system="misc"
+                startup-priority="&subsystem;"/>
+
+        <server name="SlPipelineFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=slpipeline delay=400"
+                startup-priority="&monitor;"/>
+
+        <server name="SlPipeline"
+                path="&BIN_DIR;pipeline"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; mode=sl vbdir=/tmp"
+                system="correlator"
+                startup-priority="&subsystem;" />
+
+
+        <server name="WbcDataCatcher"
+                path="&BIN_DIR;catchData"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; mode=wb"
+                startup-priority="&subsystem-core;"/>
+
+        <server name="WbPipelineFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbpipeline delay=400"
+                startup-priority="&monitor;"/>
+
+        <server name="WbPipeline"
+                path="&BIN_DIR;pipeline"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; mode=wb vbdir=/tmp"
+                startup-priority="&subsystem;"/>
+        <server name="SlcBand1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=slcBand1" />
+
+        <!-- Simulated Correlator -->
+        <server name="SlcBand1" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=1 p=19001 f=correlator/slcorrelator.conf sim=correlator/labCarma15.ini hwtype=cobra "
+                critical="true"/>
+
+        <server name="WbcBand3FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand3"
+                 />
+
+        <server name="WbcBand3" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=3 p=19003 f=correlator/wbcorrelator.conf sim=correlator/sza14Sim.ini hwtype=cobra  sl=false"
+                critical="true"/>
+
+
+        <!-- Downconverter -->
+        <server name="Sldc"
+                path="&BIN_DIR;carmaSldcHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; emulate=true sim=true" />
+
+        <server name="SldcFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=Sldc delay=300 " />
+
+
+        <server name="Wbdc"
+                path="&BIN_DIR;carmaWbdcHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; emulate=true" />
+
+        <server name="WbdcFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=Wbdc delay=300 " />
+
+    </oad>
+</domain>

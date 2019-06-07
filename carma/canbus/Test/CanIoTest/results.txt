@@ -1,0 +1,99 @@
+------------------------------------------------------------
+Force Pentium III 1GHz 1 Gb ram
+
+Constructing CanIo object.....successful.
+Testing msg rates.
+0 byte payload...................... 9688.64 msgs/s.
+1 byte payload...................... 8890.39 msgs/s.
+2 byte payload...................... 8262.46 msgs/s.
+3 byte payload...................... 7694.75 msgs/s.
+4 byte payload...................... 7233.32 msgs/s.
+5 byte payload...................... 6797.51 msgs/s.
+6 byte payload...................... 6410.21 msgs/s.
+7 byte payload...................... 6039.82 msgs/s.
+8 byte payload...................... 5743.04 msgs/s.
+
+Results
+Messages sent 189000
+Messages lost 0
+Message integrity tests passed.
+
+CPU Usage as reported by top
+read thread about 25%
+Write thread about 5% // Write messages, process received msgs.
+
+
+--------------------------------------------------------------
+Ziatech Pentium II-M 333Mhz 128 MB RAM
+
+ Byte Payload ...............   Sustained   |   .5s Tx   | .5s Rx
+----------------------------------------------------------------
+0 byte payload............... 2165.89 msgs/s 1673.36 msg/s 2723.99 msg/s
+1 byte payload............... 1770.61 msgs/s 1772.82 msg/s 1796.2 msg/s
+2 byte payload............... 1802.33 msgs/s 1737.32 msg/s 1722.14 msg/s
+3 byte payload............... 1799.71 msgs/s 1845.67 msg/s 1385.76 msg/s
+4 byte payload............... 1791.05 msgs/s 1731.44 msg/s 1870 msg/s
+5 byte payload............... 1786.59 msgs/s 1707.39 msg/s 1843.99 msg/s
+6 byte payload............... 1780.96 msgs/s 1685.83 msg/s 1193.63 msg/s
+7 byte payload............... 1773.8 msgs/s 1675.92 msg/s 1810 msg/s
+8 byte payload............... 1768.24 msgs/s 1642.67 msg/s 1703.11 msg/s
+
+Results
+Messages sent 198000
+Messages lost 0
+Message integrity tests passed.
+
+CPU Usage as reported by top
+User: 5%
+System: 17%
+
+
+--------------------------------------------------------------
+Force Pentium I MMX 200MHz 64 Mb RAM
+
+0 byte payload...................... 6059.96 msgs/s.
+1 byte payload...................... 5638.6 msgs/s.
+2 byte payload...................... 5466.13 msgs/s.
+3 byte payload...................... 5543.33 msgs/s.
+4 byte payload...................... 5361.08 msgs/s.
+5 byte payload...................... 5253.74 msgs/s.
+6 byte payload...................... 5259.86 msgs/s.
+7 byte payload...................... 5122.69 msgs/s.
+8 byte payload...................... 5065.56 msgs/s.
+
+Results
+Messages sent 189000
+Messages lost 0
+Message integrity tests passed.
+
+CPU Usage as reported by top
+read thread 35% // Responsible for retrieving messages from device
+main thread 55% // Writes messages, processes received messages.
+---------------------------------------------------------------
+Trenton CPLE 1GHz PIII-M 1Gb Ram 256K Cache
+
+Testing msg rates.
+ 
+  Byte Payload ...............   Sustained   |   .5s Tx   | .5s Rx
+  ----------------------------------------------------------------
+  0 byte payload............... 8476.21 msgs/s 8657.63 msg/s 8485.26 msg/s
+  1 byte payload............... 7889.18 msgs/s 7999.71 msg/s 7907.7 msg/s
+  2 byte payload............... 7331.98 msgs/s 6999.64 msg/s 7359.9 msg/s
+  3 byte payload............... 6922.43 msgs/s 6999.65 msg/s 6935.9 msg/s
+  4 byte payload............... 6541.05 msgs/s 6944.94 msg/s 6553.69 msg/s
+  5 byte payload............... 6176.12 msgs/s 6499.88 msg/s 6181.9 msg/s
+  6 byte payload............... 5841.32 msgs/s 6000.13 msg/s 5848.13 msg/s
+  7 byte payload............... 5551.4 msgs/s 5499.87 msg/s 5567.86 msg/s
+  8 byte payload............... 5301.6 msgs/s 5212.09 msg/s 5315.98 msg/s
+   
+   Results
+   Messages sent 189000
+   Messages lost 0
+   Message integrity tests passed.
+    
+     
+     real    0m30.042s
+     user    0m2.470s
+     sys     0m8.860s
+---------------------------------------------------------------
+

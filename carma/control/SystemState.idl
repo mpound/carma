@@ -1,0 +1,81 @@
+#ifndef CARMA_CONTROL_SYSTEMSTATE_IDL
+#define CARMA_CONTROL_SYSTEMSTATE_IDL
+
+/**
+ * @file
+ *
+ * Interface for retrieving Carma system state information.
+ *
+ * @author: Andy Beard
+ * $Id: SystemState.idl,v 1.10 2011/05/17 16:27:40 iws Exp $
+ * $CarmaCopyright$
+ */
+#include "carma/control/SequenceTypedefs.idl"
+#include "carma/util/UserException.idl"
+#include "carma/monitor/monitorframe.idl"
+
+module carma {
+module control {
+
+const string SYSTEM_STATE_NAME = "carma.control.systemState";
+
+typedef sequence< unsigned long > SeqULong;    ///< Sequence of CORBA::ULong
+
+struct StateTransportMonitorValue {
+    carma::monitor::TransportMonitorValue tmv;
+    boolean changed;
+};
+
+typedef sequence< StateTransportMonitorValue > StateTransportMonitorValueSeq;
+
+
+/**
+ * Interface for retrieving system state information.
+ */
+interface SystemState {
+
+    /**
+     * Retrieve the oldest frame for which saved state is available.
+     * @return Frame of oldest saved state.
+     */
+    unsigned long getOldestStateFrame( )
+        raises ( carma::util::UserException );
+
+    /**
+     * Retrieve the most recent frame for which saved state is available.
+     * @return Frame of most recent saved state.
+     */
+    unsigned long getNewestStateFrame( )
+        raises ( carma::util::UserException );
+
+    /**
+     * Retrieve a sequence of frames indicating state change times for
+     * the input canonical monitor point names.
+     * @param names Canonical monitor point names.
+     * @param begin Frame to begin searching (frame inclusive).
+     * @param end Frame to end searching (frame inclusive).
+     * @return A possibly empty list of state change frames in given range.
+     */
+    SeqULong getStateChangeFrames( in SeqString names,
+                                   in unsigned long begin,
+                                   in unsigned long end )
+        raises ( carma::util::UserException );
+
+    /**
+     * Given a list of canonical monitor point names and a frame, return
+     * the saved state values for that frame in time.  Values that have
+     * changed from the previous saved state will be marked 'changed' in the
+     * return structure.
+     * @see getStateChangeFrames
+     * @param names Canonical monitor point names to retrieve values for.
+     * @param frame Frame which to return data for - use getStateChangeFrames.
+     * @return A possibly empty list of values.
+     */
+    StateTransportMonitorValueSeq getStateValues( in SeqString names,
+                                                  in unsigned long frame )
+        raises ( carma::util::UserException );
+
+}; // interface SystemState
+}; // module control
+}; // module carma
+#endif

@@ -1,0 +1,342 @@
+<!-- $Id: loghowto.html,v 1.5 2005/01/12 13:56:25 mpound Exp $ -->
+<HTML>
+<HEAD>
+<TITLE>
+ON THE USE AND ABUSE OF LOGGER AND TRACE
+</TITLE>
+</HEAD>
+<BODY>
+<CENTER>
+<h1> ON THE USE AND ABUSE OF LOGGER AND TRACE</h1>
+Marc Pound<br>
+Last update: $Date: 2005/01/12 13:56:25 $<br>
+</CENTER>
+
+
+<h2>Abstract</h2>
+<p>
+Now that more of us are using Logger and Trace and with the
+addition of syslog facility support, a how-to and when-to for Logger
+and Trace is in order.   In writing this up, I have (with the help of
+Chul and Amar) exposed an issue in the use of <i>logname</i> that
+we may wish to discuss.
+</p>
+
+<h2>The Difference Between Logger and Trace and When to use them</h2>
+
+<p>
+ Since Trace is built upon Logger, they naturally share many 
+ similarities.  But their purposes are different.
+ Simply put, Logger is for messages that should be part of daily 
+ observatory operation. They are important enough that they 
+ are saved in the RDBMS (if processed by syslog and higher priority than DEBUG).
+ Trace messages are for, you guessed it, tracing the operation
+ of a piece of code.  Trace is meant for debugging and testing.
+ Trace messages will not be saved in the RDBMS.
+</p>
+
+<h2>How To Use Logger</h2>
+
+<p>
+First off, review the 
+<a href=http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1util_1_1Logger.html>API for carma::util::Logger.</a>
+There are but 3 method calls in Logger, all static.  Each instantiates
+one of the 3 kinds of logger: syslogger, file logger, or ostream logger.
+Even though the method calls have several arguments, most arguments have
+sensible defaults.  A quick review:
+</p>
+<ol>
+<li>
+<a href=http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1util_1_1Logger.html#e0>
+ <b>getSyslogger</b> 
+</a> &mdash; The three parameters that do not default are
+    <i>identity, host,</i> and <i>logname</i>.  
+    The parameter <i>identity</i> should generally be
+    your program, process or object name.  The parameter <i>host</i> is 
+    the computer on which syslog is running. 
+    Generally it will be your own machine which is the default.
+    We are seting up /etc/syslog.conf on non-acc machines to forward message
+    on CARMA facilities to the ACC.  (Kernel messages stay with the local
+    machine, CARMA messages go to the ACC).
+    The parameter <i>logname</i> is the 
+    hierarchical namespace for your logger, in general it should 
+    follow our C++ namespace.  See <a href=#logname>below.</a> 
+    The output format of a syslogger uses {} to delineate
+    fields &mdash; these will be used to find the table column data 
+    when ingested into the dbms.
+</li>
+<li>
+<a href=http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1util_1_1Logger.html#e1>
+ <b>getFilelogger</b> 
+</a>
+&mdash; This logger writes to a rolling file.
+    When the file size reaches 10MB, it is rolled over to "filename.[1,2,3]"
+    (only 3 rollovers are kept).  The non-defaulted parameters are
+    <i>identity</i>, the identifying name as above, and <i>pathname</i>,
+    the file to open.  File logger messages are <b>not</b> saved to 
+    the dbms.
+</li>
+<li>
+
+<a href=http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1util_1_1Logger.html#e2>
+ <b>getOstreamlogger</b> 
+</a>
+ &mdash; This logger writes to an output
+    stream. The default stream is cout.  The only non-defaulted
+    parameter is <i>identity</i>.
+    Ostream logger messages are <b>not</b> saved to the dbms.
+</li>
+</ol>
+
+<a name=example>
+Example code may be found carma/util/Test/Log2File.cc and
+carma/util/Test/Log2Syslog.cc. 
+
+<blockquote>
+<a name=logname>
+<h3>What is logname really for?</h3>
+<p>
+    The logname is the hierarchical space in which the a logger (Category) is defined. 
+    Loggers inherit the priority of their parents, so the logger "carma.loberotator.lrboard2"  
+    would default to the same priority level "carma.loberotator".  Furthermore, messages
+    passed through a child may also get passed through its ancestors if 
+    <a href=http://log4cpp.sourceforge.net/api/classlog4cpp_1_1Category.html#a18>
+    the additivity flag is set 
+    </a> 
+    (in carma::util::Logger this behavior is turned off by default).
+</p>
+<p>
+    The choice of a logname can either be process-based or object-based. For instance
+    the object carma::environment::Atmosphere which logs messages could
+    log in the namespace of its parent program (say, carma.interferometry.delayengine or 
+    carma.environment.weatherstation, i.e. process-based) or in its own namespace 
+    (carma.environment.atmosphere, i.e. object-based).
+    We don't have a policy on this; the choice is up to the developer which context 
+    best matches how the code will be used.
+    However, this must be decided at the time the code is written; it is not configurable.
+    See <a href=#when>When and When Not</a>.
+</p>
+<p>
+    The logname is of particular importance as it will likely be an oft-queried column 
+    in the dbms when searching for log messages; e.g., one might query for all messages 
+    that came from the loberotator with "carma.loberotator*". For the 
+    <a href=http://www.mmarray.org/ccwg-arch/2004b/0818.html>
+    5 pre-defined syslog facilities, 
+    </a>
+    I have chosen matching lognames, such that if you call 
+    <a href=http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1util_1_1Program.html#a21>
+    Program::setFacility(facilityType f)
+    </a>, the logname also gets set. But you should not feel constrained to
+    stick with these, especially since we have mapped multiple subsystems
+    to a single facility.  For instance, INTERFEROMETRY_FACILITY
+    defaults <i>logname</i> to "carma.interferometry", but if the your
+    logger is instantiated in lobe rotator code, you should probably set
+    <i>logname</i> to "carma.loberotator" or "carma.loberotator.lrboard2"
+    or whatever is most descriptive and appropriate.  If in your log
+    output you see "carma.you.should.have.put.a.hierarchy.here" in the
+    logname column, it means a logname was never set.
+    <p>
+    <b>Because logname affects how we sort and view log messages--i.e. 
+    how we monitor operations and chase down problems,
+    we should have a convention or even a policy on choosing lognames.</b>
+    </p>
+<br>
+<br>
+<table align="center" border>
+<caption>Table 1. Facilities and Lognames</caption>
+<tr>
+<th>facilityType</th>
+<th>default logname</th>
+</tr>
+<tr>
+<td> DEFAULT_FACILITY </td> <td> carma.default </td>
+</tr>
+<td> MONITOR_FACILITY </td> <td> carma.monitor </td>
+</tr>
+<td> INTERFEROMETRY_FACILITY </td> <td>carma.interferometry </td>
+</tr>
+<td> CONTROL_FACILITY </td> <td>carma.control </td>
+</tr>
+<td> ENVIRONMENT_FACILITY </td> <td>carma.environment</td>
+</tr>
+</table>
+</p>
+</blockquote>
+<blockquote>
+<h3>The Nested Diagnostic Context</h3>
+    <p>
+    The nested diagnostic context is a way to distinguish similar log
+    output from different sources. For instance, each CARMA antenna
+    may be running an instance of a particular Program.  This program
+    might have the same identity and logname regardless of where it
+    is running. Through proper use the NDC, the exact antenna from
+    which a log message originates may be placed within the message
+    (see <a href=#example>example code</a>).  In the log4cpp package, 
+    <a href=http://log4cpp.sourceforge.net/api/classlog4cpp_1_1NDC.html>
+    NDC
+    </a> is implemented
+    as a simple stack in which the developer
+    pushes or pops messages.  Since the NDC is a stack, the developer
+    can push and pop at specific critical locations in the code for a
+    more detailed diagnostic context.  To push a message onto the
+    NDC, one uses the static method 
+    <a href=http://log4cpp.sourceforge.net/api/classlog4cpp_1_1NDC.html#d6>
+    NDC::push(const std::string& message)
+    </a>.  The methods 
+    <a href=http://log4cpp.sourceforge.net/api/classlog4cpp_1_1NDC.html#d5>
+    NDC::pop()
+    </a>and 
+    <a href=http://log4cpp.sourceforge.net/api/classlog4cpp_1_1NDC.html#d0>
+    NDC::clear()
+    </a> will pop and
+    clear the stack respectively.  When NDC is printed out, the entire
+    stack gets printed, i.e. messages are concatenated.
+    </p>
+    <p>
+    Note that NDCs are managed on a per thread basis. NDC operations
+    such as push,  pop, and clear affect the NDC
+    of the current thread only. NDCs of other threads remain unaffected.
+    This allows you to use the same Logger instance in different 
+    threads and distinguish output by NDC.
+    </p>
+
+</blockquote>
+
+<h2>How to Use Trace</h2>
+<p>
+Trace is built on top of logger and uses the three above calls under
+the hood, depending on how your Trace is instantiated. Trace has
+a single <a href=
+http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1util_1_1Trace.html#a0>
+constructor
+</a> which has non-default arguments <i>traceLevel</i> and 
+<i>traceDestination</i>. The <i>traceLevel</i> is a message priority level
+that maps to log4cpp::Priority (see <a href=#priority>below</a>) and the <i>traceDestination</i>
+is a string that is interpreted to decide which of the 3 types of
+logger to use under the hood.  If <i>traceDestination</i> is "stdout" an
+ostream logger is created; if <i>traceDestination</i> is "syslog" and
+syslogger is created; anything else is taken to be a file name and
+a file logger is created.  While Trace has several write methods, generally one
+of the two Trace macros is always used, since they insert file and line number
+information.
+</p>
+<blockquote>
+<h3>Trace Macros</h3>
+Trace has 2 macros CARMA_TRACE and CPTRACE.
+<ol>
+<li>
+<b>
+CARMA_TRACE(traceObject, priorityLevel, message)
+</b> writes the <i>message</i> assigning it the 
+<i>priorityLevel</i> using the <i>traceObject</i> pointer to 
+a Trace which you must have instantiated previously.  File name 
+and line number of the originating code are automatically inserted
+into the message.
+</li>
+<li>
+<b>CPTRACE(priorityLevel, message)</b> 
+</b> writes the <i>message</i> assigning it the 
+<i>priorityLevel</i> using the Trace object returned
+from Program::getTrace().  If you use CPTRACE, you do not have to
+instantiate your own Trace object.  Messages will be written using
+the parent Program's namespace.  File name 
+and line number of the originating code are automatically inserted
+into the message.
+</blockquote>
+
+<a name=priority>
+<h2>Log Levels versus Trace Levels</h2>
+Since Trace uses log4cpp via Logger, its TraceLevels map directly to
+<a href=http://log4cpp.sourceforge.net/api/classlog4cpp_1_1Priority.html>log4cpp::Priority levels</a>, 
+which in turn map directly to the Unix
+<a href=http://man.he.net/man3/syslog>syslog levels</a>.  
+In order of most critical (highest priority) to least critical (lowest priority):
+<br>
+<br>
+<table align="center" border=1 cellpadding=1 cellspacing=3>
+<caption>Table 2. Log Levels</caption>
+<tr>
+<th>Syslog</th>
+<th>Logger/log4cpp</th>
+<th>Trace</th>
+<th>Program traceLevel</th>
+</tr>
+
+<tr>
+<td>KERN_EMERG</td><td>EMERG or FATAL </td><td> TRACE0  </td><td align="center">0</td>
+</tr>
+<tr>
+<td>KERN_ALERT</td><td>ALERT </td><td> TRACE1 </td><td align="center">1</td>
+</tr>
+<tr>
+<td>KERN_CRIT</td><td>CRIT  </td><td> TRACE2  </td><td align="center">2</td>
+</tr>
+<tr>
+<td>KERN_ERR</td><td>ERROR </td><td> TRACE3   </td><td align="center">3</td>
+</tr>
+<tr>
+<td>KERN_WARNING</td><td>WARN  </td><td> TRACE4  </td><td align="center">4</td>
+</tr>
+<tr>
+<td>KERN_NOTICE</td><td>NOTICE</td><td> TRACE5    </td><td align="center">5</td>
+</tr>
+<tr>
+<td>KERN_INFO</td><td>INFO  </td><td> TRACE6    </td><td align="center">6</td>
+</tr>
+<tr>
+<td>KERN_DEBUG</td><td>DEBUG </td><td> TRACEALL </td><td align="center">7</td>
+</tr>
+<tr>
+<td align="center"> &mdash; </td><td>NOTSET</td><td> NOTRACE </td><td align="center">8</td>
+</tr>
+</tbody>
+</table>
+<br>
+Whenever a message is sent from Logger or Trace, it is ultimately assigned a log4cpp::Priority
+level and passed through a <a href=http://log4cpp.sourceforge.net/api/classlog4cpp_1_1Category.html>
+log4cpp::Category</a>.  The decision whether to output the message or not depends on
+the log4cpp::Priority assigned to the Category.  If the message has Priority equal to or greater than
+the Category's Priority, the message will be output.
+
+<h2>Relevant Program Keywords</h2>
+Logger and Trace have independent Program keywords to control their
+output when instantiated from Program.
+<ul>
+<li><b>syslog </b> = [<em>true | false</em>] &mdash; If <i>true</i>, logging will go to
+syslog via Logger.
+</li>
+<li><b>logfile </b> = <em>filename</em> &mdash; Logging will go to the file <i>filename</i>.
+Can be used in conjunction with syslog=true to enable logging to both outputs.
+</li>
+<li><b>loghost </b> = <em>hostname</em> &mdash; The hostname for syslog; defaults to value
+returned by <i>gethostname(3)</i>.
+</li>
+<li><b>traceFile </b> = <em> filename </em> &mdash; If <i>filename</i> is
+one of "stdout","stderr","cout","cerr","std::cout", or "std::cerr" 
+an ostream Trace to stdout is created.  If <i>filename</i> is "syslog"
+a syslog Trace is created. Otherwise a file Trace to
+<i>filename</i> is created.
+</li>
+<li><b>traceLevel </b> = [<em>0&ndash;8</em>] &mdash; the level at which to enable Trace output.
+Trace output with higher Trace number (== lower Priority!) will not be output.
+</li>
+</ul>
+
+<a name=when>
+<h2>When and When Not To Use Program::getLogger() and Program::getTrace()</h2>
+<p>
+You can use these methods anytime in any code, the question is when
+<i>should/shouldn't</i> they be used? It all comes down to process-based
+or object-based logging.  If you have an object which is not a Program
+subclass but you want it always to log in the namespace of the Program that
+instantiated it, then you should use the Program methods (and CPTRACE for
+a shortcut).  If, on the other hand, you want your object to always log
+in its own namespace then you should use Logger and Trace classes directly
+(and CARMA_TRACE for a shortcut).
+</p>
+<p>
+If your object is a Program subclass, then naturally you will use the 
+Program methods.
+</p>
+</BODY>
+</HTML>

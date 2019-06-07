@@ -1,0 +1,9 @@
+The third stage temperature for the cryogenic system is high. 
+This may be indicative of a warm up of the 4k stage and should be carefully
+watched. There can be multiple causes, including contamination and worn seals,
+refrigerator motor failure, compressor failure, or low helium supply pressure. 
+
+See also:
+http://cedarflat.mmarray.org/wiki/Alarms#BimaX.BimaSpecific.Dewar.stage3
+
+If it's the middle of the night and you need guidance, email help@mmarray.org.

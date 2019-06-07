@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Block Downconverter Monitor Point Definitions -->
+
+<Common scope="global" author="Andrew Beard" >
+
+<Container name="BlockDownconverter" priority="normal">
+    <description>
+    [From API 004 Documentation] Each block downconverter takes the two 
+    polarizations of a given antenna and splits it into two blocks.  One
+    of these (bypassed) is passed directly through at 1-5GHz, while the other block
+    (enabled), at 5-9 GHz, is downconverted to 1-5 GHz.  There are eight outputs
+    that go to the downconverters, and each of these outputs may be connected
+    to either 'bypassed' or 'enabled' of polarization 1 or polarization 2.
+    </description>
+
+    <MonitorPoint name="block" type="enum" count="8" >
+        <shortName>Block</shortName>
+        <shortName>Downconverter Block</shortName>
+        <description>Downconverter block selected for output N.</description>
+        <enum name="UNDEFINED"/>
+        <enum name="BYPASSED"/>
+        <enum name="ENABLED"/>
+    </MonitorPoint>
+
+    <MonitorPoint name="polarization" type="enum" count="8" >
+        <shortName>Polarization</shortName>
+        <longName>Downconverter Polarization</longName>
+        <description>Downconverter polarization selection.</description>
+        <enum name="UNDEFINED"/>
+        <enum name="POLARIZATION_1"/>
+        <enum name="POLARIZATION_2"/>
+    </MonitorPoint>
+
+    <MonitorPoint name="temperature" type="float">
+        <shortName>Temperature</shortName>
+        <longName>Module Temperature</longName>
+        <description>CAN module board temperature</description>
+        <units>C</units>
+        <precision>2</precision>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps24V" type="float">
+        <shortName>+24V</shortName>
+        <longName>Power Supply 24 V</longName>
+        <description>24V Analog Supply Voltage</description>
+        <units>V</units>
+        <warnLo>20.0</warnLo>
+        <warnHi>28.0</warnHi>
+        <errLo>18.0</errLo>
+        <errHi>30.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps5vDigital" type="float">
+        <shortName>+5V Digital</shortName>
+        <longName>Power Supply 5V Digital</longName>
+        <description>5V Analog Supply Voltage</description>
+        <units>V</units>
+        <warnLo>4.85</warnLo>
+        <warnHi>5.15</warnHi>
+        <errLo>4.75</errLo>
+        <errHi>5.25</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps6vAnalog" type="float">
+        <shortName>+6V Analog</shortName>
+        <longName>Power Supply 6V Analog</longName>
+        <description>6V analog PSU voltage</description>
+        <units>V</units>
+        <warnLo>5.5</warnLo>
+        <warnHi>6.5</warnHi>
+        <errLo>5.0</errLo>
+        <errHi>7.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps3_3vDigital" type="float">
+        <shortName>+3.3V Digital</shortName>
+        <longName>Power Supply 3.3V Digital</longName>
+        <description>3.3V analog PSU voltage</description>
+        <units>V</units>
+        <warnLo>3.0</warnLo>
+        <warnHi>3.6</warnHi>
+        <errLo>2.7</errLo>
+        <errHi>3.9</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps5v1" type="float">
+        <shortName>+5V #1</shortName>
+        <longName>5V Power Supply #1</longName>
+        <description>5V Power Supply #1 Voltage</description>
+        <units>V</units>
+        <warnLo>4.8</warnLo>
+        <warnHi>5.2</warnHi>
+        <errLo>4.6</errLo>
+        <errHi>5.4</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps5v2" type="float">
+        <shortName>+5V #2</shortName>
+        <longName>5V Power Supply #2</longName>
+        <description>5V Power Supply #2 Voltage</description>
+        <units>V</units>
+        <warnLo>4.85</warnLo>
+        <warnHi>5.15</warnHi>
+        <errLo>4.75</errLo>
+        <errHi>5.25</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="ps5vPort" type="float" count="8">
+        <shortName>+5V Port</shortName>
+        <longName>5V Power Supply Port</longName>
+        <description>5V Power Supply Port Voltage</description>
+        <units>V</units>
+        <warnLo>4.8</warnLo>
+        <warnHi>5.2</warnHi>
+        <errLo>4.6</errLo>
+        <errHi>5.4</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="fpgaVersion" type="string">
+        <shortName>FPGA Ver.</shortName>
+        <longName>FPGA Version</longName>
+        <description>FPGA Version</description>
+    </MonitorPoint>
+
+</Container>
+</Common>

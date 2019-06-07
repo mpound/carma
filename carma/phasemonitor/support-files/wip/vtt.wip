@@ -1,0 +1,66 @@
+# Plots each of the 4 channels (SW in-phase and quadrature, NE in-phase and
+# quadrature) as a function of time (using 1 second data)
+
+# input data and set plot scale
+set \1 .2
+data /home/obs/phasemon/data/1sec.new
+font 2
+expand 1.3
+mtext t 1.2 .5 .5 CARMA Phasemonitor
+mtext b 2.5 .5 .5 Day of Year
+expand 1.0
+font 1
+# macro to draw Y axis zero line
+define drawzero
+lsty 2
+move -9999 0
+draw 9999 0
+lsty 1
+end
+# SW antenna sin & cos
+panel 1 3 1
+xcol 1
+col 1
+ycol 4
+limits
+limits x1 x2 -\1 \1
+box
+drawzero
+ylab voltsi
+mtext t .5 0.5 0.5 SW interferometer Sin & Cos amplitudes (1sec.new)
+conn
+lab SWS
+col 2
+ycol 5
+conn
+lab SWC
+# NE antenna sin & cos
+panel 1 3 2
+limits x1 x2 -\1 \1
+col 3
+ycol 6
+conn
+lab NES
+col 4
+ycol 7 
+conn
+lab NEC
+col 1 
+box
+drawzero
+ylabel volts 
+mtext t .5 0.5 0.5 NE interferometer Sin & Cos amplitude (1sec.new) 
+set \2 x1
+set \3 x2
+# box temperature
+panel 1 3 3
+data /home/obs/phasemon/data/sample.dat
+xcol 1
+ycol 10
+lim
+lim \2 \3 y1 y2 
+box
+conn
+ylab Box Temp (C)
+mtext t -2 .5 .5 Temperature inside Phasemon box (10min sample.dat) 
+

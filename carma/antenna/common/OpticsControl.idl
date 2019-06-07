@@ -1,0 +1,35 @@
+#ifndef _OPTICSIDL
+#define _OPTICSIDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+
+  module antenna {
+
+    module common {
+      /**
+       * Antenna %Optics subsystem control.
+       * Only the OVRO and SZA antennas have optics for receiver
+       * selection.
+       */
+      interface  OpticsControl {
+	/**
+	 * Put this receiver on axis
+	 * This interface is invoked by the higher level Rx interface,
+	 * but is available for debugging.
+	 * @see Rx
+	 */
+	void selectRx() raises (carma::util::UserException);
+
+      }; // End Optics interface
+
+    }; // End common module
+
+  }; // End antenna module
+
+}; // End carma module
+
+#endif  // _OPTICSIDL
+
+

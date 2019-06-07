@@ -1,0 +1,226 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global">
+
+<Container name="MonitorSubsystemStats">
+
+    <MonitorPoint name="dataWriteTime" type="int">
+        <shortName>DataWrite</shortName>
+        <longName>Subsystem Data Write Time</longName>
+        <description>
+            The time elapsed in milliseconds since the frame boundary that
+            for the last write to the FSP either via an autowriter or 
+            explicitly by a monitor data collection process
+            (e.g. a CANbus master). This MP will be invalid if a write
+            did not occur for this frame.
+        </description>
+        <units>ms</units>
+        <precision>1</precision>
+    </MonitorPoint>
+
+    <MonitorPoint name="fspWriteTime" type="int">
+        <shortName>FSPwrite</shortName>
+        <longName>FSP Write Time</longName>
+        <description>
+            The time elapsed in milliseconds since the frame boundary that
+            this subsystem's frame scriber publisher (FSP) wrote to the
+            frameCollator.
+            This MP will be invalid if the FSP frame was not received within
+            the collator's time window for the frame.
+        </description>
+        <units>ms</units>
+        <precision>1</precision>
+    </MonitorPoint>
+
+    <MonitorPoint name="frameCollatorRxTime" type="int">
+        <shortName>CollatorRx</shortName>
+        <longName>Collator Rx Time</longName>
+        <description>
+            The elapsed in milliseconds since the frame boundary that this
+            subsystem was received by the frameCollator on the acc.
+            This MP will be invalid if the FSP frame was not received within
+            the collator's time window for the frame.
+        </description>
+        <units>ms</units>
+        <precision>1</precision>
+    </MonitorPoint>
+
+    <MonitorPoint name="validSubsystem" type="bool">
+        <shortName>Valid</shortName>
+        <longName>Valid Subsystem</longName>
+        <description>
+            A value of true indicated that the dataWriteTime and the 
+            frameCollatorRxTime are valid. This indicates that the 
+            monitor data were correctly sent by the subsystem to the
+            FSP and the FSP sent the data to the collator and it was 
+            received correctly. 
+            This MP is a convenience MP and contains no unique information.
+        </description>
+        <errHi>false</errHi>   
+    </MonitorPoint>
+
+    <MonitorPoint name="missedDataFrames" type="int">
+        <shortName>MissedData</shortName>
+        <longName>Missed Data Frames</longName>
+        <description>
+            The number of frames for a subsystem where the FSP did not receive
+            data from a data collection system before it sent off the data
+            to the collator. This will happen if the data collection system
+            is late or dead.
+        </description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="earlySubsystemFrames" type="int">
+        <shortName>EarlyFrames</shortName>
+        <longName>Early Subsystem Frames</longName>
+        <description>
+            The number of subsystem frames which arrived at the collator too 
+            early for processing.  This typically indicates resources starvation
+            on the acc or in the frameCollator directly.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="lateSubsystemFrames" type="int">
+        <shortName>LateFrames</shortName>
+        <longName>Late Subsystem Frames</longName>
+        <description>
+            The number of subsystem frames which arrived at the collator too 
+            late for processing.  This can be due to slow clients,
+            or slow server processing.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="missedSubsystemFrames" type="int">
+        <shortName>MissedFrames</shortName>
+        <longName>Missed Subsystem Frames</longName>
+        <description>
+            The number of subsystem frames which did not arrive at the collator
+            as deduced from discontinuities in frames. 
+        </description>
+    </MonitorPoint>
+    
+</Container>
+
+<Container name="MonitorSystemStats">
+    <description>
+        Contains monitor points which record timing statistics about the 
+        frameCollator process.
+    </description>
+
+    <MonitorPoint name="rawWriteTime" type="int">
+        <shortName>RawWrite</shortName>
+        <longName>Raw Write Time</longName>
+        <description>
+            The time in ms after the data sample frame when the collated
+            monitor system was published (written to the raw IPQ) on the acc.
+        </description>
+        <units>ms</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="rawReadTime" type="int">
+        <shortName>RawRead</shortName>
+        <longName>Raw Read Time</longName>
+        <description>
+            The time in ms after the data sample frame when the raw 
+            monitor system was read by the fault system and processed. 
+        </description>
+        <units>ms</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="finalWriteTime" type="int">
+        <shortName>FinalWrite</shortName>
+        <longName>Final Write Time</longName>
+        <description>
+            The time in ms after the data sample frame when the intermediate 
+            monitor system (also known as carma monitor system) was written by 
+            the fault system. 
+        </description>
+        <units>ms</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="outOfOrderSubsystemFrames" type="int">
+        <shortName>OutOfOrderFrames</shortName>
+        <longName>Out-of-Order Subsys Frames</longName>
+        <description>
+            The frame collator assumes that notifications from FSPs will 
+            arrive and be queued in time order (oldest first).  This
+            MP tracks that assumption and records any detected out-of-order
+            subsystem frames.
+        </description>
+        <warnHi>1</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="duplicateSubsystemFrames" type="int">
+        <shortName>DupFrames</shortName>
+        <longName>Duplicate Subsys Frames</longName>
+        <description>
+            The frame collator assumes that there is only one subsystem writer
+            (the frameScriberPublisher) for each subsystem.  This MP tracks
+            that assumption and records any detected duplicate subsystem 
+            frames.  One situation which is known to cause this is when a 
+            notification channel is not cleaned up on frameCollator shutdown. 
+        </description>
+        <warnHi>1</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="erroneousNotifications" type="int">
+        <shortName>BadNotifications</shortName>
+        <longName>Bad Notifications</longName>
+        <description>
+            The number of spurious, invalid, or otherwise errenous 
+            notifications received by the frameCollator.
+        </description>
+        <warnHi>1</warnHi>
+    </MonitorPoint>
+    
+    <MonitorPoint name="totalFrames" type="int">
+        <shortName>TotFrames</shortName>
+        <longName>Total Number Frames</longName>
+        <description>
+            The total number of frames processed by the frameCollator 
+            since it was started.
+        </description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="totalMissedDataFrames" type="int">
+        <shortName>TotMissedData</shortName>
+        <longName>Total Number Missed Data Frames</longName>
+        <description>
+            The total number of frames in all subsystem that had not
+            been sent any data from the data collection systems. 
+            Another description is the FSP did not receive any
+            data for the frame.
+        </description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="totalEarlyFrames" type="int">
+        <shortName>TotEarly</shortName>
+        <longName>Total Number Early Frames</longName>
+        <description>
+            The total number of early frames in all subsystem detected 
+            by the frameCollator since it was started.
+        </description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="totalLateFrames" type="int">
+        <shortName>TotLate</shortName>
+        <longName>Total Number Late Frames</longName>
+        <description>
+            The total number of late frames in all subsystem detected 
+            by the frameCollator since it was started.
+        </description>
+    </MonitorPoint>    
+    
+    <MonitorPoint name="totalMissedFrames" type="int">
+        <shortName>TotMissed</shortName>
+        <longName>Total Number Missed Frames</longName>
+        <description>
+            The total number of missing frames in all subsystem detected 
+            by the frameCollator since it was started.
+        </description>
+    </MonitorPoint>
+
+</Container>
+
+</Common>

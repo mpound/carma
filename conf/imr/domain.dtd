@@ -1,0 +1,70 @@
+<!ENTITY defargs "">
+<!ENTITY defoptargs "">
+<!ENTITY defdirectory "/home/control">
+<!ENTITY defactivatepoas "no">
+<!ENTITY defmaxspawncount "2">
+<!ENTITY deffailtimeout "60">
+<!ENTITY defupdatetimeout "20000">
+<!ENTITY defemulate "true">
+<!ENTITY defcritical "false">
+<!ENTITY BIN_DIR "/opt/rt/bin">
+<!ENTITY TRACE_OFF "traceFile=syslog traceLevel=8">
+<!ENTITY TRACE_SYSLOG "traceFile=syslog traceLevel=">
+<!ENTITY EMULATE "emulate=&defemulate;">
+
+<!ENTITY acc      "acc">
+<!ENTITY wbdc     "wbdc">
+<!ENTITY wbcor1   "wbcor1">
+<!ENTITY wbcor2   "wbcor2">
+<!ENTITY wbcor3   "wbcor3">
+<!ENTITY wbcor4   "wbcor4">
+<!ENTITY wbcor5   "wbcor5">
+<!ENTITY wbcor6   "wbcor6">
+<!ENTITY wbcor7   "wbcor7">
+<!ENTITY wbcor8   "wbcor8">
+<!ENTITY ovro1    "ovro1">
+<!ENTITY ovro2    "ovro2">
+<!ENTITY ovro3    "ovro3">
+<!ENTITY ovro4    "ovro4">
+<!ENTITY ovro5    "ovro5">
+<!ENTITY ovro6    "ovro6">
+<!ENTITY bima1    "bima1">
+<!ENTITY bima2    "bima2">
+<!ENTITY bima3    "bima3">
+<!ENTITY bima4    "bima4">
+<!ENTITY bima5    "bima5">
+<!ENTITY bima6    "bima6">
+<!ENTITY bima7    "bima7">
+<!ENTITY bima8    "bima8">
+<!ENTITY bima9    "bima9">
+<!ENTITY database "database">
+<!ENTITY corba    "corba">
+
+<!-- Startup priority entities -->
+<!ENTITY corba-services "0">
+<!ENTITY monitor-core "1">
+<!ENTITY monitor "2"> 
+<!ENTITY pre-subsystem "3"> 
+<!ENTITY subsystem-core "4"> 
+<!ENTITY subsystem "6">
+<!ENTITY control "7">
+<!ENTITY other "9">
+
+<!ELEMENT domain (oad*)>
+<!ELEMENT oad (server+)>
+<!ATTLIST oad hostname CDATA #REQUIRED>
+<!ATTLIST oad system (data|monitor|control|interferometry|correlator|ovro|bima|sza|misc) 
+                "misc">
+<!ELEMENT server ANY>
+<!ATTLIST server name CDATA #REQUIRED>
+<!ATTLIST server path CDATA #REQUIRED>
+<!ATTLIST server args CDATA "&defargs;">
+<!ATTLIST server optargs CDATA "&defoptargs;">
+<!ATTLIST server directory CDATA "&defdirectory;">
+<!ATTLIST server activatepoas (yes|no) "&defactivatepoas;">
+<!ATTLIST server maxspawncount CDATA "&defmaxspawncount;">
+<!ATTLIST server failtimeout CDATA "&deffailtimeout;">
+<!ATTLIST server updatetimeout CDATA "&defupdatetimeout;">
+<!ATTLIST server system (data|monitor|control|interferometry|correlator|ovro|bima|sza|misc|unknown) "unknown">
+<!ATTLIST server startup-priority (0|1|2|3|4|5|6|7|8|9) "9">
+<!ATTLIST server critical (true|false) "&defcritical;">

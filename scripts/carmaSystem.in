@@ -1,0 +1,100 @@
+#!/bin/bash
+# 
+# Start the control system for carma at the high site. 
+# This is a simple wrapper script for the controlSystem script.
+#
+
+# Define CARMA environment variable for the root of the build/install
+# Figure out the root of the build/install directory
+# The assumption and requirement is that this script is located
+# one level below the build/install root
+# Fixes case where a relative path is given
+INPUT_PATH=`/usr/bin/dirname "$0"`
+ABSPATH=`/bin/sh -c "cd ${INPUT_PATH} > /dev/null; pwd"`
+export CARMA_RUN=`/usr/bin/dirname ${ABSPATH}`
+
+IMR="acc3.carma.pvt"
+IMRACC="--imracc $IMR"
+FILE="--file imr/carma.xml"
+CONTROL_SYSTEM="sudo -u control ${CARMA_RUN}/scripts/taoControlSystem ${IMRACC} ${FILE}"
+ 
+# Source logging functions
+source "${CARMA_RUN}/scripts/logging" || fail "Can't source ${CARMA_RUN}/scripts/logging"
+
+
+function queryReason {
+    if [ $USER == "obs" ]; then 
+        REASON=""
+        while [ -z "${REASON}" ]; do
+            echo -n "Please enter a reason for stopping/restarting so that we "
+            echo "can improve the system:"
+            read REASON
+        done
+        logcarmanotice "Reason for carmaSystem stop: $REASON"
+    fi
+}
+
+function printUsage {
+	echo $"Usage: $0 {start|stop|restart|status}"
+}
+
+function printHelp {
+    echo Starts and stops the carma control system. See the controlSystem
+    echo 'script for more details (this is just a wrapper)'.
+    echo The command that is used is:
+    echo $CONTROL_SYSTEM
+	printUsage
+}
+
+
+function doCommand
+{
+    #echo "CarmaSystem input: $*"
+    #echo "cmd: $CONTROL_SYSTEM $*"
+    #echo doing command $1
+    case "$1" in
+        --help)
+            printHelp
+	        exit 0 
+            ;;
+        --usage)
+            printUsage
+	        exit 0 
+            ;;
+        start)
+            $CONTROL_SYSTEM ${argList[*]}
+	        exit 0 
+            ;;
+        stop)
+            $CONTROL_SYSTEM ${argList[*]}
+	        exit 0 
+            ;;
+        restart)
+            $CONTROL_SYSTEM ${argList[*]}
+	        exit 0 
+            ;;
+        status)
+            $CONTROL_SYSTEM ${argList[*]}
+	        exit 0 
+            ;;
+    esac
+}
+
+# Run first command found
+# arg1: number of arguments in argList to process
+function runCommand {
+
+    # run through arguments to check for options
+    for (( i=$1; i+1; i=i-1 ));
+    do
+        doCommand "${argList[$i]}"
+    done
+}
+
+# get list of arguments
+argList=($*)
+
+
+runCommand $#
+
+exit $?

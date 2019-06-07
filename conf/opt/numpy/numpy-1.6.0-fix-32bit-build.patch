@@ -1,0 +1,12 @@
+diff -Nrua numpy-1.6.0.orig/numpy/distutils/fcompiler/gnu.py numpy-1.6.0.patch/numpy/distutils/fcompiler/gnu.py
+--- numpy-1.6.0.orig/numpy/distutils/fcompiler/gnu.py	2011-05-05 13:41:53.000000000 -0700
++++ numpy-1.6.0.patch/numpy/distutils/fcompiler/gnu.py	2012-04-10 15:48:38.974379000 -0700
+@@ -255,7 +255,7 @@
+         'compiler_f90' : [None, "-Wall", "-fno-second-underscore"] + _EXTRAFLAGS,
+         'compiler_fix' : [None, "-Wall", "-ffixed-form",
+                           "-fno-second-underscore"] + _EXTRAFLAGS,
+-        'linker_so'    : ["<F90>", "-Wall"],
++        'linker_so'    : ["<F90>", "-Wall", "-m32"],
+         'archiver'     : ["ar", "-cr"],
+         'ranlib'       : ["ranlib"],
+         'linker_exe'   : [None, "-Wall"]

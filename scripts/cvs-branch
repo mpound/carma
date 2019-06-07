@@ -1,0 +1,25 @@
+#! /bin/csh -f
+#
+#   check out the current directory is a name that reflects the review branch
+#   (typically review1 or review2)
+#
+
+if ($#argv == 0) then
+  echo Usage $0 branch-name
+  echo "  Checks out a branchnamed directory of the current directory"
+  echo "  "
+  echo " Example:"
+  echo "  cvs-branch release_2_1"
+  echo " will create a subdirectory release_2_1 in the current directory with that "
+  echo " branch name hierarchically copied into"
+  exit 0
+endif
+
+set branch=$1
+
+set dir=`pwd`
+
+set subdir=`echo $dir | sed s,$CARMA/,,`
+
+cvs co -r $branch -d $branch carma/$subdir
+

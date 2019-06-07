@@ -1,0 +1,168 @@
+#ifndef SZA_UTIL_SERIALCLIENT_H
+#define SZA_UTIL_SERIALCLIENT_H
+
+/**
+ * @file SerialClient.h
+ * 
+ * Tagged: Mon May 10 15:32:08 PDT 2004
+ * 
+ * @author Erik Leitch
+ */
+#include "sza/util/Port.h"
+
+#include <termios.h>
+
+namespace sza {
+  namespace util {
+    
+    class SerialClient : public Port {
+    public:
+      
+      /**
+       * Constructor.
+       */
+      SerialClient(std::string port="/dev/ttyS0", int baudRate=9600);
+      
+      /**
+       * Destructor.
+       */
+      virtual ~SerialClient();
+      
+      /**
+       * Open a connection to the serial port
+       */
+      void connect();
+      
+      /**
+       * Set the port
+       */
+      void setPort(std::string port);
+      
+      /**
+       * Set the baud rate
+       */
+      void setBaudRate(int baudRate);
+      
+      /**
+       * Set the number of stop bits
+       */
+      void setStopBits(unsigned nStopBit);
+      
+      /**
+       * Turn echo on/off
+       */
+      void enableEcho(bool enable);
+
+      /**
+       * Turn input hardware flow control on/off
+       */
+      void enableHardwareInputFlowControl(bool enable);
+
+      /**
+       * Turn output hardware flow control on/off
+       */
+      void enableHardwareOutputFlowControl(bool enable);
+
+      /**
+       * Turn output processing on/off
+       */
+      void enableOutputProcessingChecking(bool enable);
+
+      /**
+       * Turn parity checking on/off
+       */
+      void enableParityChecking(bool enable);
+
+      /**
+       * Set the number of stop bits to 1
+       */
+      void set1StopBit();
+
+      /**
+       * Set the number of stop bits to 2
+       */
+      void set2StopBit();
+
+      /**
+       * Set the number of bits per char to 8
+       */
+      void setBitsPerChar(unsigned short nBit);
+
+      /**
+       * Use canonical processing
+       */
+      void useCanonicalProcessing(bool use);
+
+      /**
+       * Set a flag in the termios struct
+       */
+      void setIoFlag(IoFlag flag);
+
+      /**
+       * Reset the saved attributes 
+       */
+      void resetAttributes();
+
+      /**
+       * Set the current attributes 
+       */
+      void applyAttributes();
+
+      /**
+       * Save the current attributes 
+       */
+      void saveAttributes();
+      
+    private:
+      
+      //------------------------------------------------------------
+      // Static arrays
+      //------------------------------------------------------------
+      
+      /**
+       * Define a struct for encapsulating a baud rate
+       */
+      struct BaudRate {
+	speed_t speed;
+	int baudRate;
+      };
+      
+      /**
+       * A static array of baudrate enumerator-speed associations
+       */
+      static BaudRate baudRates_[];
+      
+      /**
+       * The number of elements in the above array
+       */
+      static unsigned nBaudRates_;
+      
+      /**
+       * A struct in which we will store the state of the port when
+       * this object was created
+       */
+      struct termios termioSave_;
+      
+      /**
+       * The serial port
+       */
+      std::string portName_;
+      
+      /**
+       * The baud rate
+       */
+      BaudRate* baudRate_;
+      
+      /**
+       * The number of stop bits
+       */
+      unsigned nStopBit_;
+      
+    }; // End class SerialClient
+    
+  } // End namespace util
+} // End namespace sza
+
+
+
+#endif // End #ifndef SZA_UTIL_SERIALCLIENT_H

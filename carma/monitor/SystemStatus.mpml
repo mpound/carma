@@ -1,0 +1,294 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- ************************************************************ -->
+<!-- SystemStatus subsystem monitor point definitions             -->
+<!-- ************************************************************ -->
+
+<Subsystem name="SystemStatus" author="Erik Leitch" priority="normal" persistent="true">
+
+  <?common MonitorStats.mpml?>
+  <CommonContainer ref="MonitorSubsystemStats" />
+  <CommonContainer ref="MonitorSystemStats" />
+
+  <!-- ************************************************************ -->
+  <!-- ** Declare files we'll be drawing monitor points from     ** -->
+  <!-- ************************************************************ -->
+
+  <?common SystemStatusCommon.mpml?>
+
+  <!-- ************************************************************ -->
+  <!-- ** Declare the common status monitor point                ** -->
+  <!-- ************************************************************ -->
+
+  <CommonMonitorPoint ref="ok" />
+
+  <!-- ************************************************************ -->
+  <!-- ** Declare a container of places                          ** -->
+  <!-- ************************************************************ -->
+
+  <Container name="Places" priority="normal" persistent="true">
+
+    <CommonMonitorPoint ref="ok" />
+
+    <Container name="CorrelatorRoom">
+      <CommonMonitorPoint ref="ok" />
+      <CommonMonitorPoint ref="status" />
+
+      <MonitorPoint name="currentTemperature" type="double" persistent="true">
+        <shortName>currentTemp</shortName>
+        <description>
+        Current temperature
+        </description>
+        <units>C</units>
+        <precision>1</precision>
+
+        <!--
+        - DO NOT CHANGE THESE LIMITS WITHOUT UPDATING THE NAGIOS CONFIGURATION
+        - TO MATCH. THE LIMITS IN BOTH SYSTEMS SHOULD BE THE SAME TO AVOID
+        - CONFUSION.
+        -->
+
+        <!-- 25.00C == 77.0F -->
+        <warnHi>23.89</warnHi>
+
+        <!-- 26.67C == 80.0F -->
+        <errHi>26.67</errHi>
+
+      </MonitorPoint>
+
+      <CommonMonitorPoint ref="sampleTime"/>
+    </Container>
+
+    <Container name="GeneratorBldg1">
+      <CommonMonitorPoint ref="ok"/>
+      <CommonMonitorPoint ref="status" />
+      <MonitorPoint name="currentTemperature" type="double" persistent="true">
+        <shortName>currentTemp</shortName>
+        <description>
+        Current temperature
+        </description>
+        <units>C</units>
+        <precision>1</precision>
+
+        <!--
+        - DO NOT CHANGE THESE LIMITS WITHOUT UPDATING THE NAGIOS CONFIGURATION
+        - TO MATCH. THE LIMITS IN BOTH SYSTEMS SHOULD BE THE SAME TO AVOID
+        - CONFUSION.
+        -->
+
+        <!-- 41.67C == 107.0F -->
+        <errHi>41.67</errHi>
+
+      </MonitorPoint>
+      <CommonMonitorPoint ref="sampleTime"/>
+    </Container>
+
+    <Container name="GeneratorBldg2">
+      <CommonMonitorPoint ref="ok"/>
+      <CommonMonitorPoint ref="status" />
+      <MonitorPoint name="currentTemperature" type="double" persistent="true">
+        <shortName>currentTemp</shortName>
+        <description>
+        Current temperature
+        </description>
+        <units>C</units>
+        <precision>1</precision>
+
+        <!--
+        - DO NOT CHANGE THESE LIMITS WITHOUT UPDATING THE NAGIOS CONFIGURATION
+        - TO MATCH. THE LIMITS IN BOTH SYSTEMS SHOULD BE THE SAME TO AVOID
+        - CONFUSION.
+        -->
+
+        <!-- 41.67C == 107.0F -->
+        <errHi>41.67</errHi>
+
+      </MonitorPoint>
+      <CommonMonitorPoint ref="sampleTime"/>
+    </Container>
+
+    <Container name="ComputerRoomCF">
+
+      <CommonMonitorPoint ref="ok"/>
+
+      <Container name="UpsTemp">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="status" />
+        <CommonMonitorPoint ref="currentTemperature"/>
+        <CommonMonitorPoint ref="lowTemperature"/>
+        <CommonMonitorPoint ref="highTemperature"/>
+        <CommonMonitorPoint ref="sampleTime"/>
+      </Container>
+
+      <Container name="RoomTemp">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="status" />
+
+        <MonitorPoint name="currentTemperature" type="double" persistent="true">
+          <shortName>currentTemp</shortName>
+          <description>
+          Current temperature
+          </description>
+          <units>C</units>
+          <precision>1</precision>
+
+          <!--
+          - DO NOT CHANGE THESE LIMITS WITHOUT UPDATING THE NAGIOS CONFIGURATION
+          - TO MATCH. THE LIMITS IN BOTH SYSTEMS SHOULD BE THE SAME TO AVOID
+          - CONFUSION.
+          -->
+
+          <!-- 22.22C == 72.0F -->
+          <warnHi>22.22</warnHi>
+
+          <!-- 23.33C == 74.0F -->
+          <errHi>23.33</errHi>
+
+        </MonitorPoint>
+
+        <CommonMonitorPoint ref="sampleTime"/>
+      </Container>
+
+    </Container>
+
+    <Container name="ComputerRoomBldg12">
+      <CommonMonitorPoint ref="ok"/>
+      <CommonMonitorPoint ref="status" />
+      <CommonMonitorPoint ref="currentTemperature"/>
+      <CommonMonitorPoint ref="setTemperature"/>
+      <CommonMonitorPoint ref="sampleTime"/>
+    </Container>
+
+  </Container> <!-- SystemStatus.Places -->
+
+  <!-- ************************************************************ -->
+  <!-- ** Declare a container of devices                         ** -->
+  <!-- ************************************************************ -->
+
+  <Container name="Devices" priority="normal" persistent="true">
+
+    <CommonMonitorPoint ref="ok"/>
+
+    <!-- ************************************************************ -->
+    <!-- ** Declare a container of computers                       ** -->
+    <!-- ************************************************************ -->
+
+    <Container name="Computers" priority="normal" persistent="true">
+
+      <CommonMonitorPoint ref="ok"/>
+
+      <Container name="Ups1">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="reachable"/>
+      </Container>
+
+      <Container name="Nfs2">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="reachable"/>
+      </Container>
+
+      <Container name="CorrTemp">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="reachable"/>
+      </Container>
+
+      <Container name="CompTemp">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="reachable"/>
+      </Container>
+
+      <Container name="Gen1cool">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="reachable"/>
+      </Container>
+
+      <Container name="Gen2cool">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="reachable"/>
+      </Container>
+
+      <Container name="Acc">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="pingTime"/>
+        <CommonMonitorPoint ref="sampleTime"/>
+        <CommonMonitorPoint ref="status"/>
+      </Container>
+
+      <Container name="Boot1">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="pingTime"/>
+        <CommonMonitorPoint ref="sampleTime"/>
+        <CommonMonitorPoint ref="status"/>
+      </Container>
+
+      <Container name="Db2">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="pingTime"/>
+        <CommonMonitorPoint ref="sampleTime"/>
+        <CommonMonitorPoint ref="status"/>
+      </Container>
+
+      <Container name="Cedarflat1">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="pingTime"/>
+        <CommonMonitorPoint ref="sampleTime"/>
+        <CommonMonitorPoint ref="status"/>
+      </Container>
+
+      <Container name="Cedarflat3">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="pingTime"/>
+        <CommonMonitorPoint ref="sampleTime"/>
+        <CommonMonitorPoint ref="status"/>
+      </Container>
+
+      <Container name="Cedarflat4">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="pingTime"/>
+        <CommonMonitorPoint ref="sampleTime"/>
+        <CommonMonitorPoint ref="status"/>
+      </Container>
+
+      <Container name="Cedarflat5">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="pingTime"/>
+        <CommonMonitorPoint ref="sampleTime"/>
+        <CommonMonitorPoint ref="status"/>
+      </Container>
+
+    </Container> <!-- SystemStatus.Devices.Computers -->
+
+    <!-- ************************************************************ -->
+    <!-- ** Declare a container of switches                        ** -->
+    <!-- ************************************************************ -->
+
+    <Container name="Switches" priority="normal">
+
+      <CommonMonitorPoint ref="ok"/>
+
+      <Container name="Switch1">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="reachable"/>
+      </Container>
+
+    </Container> <!-- SystemStatus.Devices.Switches -->
+
+    <!-- ************************************************************ -->
+    <!-- ** Declare a container of power strips                    ** -->
+    <!-- ************************************************************ -->
+
+    <Container name="PowerStrips" priority="normal">
+
+      <CommonMonitorPoint ref="ok"/>
+
+      <Container name="C16ps">
+        <CommonMonitorPoint ref="ok"/>
+        <CommonMonitorPoint ref="reachable"/>
+      </Container>
+
+    </Container> <!-- SystemStatus.Devices.Switches -->
+
+  </Container>  <!-- SystemStatus.Devices-->
+
+</Subsystem>

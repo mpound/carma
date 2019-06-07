@@ -1,0 +1,4 @@
+The centimeter receiver power is too low. The result is that the antenna 
+IF attenuation is then too low when setup for the centimeter receiver 
+on the ambient load. The attenuation must be more than 8dB on ambient 
+to allow 8dB to be removed when going to the sky position. 

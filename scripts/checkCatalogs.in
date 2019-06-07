@@ -1,0 +1,45 @@
+#!/bin/csh -f
+#
+# Script to run checkcat on all catalogs in /array/rt/catalogs.
+# This script to be run by a cron job.
+# $Id: checkCatalogs.in,v 1.4 2012/03/05 16:09:06 mpound Exp $
+
+if ( $#argv != 1 ) goto Usage
+
+foreach a ($*)
+    set $a
+end
+
+set dir=/array/rt/catalogs
+set out=$dir/checkCatalogs.out 
+set tmp=/tmp/checkcat.$$
+echo "Results of automatic catalog checking on " >! $tmp
+echo `date` >> $tmp
+#
+# Grab list of files that have been modified with $newerThan days
+#
+cd $dir
+foreach file ( `find ./*.cat -mtime -$newerThan -print` )
+  /opt/rt/bin/checkcat catalog=$file >>& $tmp
+#  echo $file
+#  /opt/rt/bin/checkcat catalog=$file
+end
+
+# Catalog errors will be preceeded by "###" in output
+set d="`date`"
+grep "#" $tmp >! /tmp/caterrs.$$
+set numerrs=`grep -c "#" $tmp`
+if ( "$numerrs" == "0" ) then 
+    echo "No errors found during automatic catalog checking on $d" >! $out
+else 
+    echo "The following errors were found during automatic catalog checking on $d" >! $out
+    cat /tmp/caterrs.$$ >> $out
+endif
+/bin/rm -rf $tmp /tmp/caterrs.$$
+
+exit 0
+
+Usage:
+  echo "$0 newerThan=N"
+  echo "Will check catalogs that have been modified within the last N days"
+ 

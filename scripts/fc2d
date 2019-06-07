@@ -1,0 +1,27 @@
+#!/bin/bash 
+# Dave MacMahon's script to convert framecount to date & vice versa.
+# Call this as fc2d to translate from frame->date or d2fc to go the
+# other way.
+
+function funfc2d ()
+{
+    for f in "${@:-0}";
+    do
+        date -ud "2000-01-01 +$(($f/2)) sec";
+    done
+}
+
+function fund2fc ()
+{
+    for d in "${@:-$(date)}";
+    do
+        s=$(date -ud "$d" +%s) && echo $((($s-$(date -ud "2000-01-01" +%s))*2));
+    done
+}
+
+
+#main
+case `basename $0` in
+  fc2d) funfc2d $* ;;
+  d2fc) fund2fc $* ;;
+esac

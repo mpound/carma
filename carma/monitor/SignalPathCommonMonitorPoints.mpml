@@ -1,0 +1,241 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global" author="Erik Leitch">
+
+<!-- ============================================================ -->
+<!-- Antenna number -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="antennaNo" type="int" persistent="true">
+    <shortName>antennaNo</shortName>
+    <description>
+      The number of the antenna currently connected to this input
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Antenna IF index -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="antennaIFNo" type="int" persistent="true">
+    <shortName>antennaIFNo</shortName>
+    <description>
+      The number of the currently-selected antenna IF
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Astro band number -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="astroBandNo" type="int" persistent="true">
+    <shortName>astroBandNo</shortName>
+    <description>
+      The astro band number corresponding to this input (1-24)
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Astro band input number -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="astroBandInputNo" type="int" persistent="true">
+    <shortName>astroBandInputNo</shortName>
+    <description>
+      The astro band input number corresponding to this input
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Configuration name -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="confName" type="string" persistent="true">
+    <shortName>ConfName</shortName>
+    <description>
+      name of the current configuration for this astro band
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Configuration enum -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="confTag" type="enum" persistent="true">
+    <shortName>ConfTag</shortName>
+    <description>
+      An enumeration of standard configurations:
+        NONE:                    None (not currently configured)
+        UNKNOWN:                 Unknown (an unknown configuration)
+        LL:                      Single-pol, LL
+        RR:                      Single-pol, RR
+        CARMA23:                 CARMA 23 mode
+        FULLSTOKES:              Full-Stokes mode
+        DUALPOL:                 Dual-polarization mode
+        MAXSENS_DUALPOL:         Maximum-sensitivity dual-polarization mode
+        MAXSENS_CARMA23_LOWRES:  Maximum-sensitivity carma23+C[16-23]L mode
+        MAXSENS_CARMA23_HIGHRES: Maximum-sensitivity carma23+C[1-7,15]L mode
+        MAXSENS_LL:              Maximum-sensitivity LL mode
+	CMTEST:                  cm-receiver test mode
+        MAXSENS_CARMA23_MEDRES:  Maximum-sensitivity carma23+C[8-15]L mode
+     </description>
+    <units></units>
+    <enum name="NONE"/>
+    <enum name="UNKNOWN"/>
+    <enum name="LL"/>
+    <enum name="RR"/>
+    <enum name="CARMA23"/>
+    <enum name="FULLSTOKES"/>
+    <enum name="DUALPOL"/>
+    <enum name="MAXSENS_DUALPOL"/>
+    <enum name="MAXSENS_CARMA23_LOWRES"/>
+    <enum name="MAXSENS_CARMA23_HIGHRES"/>
+    <enum name="MAXSENS_LL"/>
+    <enum name="CMTEST"/>
+    <enum name="MAXSENS_CARMA23_MEDRES"/>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Correlator band number -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="corrBandNo" type="int" persistent="true">
+    <shortName>corrBandNo</shortName>
+    <description>
+      The correlator band number corresponding to this input (1-8 for slcor, 1-16 for wbcor)
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- The correlator band input number -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="corrBandInputNo" type="int" persistent="true">
+    <shortName>corrBandInputNo</shortName>
+    <description>
+      The correlator band input number corresponding to this input
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Configuration frame count                                    -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="lastModified" type="int" persistent="true">
+    <shortName>Modified</shortName>
+    <description>
+       Frame count of the last configuration change
+    </description>
+    <width>12</width>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Number of unique antennas in a subarray -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="nAntInSubarray" type="int" persistent="true">
+    <shortName>nAntInSubarray</shortName>
+    <description>
+      The number of antennas belonging to a subarray
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Number of unique antennas in a a configuration -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="nAntInConfiguration" type="int" persistent="true">
+    <shortName>nAntInConfiguration</shortName>
+    <description>
+      The number of antennas belonging to a configuration
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Number of actual inputs -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="nInput" type="int" persistent="true">
+    <shortName>Inputs</shortName>
+    <description>
+      The number of inputs relevant for the current configuration of a given band
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Polarization type -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="polarization" type="enum" persistent="true">
+    <shortName>polarization</shortName>
+    <description>
+      Polarization can be one of the following:
+        UNKNOWN: Unknown
+        L:       Left Circular Polarization.
+        R:       Right Circular Polarization.
+        V:       Vertical polarization.
+        H:       Horizontal polarization.
+     </description>
+    <units></units>
+    <enum name="UNKNOWN"/>
+    <enum name="L"/>
+    <enum name="R"/>
+    <enum name="V"/>
+    <enum name="H"/>
+    <warnHi>UNKNOWN</warnHi>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Splitter channel enum -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="splitterChannel" type="enum" persistent="true">
+    <shortName>splitterChannel</shortName>
+    <description>
+      One of four splitter channels (A-D)
+    </description>
+    <units></units>
+    <enum name="NONE" />
+    <enum name="A"/>
+    <enum name="B"/>
+    <enum name="C"/>
+    <enum name="D"/>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Validity flag -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="hardwareConfValid" type="bool" persistent="true">
+    <shortName>HwConfValid</shortName>
+    <description>
+	True if the current hardware configuration is correct for the current astroband configuration
+    </description>
+   <errHi>false</errHi>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Subarray number -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="subarrayNo" type="int" persistent="true">
+    <shortName>subarrayNo</shortName>
+    <description>
+      The number of the subarray that configured this astroband
+    </description>
+  </MonitorPoint>
+
+<!-- ============================================================ -->
+<!-- Walsh column number -->
+<!-- ============================================================ -->
+
+  <MonitorPoint name="walshColNo" type="int" persistent="true">
+    <shortName>walshColNo</shortName>
+    <description>
+      The number of the walsh column currently assigned to an antenna
+    </description>
+  </MonitorPoint>
+
+</Common>
+

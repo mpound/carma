@@ -1,0 +1,416 @@
+<html> <head> <title>System Log</title> </head>
+<body>
+
+See also the <A HREF=observerDuties.html>Observer Duties</A> list for a more
+detailed explanation what the duties of current observer entail, including
+the standard checklist of things to do.
+
+<h1>Observer's Log</h1>
+<hr>
+<B>Entries, newest at top...</b>
+
+<h2> 22 July 2005  Steve Scott </h2>
+Tagged CARMA tree with CVS tag R4-loberotator, as a mini-release
+for the loberotator. The integration report and followup is in the
+loberotator work package directory. The loberotator is basically ready
+for science. The ability to download phase switching columns is roughed
+out in the high level code and the firmware but is not complete or
+tested. This capability is being intentionally deferred for 
+higher priority tasks.
+
+<h2> 20 July 2005  Rick Hobbs </h2>
+Tagged CARMA tree with CVS tag R4-RC1. This is my mini release containing
+the following functionality.<p>
+Pipeline DO. activate/deactivate all stages. Control Integrations and
+Decimations. BlankFlagging is in simulation mode using an extened class
+of Amar's CorrelatorPipelineInfo class.<p>
+VisBricks are being written out for Athol's inspection. 
+
+<h2> 20 June 2005  Peter Teuben </h2>
+Doing lots of optical pointing experiments to get the procedures
+nailed down. At 2pm: cvs update and rebuild. Added ants 1 and 5
+into the array for more integration.
+
+
+<h2> 31 May 2005  Marc Pound </h2>
+Cvs update and rebuild.  Tagged as INTEG-2005-05-31.
+
+
+<h2> 17 May 2005  Peter Teuben </h2>
+
+cvs update and rebuild, needless to say perhaps, the connection to OVRO has been 
+very stable again since the fixup two weeks ago. Debugging the Weather Station (WS) 
+variables, at irregular (?) times their values remain un-updated. This is an issue
+at the WS, not monitor system.
+
+<h2> 12 May 2005  Marc Pound </h2>
+
+Cvs update and rebuild. 
+Created <a href="CPUtable.html">CPU usage history</a> table.
+
+<h2> 09 May 2005  Marc Pound </h2>
+<b>Main Branch</b>
+
+System rebuild &amp; restarted this morning. 
+<br>Problems:
+<ul>
+<li>WeatherHost was forked.  Used imradmin to reset it then restart it.</li>
+<li>MonitorAverage is stopped.  Reset and restart don't work, it terminates
+with error:
+<tt>monitorAverageWriter exiting via an exception: File carma_src/carma/monitor/TagIDAuthority.cc, Line 204: Name not found: Wbdc.Can.Host.nActiveNodes 
+</tt>
+<li>OVRO drive monitor data are not showing up in the realtime windows.
+</li>
+</ul>
+Actions:
+<ul>
+<li>Rebuilt java, which hadn't been done in a while</li>
+</ul>
+
+<h2> 29 April 2005  Marc Pound </h2>
+<b>R3 Branch</b>
+<br>
+Problems:
+<ul> 
+<li>Connection to ovro is intermittent. Goes away for several minutes at a time.</li>
+After controlSystem restart:<br>
+<li> subarrayControl dies with SIGABRT.  No message to alert.log! Steve 
+restarted server SubArray1 with imrConsole. See Bug 62.
+</li>
+<li>
+AntennaHandle::setRaDec is sending incorrect coordinates to subsystems.
+Always sends RA (rad) = 0.001088 Dec (rad) = 0.0004727.  I checked
+this on W3OH and 3C48.
+</li>
+<br>
+Before controlSystem restart:<br>
+<br>
+<li>Little or no information is going to logs.</li>
+<li>
+Started sac, tried a couple things like de.selfTest(0) which worked
+Got bold and did s.track("W3OH") which hung subarrayControl.  
+Had to kill -9 sac.  After that any command in sac hung, and
+imradmin commands to Subarray1 server would not return. (Although
+the stop-server seems to have taken effect).
+</li>
+<li>
+Not seeing much emulated data in Rt windows.  Are all subsystems
+doing emulation properly?
+</li>
+</ul>
+Actions:
+<ul>
+<li> Restarted controlSystem at 06:35 PDT to try to fix above </li>
+</ul>
+More Problems:
+
+<h2> 20 April 2005  Marc Pound </h2>
+<br>
+Problems:
+<ul> 
+<li>
+Noticed database oad was not up despite that it is listed
+in carma.xml.  Did controlSystem stop and start but only acc and
+corba came back up.  Eventually controlSystem came back
+with many instances of the error 
+<kbd>
+bash: line 1: /opt/rt/scripts/rc.carma: No such file or directory.
+</kbd>
+I cannot ssh/rsh to many satellite systems, ttsumably the
+same ones that caused the multiple bash errors.  Verbose mode in
+ssh gets to the point 
+<kbd>
+debug1: Offering public key: /home/control/.ssh/id_dsa
+debug3: send_pubkey_test
+debug2: we sent a publickey packet, wait for reply
+</kbd>
+and hangs.
+</li>
+</ul>
+
+<h2> 14 April 2005  Steve Scott/Tom Costa </h2>
+<br>Actions:
+<ul>
+<li>All bima antenna, linelength and loberotator computers are running and
+they have been added to the carma.xml configuration file.
+<li>The rtd server programs would crash when started by xinetd 
+(and only when started by xinetd). 
+The problem was fixed by adding LD_ASSUME_KERNEL to the env via the 
+xinetd conf file. 
+It is not known why this problem suddenly appeared.
+</ul>
+
+</ul>
+
+
+<h2> 05 April 2005  Steve Scott </h2>
+<br>Actions:
+<ul>
+<li>Ovro antennas 2, 4, and 6 have been shutdown for migration to Cedar Flat.
+Changed carma.xml configuration file to move some of the non-hardware related
+programs to other ovro antenna computers and commented out the rest.
+</ul>
+<br>Observations:
+<ul>
+<li>The monitor system had been running and transporting data since 28 March
+until the system was reloaded today.
+</ul>
+
+<h2> 25 March 2005  Steve Scott </h2>
+<br>Actions:
+<ul>
+<li>Changed configuration file to use shared rather than persistent objects.
+Additionally, the imrconfig program was changed so that another pass through
+the servants could be done to start them up.
+After this change the system would always start up without hanging, 
+even though some processes were not running correctly.
+</ul>
+<br>Problems:
+<ul>
+<li>The subarray controller program usually does not start correctly on 
+system restart. Killing any instances of this process and restarting with
+the IMR does the trick.
+</ul>
+
+<h2> 18 March 2005  Marc Pound </h2>
+<p> tag=INTEG-2005-03-18
+<br>Actions:
+<ul>
+<li>Update, install, tag at 07:48 PT</li>
+<li>Installed latest syslog.conf.acc to acc:/etc/syslog.conf
+and restarted syslog daemon.  This created new file /var/carma/accLog/alert.log
+for critical messages
+</li>
+</ul>
+<br>Problems:
+<ul>
+<li>Microvax power failure. <br>Solution: Steve restarted them</li>
+<li>ovroCanHost not starting up because permissions on 
+ /dev/video0 (framegrabber), which get reset after reboot were too restrictive.
+<br>Solution: Modify /etc/security.console.perms.  The
+video devices are part of the &lt;v4l&gt; class.  See <kbd>man 5
+console.perms</kbd> for more info.
+</li>
+
+<li>Syslog2db died after the syslog daemon restart. Problem was /opt/dbIngest/logData/syslog2db.index did not include an entry for alert.log.  I don't expect
+this error will happen again, since we have finalized the files that
+syslog daemon will write to.
+<br>Solution: removed /opt/dbIngest/logData/syslog2db.index. It gets
+recreated by syslog2Db.
+</li>
+<li>MonitorAverageWriter dies.
+</li>
+<li>syslog2Db ("LogParser" server) died with coredump
+</ul>
+
+<hr>
+<h2> 17 March 2005  Marc Pound </h2>
+
+<br>Problems:
+<ul>
+<li>Upon restarting controlSystem, the acc OAD did not come up.
+Turns out /var/carma got filled up because Trace messages were
+turned on in carma.xml and CarmaThread.cc was
+writing a Trace message in a tight and infinite loop.  With the
+recent change to Trace, traceLevel=8 no longer means "no messages" but
+"high verbosity". So /var/carma/log/*.debug
+all have millions of lines in them. 
+<br>Solution: Modified carma.xml to have traceLevel=0, checked it in
+and installed it in /opt/rt/conf/imr.  Logged in as root: 
+<kbd>
+service sysylog stop<br>
+rm /var/carma/log/monitor.debug<br>
+service sysylog start<br>
+chown control:prgrmrs /var/carma/log/monitor.debug<br>
+</kbd>
+(Note you should not remove or rename a file that is actively being updated
+by syslogd).
+monitor.debug had over 2 million lines written to it just today!
+</li>
+
+<li>No monitor data flowing from any subsystems.  NTP was complaining 
+about not being
+able to write to /etc, but according to Paul ntpd was still running
+fine and all machines had proper time.
+<br>Solution: none. But the problem seems to have cleared itself up
+after I modified the trace level.  I suspect that the monitor
+system was so busy spewing TRACE messages that the frames always
+arrive late.
+</li>
+
+</ul>
+
+</p>
+<h2> 16 March 2005  Marc Pound </h2>
+<p> tag=INTEG-2005-03-16
+<br>
+<br>Actions:
+<ul>
+<li> Did full check out and rebuild at ~17:00 PT.</li>
+<li>
+Added bimaMH processes back in to /opt/rt/conf/imr/carma.xml,
+since Colby fixed the bimaMonitorHost bug.
+</li>
+</ul>
+<br>Problems:
+<ul>
+<li>All CorrelatorSimServers die with the following error:
+<br>
+Mar 16 17:28:09 wbcor5 CorrelatorSimServer:  {2005} {ERROR} {carma.correlator} {} {carma::util::CorbaUtils::sendNotification: could not obtain reference to proxy push consumer with channel name b9. CORBA::SystemException exception System exception `TRANSIENT' Locality: exception has been received "over the wire" Completed: no Minor code: 0x0 }  
+<br>
+Solution: Commented out CorrelatorSimServers from /opt/rt/conf/imr/carma.xml.
+Real solution needed!
+</li>
+
+<li><kbd>controlSystem stop</kbd> complains it cannot connect to 
+the machine corba:
+<kbd>
+[control@acc optimized]$ controlSystem stop
+
+Checking reachability of all machines (takes about 10 seconds)
+All systems reachable
+/opt/rt/scripts/controlSystem: line 186:  6053 Killed                  ( rsh $USER $ACC $COMMAND )
+/opt/rt/scripts/controlSystem: line 186:  6054 Killed                  rsh $USER $IMR $COMMAND
+Unable to connect to corba
+the time is Wed Mar 16 07:38:24 PST 2005 
+[control@acc optimized]$ 
+</kbd> 
+Nonetheless the imr seems to be properly stopped.
+<br>
+Solution: none at this time. Steve will look at controlSystem.in
+</li>
+
+<li>Upon restart, several database programs dies because /opt/dbtest
+could not be found.  Turns out /opt/dbtest has been renamed to /opt/dbIngest.
+We had decided to rename this directory last week, but it had not been
+made known that this renaming was actually done.   
+<br>
+Solution: I changed conf/dbms/dbms.conf apropriately and restarted 
+<kbd>controlSystem</kbd>.
+</li>
+<li>Processes on wbcorN fail because imrconfig cannot find libIMR.so.4.1.2
+since Orbacus 4.2 was installed on these systems and Orbacus 4.1 removed
+yesterday.  
+<br>Solution: Orbacus 4.2 installed on all carmatools in public and 
+private networks.
+</li>
+</ul>
+</p>
+
+<h2>12 March 2005  Steve Scott </h2>
+<p> tag=INTEG-2005-03-12
+<br>
+<br>Actions:
+<ul>
+<li>
+Removed all bimaMH processes from carma.xml. 
+They are still crashing and they bring down the system.
+</li>
+</ul> 
+<br>Problems:
+<ul>
+<li> database machine disk dead (holds db data), 
+so all db processes and those running on database machine are offline
+</li><li> bimaMonitorHost dies (still)
+</li><li> The controlSystem command does not reliably restart the system. 
+This may be related to the bimaMH processes as it was reliable before they were
+added back in. Need to see how things work with them removed again.
+</li></ul>
+<br>Notes
+<ul>
+<li> All ovro antennas are now online again.  
+</li><li> All ovro antennas except #5 have the environmental modules installed 
+which supplies the time sync to the microvax drive system.
+</li><li> All 16 correlator bands of data and all monitor subsystem data flowing to acc.
+</li><li> Subarray control successfully commands antennas in both horizon (move) 
+and equatorial (track) coordinates. 
+</li></ul>
+</p>
+
+<h2> 07 March 2005  Chul Gwon </h2>
+
+<br>Problems:
+<ul>
+  <li>Following processes did not start correctly with
+  /opt/rt/scripts/controlSystem start:
+    <ul>
+      <li>LogParser (bug 48)</li>
+      <li>MonitorLoader </li>
+      <li>MonitorDeleter (bug 50) </li>
+      <li>MonitorAverageWriter (bug 49) </li>
+    </ul>
+    Bug information is added - it seems that they are all somehow
+    related to the DB configuration.</li>
+   <li>Following machines (and therefore OADs) were down:
+    <ul>
+      <li>ovro1
+      <li>ovro2
+    </ul>
+   </li>
+</ul>
+
+<br>Actions:
+<ul>
+  <li>Athol contacted me saying he would make changes to the DB
+  configuration today or tomorrow.</li>
+  <li>Marc believes that the fix for
+  LogParser/MonitorLoader/MonitorDeleter is to have the
+  /opt/dbtest/monitorData directory exported to database.carma.pvt -
+  will talk to Paul about setting this up
+  </li>
+  <li>No action taken for machines that were down
+  </li>
+</ul>
+
+<br>Notes
+<ul>
+  <li> Had troubles running "/opt/rt/scripts/controlSystem start" on
+  dana, and later on acc.  Still inconsistent behavior for starting
+  processes not listed above in "Problems".
+  </li>
+</ul>
+
+<h2> 04 March 2005  Steve Scott </h2>
+<p> tag=INTEG_2005_03_04
+<br>
+Added back in all the bima processes to the system, giving 127 total processes.
+<br>Actions:
+<ul>
+<li>
+Athol updated the monitor database, but monitorAverageWriter 
+still finds data it doesn't like.</LI>
+<li>
+The rtd windows were broken because Logger wrote a message to stdout and
+a RuntimeDirs trace message that was printed out. Both fixed.</LI>
+</ul> 
+<br>Problems:
+<ul>
+<li> bimaMonitorHost dies</LI>
+<li> monitorAverageWriter complains of MP:Weather.ambientTemperature</LI>
+<li> The monitorAverageWriter in using the dbms for tagIDs but the log 
+ indicateds that others are creating them on the fly </LI>
+<li> syslog2Db dies because file not there. 
+Think this file should be written by acc on file that is nfs exported and then
+mounted by database. Imagine export got removed in os reinstall this week.</LI>
+<li> subarray control was up and responsive to query commands, 
+but died when given move command.</LI>
+</ul>
+<br>Notes
+<ul>
+<li> Monitor system shows all systems have mpml and FSPs. All but bima ants,
+loref, linelength are publishing (from dumpMonitor stats=t). </LI>
+<li> All 16 correlator bands flowing (from pipeline rtd window).</LI>
+<LI> RTD windows up and running.</LI>
+<li> ovro ant#2 is down (think power is off because of welding)</LI>
+</ul>
+</p>
+
+<h2> 03 March 2005  Andy Beard </h2>
+<p> WEEKLY_2_22_2005_STABLE - Somewhat stable system [see bugs 47-50] but not
+thoroughly verified.  Did verify that monitor data flowed through the 
+active subystems for the tag.  Verified that data was being displayed on 
+CARMA Real-Time display windows.  Did not verify control system.
+</p>
+
+</body>
+</html>

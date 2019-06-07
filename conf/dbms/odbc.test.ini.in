@@ -1,0 +1,28 @@
+; begin odbc.ini
+[ODBC Data Sources]
+myodbc3       = MySQL ODBC 3.51 Driver DSN 
+
+[myodbc3]
+; this is defined in terms of @carma_tools@, so we need a .in file
+#Driver = @carma_tools@/lib/libmyodbc3
+Driver = @carma_tools@/lib/libmyodbc5.so
+Description = MySQL ODBC 3.51 Driver DSN
+Server = localhost
+PORT = 9306
+SOCKET = /tmp/mysql.9306.sock
+;:USER = root
+:Password = 
+Database = carma
+;ReadOnly = no
+;ServerType = MySQL
+;FetchBufferSize = 99
+:ServerOptions =
+:ConnectOptions =
+;:OPTION = 3
+;TraceFile = /appl/beren/dmehring/mysql_test_trace.log
+;Trace = 1
+;DebugFile = /appl/beren/dmehring/mysql_test_debug.log
+;Debug = 1
+
+;end odbc.test.ini
+

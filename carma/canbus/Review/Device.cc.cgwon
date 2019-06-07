@@ -1,0 +1,132 @@
+/**
+ * $Id: Device.cc.cgwon,v 1.1 2003/07/09 18:18:36 cgwon Exp $ 
+ * 
+ * Device implementation for all CAN devices.
+ * 
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/09 18:18:36 $
+ */
+
+// Carma includes
+#include "carma/canbus/Device.h"
+/**** REVIEW
+ Reviewer: csg
+ Comments: Types.h already included in Device.h
+ */
+#include "carma/canbus/Types.h"
+#include "carma/canbus/Utilities.h"
+
+using namespace carma::canbus;
+
+// -----------------------------------------------------------------------------
+Device::Device(apiType api, nodeType node, CanOutput &io) :
+api_(api), node_(node), key_(createKey(api, node)), io_(io) 
+{
+    busId_ = 0;	
+    state_ = OFFLINE;
+    lastRxMjd_ = 0.0;
+}
+
+// -----------------------------------------------------------------------------
+Device::~Device() 
+{
+    // nothing
+}
+
+// -----------------------------------------------------------------------------
+apiType Device::getApi() const 
+{
+    return api_;
+}
+
+// -----------------------------------------------------------------------------
+nodeType Device::getNode() const
+{
+    return node_;
+}
+
+// -----------------------------------------------------------------------------
+keyType Device::getKey() const
+{
+    return key_;
+}
+
+// -----------------------------------------------------------------------------
+boardType Device::getBoardType() 
+{
+    return boardType_;
+}
+
+// -----------------------------------------------------------------------------
+serialNumberType Device::getSerialNumber() 
+{
+    return serialNumber_;
+}
+
+// -----------------------------------------------------------------------------
+busIdType Device::getBusId() 
+{
+    return busId_;
+}
+
+// -----------------------------------------------------------------------------
+deviceStateType Device::getState() 
+{
+    return state_;
+}
+
+// -----------------------------------------------------------------------------
+double Device::getLastRxTime() 
+{
+    return lastRxMjd_;
+}
+
+// -----------------------------------------------------------------------------
+map<msgType, string> Device::getControls() const 
+{
+    map<msgType, string> tmp;
+    tmp[RESET]                          = "Software reset";
+    tmp[START_CHANNEL_1_FAST_SAMPLING]  = "Start channel 1 fast sampling";
+    tmp[START_CHANNEL_2_FAST_SAMPLING]  = "Start channel 2 fast sampling";
+    return tmp;
+}
+
+// -----------------------------------------------------------------------------
+void Device::setState(deviceStateType state) 
+{
+    state_ = state;
+}
+
+// -----------------------------------------------------------------------------
+void Device::setBusId(busIdType busId) 
+{
+    busId_ = busId;
+}
+
+// -----------------------------------------------------------------------------
+void Device::setLastRxTime(double rxMjd) 
+{
+    lastRxMjd_ = rxMjd;
+}
+
+// -----------------------------------------------------------------------------
+void Device::reset() 
+{
+    idType address = createId(false, api_, node_, RESET);		
+    vector<byteType> data;
+/**** REVIEW
+ Reviewer: csg
+ Comments: "push_back" method causes problems with -fno-implicit-templates flag.  can data be made into a fixed-sized vector?
+ */
+    data.push_back(0xE1);
+    data.push_back(0x1E);
+    data.push_back(0xA5);
+    data.push_back(0x5A);
+    data.push_back(0xC3);
+    data.push_back(0x3C);
+    data.push_back(0x96);
+    data.push_back(0x69);
+    Message msg(address, data, ALL_BUSSES);
+    io_.postMessage(msg);
+}

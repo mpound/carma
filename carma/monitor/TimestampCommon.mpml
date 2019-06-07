@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global">
+   <MonitorPoint name="timestamp" type="absTime">
+      <shortName>Timestamp</shortName>
+      <longName>packet completion time</longName>
+      <description>
+         Time that packet data was completed/written
+      </description>
+      <units>UTC</units>
+   </MonitorPoint>
+</Common>

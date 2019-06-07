@@ -1,0 +1,323 @@
+<?xml version="1.0"?>
+
+<!-- $Id: andyLab.xml,v 1.6 2013/04/09 22:48:04 abeard Exp $  -->
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "/home/abeard/development/carma/install/bin">
+        <!ENTITY DEFAULT_DIR "/home/abeard">
+        <!ENTITY EMULATE "true">
+        <!ENTITY LOG "traceFile=syslog traceLevel=0">
+        <!ENTITY USE_DB "useDBMS=false">
+        <!ENTITY BANDTRACE "traceFile=/tmp/band4.trace traceLevel=4">
+        <!ENTITY CORR_INIS "f=correlator/slcorrelator.conf sim=correlator/labCarma15.ini hwtype=carma">
+]>
+
+<!-- Configuration for the ovro lab runtime system.  
+     For a detailed description of all tags see 
+       carma/conf/exampleCarmaConfig.xml 
+     Domains must be specified in the hostnames 
+     
+     OAD names **must** be native host names, not DNS aliases.
+ -->
+
+
+<!-- @version -->
+<domain>
+
+    <!-- The main system 'acc' -->
+    <oad hostname="labacc.correlator.pvt">
+        <server name="labdelayEngineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=delayEngine"
+                system="interferometry" />
+        <server name="labFrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; delay=750"
+                system="monitor" />
+        <server name="labcontrolFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=control"
+                system="control" />
+        <server name="labSubarray1" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true subarrayNo=1 &LOG; &USE_DB;"
+                system="control" />
+        <server name="labControlState" path="&BIN_DIR;/carmaControlState"
+                directory="&DEFAULT_DIR;" 
+                args="statedir=/tmp production=false &LOG; &USE_DB; nice=10"
+                system="control" critical="true" />
+
+
+<!--
+        <server name="labSubarray2" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true subarrayNo=2 &LOG; &USE_DB;" />
+-->
+
+        <server name="labSubarray3" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true subarrayNo=3 &LOG; &USE_DB;"
+                system="control" />
+
+<!--
+        <server name="labSubarray4" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true subarrayNo=4 &LOG; &USE_DB;"
+                system="control" />
+
+        <server name="labSubarray5" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true subarrayNo=5 &LOG; &USE_DB;" />
+-->
+
+        <server name="labFaultSystem" path="&BIN_DIR;/faultSystem"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; simName=simple blankOnNoData=false" />
+        
+        <server name="labalarmFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=alarm"/>
+        <server name="labalarmControl" path="&BIN_DIR;/carmaAlarm"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; mode=control"/>
+        <server name="labalarmDevice" path="&BIN_DIR;/carmaAlarm"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; mode=device emulate=true"/>
+
+        <!-- Process monitor -->
+        <server name="ProcessMonitorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; subsystem=Imr delay=150"
+                system="monitor" />
+
+        <server name="ProcessMonitor" path="&BIN_DIR;/processMonitor"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; file=/home/abeard/development/carma/install/conf/imr/andyLab.xml writedelay=0.100"
+                system="monitor" />
+
+    </oad>
+    
+    <!-- Pipeline processes-->
+    <oad hostname="labacc.correlator.pvt">
+        <server name="labwbPipelineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=wbpipeline" 
+                system="data" />
+        <server name="labslPipelineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=slpipeline delay=400" 
+                system="data" />
+        <server name="labSlDataCatcher" path="&BIN_DIR;/catchData"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; mode=sl" system="data" />
+        <server name="labSlPipeline" path="&BIN_DIR;/pipeline"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; sl=true vbFile=/opt/scratch/visbrick/visbrickData f=correlator/slcorrelator.conf monitorDelay=250" 
+                system="data" />
+    </oad>
+    
+    <!-- Loberotator machine processes-->
+    <oad hostname="labcwdc.correlator.pvt">
+        <server name="labloberotatorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=loberotator"
+                system="interferometry" />
+        <server name="labmasterClockFSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=masterclock"
+            system="interferometry" />
+    
+        <server name="labLoberotatorHost" path="&BIN_DIR;/carmaLoberotatorHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; board=0 canbus=1"
+                system="interferometry" />
+        <server name="labMasterClock" path="&BIN_DIR;/carmaClockHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; board=0 bus=0"
+                system="interferometry" />
+    </oad>
+
+    <!-- Spectral line downconverter -->
+    <oad hostname="labcwdc.correlator.pvt" system="correlator">
+        <server name="labsldcFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=sldc"/>
+        <server name="labSldc" path="&BIN_DIR;/carmaSldcHost"
+                args="&LOG; &USE_DB; board=1 canbus=0 sim=true"
+                directory="&DEFAULT_DIR;" />
+         <server name="labRemoteCanSldc" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;"/>
+    </oad>
+    
+    <!-- Servers for Correlator AND Monitor Data -->
+
+    <!-- Bands 1,2 & 3 all CARMA -->
+    <oad hostname="labslcor4.correlator.pvt" system="correlator">
+
+        <server name="Band1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB; subsystem=CarmaSlcBand1" 
+                system="correlator"/>
+        
+        <server name="SlcBand1" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=1 p=19001 &CORR_INIS;"/>
+                
+    </oad>
+
+    <oad hostname="bodie.ovro.pvt" system="correlator">
+        <server name="Band2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB; subsystem=CarmaSlcBand2" 
+                system="correlator"/>
+        
+        <server name="SlcBand2" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=2 p=19002 &CORR_INIS;"/>
+    </oad>
+
+    <oad hostname="labslcor5.correlator.pvt" system="correlator">
+
+        <server name="Band3FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB; subsystem=CarmaSlcBand3" 
+                system="correlator"/>
+
+        <server name="SlcBand3" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=3 p=19003 &CORR_INIS;"/>
+
+    <!--
+        <server name="Band4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB; subsystem=CarmaSlcBand4" 
+                system="correlator"/>
+
+        <server name="SlcBand4" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=4 p=19004 &CORR_INIS;"/>
+    -->
+                
+    </oad>
+    <oad hostname="labslcor6.correlator.pvt" system="correlator">
+
+        <!-- FSPs -->
+        <server name="Band5FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB; subsystem=CarmaSlcBand5" 
+                system="correlator"/>
+
+        <server name="SlcBand5" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=5 p=19005 &CORR_INIS;"/>
+
+    <!--
+        <server name="Band6FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB; subsystem=CarmaSlcBand6" 
+                system="correlator"/>
+
+        <server name="SlcBand6" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=6 p=19006 &CORR_INIS;"/>
+    -->
+    </oad>
+    
+    <!-- Bands 7-8 -->
+    <oad hostname="labslcor7.correlator.pvt" system="correlator">
+
+        <!-- FSPs -->
+        <server name="Band7FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB; subsystem=CarmaSlcBand7" 
+                system="correlator"/>
+
+        <server name="SlcBand7" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=7 p=19007 &CORR_INIS;"/>
+                
+    <!--
+        <server name="Band8FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&USE_DB; subsystem=CarmaSlcBand8" 
+                system="correlator"/>
+
+        <server name="SlcBand8" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; b=8 p=19008 &CORR_INIS;"/>
+
+    -->
+    </oad>
+
+    <!-- OVRO antennas -->
+    <oad hostname="bodie.ovro.pvt">
+        <server name="labovro1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro1 delay=300"
+                system="ovro" />
+        <server name="labOvro1CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; ant=1 emulate=true simulate=true "
+                system="ovro" />
+         <server name="labRemoteCanOvro1" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&LOG; &USE_DB;"
+                system="ovro" />
+        <server name="labovro2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro2 delay=300"
+                system="ovro" />
+        <server name="labOvro2CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; ant=2 emulate=true simulate=true "
+                system="ovro" />
+        <server name="labovro3FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro3 delay=300"
+                system="ovro" />
+        <server name="labOvro3CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; ant=3 emulate=true simulate=true "
+                system="ovro" />
+        <server name="labovro4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro4 delay=300"
+                system="ovro" />
+        <server name="labOvro4CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; ant=4 emulate=true simulate=true "
+                system="ovro" />
+        <server name="labovro5FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro5 delay=300"
+                system="ovro" />
+        <server name="labOvro5CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; ant=5 emulate=true simulate=true "
+                system="ovro" />
+        <server name="labovro6FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro6 delay=300"
+                system="ovro" />
+        <server name="labOvro6CanHost" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; ant=6 emulate=true simulate=true "
+                system="ovro" />
+    </oad>
+
+    <!-- The test subsystem with simulated data -->
+    <!--
+    <oad hostname="labacc.correlator.pvt">
+        <server name="labtestFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=test" />
+        <server name="labTestSimulator" path="&BIN_DIR;/testMPwriterReader"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  writeOnly=true iterations=0
+               " />
+    </oad>
+    -->
+    
+</domain>

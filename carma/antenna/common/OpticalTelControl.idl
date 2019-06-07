@@ -1,0 +1,307 @@
+/**
+ * @mainpage
+ *
+ * @author Erik Leitch
+ * @author Colby Gutierrez-Kraybill
+ */
+
+#ifndef _OPTICALTELIDL
+#define _OPTICALTELIDL
+
+#include "carma/antenna/common/SwitchState.idl"
+#include "carma/util/UserException.idl"
+
+module carma
+{
+  module antenna
+  {
+    module common
+    {
+      /**
+       * OpticalTelControl nameserver name.
+       */
+      const string OPTICAL_TEL_NAME = "OpticalTel";
+
+      /**
+       * Resolutions supported by our framegrabber.
+       * These are native resolutions supported by the framegrabber.
+       * Implementations can query the framegrabber itself to retrieve
+       * pixel dimensions.
+       */
+      enum Resolution {
+          HIGH_RES,
+          MEDIUM_RES,
+          LOW_RES
+      };
+
+      /**
+       * Rich description of a frame grabbed image.
+       * As a real live example, suppose we want to retrieve an image from an
+       * OVRO framegrabber with a width of 100 px and a height of 200 px at
+       * MEDIUM_RES (@see carma::antenna::common::Resolution).  We would first
+       * call setFramegrabberResolution(MEDIUM_RES), we'd then call
+       * setFrameDimensions(100, 200, 0, 0) and finally grabFrame() which
+       * returns a flattenedOpticalImage.  The retrieved image would contain
+       * the following: xRes==400, yRes==640, x==100, y==200, xMax==480,
+       * yMax==768 and res==MEDIUM_RES.
+       * Note that the uncropped image dimensions (xRes, yRes) and (xMax, yMax)
+       * increase when the image is rotated as the rotated image
+       * encloses all of the unrotated image adding extra area with
+       * a pixel value of zero.
+       */
+      struct flattenedOpticalImage
+      {
+          short xRes;     /**< Uncropped image width in pixels. */
+          short x;        /**< Actual width of image in pixels. Note this
+                           *   will be less than xRes when the image is
+                           *   cropped. */
+          short yRes;     /**< Uncropped image height in pixels. */
+          short y;        /**< Actual height of image in pixels. Note this
+                           *   will be less than yRes when the image is
+                           *   cropped. */
+          short xMax;     /**< Maximum image width in pixels - this corresponds
+                           *   to the width at the highest resolution. */
+          short yMax;     /**< Maximum image height in pixels - this corresponds
+                           *   to the height at the highest resolution. */
+          float fovWidth; /**< Field of view width measured as arc-minutes
+                           *   of minimum dimension.
+                           */
+          float rotationInDegrees; /**< Image rotation clockwise in degrees */
+          short numImages;/**< Number of images in this structure - usually 1 */
+          sequence<octet> opticalData; /**< Contains the actual bytes */
+          short pixelDepth; /**< Better known as color depth in bits. */
+      };
+
+      /**
+       * Result of centroid on a single image.
+       */
+      struct CentroidResult {
+          boolean valid;             /**< Indicates status of centroid */
+          string errorString;        /**< Error message if invalid */
+          float xOffsetInArcminutes; /**< mean X offset in arcminutes */
+          float yOffsetInArcminutes; /**< mean Y offset in arcminutes */
+          float peakPixelSNR;        /**< Peak pixel signal to noise ratio */
+          float sizeInArcminutes;    /**< Object size in arcminutes
+                                          defined as twice the weighted
+                                          standard deviation. */
+          unsigned long aperturePixelCount;  /**< Number of pixels in centroid*/       };
+
+      typedef sequence<CentroidResult> CentroidResults;
+
+      /**
+       * Antenna optical telescope control
+       */
+      interface OpticalTelControl
+      {
+
+          /**
+           * Turn the telescope and camera on or off.  The OFF command
+           * covers the telescope for protection (lens cap, flap) and
+           * turns off the camera.
+           * @param state
+           * @see SwitchState
+           */
+          void turn( in SwitchState state )
+              raises (carma::util::UserException);
+
+          /**
+           * Set specific frame dimensions.
+           * This effectively crops any frame buffer image to the specified
+           * dimensions.  Please note the distinction between resolution and
+           * frame dimensions. The supported resolutions define the maximum
+           * frame dimensions only! Frame dimensions are measured as a width
+           * and height starting at a particular offset (x0, y0) into the image.
+           * As an example, the optical telescope on 10-m antennas is mounted
+           * at a -90 angle, thus when requesting HIGH_RES frame dimensions,
+           * one would specify 468x760 rather than 760x468 (native dimensions).
+           * If (x0 + x, y0 + y) exceeds the current resolution OR image
+           * boundaries, an exception is thrown. No autoscaling is performed
+           * so you must properly set a resolution which supports your
+           * desired frame dimensions.
+           * @param x Size in x dimension
+           * @param y Size in y dimension
+           * @param x0 Initial x offset.
+           * @param y0 Initial y offset.
+           * @throws carma::util::UserException Upon invalid dimensions.
+           * @see OpticalTelControl::setFramegrabberResolution
+           */
+          void setFrameDimensions( in short x,
+                                   in short y,
+                                   in short x0,
+                                   in short y0 )
+              raises (carma::util::UserException);
+
+          /**
+           * Sets the brightness of subsequent frames.
+           * @param brightness Normalized brightness (0.0 - 1.0).
+           */
+          void setBrightness( in float brightness )
+              raises (carma::util::UserException);
+
+          /**
+           * Sets the contrast of subsequent frames.
+           * @param contrast Normalized contrast (0.0 - 1.0).
+           */
+          void setContrast( in float contrast )
+              raises (carma::util::UserException);
+
+          /**
+           * Set the resolution of the framegrabber.
+           * @param res Desired resolution.
+           * @see carma::antenna::common::Resolution
+           */
+          void setFramegrabberResolution( in Resolution res )
+              raises (carma::util::UserException);
+
+          /**
+           * Set image rotation and az/el fields of view.
+           * The rotation value is used to align raw camera images
+           * with the az/el coordinate system.  Field of view values
+           * define the plate scale in azimuth and elevation *after*
+           * rotation. The rotated cropped image is used by findCentroid.
+           * @param rotationInDegrees Amount of rotation in degrees.
+           * @param azFOVInArcminutes Azimuth field of view in arcminutes
+           * @param elFOVInArcminutes Elevation field of view in arcminutes
+           * @see findCentroid
+           */
+          void setRotationAndFieldsOfView( in float rotationInDegrees,
+                                           in float azFOVInArcminutes,
+                                           in float elFOVInArcminutes )
+              raises (carma::util::UserException);
+
+          /**
+           * Get a frame from the frame grabber and return it.
+           * @return a frame of CCD data
+           * @deprecated Use getImage.
+           *
+           * This method is provided here for debugging purposes and with
+           * the idea that it may be called by a dedicated thread on the
+           * ACC.  Functions which return data like this should NOT be
+           * called directly by control threads in the ACC, because such
+           * calls will cause them to block.
+           *
+           * @see setFieldsOfViewAndRotation
+           */
+          flattenedOpticalImage grabFrame()
+              raises (carma::util::UserException);
+
+          /**
+           * Create and return an image from the input number of frames.
+           * Co-adds input number of frames and returns the result.  This
+           * command blocks while grabbing and co-adding frames and
+           * is thus only for experimental and debugging purposes.
+           * @param numFrames Number of frames to co-add into image.
+           * @param subBackground Subtract background image.
+           * @param normalizeMedian Before subtracting the images, scale the
+           *        background images and the current image to the same median
+           *        value.
+           * @param normalizeImage Normalize output image such that the minimum
+           *        pixel value is 0 and the maximum is 255 (contrast stretch).
+           * @see findCentroid
+           */
+          flattenedOpticalImage getImage( in unsigned short numFrames,
+                                          in boolean subBackground,
+                                          in boolean normalizeMedian,
+                                          in boolean normalizeImage )
+              raises (carma::util::UserException);
+
+          /**
+           * Take background image.
+           * Identical to getImage but saves the image as the background image
+           * for future image subtraction.  When the operation completes, the
+           * sequence number is placed into the monitor system.
+           * @param numFrames Number of frames to co-add into image.
+           * @param seqNo Sequence number to return when command completes
+           *        in monitor point named CentroidSeqNum
+           * @throw carma::util::UserException on fatal error.
+           * @see getStoredBackgroundImage
+           */
+          void takeBackgroundImage( in unsigned short numFrames,
+                                    in unsigned long seq )
+              raises (carma::util::UserException);
+
+          /**
+           * Get stored background image.
+           * Returns last image stored with takeBackgroundImage.  If no
+           * image has been stored an exception is thrown.
+           * @return Background image.
+           * @throw carma::util::UserException if no image stored.
+           * @pre takeBackgroundImage called prior to store background image.
+           * @post UserException if no image exists or returned image.
+           */
+          flattenedOpticalImage getStoredBackgroundImage( )
+              raises ( carma::util::UserException );
+
+          /**
+           * Find centroid of star in field of view
+           * This routine will calculate the centroid on each of a number of
+           * specified images.  The routine automatically co-adds frames
+           * when specified.  The sequence number is used to verify the remote
+           * system has completed the requested operation.
+           * The sequence number is stored locally on the remote system
+           * and once complete, the corresponding monitor point for
+           * this sequence number is set to the one passed as seqNo.
+           * @param numFramesPerImage Number of frames to co-add per image.
+           * @param minValidCentroids Minimum number of valid centroids after
+           *        which to return.
+           * @param maxCentroidAttempts Maximum number of images to centroid on
+                    in an attempt to obtain numValidImages.
+           * @param numEdgePixels Number of edged pixels to ignore.
+           * @param apertureRadiusPixels Radius of centroiding aperture in pixs.
+           * @param pixelThresholdSigma Only pixels with a value greater than
+           *        the mean + pixelThresholdSigma * sigma  will be considered
+           *        for centroiding.  3.0 is a good default.
+           * @param subBackground Subtract background image.
+           * @param normalizeMedian Before subtracting the images, scale the
+           *        background images and the current image to the same median
+           *        value.
+           * @param seqNo Sequence number to return when command completes
+           *        in monitor point named CentroidSeqNum
+           * @throw carma::util::UserException If backgroundImage or
+           *        normalizeMedian specified but no image stored.
+           * @pre If subBackground or normalizeMedian is true a background
+           *      image must have been stored prior with takeBackgroundImage.
+           * @see takeBackgroundImage
+           * @see findCentroid
+           */
+          void findCentroid(
+                  in unsigned short numFramesPerImage,
+                  in unsigned short minValidCentroids,
+                  in unsigned short maxCentroidAttempts,
+                  in unsigned short numEdgePixels,
+                  in unsigned short apertureRadiusPixels,
+                  in float pixelThresholdSigma,
+                  in boolean subBackground,
+                  in boolean normalizeMedian,
+                  in unsigned long seq )
+              raises ( carma::util::UserException );
+
+          /**
+           * Return results of last findCentroid call.
+           */
+          CentroidResults getCentroidResults( )
+              raises ( carma::util::UserException );
+
+          /**
+           * Apply an offset to on the fly generated test images.
+           * For testing simulation purposes only.
+           * @param azInArcmin Azimuth offset in arc minutes.
+           * @param elInArcmin Elevation offset in arc minutes.
+           * @throw UserException If not running in simulation mode.
+           */
+          void applyTestOffset( in double azInArcmin, in double elInArcmin )
+            raises ( carma::util::UserException );
+
+          void zeroTestOffset( )
+            raises ( carma::util::UserException );
+
+      }; // End OpticalTelControl interface
+
+    }; // End common module
+
+  }; // End antenna module
+
+}; // End carma module
+
+#endif  // _OPTICALTELIDL
+

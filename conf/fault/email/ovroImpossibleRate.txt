@@ -1,0 +1,5 @@
+The encoder readouts on either az or el are indicating an impossible rate
+of motion on a 10m antenna. This means that this encoder reading is not
+reliable, including software limits, so the antenna will be placed in a 
+FATAL drive state. 
+

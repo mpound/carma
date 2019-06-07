@@ -1,0 +1,111 @@
+$Id: Logger.review1,v 1.1 2003/07/24 18:13:01 mpound Exp $
+# Developer review for Logger.cc, Logger.h, SyslogLayout.cc, FileLayout.cc
+# 
+#-----------------------------------------------------------------------------
+# 1. CODE COVERAGE AND UNIT TEST
+#-----------------------------------------------------------------------------
+
+% make coverage
+
+Logger:
+rm -rf *.o *.a *.so *.gcov *.bb *.bbg *.da Test/*.o Test/utLogger ../../doc/services
+c++   -Wall -fprofile-arcs -ftest-coverage  -I/lupus/mpound/src/carma/include  -o FileLayout.o -c FileLayout.cc
+c++   -Wall -fprofile-arcs -ftest-coverage  -I/lupus/mpound/src/carma/include  -o SyslogLayout.o -c SyslogLayout.cc
+c++   -Wall -fprofile-arcs -ftest-coverage  -I/lupus/mpound/src/carma/include  -o Logger.o -c Logger.cc
+/bin/rm -f libservices.a
+ar rc libservices.a FileLayout.o SyslogLayout.o Logger.o	
+c++   -Wall -fprofile-arcs -ftest-coverage  -I/lupus/mpound/src/carma/include  -o Test/utLogger.o -c Test/utLogger.cc
+c++ -o Test/utLogger  Test/utLogger.o FileLayout.o SyslogLayout.o Logger.o /lupus/mpound/src/carma/lib/libcppunit.a  /lupus/mpound/src/carma/lib/liblog4cpp.a /lupus/mpound/src/carma/carma/util/libutil.a  -lrt
+Test/utLogger
+FileLayout test
+FileLayout Constructor
+FileLayout Destructor
+SyslogLayout test
+LoggerTest::runTest()
+LoggerTest finished
+gcov Logger.cc
+[snip]
+ 94.12% of 34 source lines executed in file Logger.cc
+gcov FileLayout.cc
+[snip]
+100.00% of 13 source lines executed in file FileLayout.cc
+gcov SyslogLayout.cc
+[snip]
+100.00% of 7 source lines executed in file SyslogLayout.cc
+
+echo "### Please verify output to /tmp/filetest.log and /var/log/messages ###"
+### Please verify output to /tmp/filetest.log and /var/log/messages ###
+
+#-----------------------------------------------------------------------------
+#1b. LOG FILE OUTPUT CHECK
+#-----------------------------------------------------------------------------
+
+% cat /tmp/filetest.log
+
+2003-05-01T17:40:08.0 {INFO} {carma.unittest.filelogger} {New instantiation of file logger.} {File logger created for process File Logger Unit Test}
+2003-05-01T17:40:08.0 {NOTICE} {carma.unittest.filelogger} {Starting unit test.} {Hello, world.}
+2003-05-01T17:40:08.0 {DEBUG} {carma.unittest.filelogger} {Continuing unit test} {This is a DEBUG level statement.}
+2003-05-01T17:40:08.0 {WARN} {carma.unittest.filelogger} {Continuing unit test} {This is a WARN level statement.}
+2003-05-01T17:40:08.0 {NOTICE} {carma.unittest.filelogger} {Continuing unit test} {This is a NOTICE level statement.}
+2003-05-01T17:40:08.0 {INFO} {carma.unittest.filelogger} {Continuing unit test} {This is a INFO level statement.}
+2003-05-01T17:40:08.0 {ALERT} {carma.unittest.filelogger} {Continuing unit test} {This is a ALERT level statement.}
+2003-05-01T17:40:08.0 {CRIT} {carma.unittest.filelogger} {Continuing unit test} {This is a CRITICAL level statement.}
+2003-05-01T17:40:08.0 {NOTICE} {carma.unittest.filelogger} {Ending unit test} {Goodbye.}
+
+#-----------------------------------------------------------------------------
+#1c. SYSLOG OUTPUT CHECK
+#-----------------------------------------------------------------------------
+
+% tail -16 /var/log/messages
+
+May  1 13:40:08 lupus Sys Logger Unit Test:  {INFO} {carma.unittest.syslogger} {New instantiation of syslogger.} {Syslogger created for process Sys Logger Unit Test on host lupus.astro.umd.edu} 
+May  1 13:40:08 lupus Sys Logger Unit Test:  {NOTICE} {carma.unittest.syslogger} {Starting unit test.} {Hello, world.} 
+May  1 13:40:08 lupus Sys Logger Unit Test:  {WARN} {carma.unittest.syslogger} {Continuing unit test} {This is a WARN level statement.} 
+May  1 13:40:08 lupus Sys Logger Unit Test:  {NOTICE} {carma.unittest.syslogger} {Continuing unit test} {This is a NOTICE level statement.} 
+May  1 13:40:08 lupus Sys Logger Unit Test:  {INFO} {carma.unittest.syslogger} {Continuing unit test} {This is a INFO level statement.} 
+May  1 13:40:08 lupus Sys Logger Unit Test:  {ALERT} {carma.unittest.syslogger} {Continuing unit test} {This is a ALERT level statement.} 
+May  1 13:40:08 lupus Sys Logger Unit Test:  {CRIT} {carma.unittest.syslogger} {Continuing unit test} {This is a CRITICAL level statement.} 
+May  1 13:40:08 lupus Sys Logger Unit Test:  {NOTICE} {carma.unittest.syslogger} {Ending unit test} {Goodbye.} 
+May  1 13:40:35 lupus Sys Logger Unit Test:  {INFO} {carma.unittest.syslogger} {New instantiation of syslogger.} {Syslogger created for process Sys Logger Unit Test on host lupus.astro.umd.edu} 
+May  1 13:40:35 lupus Sys Logger Unit Test:  {NOTICE} {carma.unittest.syslogger} {Starting unit test.} {Hello, world.} 
+May  1 13:40:35 lupus Sys Logger Unit Test:  {WARN} {carma.unittest.syslogger} {Continuing unit test} {This is a WARN level statement.} 
+May  1 13:40:35 lupus Sys Logger Unit Test:  {NOTICE} {carma.unittest.syslogger} {Continuing unit test} {This is a NOTICE level statement.} 
+May  1 13:40:35 lupus Sys Logger Unit Test:  {INFO} {carma.unittest.syslogger} {Continuing unit test} {This is a INFO level statement.} 
+May  1 13:40:35 lupus Sys Logger Unit Test:  {ALERT} {carma.unittest.syslogger} {Continuing unit test} {This is a ALERT level statement.} 
+May  1 13:40:35 lupus Sys Logger Unit Test:  {CRIT} {carma.unittest.syslogger} {Continuing unit test} {This is a CRITICAL level statement.} 
+May  1 13:40:35 lupus Sys Logger Unit Test:  {NOTICE} {carma.unittest.syslogger} {Ending unit test} {Goodbye.} 
+
+#-----------------------------------------------------------------------------
+# 2. LEAK CHECK
+#-----------------------------------------------------------------------------
+
+% make leak
+
+valgrind --leak-check=yes Test/utLogger
+FileLayout test
+FileLayout Constructor
+FileLayout Destructor
+SyslogLayout test
+LoggerTest::runTest()
+LoggerTest finished
+==16713== valgrind-20020225, a memory error detector for x86 GNU/Linux.
+==16713== Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.
+==16713== For more details, rerun with: -v
+==16713== 
+==16713== 
+==16713== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==16713== malloc/free: in use at exit: 18891 bytes in 51 blocks.
+==16713== malloc/free: 187 allocs, 136 frees, 149919 bytes allocated.
+==16713== For counts of detected errors, rerun with: -v
+==16713== searching for pointers to 51 not-freed blocks.
+==16713== checked 5373612 bytes.
+==16713== 
+==16713== definitely lost: 0 bytes in 0 blocks.
+==16713== possibly lost:   1664 bytes in 1 blocks.
+==16713== 
+==16713== 1664 bytes in 1 blocks are possibly lost in loss record 8 of 9
+==16713==    at 0x40061F3E: (within /usr/lib/valgrind/valgrind.so)
+==16713==    by 0x8063236: ??? (/usr/include/g++-v3/bits/stl_alloc.h:114)
+==16713==    by 0x8062FC7: ??? (/usr/include/g++-v3/bits/stl_alloc.h:480)
+==16713==    by 0x8062D33: ??? (/usr/include/g++-v3/bits/stl_alloc.h:281)
+

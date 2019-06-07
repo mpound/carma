@@ -1,0 +1,91 @@
+% Note: This file uses eps graphics. pdfLatex will not work so you must
+% do the following:
+% latex <filename.tex>
+% dvipdf <filename.dvi>
+
+\documentclass[11pt]{article}
+
+\usepackage{color}
+
+\usepackage{graphicx}
+\usepackage{lscape}
+\usepackage{epsfig}
+
+% PS fonts
+\usepackage{mathptmx,courier,pifont,helvet}
+\usepackage[T1]{fontenc}
+
+\addtolength{\textheight}{1.75truein}
+\addtolength{\topmargin}{-1truein}
+\addtolength{\textwidth}{1.5truein}
+\addtolength{\oddsidemargin}{-0.75truein}
+\addtolength{\evensidemargin}{-0.75truein}
+
+\begin{document}
+\title{\LARGE\bf Online SelfCal}
+\author{Peter Teuben~(UMD)}
+\date {\it $ $Revision: 1.1 $ $ \\ $ $Date: 2006/02/14 03:27:22 $ $}
+\maketitle
+
+%
+%
+\section{Selfcal}
+
+\subsection{Goal}
+
+Complex antenna based gains, derived from a self-cal solution, on a point
+source\footnote{in theory any source for which a good model is known}
+are a useful diagnostic to monitor the performance and quality
+of the interferometric observations. 
+The solutions, as well as their error estimates, are published as monitors
+points in the CARMA online system.
+Instead of having to plot $N(N-1)/2$ phases and amplitudes, only $N$ need to
+be summarized.
+
+\smallskip\noindent
+They are derived from a {\it meta-channel}, defined by the observer by choosing
+any set of channels (typically a wide-band channel). The gains are computed on
+a integration timescale, not on the 1/2 second system beat, and these gains
+are also not exported to the (Miriad) scientific data sets. 
+
+\smallskip\noindent
+However, by virtue of being in the monitor stream, are available to write
+sophisticated real-time routines during observations.
+
+%
+\subsection{Theory}
+%
+%
+
+Following e.g. Cornwell et al we can write the outcome
+$$
+\tilde{V}_{ij} = g_i g^*_j G_{ij} V_{ij}  + \varepsilon_{ij} + \epsilon_{ij} 
+$$
+but simplify this to
+$$
+\tilde{V}_{ij} = g_i g^*_j V_{ij}  + \epsilon_{ij} 
+$$
+
+
+and this is where the magic starts...
+
+For a self-calibration we want to minimize
+
+$$
+\sum_k \sum_{i,j} w_{ij} \left\| \tilde{V}_{ij} - g_i g^*_j \hat{V}_{ij} \right\|^2
+$$
+
+where $k$ is a sum over time, and $i,j$ over antennae baseline pairs.
+
+where at least for a point source the model is well known.
+
+\subsection{Implementation}
+
+Jacobi iteration (miriad::selfcal) vs. least squares solution (hat::xpnt)
+The {\tt carma::services::SelfCal} class implements the MIRIAD selfcal
+solution.
+\bigskip
+
+Minimizing in $L_1$ vs. $L_2$ norm (Schwab)
+
+\end{document}

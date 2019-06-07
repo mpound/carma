@@ -1,0 +1,329 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Monitor points that are common between all correlators within -->
+<!-- Control subsystem.                                            -->
+
+<Common scope="global" author="N.S. Amarnath">
+ 
+  <Container name="ControlBandPoints" priority="vital">
+    <description>
+       A correlator band, including downconverter and 2nd LO.
+    </description>
+    <MonitorPoint name="number" type="int" persistent="true">
+      <shortName>Number</shortName>
+      <description>
+         Band number, starting at one   
+      </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="configuration" type="enum" persistent="true">
+      <shortName>Configuration</shortName>
+      <longName>Band configuration</longName>
+      <description>
+        Status of the configuration of this band. Invalid is indicated when
+        the computed 2nd LO frequency is out of range of the hardware. This
+        can happen if the band has not been reconfigured after the 1st LO
+        has been changed.   
+      </description>
+      <enum name="VALID">
+        <description>
+          Valid configuration
+        </description>
+      </enum>
+      <enum name="INVALID">
+        <description>
+          Invalid configuration
+        </description>
+      </enum>
+      <errHi>INVALID</errHi>
+    </MonitorPoint>
+ 
+    <MonitorPoint name="online" type="bool" persistent="true">
+      <shortName>Online</shortName>
+      <longName>Online</longName>
+      <description>
+         Online status of a band. Data for an offline band is not written out.   
+      </description>
+      <warnHi>false</warnHi>
+    </MonitorPoint>
+   
+    <MonitorPoint name="lo2Freq" type="double" persistent="true">
+      <shortName>LO2freq</shortName>
+      <longName>SecondLOfreq</longName>
+      <description>
+         Frequency of the 2nd local oscillator    
+      </description>
+      <units>GHz</units>
+      <errLo>1.7495</errLo>
+      <errHi>4.2505</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="centerFreq" type="double" persistent="true">
+      <shortName>CenterFreq</shortName>
+      <longName>Center Frequency</longName>
+      <description>
+         Rest frequency of center of his band.
+         This is the frequency used to set up the 2nd LO and
+         is the frequency that is Doppler tracked.   
+      </description>
+      <units>GHz</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="restFreq" type="double" persistent="true">
+      <shortName>RestFreq</shortName>
+      <longName>Rest Frequency</longName>
+      <description>
+         Rest frequency from which velocities are calculated for the
+         channels in the band.   
+      </description>
+      <units>GHz</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="ifFreq" type="double" persistent="true">
+      <shortName>IFfreq</shortName>
+      <longName>IfFrequency</longName>
+      <description>
+        IF frequency for the center of band.  
+      </description>
+      <units>GHz</units>
+      <errLo>1.0</errLo>
+      <errHi>9.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="imageRestFreq" type="double" persistent="true">
+      <shortName>RestFreq</shortName>
+      <longName>Rest Frequency</longName>
+      <description>
+        Rest frequency of molecular transition for image sideband;
+        used for labeling of the image sideband.   
+      </description>
+      <units>GHz</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="transition" type="string" persistent="true">
+      <shortName>Transition</shortName>
+      <longName>MolecularTransition</longName>
+      <description>
+           Name of the molecular line transition used for the rest frequency.   
+      </description>
+    </MonitorPoint>
+ 
+    <MonitorPoint name="imageTransition" type="string" persistent="true">
+      <shortName>ImageTran</shortName>
+      <longName>ImageSidebandMolecularTransition</longName>
+      <description>
+           Name of the molecular line transition used for the rest frequency
+           for the image sideband.   
+      </description>
+    </MonitorPoint>
+      
+    <MonitorPoint name="bandwidth" type="double" persistent="true">
+      <shortName>BW</shortName>
+      <longName>BandWidth</longName>
+      <description>
+        Nominal bandwidth of the band.
+        The bandwidth of the data may be smaller if end channels are dropped,
+        as is usually the case.    
+      </description>
+      <units>MHz</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="lo2Sideband" type="enum" persistent="true">
+     <shortName>LO2sideband</shortName>
+     <longName>SecondLOsideband</longName>
+     <description>
+        Sideband of the 2nd downconversion; 
+          LOWER = data frequency is below 2ndLO.    
+     </description>
+     <enum name="UPPER"/>
+     <description>
+        Upper sideband
+     </description>
+     <enum name="LOWER"/>
+     <description>
+        Lower sideband
+     </description>
+    </MonitorPoint>
+ 
+    <MonitorPoint name="reqLO2sideband" type="enum" persistent="true">
+     <shortName>ReqLO2sideband</shortName>
+     <longName>Reuested 2ndLO sideband</longName>
+     <description>
+        Sideband of the 2nd downconversion; 
+          LOWER = data frequency is below 2ndLO.    
+     </description>
+     <enum name="UPPER"/>
+     <description>
+        Upper sideband
+     </description>
+     <enum name="LOWER"/>
+     <description>
+        Lower sideband
+     </description>
+     <enum name="AUTO"/>
+     <description>
+        Automatic sideband selection
+     </description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="corrBits" type="enum" persistent="true">
+        <shortName>Corr Bits</shortName>
+        <longName>Correlator Bits</longName>
+        <description>Correlator quantization bit value</description>
+        <enum name="CORR_2BIT"/>
+         <description>2-bit mode</description>
+        <enum name="CORR_3BIT"/>
+         <description>3-bit mode</description>
+        <enum name="CORR_4BIT"/>
+         <description>4-bit mode</description>
+    </MonitorPoint>
+
+    <MonitorPoint name="blockDCpolarization" type="enum" persistent="true">
+        <shortName>Block DC Pol</shortName>
+        <longName>Block Downconverter polarization</longName>
+        <description>Block Downconverter polarization input state</description>
+        <enum name="POL1"/>
+         <description>Polarization state 1</description>
+        <enum name="POL2"/>
+         <description>Polarization state 2</description>
+    </MonitorPoint>
+
+    <MonitorPoint name="bdcEnabled" type="bool" priority="useful" persistent="true">
+           <shortName>Block DC Enabled</shortName>
+           <longName>Block downconverter enabled</longName>
+       <description>
+        Expected state of block downconverter for this band.
+        True means the the control system tried to enable the block 
+        downconverter for this band.
+       </description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="decimationState" type="enum" persistent="true">
+        <shortName>Decimation State</shortName>
+        <longName>Decimation State</longName>
+        <description>
+            Full decimation state; both decimation and end channel 
+            disposition. This MP stores the control of both of these attributes,
+            but is not easy to use for display. See the Decimation and 
+            KeepEndChans for display.
+        </description>
+        <enum name="DECI_OFF_KEEP_ENDCHANS"/>
+         <description>Decimation off, keep end channels</description>
+        <enum name="DECI_OFF_DROP_ENDCHANS"/>
+         <description>Decimation off, drop end channels</description>
+        <enum name="DECI_ON"/>
+         <description>Decimation on</description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="decimation" type="bool" persistent="true">
+        <shortName>Decimation on</shortName>
+        <longName>Decimation on</longName>
+        <description>
+            Decimation on.
+            Hanning smoothing and then every other channel removed.
+            The actual control point is decimationState; this is a 
+            redundant MP used for display only.
+        </description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="keepEndChans" type="bool" persistent="true">
+        <shortName>Keep End Chans</shortName>
+        <longName>Keep end channels</longName>
+        <description>
+            Keep end channels.
+            The end channels are normally dropped except for rare instances
+            for debugging. When decimation is on the end channels must be
+            kept after the decimation.
+            The actual control point is decimationState; this is a 
+            redundant MP used for display only.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="fpgaMode" type="enum" persistent="true">
+        <shortName>Astroband Mode</shortName>
+        <longName>Astroband configuration mode</longName>
+        <description>Configuration mode for a given astroband,
+            one of SINGLEPOL, DUALPOL, FULLSTOKES, CARMA23. 
+            Depending on this mode, the correlator FPGAs will load
+            a distinct set of configurations and and correlator data
+            processing differs.  
+       </description> <enum name="SINGLEPOL"/>
+         <description>Single polarization mode, e.g. LL or RR</description>
+       <enum name="DUALPOL"/>
+         <description>Dual polarization mode, LL+RR</description>
+       <enum name="FULLPOL"/>
+         <description>Full-stokes mode, LL+RR+RL+LR</description>
+       <enum name="CARMA23"/>
+         <description>23-station mode </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="astrobandConf" type="string" persistent="true">
+      <shortName>Astroband Conf</shortName>
+      <longName>Astroband Configuration</longName>
+      <description>
+           The string descriptor of the Astroband configuration, 
+           e.g., LL, FULL-STOKES, etc.
+      </description>
+    </MonitorPoint>
+
+    <Container name="Sideband" count="2" >
+      <description>
+          Sideband, upper is first one, lower is second   
+      </description>
+     
+      <MonitorPoint name="skyFreq" type="double" persistent="true"
+          priority="vital">
+        <!-- This is a critical MP for the miriad header, don't muck it up -->       
+        <shortName>SkyFreq</shortName>
+        <longName>SkyFrequency</longName>
+        <description>
+          Sky frequency of the edge of the band corresponding to the
+          lowest IF frequency before processing. 
+          Channels are centered on the edge of a band, but note that
+          channels may subsequently be dropped from the ends of this band
+          before the final data are written.   
+        </description>
+        <units>GHz</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="restFreq" type="double" persistent="true"
+          priority="vital">
+        <!-- This is a critical MP for the MIRIAD header, don't muck it up -->       
+        <shortName>RestFreq</shortName>
+        <longName>RestFrequency</longName>
+        <description>
+           Rest frequency that can be used for this band/sideband to
+           infer the velocity of each channel.   
+        </description>
+        <units>GHz</units>
+      </MonitorPoint>
+
+        <MonitorPoint name="transition" type="string" persistent="true">
+        <shortName>Transition</shortName>
+        <longName>MolecularTransition</longName>
+        <description>
+           Name of the molecular line transition used for the 
+           reference rest frequency. 
+        </description>
+      </MonitorPoint>
+   
+      <Container name="BandCenter" >
+        <description>
+          Frequencies calculated for the center of the band   
+        </description>
+        
+        <MonitorPoint name="skyFreq" type="double" persistent="true">
+          <shortName>SkyFreq</shortName>
+          <longName>SkyFrequency</longName>
+          <description>
+            Sky frequency for the center of band 
+          </description>
+          <units>GHz</units>
+        </MonitorPoint>
+                
+      </Container>   <!-- End BandCenter -->         
+    </Container>     <!-- End Sideband -->       
+  </Container>       <!-- End BandControlPoints -->
+</Common>
+

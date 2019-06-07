@@ -1,0 +1,34 @@
+#$Id: timeData,v 1.3 2004/11/24 15:50:41 mpound Exp $
+#=================================================================
+# These are data that can be used for testing the sidereal time
+# methods in AstroTime.  They are taken some of from Marc Pound's
+# MIRIAD format BIMA observations:
+# 1. 2003 Mar 19,  datafile 0530+135, 0h UT = 52717 MJD 
+# 2. 2002 Dec 07,  datafile 1733-130, 0h UT = 52615 MJD
+#
+# Miriad Commands used
+# For ut or lst:
+# uvio vis=[filename] |grep [ut|lst] |grep -v Count | awk awk '{printf("%.10f\n",$NF*12.0/3.14159265358979323846)}'
+# For MJD:
+# uvio vis=[filename] |grep ut |grep -v Count \
+#       | awk '{printf("%.10f\n",$NF/(2.0*3.14159265358979323846)+[MJD])}'
+#
+# Comparison of LST to AstroTime return value should be
+# good to a millisecond (?) = 2.8E-7 hours
+#
+# Hat Creek location:
+# Latitude:         40:49:02.50  =   40.8173611111
+# Longitude:      -121:28:18.49  = -121.4718027778
+# Altitude:       1043.0 metres
+#=================================================================
+#  UT                 MJD                   LST
+# (hours)            (days)               (hours)
+#
+# 2003 Mar 19
+0.9312411070    52717.0388017128        4.5775595240
+3.9986105499    52717.1666087729        7.6533268081
+5.6529244413    52717.2355385184        9.3121698813
+# 2002 Dec 07
+19.4260283065   52615.8094178461       16.4205597390
+21.5672671982   52615.8986361333       18.5676613260
+22.7945505303   52615.9497729388       19.7983049486

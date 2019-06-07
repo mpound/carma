@@ -1,0 +1,576 @@
+# -*- Mode: perl; indent-tabs-mode: nil -*-
+
+# carma.buildcf - this is the buildcf (build configuration file)
+# for all carma tinderbox builds.
+
+# Run:
+
+#	./build_shellscript	--buildcf ./generic.sample.buildcf	\
+#				--build construct --test 		\
+#					-- 				\
+#				--tree seamonkey
+
+# to see the completed build script which has all the perl
+# variables substituted.
+
+
+# $Id: carma.buildcf,v 1.26 2014/03/10 17:36:26 iws Exp $ 
+
+package UserDef;
+
+# We use the same tinderbox treedata module which is on the server
+# side to translate a treename into a module and branch.
+
+use lib '/home/build/lib';
+
+# set the standard tinderbox search path to allow us to compile on the
+# machine we run make on.
+
+use lib '/usr/local/tinderbox/local_conf',
+   '/usr/local/tinderbox/default_conf',
+   '/usr/local/tinderbox/lib';
+
+
+use TreeData;
+
+# User configurable variables live in their own namespace so that they
+# will not contaminate the build script.  The buildscript will get the
+# values it needs via well known functions.  This package may also set
+# %ENV to effect the build programs.
+
+
+# given a time return a human readable string suitable for using as
+# part of a CVS checkout.
+
+sub cvs_time_str {
+    my ($time) = @_;
+
+    my ($sec,$min,$hour,$mday,$mon,$year,
+	$wday,$yday,$isdst) = localtime($time);
+    
+    $mon++;
+    $year += 1900;
+
+    my $str = sprintf "%04d-%02d-%02d %02d:%02d", $year,$mon,$mday,$hour,$min;
+    return $str;
+}
+
+
+# given a time return a human readable string suitable for using as
+# part of a file name but similar to the CVS checkout string for the
+# same time (no space, shell does not likes spaces in filenames; no
+# colon tar interprets colons specially).
+
+sub filename_time_str {
+    my ($time) = @_;
+
+    my ($sec,$min,$hour,$mday,$mon,$year,
+	$wday,$yday,$isdst) = localtime($time);
+    
+    $mon++;
+    $year += 1900;
+
+    my $str = sprintf "%04d-%02d-%02d.%02d%02d", $year,$mon,$mday,$hour,$min;
+    return $str;
+}
+
+
+
+# This is where environment variable pertinent to the build are
+# defined.  In general, environment variables here will point to 
+# the appropriate build directories, libraries and executables.
+
+sub build_environment{
+   my (%args) = @_;
+   my ($tree_name) = $args{'tree_name'};
+
+    $ENV{PATH} = (
+                  '/usr/local/bin:'.
+                  '/bin:'.
+                  '/usr/bin:'.
+                  './'.
+                  '/usr/X11R6/bin:'.
+                  '');
+
+    $ENV{CVSROOT} = (":ext:build\@dana:/sw/cvscarma");    
+
+    $ENV{CVS_RSH} = "ssh";
+
+    $ENV{CARMA_PKG} = '/sw/carma_pkg';
+    $ENV{JAVA_HOME} = '/opt/jdk';
+    $ENV{LD_LIBRARY_PATH} = "/usr/local/lib:$LD_LIBRARY_PATH";
+    $ENV{CCACHE_LOGFILE} = "./ccache.log";
+    
+    return 1;
+}
+
+sub build_scripts {
+    my (%args) = @_;
+    my ($tree_name) = $args{'tree_name'};    
+    my ($build_type) = $args{'build_type'};
+
+    # get a time stamp and use the day of the week to append to the
+    # name of the carmaTools directory
+    my @timestruct = (localtime(time()));
+
+    my $build_dir = (
+                     "/opt/tmp/tinderbox_build_".
+                     "$build_type".
+                     "");
+    
+    my $carma_tools = (
+            "$build_dir/install".
+            "");
+    # pick a time earlier then the current time. Check out the sources
+    # as of that time and use that time as the name of the tar
+    # file. Now anyone who wants to recreate the sources of the binary
+    # tar can use the tarfile name to checkout the sources as if we had
+    # tagged them.  We use a few minutes ago as the checkout time to
+    # ensure that the CVS server has time to settle down from any
+    # large checkins which may be in progress.
+
+    my $checkout_time = time();
+    my $filename_time_str = filename_time_str($checkout_time);
+    my $cvs_time_str = cvs_time_str($checkout_time);
+
+    # we give the CVS server time to finish what ever it is doing at
+    # this time.
+
+    my $sleep_minutes= 1;
+    my $sleep_time = $sleep_minutes*60;
+
+    my $dest_dir="$build_dir/dest";
+    chomp $time_stamp;
+    my $tar_file = (
+                    "/var/spool/builds/".
+                    $tree_name.
+                    "/".
+                    "reef-aprt.".
+                    $tree_name.
+                    ".".
+                    $filename_time_str.
+                    ".tar.gz"
+                    );
+        
+  if ($dest_dir) {
+      $make_flags .= " DESTDIR=$dest_dir RELEASEDIR= ";
+   }
+
+  my $branch = $TreeData::VC_TREE{$tree_name}{'branch'};
+  my $module = $TreeData::VC_TREE{$tree_name}{'module'};
+
+  if ($branch) {
+#      $cvs_checkout_flags .= " -r $branch ";
+  }
+
+    # pass these variables to the Makefile.orig so that the
+    # buildid can contain this information.
+
+    $ENV{'BUILD_CVS_D_TIME'} = $filename_time_str;
+    $ENV{'BUILD_BRANCH'} = $branch;
+    $ENV{'BUILD_MODULE'} = $module;
+
+
+# builds describe a sequence of steps needed to perform a "build".
+# Each build either succeeds or fails.  Builds can be used for running
+# tests and checking source code style in addition to creating binaries.
+
+# Builds may depend on the environment, the OS or special arguments
+# passed to the program.  Arguments which are passed after the '--'
+# are assumed to be build specific and are ignored by the build
+# harness and can be used in defining the build sequence.
+
+# Builds can be architecture dependent (one build name can be used for
+# all architectures) or independent (each OS uses a different
+# buildname) depending on your application.
+
+
+# each build can have as many phases as
+# are needed (sample: checkout, configure, build, test)
+
+
+# Each phase must have the following entries:
+
+#	 phase_name: which describes what the phase is.
+
+#	 error_status: the tinderbox status which should be returned
+#	 if the phase fails.
+
+#	 script: a list of shell commands to be executed in order
+#	 until one fails (each command in a separate shell, similar to make).
+
+#	 dir: the directory which will be local while the script is
+#	 executing.
+
+
+
+
+    $BUILDS = { 
+
+        # Our Carma Full Build - Complete checkout and rebuild.
+	    'full' => [
+	    {
+		    'phase_name' => "create-build-directories",
+		    'error_status' => "build_failed",
+		    'dir' => "/usr/local/tinderbox/clientbin",
+		    'script' => [
+			    "rm -rf $build_dir",
+		        "mkdir -p $build_dir",
+		        "mkdir $build_dir/build",
+                "echo $LD_ASSUME_KERNEL",
+		    ],
+	    },
+	    {
+		    'phase_name' => "checkout",
+		    'error_status' => "build_failed",
+		    'dir' => "$build_dir",
+		    'script' => [
+			    "sleep $sleep_time",
+		        "cvs -Q checkout  $cvs_checkout_flags  -D '$cvs_time_str' ".
+                "$module",
+		    ],
+	    },
+	    {
+		    'phase_name' => "configure",
+		    'error_status' => "build_failed",
+		    'dir' => "$build_dir/$module",
+		    'script' => [
+			    "autoreconf -i -s",
+		        "cd ../build;../$module/configure".
+                    " --with-carma-tools=/misc/carmaToolsDir/`ls -l /misc/carmaToolsDir/carmaTools | awk '{print \$11}'`".
+                    " --with-java-home=/opt/jdk".
+                    " --enable-integration-tests".
+                    " --enable-coverage",
+		    ],
+	    },
+	    {
+		    'phase_name' => "build",
+		    'error_status' => "build_failed",
+		    'dir' => "$build_dir/build",
+		    'script' => [
+			    "date >> ./ccache.log",
+			    "make all",
+			    "make java",
+		    ],
+	    },
+	    {
+		    'phase_name' => "test",
+		    'error_status' => "test_failed",
+		    'dir' => "$build_dir/build",
+		    'script' => [
+			    "make check",
+		    ],
+	    },
+	    {
+		    'phase_name' => "coverage",
+		    'error_status' => "test_failed",
+		    'dir' => "$build_dir/build",
+		    'script' => [
+			    "./scripts/reap-coverage",
+			    "cp ./coverage/* /home/abeard/public_html/carma-coverage/",
+		    ],
+	    },
+	    {
+		    'phase_name' => "ftpDist",
+# failure of ftp copy isn't fatal, so just turn the build orange to
+# get someone's attention
+		    'error_status' => "test_failed",
+		    'dir' => "$build_dir/build",
+		    'script' => [
+	                   "if [ -d /anonftp/pub/rtd ]; then /misc/carmaToolsDir/`ls -l /misc/carmaToolsDir/carmaTools | awk '{print \$11}'`/bin/ant tarballOvro; else echo Skipping ftp install; fi"
+		    ],
+	    },
+	    {
+		    'phase_name' => "docs",
+		    'error_status' => "test_failed",
+		    'dir' => "$build_dir/build",
+		    'script' => [
+			    "make html pdf > doc.log",
+			    "cp -fr doc.log $build_dir/build/doc/*".
+                " /usr/local/www-docs/carma/project/system/API/",
+		    ],
+	    },
+	    {
+		    'phase_name' => "tagging",
+		    'error_status' => "test_failed",
+		    'dir' => "$build_dir/$module",
+		    'script' => [
+			    "cvs -Q rtag -a -D '$cvs_time_str' -F LAST_GOOD_".
+                kern_maj_min().
+                " carma",
+		    ],
+	    },
+	    ],  # end full 
+
+        # Carma Incremental build - Rebuild an existing source tree.
+        'incremental' => [
+        {
+            'phase_name' => "start",
+		    'error_status' => "build_failed",
+            'dir' => "/usr/local/tinderbox/clientbin",
+            'script' => [
+                "if [ ! -d $build_dir ];". 
+                "    then mkdir -p $build_dir/build;".
+                "    cd $build_dir;".
+                "    cvs co carma;".
+                "fi;",
+            ],
+        },
+        {
+            'phase_name' => "update-source-tree",
+		    'error_status' => "build_failed",
+            'dir' => "$build_dir",
+            'script' => [
+                "echo waiting for checkins to complete",
+                "sleep $sleep_time",
+                "cvs -q update -P -d -A -D '$cvs_time_str' $module",
+            ],
+        },
+        {
+            'phase_name' => "autoreconf",
+		    'error_status' => "build_failed",
+            'dir' => "$build_dir/$module",
+            'script' => [
+                "autoreconf -i -s",
+            ],
+        },
+        {
+            'phase_name' => "configure",
+		    'error_status' => "build_failed",
+            'dir' => "$build_dir/build",
+            'script' => [
+                "../carma/configure --with-carma-tools=/misc/carmaToolsDir".
+                "`ls -l /misc/carmaToolsDir/carmaTools | awk '{print \$11}'` --with-java-home=/opt/jdk --with-ccache",
+            ],
+        },
+        {
+            'phase_name' => "build",
+            'error_status' => "build_failed",
+            'dir' => "$build_dir/build",
+            'script' => [
+                "date >> ./ccache.log",
+                "make -k Makefile", # Remake makefile avoiding errors
+                "make -j4 phase1",
+                "make -j4 phase2",
+            ],
+        },
+        {
+            'phase_name' => "test",
+            'error_status' => "test_failed",
+            'dir' => "$build_dir/build",
+            'script' => [
+                "make check",
+            ],
+        },
+        ],  # end incremental 
+
+        # Carma Tools build - full 8 hours of hell.
+        'tools' => [
+        {
+            'phase_name' => "directories",
+            'error_status' => "build_failed",
+            'dir' => "/usr/local/tinderbox/clientbin",
+            'script' => [
+                "rm -rf $build_dir",
+                "mkdir -p $build_dir",
+                "mkdir $build_dir/build",
+                "echo $LD_ASSUME_KERNEL",
+            ],
+        },
+        {
+            'phase_name' => "checkout",
+            'error_status' => "build_failed",
+            'dir' => "$build_dir",
+            'script' => [
+                "sleep $sleep_time",
+                "cvs -Q checkout  $cvs_checkout_flags  -D '$cvs_time_str'".
+                    " $module",
+            ],
+        },
+        {
+            'phase_name' => "sync",
+            'error_status' => "build_failed",
+            'dir' => "$build_dir/$module/conf",
+            'script' => [
+                "./carma-package-sync slave=$build_dir/carma_pkg"
+            ],
+        },
+        {
+            'phase_name' => "tools",
+            'error_status' => "build_failed",
+            'dir' => "$build_dir/$module/conf",
+            'script' => [
+                "./install_tools carma_pkg=$build_dir/carma_pkg".
+                    " carma_tools=$carma_tools debug=0"
+                ],
+        },
+        {
+            'phase_name' => "configure",
+            'error_status' => "build_failed",
+            'dir' => "$build_dir/$module",
+            'script' => [
+                "autoreconf -i -s",
+                "cd ../build;../$module/configure".
+                    " --disable-dependency-tracking".
+                    " --with-carma-tools=$carma_tools".
+                    " --with-java-home=/opt/jdk",
+            ],
+        },
+        {
+            'phase_name' => "build",
+            'error_status' => "build_failed",
+            'dir' => "$build_dir/build",
+            'script' => [
+                "make all",
+            ],
+        },
+        {
+            'phase_name' => "test",
+            'error_status' => "test_failed",
+            'dir' => "$build_dir/build",
+            'script' => [
+                "uptime",
+                "make check",
+            ],
+        },
+        {
+            'phase_name' => "tagging",
+            'error_status' => "test_failed",
+            'dir' => "$build_dir/$module",
+            'script' => [
+              # "cvs -Q rtag -a -D '$cvs_time_str' -F LAST_GOOD_2_4_FULL carma",
+                "cvs -Q rtag -a -D '$cvs_time_str' -F LAST_GOOD_".
+                kern_maj_min().
+                "_TOOLS carma",
+                "echo $build_type",
+            ],
+        },
+        ],  # end tools 
+	  }; # end %BUILDS
+
+return $BUILDS;
+}
+
+
+# We have different error parsers defined for each 'type' of build.
+
+sub error_parser_name {
+  my (%args) = @_;
+
+  my $parser_name =  'unix';
+
+  return  $parser_name;
+}
+
+
+# Our build names on the tinderbox server (column names) are the
+# hostname and OS name (and a few other details). We are running the
+# same build instructions on each architecture so it makes sense to
+# speak of the 'Solaris Build'.  Other users who do not worry about
+# portability may use the buildscript buildname.  These users will have
+# tinderbox columns with names like: "seamonkey", "grendel", "aurora"
+# (these are the names of the 'type' of build).
+
+sub build_name {
+  my (%args) = @_;
+
+  my ($argv) = "@ARGV";
+
+  my $os = `uname -s`;
+  my $osver = `uname -r`;
+  my $gccver = `gcc --version | grep GCC | awk '{print \$1"-"\$3}'`; 
+  my $hostname = `hostname -s`;
+    
+  chomp $os;
+  chomp $osver;
+  chomp $gccver;
+  chomp $hostname;
+
+  my ($build_name) = "carma $args{'build_type'} ". 
+                          "$hostname $os-$osver $gccver";
+  $build_name =~ s/\.\.+/\./g;
+
+  return $build_name;
+}
+
+
+
+# person responsible for the build machines.
+
+sub build_administrator {
+  my (%args) = @_;
+
+  return "andy\@ovro.caltech.edu";
+}
+
+# addressing information for the build messages
+
+sub mail_to {
+  my (%args) = @_;
+
+  return "tinderbox_builds\@dana.ovro.caltech.edu";
+  #return "andy\@ovro.caltech.edu";
+}
+
+
+sub mail_from {
+  my (%args) = @_;
+
+  return "tinderbox-build-daemon\@".$args{'hostname'}.".ovro.caltech.edu";
+}
+
+
+# Get kernel major and minor number for tagging purposes.
+# Major and minor number are returned as a string separated by an
+# underscore.
+
+sub kern_maj_min {
+    my %args = @_;
+
+    my $version = `uname -r | awk 'BEGIN { FS = "."} ; { print \$1"_"\$2 }'`;
+    chomp $version;
+
+    return $version;
+}
+
+# Tell the tinderbox webserver what page to display the build
+# information.  In our case we use the same build instructions for
+# several different products so this information must be passed in on
+# the command line.  We must have this information or the build can
+# not be displayed on the webserver, so it is a fatal error not to
+# provide it.
+
+
+#sub tree_name {
+#  my (%args) = @_;
+#  my ($tree);
+
+#  my ($argv) = "@ARGV";
+#  if ($argv =~ m/--tree\s*=?\s*([a-zA-Z0-9\-\_]+)/) {
+#    $tree= $1;
+#  } else {
+#    die("no tree specified on command line\n");
+#  }
+
+#  return $1;
+#}
+
+#
+# Get Time 
+#
+
+sub getTime {
+    my $hr = $_[0];
+    my $min = $_[1];
+    my $sec = $_[2];
+    if( $hr > 12 ) {
+        return sprintf("%2d:%2.2d:%2.2d p.m.",$hr-12,$min,$sec);
+    }
+    else {
+        return sprintf("%2d:%2.2d:%2.2d p.m.",$hr,$min,$sec);
+    }
+}
+
+
+1;
+

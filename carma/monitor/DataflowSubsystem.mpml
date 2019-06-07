@@ -1,0 +1,438 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!--
+  - $Id: DataflowSubsystem.mpml,v 1.19 2012/09/22 01:34:40 iws Exp $
+  -
+  - Dataflow subsystem to track internals of:
+  - MonitorAverageWriter
+  - AstroHeaderWriter
+  - MonitorDataLoader
+  - DataTransfer
+  - MonitorDataDeleter
+  - SdpFiller
+-->
+<Subsystem name="Dataflow" priority="vital" author="Steve Scott">
+
+	<!-- a short name for display purposes -->
+	<shortName>Dataflow</shortName>
+	<longName>Dataflow Subsystem: used to instrument dataflow processing</longName>
+	<description>
+		The dataflow subsystem provides instrumentation for the internals
+		of dataflow processing.
+	</description>
+
+	<?common MonitorStats.mpml?>
+	<CommonContainer ref="MonitorSubsystemStats" />
+
+	<Common scope="local">
+		<Container name="Correlator">
+			<description>
+				A container which holds all information about AstroHeaderWriter
+				processing for a given Correlator.
+			</description>
+
+			<Container name="Processing">
+				<description>
+					Information on the last processing cycle
+				</description>
+
+				<MonitorPoint name="numIntegrations" type="int" persistent="true">
+					<shortName>Integrations</shortName>
+					<longName>Number of integrations</longName>
+					<description> Number of integrations processed in the last cycle</description>
+				</MonitorPoint>
+				<MonitorPoint name="processingTime" type="float" persistent="true">
+					<shortName>ProcessingTime</shortName>
+					<longName>Processing time</longName>
+					<units>s</units>
+					<precision>1</precision>
+					<description>Elapsed processing time in last cycle</description>
+				</MonitorPoint>
+				<MonitorPoint name="sleepTime" type="float" persistent="true">
+					<shortName>SleepTime</shortName>
+					<longName>Sleep time</longName>
+					<units>s</units>
+					<precision>1</precision>
+					<description>Time spent sleeping in last processing cycle</description>
+				</MonitorPoint>
+				<MonitorPoint name="elapsedTime" type="float" persistent="true">
+					<shortName>ElapsedTime</shortName>
+					<longName>Elapsed Time</longName>
+					<units>s</units>
+					<precision>1</precision>
+					<description>Total time for the last processing cycle, including any sleeping</description>
+				</MonitorPoint>
+				<MonitorPoint name="lagTime" type="float" persistent="true">
+					<shortName>LagTime</shortName>
+					<longName>Lag time</longName>
+					<units>s</units>
+					<precision>1</precision>
+					<description>
+						Lag between start of integration and
+						the time it is processed. Set to zero when there are
+						no input files to process.
+					</description>
+					<warnHi>90.0</warnHi>
+					<errHi>120.0</errHi>
+				</MonitorPoint>
+				<MonitorPoint name="obsblock" type="string" persistent="true">
+					<shortName>Obsblock</shortName>
+					<longName>Current obsblock</longName>
+					<description> Name of obsBlock currently being processed</description>
+					<width>30</width>
+				</MonitorPoint>
+			</Container> <!-- End Processing -->
+
+			<Container name="InputFiles" count="4">
+				<description>Input files to the astroHeaderWriter</description>
+
+				<MonitorPoint name="datatype" type="string" persistent="true">
+					<shortName>Datatype</shortName>
+					<longName>Datatype</longName>
+					<description>Datatype of input files</description>
+				</MonitorPoint>
+				<MonitorPoint name="mpdat" type="int" persistent="true">
+					<shortName>MPdat</shortName>
+					<longName>MPdat</longName>
+					<description>Number of input mpdat files</description>
+				</MonitorPoint>
+				<MonitorPoint name="done" type="int" persistent="true">
+					<shortName>Done</shortName>
+					<longName>Done</longName>
+					<description>Number of files marked with status done</description>
+				</MonitorPoint>
+				<MonitorPoint name="read" type="int" persistent="true">
+					<shortName>Read</shortName>
+					<longName>Read</longName>
+					<description>Number of files marked with status read</description>
+				</MonitorPoint>
+				<MonitorPoint name="error" type="int" persistent="true">
+					<shortName>Error</shortName>
+					<longName>Error</longName>
+					<description>Number of files marked with status error</description>
+				</MonitorPoint>
+				<MonitorPoint name="other" type="int" persistent="true">
+					<shortName>Other</shortName>
+					<longName>Other</longName>
+					<description>
+						Number of files not marked with a recognized extension
+					</description>
+				</MonitorPoint>
+				<MonitorPoint name="total" type="int" persistent="true">
+					<shortName>Total</shortName>
+					<longName>Total</longName>
+					<description>Total number of files (many are symlinks)</description>
+				</MonitorPoint>
+			</Container>
+		</Container>
+	</Common>
+
+	<Container name="AstroheaderWriter">
+		<description>
+			The astroHeaderWriter process reads input mpdat files for the
+			astronomical integration and processes them into astroHeader files.
+			It runs in a processing loop with a sleep (typically 30s)
+			when it doesn't have anything to do.
+		</description>
+
+		<CommonContainer ref="Correlator" name="SpectralLineCorrelator" />
+		<CommonContainer ref="Correlator" name="WidebandCorrelator" />
+
+	</Container> <!-- End AstroheaderWriter -->
+
+	<Container name="MonitorDataDeleter">
+		<description>
+			The monitorDataDeleter removes files that have been processed
+			by the astroHeaderWriter, dataTransfer, and monitorDataLoader.
+		</description>
+
+		<Container name="LastRun">
+			<description> Information on the last run cycle</description>
+
+			<MonitorPoint name="runTime" type="float" persistent="true">
+				<shortName>RunTime</shortName>
+				<longName>Run time</longName>
+				<units>s</units>
+				<precision>1</precision>
+				<description> Elapsed run time in last cycle</description>
+			</MonitorPoint>
+			<MonitorPoint name="backlog" type="bool" persistent="true">
+				<shortName>Backlog</shortName>
+				<longName>Backlog</longName>
+				<description>
+					Are there too many files that may be bogging down the
+					system. If true more files will be deleted as the expense
+					of the mp database.
+				</description>
+				<warnLo>true</warnLo>
+				<warnHi>true</warnHi>
+			</MonitorPoint>
+			<MonitorPoint name="farthestBehind" type="string" persistent="true">
+				<shortName>Worst</shortName>
+				<longName>Worst</longName>
+				<width>30</width>
+				<description>
+					The directory that is the farthest behind
+					(most files not marked .done)
+				</description>
+			</MonitorPoint>
+			<MonitorPoint name="peak" type="int" persistent="true">
+				<shortName>nFiles</shortName>
+				<longName>Number of Files</longName>
+				<description>
+					Number of files not marked .done in the worst directory
+				</description>
+				<warnLo>-1</warnLo>
+				<warnHi>35000</warnHi>
+				<errLo>-1</errLo>
+				<errHi>60000</errHi>
+			</MonitorPoint>
+		</Container> <!-- End LastRun -->
+
+		<Container name="DeletedFiles" count="4">
+			<description> Files deleted by MDD </description>
+
+			<MonitorPoint name="dataLength" type="string" persistent="true">
+				<shortName>DataLength</shortName>
+				<longName>Data Length</longName>
+				<description>Data length of deleted files</description>
+				<width>9</width>
+			</MonitorPoint>
+			<MonitorPoint name="ahw" type="int" persistent="true">
+				<shortName>AHW</shortName>
+				<longName>AstroHeader Writer</longName>
+				<description>
+					Number of files deleted from AHW directories
+				</description>
+			</MonitorPoint>
+			<MonitorPoint name="transfer" type="int" persistent="true">
+				<shortName>DT</shortName>
+				<longName>Data Transfer</longName>
+				<description>
+					Number of files deleted from data transfer directories
+				</description>
+			</MonitorPoint>
+			<MonitorPoint name="mdl" type="int" persistent="true">
+				<shortName>MDL</shortName>
+				<longName>Monitor Data Loader</longName>
+				<description>
+					Number of files deleted from the MDL directories
+				</description>
+			</MonitorPoint>
+			<MonitorPoint name="monitor" type="int" persistent="true">
+				<shortName>Write</shortName>
+				<longName>Write</longName>
+				<description>
+					Number of files deleted from the monitor directories
+				</description>
+			</MonitorPoint>
+			<MonitorPoint name="total" type="int" persistent="true">
+				<shortName>Total</shortName>
+				<longName>Total</longName>
+				<description>Total number of files (many are symlinks)</description>
+			</MonitorPoint>
+		</Container>
+	</Container> <!-- End MonitorDataDeleter -->
+
+	<Container name="MonitorDataLoader">
+		<description>
+			The monitorDataLoader is responsible for loading the mpdat flat files
+			into the Monitor Point Database.
+		</description>
+
+		<Container name="LoadedFiles" count="4">
+			<Container name="MDLSubTypes" count="4">
+				<description>Files loaded into the database</description>
+
+				<MonitorPoint name="numberLoaded" type="int" persistent="true">
+					<shortName>loaded</shortName>
+					<longName>number of files loaded</longName>
+					<description>
+						Number of files loaded into the database in the last run
+					</description>
+				</MonitorPoint>
+				<MonitorPoint name="numberToLoad" type="int" persistent="true">
+					<shortName>toLoad</shortName>
+					<longName>number of files to load</longName>
+					<description>
+						Number of files to be loaded into the database
+					</description>
+				</MonitorPoint>
+				<MonitorPoint name="lastRunTime" type="float" persistent="true">
+					<shortName>runTime</shortName>
+					<units>min</units>
+					<longName>Last run time</longName>
+					<description>
+						Length of time it took for the last loading run to complete
+					</description>
+				</MonitorPoint>
+			</Container>
+		</Container>
+	</Container> <!-- End MonitorDataLoader -->
+
+	<Container name="MonitorPointDatabase">
+		<description>
+			The monitor point database holds all monitor point data.
+		</description>
+
+		<Container name="DatabaseFiles" count="4">
+			<Container name="MPSubTypes" count="4">
+				<description> Files in the MP database </description>
+
+				<MonitorPoint name="oldestTableDate" type="string" persistent="true">
+					<shortName>oldestDate</shortName>
+					<longName>oldest existing table date</longName>
+					<description>
+						Oldest existing table in database date
+					</description>
+				</MonitorPoint>
+				<MonitorPoint name="newestTableDate" type="string" persistent="true">
+					<shortName>newestDate</shortName>
+					<longName>newest existing table date</longName>
+					<description>
+						Newest existing table in database date
+					</description>
+				</MonitorPoint>
+				<MonitorPoint name="oldestTableFrame" type="int" persistent="true">
+					<shortName>oldestFrame</shortName>
+					<longName>oldest existing table frame</longName>
+					<description>
+						Oldest existing table in database frame
+					</description>
+				</MonitorPoint>
+				<MonitorPoint name="newestTableFrame" type="int" persistent="true">
+					<shortName>newestFrame</shortName>
+					<longName>newest existing table frame</longName>
+					<description>
+						Newest existing table in database frame
+					</description>
+				</MonitorPoint>
+			</Container>
+		</Container>
+	</Container> <!-- End MonitorPointDatabase -->
+
+	<Container name="SdpFiller">
+		<description>
+			The filler generates miriad data from headers and raw visibility data
+		</description>
+
+		<MonitorPoint name="errorState" type="bool" persistent="true">
+			<shortName>errorState</shortName>
+			<longName>errorState</longName>
+			<description>
+				If the filler detects an error in the AH file
+			</description>
+			<errHi>true</errHi>
+			<errLo>true</errLo>
+		</MonitorPoint>
+	</Container> <!-- End SdpFiller -->
+
+	<Container name="DataTransfer">
+		<MonitorPoint name="numTransfer" type="int" persistent="true">
+			<shortName>numXfer</shortName>
+			<description>
+				Total number of files of any type transferred to the archive
+				since the DataTransfer process started.
+			</description>
+		</MonitorPoint>
+		<MonitorPoint name="numVisbrickTransfer" type="int" persistent="true">
+			<shortName>numVisXfer</shortName>
+			<description>
+				Number of visbrick files transferred to the archive
+				since the DataTransfer process started.
+			</description>
+		</MonitorPoint>
+		<MonitorPoint name="numHeaderTransfer" type="int" persistent="true">
+			<shortName>numHeaderXfer</shortName>
+			<description>
+				Number of astroheader files transferred to the archive since
+				the DataTransfer process started.
+			</description>
+		</MonitorPoint>
+		<MonitorPoint name="numMonitorTransfer" type="int" persistent="true">
+			<shortName>numMonXfer</shortName>
+			<description>
+				Number of monitor data files transferred to the archive since
+				the DataTransfer process started.
+			</description>
+		</MonitorPoint>
+		<MonitorPoint name="numQualityTransfer" type="int" persistent="true">
+			<shortName>numQualityXfer</shortName>
+			<description>
+				Number of quality data files transferred to the archive since
+				the DataTransfer process started.
+			</description>
+		</MonitorPoint>
+		<MonitorPoint name="transferTime" type="absTime" persistent="true">
+			<description>
+				Time at which the data were most recently transferred to the archive
+			</description>
+		</MonitorPoint>
+		<MonitorPoint name="uptime" type="int" persistent="true">
+			<description>
+				How long the data transfer program has been running
+			</description>
+			<units>minutes</units>
+		</MonitorPoint>
+
+		<!-- 
+			bgftp library calculates file transfer rates, but does not make them
+			available externally.  However, we can do it in RTS from available 
+			information.
+		-->
+		<MonitorPoint name="filesPerHour" type="int" persistent="true">
+			<shortName>filesPerHr</shortName>
+			<description>
+				The number of files transferred in the last hour 
+			</description>
+		</MonitorPoint>
+		<MonitorPoint name="filesPerDay" type="int" persistent="true">
+			<description>
+				The average rate of files transferred in the last 24 hours
+			</description>
+		</MonitorPoint>
+
+		<!--
+		<MonitorPoint name="tranferErrors" type="string" persistent="false">
+			<description>
+				Any error messages generated by the data transfer program
+			</description>
+		</MonitorPoint>
+		-->
+		<!-- 
+		ARGH no way to get at bandwidth usage without modifying bgftp library!
+		<Container name="Bandwidth">
+			<MonitorPoint name="lastHr" type="float" persistent="false">
+				<shortName>BW1Hr</shortName>
+				<description>
+					The average network bandwidth achieved for the last hour 
+				</description>
+				<units>KB/s</units>
+			</MonitorPoint>
+			<MonitorPoint name="last6Hours" type="float" persistent="false">
+				<shortName>BW6Hr</shortName>
+				<description>
+					The average network bandwidth achieved for the 6 hours
+				</description>
+				<units>KB/s</units>
+			</MonitorPoint>
+			<MonitorPoint name="last12Hours" type="float" persistent="false">
+				<shortName>BW12Hr</shortName>
+				<description>
+					The average network bandwidth achieved for the 12 hours
+				</description>
+				<units>KB/s</units>
+			</MonitorPoint>
+			<MonitorPoint name="lastDay" type="float" persistent="false">
+				<shortName>BW1Day</shortName>
+				<description>
+					The average network bandwidth achieved for the 24 hours
+				</description>
+				<units>KB/s</units>
+			</MonitorPoint>
+		</Container>
+		-->
+	</Container> <!-- End DataTransfer -->
+</Subsystem>
+<!-- vim: set ft=xml ts=4 sts=4 sw=4 noet: -->

@@ -1,0 +1,154 @@
+/** @file
+ * $Id: Types.h.eml,v 1.1 2003/07/11 16:55:04 eleitch Exp $
+ * Basic types for carma::canbus. 
+ * 
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/11 16:55:04 $
+ *
+ */
+#include <sched.h>
+#include <string>
+
+using namespace std;
+
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: Nothing wrong here -- just curious deviation from the
+ * #ifndef in all the other header files...
+ */
+#if !defined(CARMA_CANBUS_TYPES_H)
+#define CARMA_CANBUS_TYPES_H
+
+/** @mainpage
+ * 
+ * This doxygen generated documentation completely describes the carma
+ * canbus library. 
+ *
+ * In particular, an effort has been made to demonstrate how to use this
+ * framework within a distributed environment.  As a result, a complete
+ * CORBA test client and server has been developed and is documented within.
+ * The server is documented in testHost.cc and the client is documented
+ * at testClient.cc.  Both of these applications are located in the
+ * Carma CVS repository under the $CARMA/carma/canbus/Test/ClientServerTest 
+ * directory.
+ * 
+ * External links to canbus related documentation.
+ * - <A HREF="http://www.mmarray.org/project/WP/CANbus/sw/"> 
+ * Design docs for this library. </A>
+ * - <A HREF="http://www.mmarray.org/project/WP/CANbus/hw/JANZ_OVRO_CAN/
+ *cmod comb.pdf"> Description of Janz hardware, pin mappings and
+ *TTL board jumper settings - important! </A>
+ * - <A HREF="http://www.mmarray.org/project/docs/Software/canbus/
+ *VMODican23u17USERSMANUAL.pdf"> Janz VMOD-ICAN CAN card users manual </A>
+ * - <A HREF="http://www.mmarray.org/project/docs/Software/canbus/
+ *VMODICAN3mican3_12HWMANUAL.pdf"> Janz VMOD-ICAN CAN card hw manual </A>
+ * - <A HREF="http://www.mmarray.org/project/docs/Software/canbus/
+ *VMOD-TTL_O_v2_4_Hardware_Manual.pdf"> Janz Digital IO card hw manual </A>
+ *  
+ */
+namespace carma {
+namespace canbus {
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: Should all these types be capitalized?  Doesn't
+ * lowercaseUppercase for types violate 3.1.3 of the style guide?  Or
+ * are we just applying that rule to object definitions?
+ */
+
+    typedef unsigned int idType; /**< Type for full 29 bit CAN id. */
+    typedef unsigned char byteType; /**< Base raw CAN byte. */
+	typedef unsigned short portType; /**< Port id type for multi-port boards.*/
+    
+	typedef unsigned short apiType; /**< Carma API id type. */
+	typedef unsigned short boardType; /**< Carma Board Type id type. */
+    typedef unsigned short nodeType; /**< Carma Node Type id type. */
+	typedef unsigned short serialNumberType; /**< Carma Serial Number type.*/
+	typedef unsigned short msgType;  /**< Carma Message id type. */
+    typedef unsigned int keyType; /**< Carma key type. */
+    typedef unsigned short busIdType; /**< Carma Bus Id type */
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: Ok, there's some ugly indentation going on in this file! :-)
+ * But nothing a few emacs keystrokes wouldn't fix...
+ */
+    /**
+     * Specifies that a message should be sent to ALL_BUSSES.
+     */
+    const busIdType ALL_BUSSES = 0xffff;
+    
+    /**
+     * Mode type.
+     * The mode type is extracted from the CAN id.
+     * It is a single bit and designates how the application should
+     * interpret the 29 bit CAN id.  
+     */
+    typedef enum modeTypeEnum {
+		ENGINEERING = 1,  /**< Decode CAN Id in serial num, board type form */
+		APPLICATION = 0,  /**< Decode CAN id in API, Node form */
+	} modeType;
+	
+    /**
+     * Bus State type.
+     * The Bus states are standard CAN bus states which are
+     * defined by the number of rx or tx errors recorded by 
+     * the CAN controller.
+     */
+	typedef enum busStateEnum {
+		NO_ERRORS = 0,             /**< Rx and tx error count = 0 */
+		ERROR_ACTIVE = 1,          /**< Rx and tx error count < 127 */
+		ERROR_PASSIVE = 2,         /**< Rx and tx error count < 255 */
+		BUS_OFF = 3,               /**< Rx and tx error count = 255 */
+    } busStateType;
+
+    /**
+     * Bus Status type.
+     * Bus status contains variables useful for determining
+     * the health of the bus.  They are maintained by 
+     * CanIo
+     * @see carma::canbus::CanIo
+     */
+	typedef struct busStatusStruct {
+		busStateType state;            /**< State of bus */
+        volatile double rxMsgRate;    /**< Half sec averaged rx msg rate */ 
+        volatile double txMsgRate;   /**< Half sec averaged tx msg rate */
+		volatile unsigned short rxErrors; /**< Current CAN rx errors */ 
+		volatile unsigned short txErrors; /**< Current CAN tx errors */ 
+        /** 
+         * Count of Janz slow msgs lost (slow msgs are messages
+         * to communicate with the Janz board only).  
+         */
+		volatile unsigned int slowMsgsLost;
+        /**
+         * Count of Janz fast msgs lost (fast msgs are CAN messages
+         * only).
+         */
+		volatile unsigned int fastMsgsLost; 
+	} busStatusType;
+
+    /**
+     * Device state type.
+     * The device state is used to determine if a module
+     * exists on the network.
+     */
+    typedef enum deviceStateEnum {
+        ONLINE,       /**< Device is ONLINE and communicating normally */
+        OFFLINE,      /**< Device is OFFLINE and not communicating */
+        INITIALIZED,  /**< Device is waiting to be initialized */
+    } deviceStateType;
+		
+    // Useful constants.
+    const int NANOSECS_PER_SEC = 1000000000;
+
+    // IPQ name string constants.  The CAN_INPUT_IPQ is the name
+    // of the ipq that will be written by DirectCan, read from CanIo
+    // and rewritten to the CANbus.  The CAN_OUTPUT_IPQ is the name
+    // of the ipq that will be read by DirectCan, written to by 
+    // CanIo with messages read from the CANbus.
+    const string CAN_INPUT_IPQ = "/can-input.ipq";  
+    const string CAN_OUTPUT_IPQ = "/can-output.ipq";
+    const long IPQ_BUFFER_SIZE = 10000;  /**< DirectCan IPQ buffer sizes. */
+
+} // namespace canbus
+} // namespace carma
+#endif

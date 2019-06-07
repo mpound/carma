@@ -1,0 +1,338 @@
+#ifndef CARMA_MONITOR_CORR_PIPELINE_UPDATE_IDL
+#define CARMA_MONITOR_CORR_PIPELINE_UPDATE_IDL
+
+#include "carma/monitor/monitorframe.idl"
+#include "carma/util/UserException.idl"
+
+/**
+ * $Id: CorrPipelineUpdate.idl,v 1.23 2011/05/17 16:27:57 iws Exp $
+ */
+
+/**
+ * @file CorrPipelineUpdate.idl
+ * This is the IDL file for allowing the monitor/fault system to
+ * communicate with the correlator pipeline.
+ * @author N. S. Amarnath
+ *
+ * File containing IDL declarations for CARMA monitor frame structures.
+ * The primary strcutures are VarSubsystemFrame, used primarily by
+ * monitor subsystems, and MonitorSystemFrame, used only within the
+ * Array Control Computer (ACC).
+ *
+ * Convention - in all monitor namespace names, 'ss' used as a prefix denotes
+ * subsystem, in particular, a monitor subsystem as defined in the Monitor
+ * design document for CARMA -
+ * @see http://www.mmarray.org/project/WP/Monitoring/monitoringDesign.pdf
+ */
+
+module carma
+{
+
+  module monitor
+  {
+    const string SPECTRAL_CORR_PIPELINE_UPDATE_NAME =
+        "carma.monitor.SpectralCorrPipelineUpdate";
+
+    const string WIDEBAND_CORR_PIPELINE_UPDATE_NAME =
+        "carma.monitor.WidebandCorrPipelineUpdate";
+
+    /**
+     * @struct BaselineBandBlanking
+     * @brief Structure containing blanking information on per,
+     * baseline, per band.
+     * Baselines are stored as CARMA antenna numbers, with larger number
+     * first.
+     */
+    struct BaselineBandBlanking
+    {
+      /**
+       * unsigned char containing blanking flag value as defined in the
+       * enum ::carma::monitor::MonitorType::BLANKING_FLAGGING.
+       * Blanking applies to a specific baseline, per band. Baseline
+       * input pair and band can be identified from position
+       * in sequence BaseLineBlankingSeq.
+       */
+      octet             blankingFlag;
+
+    };
+
+
+    typedef sequence<BaselineBandBlanking> BaselineBandBlankingSeq;
+
+    struct MonitorPointValue
+    {
+      /**
+       * @var TransportMonitorValue value
+       * @brief One sample value (represented as a CORBA union)
+       * from a monitor point.
+       */
+      TransportMonitorValue                  value;
+
+      /**
+       * @var unsigned char validityFlags
+       * @brief Bit fields indicating whether sample value is valid.
+       */
+      octet                            validityFlags;
+    };
+
+
+    /**
+     * @struct AntennaBasedPoints
+     * @brief Structure containing antenna based monitor points whose values
+     * have to be sent to the correlator pipeline.
+     */
+    struct AntennaBasedPoints
+    {
+      /**
+       * Input number of antenna.
+       */
+      octet                        inputNo;
+
+      /**
+       * Is this antenna in the associated subarray?
+       */
+      boolean online;
+
+      /**
+       * unsigned char contains enum value expressed as a number,
+       * where enum value is from the enum type
+       * ::carma::monitor::AntennaCommon::CalStateMonitorPointEnum::CALSTATE.
+       */
+      MonitorPointValue            hotLoadState;
+
+      /**
+       * float contains the temperature of the sky load
+       */
+      MonitorPointValue              skyTemp;
+
+      /**
+       * float contains the temperature of the ambient load
+       */
+      MonitorPointValue              ambTemp;
+
+      /**
+       * float contains the temperature of the fixed load.
+       */
+      MonitorPointValue              fixedTemp;
+
+      /**
+       * float contains the partial transmission %
+       */
+      MonitorPointValue              partialTrans;
+
+      /**
+       * float contains the spillOver quantitity
+       */
+      MonitorPointValue              spillOver;
+
+      /**
+       * float contains time delay produced by WVR system, in seconds.
+       * Defaults to 0.0 for now.
+       */
+      MonitorPointValue              wvrDelay;
+
+      /**
+       * float contains jansky per kelvin calibration factor.
+       * This factor is the complete conversion which includes
+       * aperture efficiency, collecting area, etc, etc.
+       */
+      MonitorPointValue              janskyPerKelvin;
+
+      /**
+       * Current antenna elevation in degrees.
+       */
+      MonitorPointValue              elevation;
+
+    };
+
+    typedef sequence<AntennaBasedPoints>  AntennaBasedMonitorPointSeq ;
+
+    /**
+     * @struct BandInputMonitorPoints
+     * @brief Structure containing monitor points per band, per inout #
+     * that have to be sent to the correlator pipeline.
+     */
+    struct BandInputMonitorPoints
+    {
+      /**
+       * IF total power level, in dB. totalPower applies to a specific
+       * band and input pair. This pair can be uniquely determined from
+       * the position of this struct instance in the sequence
+       * DownconverterBaseMonitorPointSeq.
+       */
+      MonitorPointValue             totalPower;
+
+    };
+
+
+    typedef sequence<BandInputMonitorPoints> DownconverterBasedMonitorPointSeq;
+
+
+    /**
+     * @struct ControlBandFrequencies
+     * @brief Structure containing band based monitor points from
+     * Control subsystem.
+     * Band number implied by position in ControlBandFrequenciesSeq,
+     * along with upper/lower sideband. USB is the first in the sequence,
+     * followed by LSB.
+     */
+    struct ControlBandFrequencies
+    {
+      /**
+       * Sky frequency as GHz.
+       */
+      MonitorPointValue        skyFreq;
+
+      /**
+       * Band frequency - rest frequency of band in GHz.
+       */
+      MonitorPointValue        restFreq;
+    };
+
+    typedef sequence<ControlBandFrequencies> ControlBandFrequenciesSeq;
+
+    /**
+     * @struct ControlBasedMonitorPoints
+     * @brief Structure containing monitor points from
+     * Control subsystem that have to be sent to the correlator pipeline
+     */
+    struct ControlBasedMonitorPoints
+    {
+      /**
+       * Per band monitor points from the control subsystem. Sky frequencies
+       * and rest frequencies, in GHz.
+       */
+      ControlBandFrequenciesSeq  bandMonitorPoints;
+
+    };
+
+    /**
+     * @struct WeatherMonitorPoints
+     * @brief Structure containing weather data that has to be sent
+     * to the correlator pipeline.
+     */
+    struct WeatherMonitorPoints
+    {
+      /**
+       * Barometric pressure in millibars.
+       */
+      MonitorPointValue      barPressure;
+
+      /**
+       * Ambient temperature in Celsius.
+       */
+      MonitorPointValue      ambientTemp;
+
+      /**
+       * Relative humidity as percentage.
+       */
+      MonitorPointValue      relativeHumidity;
+
+      /**
+       * Dew point temperature in Celsius.
+       */
+      MonitorPointValue      dewPointTemp;
+
+    };
+
+    struct MappingInfo
+    {
+        /**
+         * Antenna to which this astroband/astroinput is connected
+         */
+        MonitorPointValue antennaNo;
+
+        /**
+         * Correlator type to which this astroband/astroinput is connected
+         */
+        MonitorPointValue correlatorDesignation;
+
+        /**
+         * Correlator band to which this astroband/astroinput is connected
+         */
+        MonitorPointValue corrBandNo;
+
+        /**
+         * Correlator input to which this astroband/astroinput is connected
+         */
+        MonitorPointValue corrBandInputNo;
+    };
+
+    /**
+     * @brief sequence to hold the astroband/astroinput mapping information
+     *
+     * This will use the standard approach to flattening a two-dimentional
+     * array into a single dimentional array. Each element will contain the
+     * points for the astroband/astroinput pair.
+     */
+    typedef sequence<MappingInfo> MappingInfoSeq;
+
+
+    struct CorrelatorPipelineMonitorInput
+    {
+      /**
+       * Framecount - timestamp - to which this monitor data belongs.
+       */
+      long                               frameCount;
+
+      /**
+       * Subarray to which this correlator belongs.
+       */
+      long                               subarrayNumber;
+
+      /**
+       * Current source name
+       */
+      MonitorPointValue                  sourcename;
+
+      /**
+       * Noise source status
+       */
+      MonitorPointValue                  noiseSourceOn;
+
+      /* 24 astroband * 32 astroinput array */
+      MappingInfoSeq                     mappingPoints;
+
+      /* 23 antenna array */
+      AntennaBasedMonitorPointSeq        antennaPoints;
+
+      /* 24 astroband * 32 astroinput array */
+      BaselineBandBlankingSeq            baselineBlanking;
+
+      /* control subsystem monitor point group */
+      ControlBasedMonitorPoints          controlPoints;
+
+      /* 24 astroband * 32 astroinput array */
+      DownconverterBasedMonitorPointSeq  dcPoints;
+
+      /* weather subsystem monitor point group */
+      WeatherMonitorPoints               weatherPoints;
+    };
+
+    /**
+     * @interface inputMonitorPoints
+     * @brief  CORBA service that allows a process within the monitor system
+     *         to send monitor and related data to the correlator pipeline
+     *         for creating visbility data headers.
+     *
+     * @param corrMonitorInput This input parameter is a structure consisting
+     *                of monitor point data from various portions of the carma
+     *                system, as well as blanking/flagging information
+     *                pertaining to each band of each baseline.
+     * @return none.
+     * @author N. S. Amarnath
+     */
+
+    interface CorrelatorPipelineUpdate
+    {
+      void inputMonitorPoints(in CorrelatorPipelineMonitorInput  corrMonitorInput)
+        raises (carma::util::UserException) ;
+    };
+
+  }; // End module monitor
+
+}; // End module carma
+
+
+/* vim: set ts=4 sts=4 sw=4 et: */
+#endif /* CARMA_MONITOR_CORR_PIPELINE_UPDATE_IDL */

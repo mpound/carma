@@ -1,0 +1,86 @@
+/**
+ * @file
+ *
+ * IDL for the carma::antenna::common::LOControl subsystem interface.
+ *
+ * @author Erik Leitch
+ */
+#ifndef _LOIDL
+#define _LOIDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+
+  module antenna {
+
+    module common {
+      /**
+       ** Antenna Local Oscillator control.
+       ** The local oscillator system has an Xband YIG that feeds
+       ** the centimeter or millimeter wave (3mm or 1mm)  oscillator.
+       */
+      interface  LOControl {
+
+        /**
+         * Set the YIG reference frequency and lock.
+         * This method does not block while waiting for lock.
+         * This is meant for engineering purposes only.
+         * Use antenna::common::RxControl::setFrequency to tune.
+         * @param freq YIG Frequency in GHz.
+         * @throw carma::util::UserException on error
+         * @see antenna::common::RxControl::setFrequency
+         */
+        void setYigFrequency( in double yigFreq )
+            raises ( carma::util::UserException );
+
+        /**
+         * Set the frequency for tunable oscillators and lock.
+         * This method does not block while waiting for lock.
+         * This is meant for engineering purposes only.
+         * Use antenna::common::RxControl::setFrequency to tune.
+         * @param Frequency LO Frequency in GHz.
+         * @throw carma::util::UserException on error
+         * @see antenna::common::RxControl::setFrequency
+         */
+        void setLoFrequency(in double Frequency)
+            raises (carma::util::UserException);
+
+        /**
+         * Toggle the sweep for this oscillator.
+         * This method should be used for the LO sweeps, not the YIG.
+         * @param on If true, turn the sweep on, if false, turn it off.
+         * @see toggleYigSweep
+         * @engineering
+         */
+        void toggleSweep(in boolean on)
+            raises (carma::util::UserException);
+
+        /**
+         * Toggle the sweep for the YIG.
+         * @param on If true, turn the sweep on, if false, turn it off.
+         * @see toggleSweep
+         * @engineering
+         */
+        void toggleYigSweep(in boolean on)
+            raises (carma::util::UserException);
+
+        /**
+         * Set LO Reference Terminator Attenuation
+         * Sets the attenuation of the 1100-1260 MHz LO Terminator.
+         * @param atten Attenuation value to set LO terminator to (0-31dB).
+         * @see carma::antenna::common::LOReferenceMonitor
+         */
+        void setLoTerminatorAttenuation(in unsigned short atten)
+            raises (carma::util::UserException);
+
+      }; // End LO interface
+
+    }; // End common module
+
+  }; // End antenna module
+
+}; // End carma module
+
+#endif  // _LOIDL
+

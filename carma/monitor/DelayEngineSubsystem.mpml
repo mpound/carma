@@ -1,0 +1,450 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+
+<!-- DelayEngine Subsystem monitor point definitions
+   - $Id: DelayEngineSubsystem.mpml,v 1.41 2013/10/01 23:27:47 scott Exp $
+   - $Revision: 1.41 $
+   - $Date: 2013/10/01 23:27:47 $
+  -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="DelayEngine" author="Marc Pound" priority="normal">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+   <!--
+     - The container that holds all delay values and their statuses
+     - for a given antenna.  There will be one of these containers
+     - for each  antenna.
+    -->
+    <Container name="DelayData" priority="vital"
+               count="&NUM_ANTENNAS;" indexName="antennaNo">
+
+      <!-- Strings cannot have more than one sample. -->
+       <MonitorPoint name="pointState" type="string" sampling="1"
+           persistent="true" priority="verbose">
+      <shortName>PointState</shortName>
+      <description>
+           The pointing state for a given antenna
+           that was set when the delays were calculated. One of
+           'RADEC' or 'AZEL'.
+      </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="calculatedAt" type="absTime" sampling="1"
+       persistent="true" priority="verbose">
+      <shortName>CalculatedAt</shortName>
+      <units>UTC</units>
+      <description>
+         The time AT which delay data were calculated.
+      </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="calculatedFor" type="absTime" sampling="1"
+       persistent="true" priority="verbose">
+      <shortName>CalculatedFor</shortName>
+      <units>UTC</units>
+      <description>
+         The time FOR which the delay data were calculated.
+      </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="validUntil" type="absTime" sampling="1"
+       persistent="true" priority="verbose">
+      <shortName>ValidUntil</shortName>
+      <units>UTC</units>
+      <description>
+         The time until delay data are valid.
+      </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="adjustableDelay" type="double" sampling="1"
+       persistent="true" >
+         <shortName>Adjustable</shortName>
+         <longName>Adjustable</longName>
+         <units>ns</units>
+         <description>
+            An additional delay used for various purposes.  By convention,
+            it is used to hold the 'global delay' that is applied to all
+            antennas in a subarray. But it could also be used as an artificial
+            delay for engineering tests.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="adjustableDelayStatus" type="bool" sampling="1"
+       persistent="true" priority="normal">
+         <shortName>Using Adjustable</shortName>
+         <description>
+            True if the adjustable delay is being used in the calculation of
+            the total delay.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="antennaDelay" type="double" sampling="1"
+       persistent="true" priority="verbose">
+         <shortName>Ant Delay</shortName>
+         <longName>Antenna Delay</longName>
+         <units>ns</units>
+         <description>
+            The delay from the pad to the antenna, due to e.g., cabling.  These values
+            are semi-permanent and stored in a table on disk in CARMA/conf/delay/antDelay.tab.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="opticsDelayMM" type="double" sampling="1"
+       persistent="true" priority="verbose">
+         <shortName>Optics Delay mmRx</shortName>
+         <longName>Optics Delay mmRx</longName>
+         <units>ns</units>
+         <description>
+            The delay from the intersection of the axes to the millimeter 
+            receivers (primary, seconday, cabin).  These values are 
+            semi-permanent and stored in a table on disk in 
+            CARMA/conf/delay/opticsDelay.tab.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="opticsDelayCM" type="double" sampling="1"
+       persistent="true" priority="verbose">
+         <shortName>Optics Delay cmRx</shortName>
+         <longName>Optics Delay cmRx</longName>
+         <units>ns</units>
+         <description>
+            The delay from the intersection of the axes to the centimeter 
+            receiver (primary, seconday, cabin).  These values are 
+            semi-permanent and stored in a table on disk in 
+            CARMA/conf/delay/opticsDelay.tab.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="loCableDelayMM" type="double" sampling="1"
+       persistent="true" priority="verbose">
+         <shortName>LOcable Delay mmRx</shortName>
+         <longName>LOcable Delay mmRx</longName>
+         <units>ns</units>
+         <description>
+            The delay for the LO distribution from the LO termination to the
+            receiver for the millimeter receivers.  These values are 
+            semi-permanent and stored in a table on disk in 
+            CARMA/conf/delay/opticsDelay.tab.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="loCableDelayCM" type="double" sampling="1"
+       persistent="true" priority="verbose">
+         <shortName>LOcable Delay cmRx</shortName>
+         <longName>LOcable Delay cmRx</longName>
+         <units>ns</units>
+         <description>
+            The delay for the LO distribution from the LO termination to the
+            receiver for the centimeter receiver.  These values are 
+            semi-permanent and stored in a table on disk in 
+            CARMA/conf/delay/opticsDelay.tab.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="padDelay" type="double" sampling="1"
+       persistent="true" priority="verbose">
+         <shortName>Pad Delay</shortName>
+         <longName>Pad Delay</longName>
+         <units>ns</units>
+         <description>
+            The delay from array center to the pad on which this antenna sits.  These values
+            are semi-permanent and stored in a table on disk in CARMA/conf/delay/padDelay.tab.
+         </description>
+       </MonitorPoint>
+
+
+       <MonitorPoint name="axisDelay" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>Axis Misalignment</shortName>
+         <units>ns</units>
+         <description>
+            The delay due to the non-intersection misalignment of
+            the azimuth and elevation axes.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="delayOffset" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>Delay Offset</shortName>
+         <longName>Delay Offset</longName>
+         <units>ns</units>
+         <description>
+            A fixed delay line offset per antenna, generally used for
+            'peaking up' the delays after an antenna move.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="geometricDelay" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>Geometric</shortName>
+         <units>ns</units>
+         <description>
+            The geometric delay, equal to minus the W coordinate plus
+            the azimuth-elevation axis misalignment.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="geometricDelayStatus" type="bool" sampling="1"
+       persistent="true" priority="normal" >
+         <shortName>Using Geometric</shortName>
+         <description>
+            True if the geometric delay is being used in the calculation of
+            the total delay.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="heightDelay" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>Height</shortName>
+         <units>ns</units>
+         <description>
+            The additional refractive delay due to the difference in
+            this antenna's height and that of the array reference point.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="heightDelayStatus" type="bool" sampling="1"
+       persistent="true" priority="normal" >
+         <shortName>Using Height</shortName>
+         <description>
+            True if the height delay is being used in the calculation of
+            the total delay.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="U" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>U</shortName>
+         <units>m</units>
+         <description>
+            The U coordinate in the J2000 system.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="V" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>V</shortName>
+         <units>m</units>
+         <description>
+            The V coordinate in the J2000 system.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="W" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>W</shortName>
+         <units>m</units>
+         <description>
+            The W coordinate in the J2000 system.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="X" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>X</shortName>
+         <longName>X</longName>
+         <units>m</units>
+         <precision>5</precision>
+         <width>11</width>
+         <description>
+            The X coordinate of the antenna in the local topocentric XYZ system
+            with respect the the array reference location.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="Y" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>Y</shortName>
+         <longName>Y</longName>
+         <units>m</units>
+         <precision>5</precision>
+         <width>11</width>
+         <description>
+            The Y coordinate of the antenna in the local topocentric XYZ system
+            with respect the the array reference location.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="Z" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>Z</shortName>
+         <longName>Z</longName>
+         <units>m</units>
+         <precision>5</precision>
+         <width>11</width>
+         <description>
+            The Z coordinate of the antenna in the local topocentric XYZ system
+            with respect the the array reference location.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="ionosphericDelay" type="double" sampling="1"
+       persistent="true" priority="normal">
+         <shortName>Ionospheric</shortName>
+         <units>ns</units>
+         <description>
+            The delay contributed by the ionosphere. This delay is
+            less than or equal to zero.
+         </description>
+         <!-- Since the ionospheric delay should always be negative, issue
+            - warnings and errors if it becomes positive.
+           -->
+         <warnHi>0.1</warnHi>
+         <errHi>1.0</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="ionosphericDelayStatus" type="bool" sampling="1"
+       persistent="true" priority="normal" >
+         <shortName>Using Ionospheric</shortName>
+         <description>
+            True if the ionospheric delay is being used in the calculation of
+            the total delay.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="pathLength" type="double" sampling="1"
+       persistent="true" priority="normal" >
+         <shortName>PathLength</shortName>
+         <units>m</units>
+         <description>
+            The pathlength through the atmosphere, i.e. the integrated
+            refractivity.
+         </description>
+         <!--
+            - Normal value at zenith is about 2 meters, so set
+            - a low warning at 1 meter. Normal value at horizon
+            - is about 30 meters, so set a warning at 40.
+           -->
+         <warnLo>1.0</warnLo>
+         <warnHi>40.0</warnHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="refractivity" type="double" sampling="1"
+       persistent="true" priority="normal" >
+         <shortName>Zenith Refractivity</shortName>
+         <units>rad</units>
+         <description>
+            The zenith refractivity.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="thermalDelay" type="double" sampling="1"
+       persistent="true" priority="normal">
+         <shortName>ThermalDelay</shortName>
+         <units>ns</units>
+         <description>
+            The delay contributed by thermal expansion or contraction
+            of the antenna structure.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="thermalDelayStatus" type="bool" sampling="1"
+       persistent="true" priority="normal">
+         <shortName>Using Thermal</shortName>
+         <description>
+            True if the thermal delay is being used in the calculation of
+            the total delay.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="totalDelay" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>TotalDelay</shortName>
+         <units>ns</units>
+         <description>
+            The delay of this antenna, not including receiver component. 
+            It is the sum of the fixed delays (IF delays) and the active delays
+            before downconversion. An active delay has a status equal to true.
+            The optics delay is also always added.
+            This delay, plus the receiver offset, is sent to the correlator.
+            This delay, minus the total fixed delay and the LO cable delay, 
+            is sent to the loberotator.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="totalFixedDelay" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>TotalFixedDelay</shortName>
+         <units>ns</units>
+         <description>
+            The fixed delay of this antenna, not including any receiver 
+            component. This is equivalent to the IF delay, not including the
+            receiver specific component.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="rxDelayPol1" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>rxDelayP1</shortName>
+         <units>ns</units>
+         <description>
+            The delay offset for the polarization state 1 receiver
+            on this antenna.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="rxDelayPol2" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>rxDelayP2</shortName>
+         <units>ns</units>
+         <description>
+            The delay offset for the polarization state 2 receiver
+            on this antenna.
+         </description>
+       </MonitorPoint>
+
+
+       <MonitorPoint name="totalDelayPol1" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>TotalDelayP1</shortName>
+         <units>ns</units>
+         <description>
+            The delay correction for polarization state 1 of this antenna.
+            It is the fixed delay
+            line offset minus the sum of all active delays (those delays with
+            status equal to true) for polarization state 1.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="totalDelayPol2" type="double" sampling="1"
+       persistent="true" priority="vital">
+         <shortName>TotalDelayP2</shortName>
+         <units>ns</units>
+         <description>
+            The delay correction for polarization state 2 of this antenna.
+            It is the fixed delay
+            line offset minus the sum of all active delays (those delays with
+            status equal to true) for polarization state 2.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="troposphericDelay" type="double" sampling="1"
+       persistent="true"  priority="vital" >
+         <shortName>TropoDelay</shortName>
+         <units>ns</units>
+         <description>
+            The additional delay contributed by the troposphere, expressed as
+            the difference in the tropospheric delay between this
+            station and the array reference point.  Also, known as
+            differential refraction.
+            For long baselines, this is a few hundredths of a nanosecond.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="troposphericDelayStatus" type="bool" sampling="1"
+       persistent="true" priority="normal">
+         <shortName>Using Tropospheric</shortName>
+         <description>
+            True if the troposheric delay is being used in the calculation of
+            the total delay.
+         </description>
+       </MonitorPoint>
+
+
+     </Container>
+
+</Subsystem>

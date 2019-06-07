@@ -1,0 +1,61 @@
+# set number of days to plot
+set \9 7
+font 2
+lwid 2
+expand 1.25
+color 1
+mtext t .5 .5 .5 1mm Alert - Atmospheric turbulence over the last \[\9] days
+mtext b 2.0 .5 .5 Universal Time (Day of Year)  [0 hours UT = 4 pm PST]
+font 1
+expand 1.0
+
+# add the UT time of the last sample
+new "time_string"
+data ../data/last_sample_time
+string time_string
+mtext T -1.5 0.5 0.5 Updated \[time_string]
+free "time_string"
+
+mtext l 3 .5 .5 RMS delay (microns)
+data sample.dat.temp
+xcol 1
+ycol 4
+lim
+set \4 x2
+set \3 x2 - \9
+lim \3 \4 0 1200
+box
+lsty 1
+col 3
+mtext t -4.0 .5 .5 CARMA  Phase Monitor - RMS phase delay (microns) for a 100m baseline
+mtext t -5.5 .5 .5 measured on a geostationary satellite at Az=153 and El=43 degrees
+conn
+lwid 1
+ycol 9
+col 7
+conn
+lsty 4
+mtext t -8.0 .5 .5 RMS delay should be below the appropriate line for the current array to have
+mtext t -9.5 .5 .5 <50% decorrelation on the longest baseline in a 10min integration at 230GHz
+mtext r 1.5 .5 .5 50% Coherence levels
+
+define dline
+set \1 x2 - .3
+set \2 x1 + .03
+move x1 $1
+draw x2 $1
+move \1 $1
+lab $2 
+#$3m
+end
+
+dline 113 A 1000
+dline 184 B 233
+dline 274 C 87
+dline 750 D 26
+# ARRAY         D       C       B       A
+# Bmax          26      87      233     1000    meters
+
+end
+
+

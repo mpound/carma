@@ -1,0 +1,8 @@
+The azimuth on a 10m antenna is outside the range of the hardware limits.
+
+This is potentially a serious problem; DO NOT MOVE THE ANTENNA, 
+either manually or under computer control. 
+
+Contact the hardware group and read this:
+
+http://cedarflat.mmarray.org/wiki/Alarms#OvroX.Drive.System.azOverlapSwitchFail

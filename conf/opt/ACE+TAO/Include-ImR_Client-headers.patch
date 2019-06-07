@@ -1,0 +1,43 @@
+Author: Andy Beard
+This patch includes several ImR_Client headers (client and server) which were
+not installed by default in this version of TAO.  These objects are used in
+particular by the process monitor and imrconfig apps in carma.
+
+I believe these are automatically included in TAO versions > 6.0.
+--- ACE_wrappers/TAO/tao/ImR_Client.mpc	2010-06-24 02:06:01.000000000 -0700
++++ ACE+TAO-5.8.1-carma-1.5/TAO/tao/ImR_Client.mpc	2010-09-08 19:04:37.000000000 -0700
+@@ -1,5 +1,5 @@
+ //$Id: Include-ImR_Client-headers.patch,v 1.1 2013/05/15 23:21:38 abeard Exp $
+-project(*idl) : tao_versioning_idl_defaults {
++project(*idl) : tao_versioning_idl_defaults, install {
+   custom_only = 1
+   IDL_Files {
+     idlflags += -Gp -Ssi -Gd -Sorb -GA \
+@@ -39,10 +39,18 @@ project(ImR_Client) : taolib, tao_output
+ 
+   Header_Files {
+     ImR_Client
++    ImR_Client/ImplRepoC.h
++    ImR_Client/ImplRepoA.h
++    ImR_Client/ImplRepoS.h
++    ImR_Client/ServerObjectC.h
++    ImR_Client/ServerObjectA.h
++    ImR_Client/ServerObjectS.h
+   }
+ 
+   Inline_Files {
+     ImR_Client
++    ImR_Client/ImplRepoC.inl
++    ImR_Client/ServerObjectC.inl
+   }
+ 
+   Template_Files {
+@@ -55,6 +63,8 @@ project(ImR_Client) : taolib, tao_output
+ 
+   PIDL_Files {
+     ImR_Client
++    ImR_Client/ImplRepo.pidl
++    ImR_Client/ServerObject.pidl
+   }
+ 
+   IDL_Files {

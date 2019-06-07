@@ -1,0 +1,9 @@
+#!/bin/tcsh -f
+# do not edit, created by build.xml
+# copy the shiftone-jrat.jar to your CDV directory first!
+@JAVAHOME@/bin/java \
+	-javaagent:@INSTALLDIR@/lib/shiftone-jrat.jar \
+	-Xbootclasspath/p:@INSTALLDIR@/lib/cdv-libs.jar \
+	-Xmx512m \
+	-jar @INSTALLDIR@/lib/cdv-prof.jar \
+	-XMLFile @CONFDIR@/cdv/carma-cdv-config.xml

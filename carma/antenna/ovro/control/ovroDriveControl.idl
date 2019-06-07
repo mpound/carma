@@ -1,0 +1,93 @@
+/** @file
+ *
+ * $Id: ovroDriveControl.idl,v 1.14 2012/02/15 21:05:00 abeard Exp $
+ *
+ * $Revision: 1.14 $
+ * $Date: 2012/02/15 21:05:00 $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_CONTROL_OVRODRIVECONTROL_IDL
+#define CARMA_ANTENNA_OVRO_CONTROL_OVRODRIVECONTROL_IDL
+
+#include "carma/antenna/common/DriveControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+/**
+ * OVRO antenna-specific drive control interface.
+ */
+interface DriveControl : carma::antenna::common::DriveControl {
+
+   /**
+    * Sets mount pointing constants.
+    * The effect of the mount pointing constants have the same sign as the offset
+    * command (@see setOffset)
+    * @param m1 azimuth encoder offset, arcmin
+    * @param m2 elevation encoder offset, arcmin
+    * @param m3 non-orthogonality of axes, arcmin
+    * @param m4 azimuth axis verticality, North/South, arcmin
+    * @param m5 azimuth axis verticality, East/West, arcmin
+    *
+    */
+   void setMountPointingConstants(in double m1, in double m2, in double m3,
+      in  double m4, in double m5)
+    raises (carma::util::UserException);
+
+    /**
+     * Set raw drive voltages independent of servo loop (i.e. open loop).
+     * Engineering command - use with extreme caution.
+     * @param azVoltage Raw azimuth voltage in Volts.
+     * @param elVoltage Raw elevation voltage in Volts.
+     */
+    void setRawDriveVoltages( in float azVoltage, in float elVoltage )
+        raises (carma::util::UserException);
+
+    /**
+     * Set raw drive rates independent of servo loop (i.e. open loop).
+     * Engineering command - use with extreme caution.
+     * @param azRate Raw azimuth rate in degrees/minute.
+     * @param elRate Raw azimuth rate in degrees/minute.
+     */
+    void setRawDriveRates( in float azRateInDegPerMin,
+                           in float elRateInDegPerMin )
+        raises (carma::util::UserException);
+
+    /**
+     * Set engineering mode.
+     * In engineering mode high level control commands are not sent.
+     */
+    void setEngineeringMode( in boolean enable )
+        raises ( carma::util::UserException );
+
+    /**
+     * Read configuration file and update any parameters which may have
+     * changed.
+     */
+    void updateConfigurationData( ) raises (carma::util::UserException);
+
+    /**
+     * Freeze tilt correction.
+     * This routine causes the current tilt value to be used until a
+     * call to thawTilt is made.  For debug only.
+     */
+    void freezeTilt( ) raises ( carma::util::UserException );
+
+    /**
+     * Thaw tilt - update and apply tilts regularly.
+     * @see freezeTilt
+     */
+    void thawTilt( ) raises ( carma::util::UserException );
+
+    /**
+     * Disable backlash correction on the fly.
+     */
+    void toggleBacklashCorrection( in boolean enable )
+        raises ( carma::util::UserException );
+
+}; // End LOControl interface
+};};}; // End carma::antenna::ovro module
+#endif

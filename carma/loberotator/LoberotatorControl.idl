@@ -1,0 +1,301 @@
+#ifndef CARMA_LOBEROTATOR_IDL
+#define CARMA_LOBEROTATOR_IDL
+
+#include "carma/canbus/devices/DeviceControl.idl"
+#include "carma/util/PhaseSwitching.idl"
+#include "carma/util/UserException.idl"
+
+/**
+ * @file
+ * This is the IDL file for the LoberotatorControl structures
+ * @author Colby Gutierrez-Kraybill, Steve Scott
+ *
+ * @version $Id: LoberotatorControl.idl,v 1.39 2011/05/17 16:27:53 iws Exp $
+ *
+ * This describes the DO interface for operations in the LobeRotator
+ * subsystem.
+ * @see http://www.mmarray.org/project/WP/LobeRotator/sw/current.pdf
+ *
+ * $CarmaCopyright$
+ *
+ */
+
+module carma
+{
+  module loberotator
+  {
+
+/**
+ * The CARMA canonical name for this Distributed Object.
+ * This is the name used to register with the nameserver.
+ */
+const string LOBEROTATOR_NAME = "carma.loberotator.LoberotatorControl";
+
+/**
+ * %LoberotatorControl interface
+ */
+interface LoberotatorControl :carma::canbus::devices::DeviceControl,
+    carma::util::PhaseSwitching {
+
+    /**
+     * A delay/mjd pair structure
+     */
+    struct DelayMjd {
+        /** Delay in nanoseconds */
+        double delay;
+
+        /** MJD for the delay */
+        double mjd;
+    };
+    /**
+     * A triplet of timetagged delays
+     */
+    typedef DelayMjd DelayTriplet[3];
+
+    /**
+     * A triplet of time tagged delays, associated with a specific channel
+     */
+    struct DelayChan {
+        /** Channel ID, range [1-24] */
+        long   channelID;
+
+        /** Walsh column, range [1-24] */
+        long   walshColumn;
+
+        /** Timetagged delay triplet */
+        DelayTriplet triplet;
+    };
+    /**
+     * Sequence of triplet/channels.
+     */
+    typedef sequence<DelayChan> DelayChanSeq;
+
+
+    /**
+     * A delay and frequency element structure
+     * The frequency items apply to all channels in the packet.
+     * Use scripts/python/loberotatorTest.py for convenient construction.
+     */
+    struct DelayFreqPacket {
+
+        /** Sequence of delay/mjd channels */
+        DelayChanSeq delaySeq;
+
+        /** First LO frequency in GHz */
+        double frequency;
+
+        /**
+         * Hardware multiplication factor for DDS signal before it is
+         * added to the first LO. The CANbus channel phase and rate input
+         * will be divided by this before it is sent to the DDS.
+         */
+        long multiplier;
+
+        /**
+         * Hardware division factor for DDS signal before it is
+         * added to the first LO. The CANbus channel phase and rate input
+         * will be multiplied by this before it is sent to the DDS.
+         */
+        long divisor;
+
+        /**
+         * Hardware sign of DDS signal when added to first LO.
+         * Must be +1 or -1.
+         */
+        long sign;
+    };
+
+    /**
+     * Pairs of channel number/walsh column assignment
+     */
+    struct WalshAssignment {
+        /**
+         * Loberotator channel number, starting at 1.
+         */
+        short channel;
+        /**
+         * Walsh column number, starting at 1.
+         */
+        short walshColumn;
+    };
+    /**
+     * Sequence of walsh columns.
+     */
+    typedef sequence<WalshAssignment> WalshAssignmentSeq;
+
+    /**
+     * Sets a time triplet of delays, and the frequency and mul/div.
+     * This is the only method used in standard control of the LR.
+     *
+     * @param updates a sequence of elements containing frequency and
+     *      three delay/mjd sets
+     * @return none.
+     */
+    void updateDelayAndFreq(in DelayFreqPacket delayFreq )
+                raises (carma::util::UserException);
+
+    /**
+     * Engineering: Turn on/off phase offset and rate. The offsets and
+     * are 'on-the-sky'; equivalent to applying the rates/phases to the
+     * final multiplied LO signal.
+     *
+     * @param chan channel number; the first chan is one, zero is all
+     * @param bool enable (true=offset phases/rates are used)
+     * @return none.
+     * @see setOffsetPhase, setOffsetRate
+     */
+    void setOffsetControl( in long chan, in boolean enable)
+                raises (carma::util::UserException);
+
+    /**
+     * Engineering: Phase offset to be added to the sky phase
+     *
+     * @param chan channel number; the first chan is one, single channel only
+     * @param double phaseOffset in degrees
+     * @return none.
+     * @see setOffsetControl, setOffsetRate
+     */
+    void setOffsetPhase( in long chan, in double phaseOffset )
+                raises ( carma::util::UserException );
+
+    /**
+     * Engineering: Phase rate offset to be added to the sky phase rate
+     *
+     * @param chan channel number; the first chan is one, single channel only
+     * @param rateOffset in Hz (turns/sec)
+     * @return none.
+     * @see setOffsetControl, setOffsetPhase
+     */
+    void setOffsetRate(in long chan, in double rateOffset)
+                raises (carma::util::UserException);
+
+    /**
+     * Loads a phase switch column into the Xac.
+     * @todo This routine has not been debugged or checked since it was
+     * originally written, and may not conform to the latest API.
+     * It currently throws an exception to tell you that it is not usable.
+     *
+     * @param chan channel number; the first chan is one
+     * @param columnId Id for a particular column, choosen from a previously
+     *  loaded table. The first column is one.
+     * @return none.
+     */
+    void loadPhaseSwitchColumn(in long chan, in short columnId )
+            raises (carma::util::UserException);
+
+    /**
+     * Assigns walsh columns to loberotator channels.
+     * The phaseswitching is actually done in the XAC modules.
+     * This command associates a walsh column with a loberotator channel.
+     * @param walshAssignments A sequence of loberotatorChannel/walshColumn pairs.
+     *
+     * @return none.
+     */
+    void assignWalshColumn(in WalshAssignmentSeq walshAssignments)
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Enable/disable fringe tracking in the linux host
+     * This only turns off fringe tracking, not any offset phases
+     * and rates that may be enabled.
+     * Note that the disable fringe tracking that can  be done on the
+     * DDS will disable all phase and rate updates.
+     *
+     * @param chan channel number; the first chan is one, zero is all
+     * @param boolean state True = fringe tracking ON, False = OFF
+     * @see enableDDSfringeTracking
+     * @return none.
+     */
+    void enableFringeTracking( in long chan, in boolean state )
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Enable/disable fringe tracking in the DDS
+     *
+     * @param chan channel number; the first chan is one, zero is all
+     * @param boolean state True = fringe tracking ON, False = OFF
+     * @return none.
+     * @see enableFringeTracking
+     */
+    void enableDDSfringeTracking( in long chan, in boolean state )
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Enable/disable 90 deg  phase switching
+     *
+     * @param chan channel number; the first chan is one, zero is all
+     * @param boolean state True = ON, False = OFF of 90 deg switching
+     * @return none.
+     * @see enablePhaseSwitching, enable180PhaseSwitching
+     */
+    void enable90PhaseSwitching(in long chan, in boolean state)
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Enable/disable 180 deg phase switching
+     *
+     * @param chan channel number; the first chan is one, zero is all
+     * @param boolean state True = ON, False = OFF
+     * @return none.
+     * @see enable90PhaseSwitching, enablePhaseSwitching
+     */
+    void enable180PhaseSwitching(in long chan, in boolean state)
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Enable/disable both 90 deg and 180 deg phase switching
+     *
+     * @param chan channel number; the first chan is one, zero is all
+     * @param boolean state True = ON, False = OFF
+     * @return none.
+     * @see enable90PhaseSwitching, enable180PhaseSwitching
+     */
+    void enablePhaseSwitching(in long chan, in boolean state)
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Reset XAC controller on a loberotator board
+     * This uses the Canbus command, rather than the reset wire.
+     *
+     * @param boardNo board number, starting at one, zero is all
+     * @return none.
+     */
+    void resetBoard(in long boardNo)
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Reset all XAC controllers on this CANbus
+     * This uses the hardware reset wire in our CANbus cable.
+     *
+     * @param none
+     * @return none
+     */
+    void hardReset()
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Turn on tracing for a loberotator
+     *
+     * @param chan channel number; the first chan is one, zero is all
+     * @param enable true=enable, false=disable
+     * @return none.
+     */
+    void enableTrace(in long chan, in boolean enable)
+            raises (carma::util::UserException);
+
+    /**
+     * Engineering: Enable/disable half second update of LR channels
+     * This is normally enabled, and turning it off will of course
+     * break the system for astronomy. Use only for extreme testing
+     * as it is very dangerous.
+     */
+    void enableUpdate(in boolean enable)
+            raises (carma::util::UserException);
+
+
+}; // LoberotatorControl
+}; // module loberotator
+}; // module carma
+
+#endif /* CARMA_LOBEROTATOR_IDL */
+

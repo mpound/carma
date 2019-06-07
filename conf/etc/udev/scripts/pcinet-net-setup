@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Setup the network for PCINet networking
+#
+# This adds a bridge and a veth pair device, and hooks
+# them together correctly
+#
+#ACTION=="add", KERNEL=="pcinet_host", SUBSYSTEM=="module", RUN+="scripts/pcinet-net-setup"
+#
+
+# We need a newer iproute2 tool suite to be able to create veth pair
+# devices. The one included with CentOS5 is extremely ancient, and does
+# not work for us at all
+IP="/home/iws/installs/iproute2/ip/ip"
+BRCTL="/usr/sbin/brctl"
+IFCONFIG="/sbin/ifconfig"
+
+stderr() {
+	echo -e "$@" >&2
+	logger -t "udev" "$0: $@"
+}
+
+netdev_exists() {
+	if $IP link show "$@" &>/dev/null ; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+# Check that we have a br0 device. If so, assume we are running in a
+# properly setup bridge mode, started from the initramfs
+if ! netdev_exists br0 ; then
+	stderr "ethernet bridge br0 does not exist"
+	stderr "did you boot the system with ip=bridge?"
+	exit 1
+fi
+
+# Create the br1 bridge if it does not exist
+#
+# Set the parameters correctly
+if ! netdev_exists br1 ; then
+	$BRCTL addbr br1
+	$BRCTL stp br1 off
+	$BRCTL setfd br1 0
+	$BRCTL sethello br1 1
+fi
+
+# Create the veth pair device if it does not exist
+#
+# Set their MTU and bring them up, then add them to the bridges
+if ! netdev_exists veth0 ; then
+	$IP link add link eth0 type veth
+	$IP link set veth0 mtu 65522 up
+	$IP link set veth1 mtu 65522 up
+
+	$BRCTL addif br0 veth0
+	$BRCTL addif br1 veth1
+fi
+
+# Copy the ip address from br0 to br1
+ADDR=`$IP -f inet addr show br0 | grep inet | awk '{ print $2; }'`
+$IP link set br1 up
+$IFCONFIG br1 $ADDR

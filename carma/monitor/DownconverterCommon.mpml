@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global">
+
+    <MonitorPoint name="bandNo" type="short" persistent="true">
+        <shortName>Band</shortName>
+        <longName>IF band number</longName>
+        <description>IF band number, starting at one.</description>
+    </MonitorPoint>
+    
+    <MonitorPoint name="inputNo" type="short" persistent="true">
+        <shortName>Input</shortName>
+        <longName>IF input number</longName>
+        <description>IF input number, starting at one.</description>
+    </MonitorPoint>
+
+    <MonitorPoint name="psys" type="float" 
+                sampling="5" priority="vital">
+        <shortName>Psys</shortName>
+        <longName>System Power Level</longName>
+        <description> 
+            IF total power level, before any level control.  Note the displayed
+            value is an average of the five samples.  
+        </description>
+        <units>dBm</units>
+         <errHi>-14.0</errHi>
+        <warnHi>-17.0</warnHi>
+        <warnLo>-29.0</warnLo>
+         <errLo>-32.0</errLo>
+    </MonitorPoint>
+
+    <MonitorPoint name="psysAtten" type="float" priority="vital" >
+        <shortName>Psys Atten</shortName>
+        <longName>Psys Attenuation</longName>
+        <description>Psys attenuation level.</description>
+        <units>dB</units>
+        <warnHi>31.5</warnHi>
+        <warnLo> 0.0</warnLo>
+    </MonitorPoint>
+
+    <MonitorPoint name="ifOutPower" type="float" priority="useful" >
+        <shortName>IF Out Power</shortName>
+        <longName>If Output Power</longName>
+        <description>IF output power level.</description>
+        <units>dBm</units>
+         <errHi>6.25</errHi>
+        <warnHi>6.15</warnHi>
+        <warnLo>4.32</warnLo>
+         <errLo>4.28</errLo>
+    </MonitorPoint>
+
+    <MonitorPoint name="ifOutAtten" type="float" priority="useful" >
+        <shortName>IF Out Atten</shortName>
+        <longName>IF Output Attenuation</longName>
+        <description>IF output attenuation level.</description>
+        <units>dB</units>
+         <errHi>31.0</errHi>
+        <warnHi>30.0</warnHi>
+        <warnLo> 1.0</warnLo>
+         <errLo> 0.5</errLo>
+    </MonitorPoint>
+
+    <MonitorPoint name="temp" type="float" priority="useful" >
+        <shortName>Temp</shortName>
+        <longName>Temperature</longName>
+        <description>Module temperature.</description>
+        <errHi>55.0</errHi>
+        <units>C</units>
+    </MonitorPoint>
+
+    <?common CanbusCommon.mpml?>
+    <?common NoiseSource.mpml?>
+
+    <Container name="NoiseSourceContainer" >
+
+        <CommonMonitorPoint ref="state" />
+
+        <!-- Include common noise source device monitor points. -->
+        <CommonContainer ref="NoiseSource"  />
+
+        <!-- Include common monitor points -->
+        <CommonContainer ref="Xac"  />
+
+    </Container>
+    
+    <?common QuadratureModulator.mpml?>
+    <Container name="QuadModContainer" >
+       <description>
+            Modulated noise inputs corresponding to antenna inputs.
+       </description>
+
+       <CommonMonitorPoint ref="state" />
+
+       <CommonContainer ref="QuadMod"  />
+
+       <!-- Include common microprocessor monitor points -->
+       <CommonContainer ref="Xac"  />
+
+    </Container>
+
+</Common>
+

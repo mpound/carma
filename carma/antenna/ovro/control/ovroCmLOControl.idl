@@ -1,0 +1,106 @@
+/** @file
+ * Ovro carma::antenna::ovro::CmLOControl interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.3 $
+ * $Date: 2011/05/17 16:27:33 $
+ * $Id: ovroCmLOControl.idl,v 1.3 2011/05/17 16:27:33 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_CMLOCONTROL_IDL
+#define CARMA_ANTENNA_OVRO_CMLOCONTROL_IDL
+
+#include "carma/antenna/common/LOControl.idl"
+#include "carma/antenna/common/SwitchState.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+/**
+ * OVRO antenna-specific LO control interface.
+ * Several Ovro Antenna LO system devices have additional functionality which
+ * is not general enough to be included in the Common Antenna API.  That
+ * additional functionality is included here.
+ */
+interface CmLOControl : carma::antenna::common::LOControl {
+
+    // Yig control commands
+
+    /**
+     * Instruct the YigPll module to extract it's tune table.
+     * This command instructs the module to extract the tuning table from the
+     * 1-wire device and save it to ram.
+     */
+    void extractTuneTable() raises (carma::util::UserException);
+
+    /**
+     * Set damping resistance - Engineering command.
+     * Sets the YigPll damping factor. The value input into this control command
+     * is saved in the modules EEPROM to be used when the module is reset.
+     * @param resistance Damping resistance in Ohms.
+     */
+    void setDampingResistance(in unsigned short resistance)
+        raises (carma::util::UserException);
+
+    /**
+     * Set yig output frequency - Engineering command.
+     * Sets the YIG output frequency but doesn't phase lock.
+     * @param freq Yig output frequency.
+     */
+    void setYigOutputFrequency(in double freq)
+        raises (carma::util::UserException);
+
+    /**
+     * Send reset message to YigPll module.
+     */
+    void resetYigPll() raises (carma::util::UserException);
+
+    // Gunn control commands
+
+    /**
+     * Set Gunn Loop Gain Resistance
+     * @param gain Desired loop gain resistance in ohms.
+     */
+    void setGunnLoopGainResistance(in unsigned short resistanceInOhms)
+        raises (carma::util::UserException);
+
+    /**
+     * Turn Gunn On or Off
+     * @param on True to enable gunn, false otherwise.
+     */
+    void turnGunn(in carma::antenna::common::SwitchState state)
+        raises (carma::util::UserException);
+
+    /**
+     * Turn Gunn IF Monitor ON or OFF
+     * @param state Desired state (ON or OFF).
+     */
+    void turnIfMonitor(in carma::antenna::common::SwitchState state)
+        raises (carma::util::UserException);
+
+    /**
+     * Reset the Gunn Pll
+     */
+    void resetGunn()
+        raises (carma::util::UserException);
+
+    // LO Reference Terminator Module
+    /**
+     * Set preset power level.
+     */
+    void setLoTerminatorPowerToPreset( )
+        raises (carma::util::UserException);
+
+    /**
+     * Set power level to requested level.
+     * @param power in dBm
+     */
+    void setLoTerminatorPowerLevel( in double power )
+        raises (carma::util::UserException);
+
+}; // End LOControl interface
+};};}; // End carma::antenna::ovro module
+#endif

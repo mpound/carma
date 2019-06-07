@@ -1,0 +1,137 @@
+#ifndef CARMA_LOREF_IDL
+#define CARMA_LOREF_IDL
+
+#include "carma/util/UserException.idl"
+
+/**
+ * @file LOReferenceControl.idl
+ *
+ * This is the IDL file for the LO Reference subsystem.
+ *
+ * @author David MacMahon
+ *
+ * @version $Id: LOReferenceControl.idl,v 1.7 2011/05/17 16:27:55 iws Exp $
+ *
+ * This describes the DO interface for the LO Reference subsystem.
+ *
+ * @see http://www.mmarray.org/project/WP/LOreference/sw/LOreferencePDR.pdf
+ */
+
+module carma
+{
+  /**
+   * Namespace for the LOReference system.
+   * @see http://cvs.mmarray.org/project/WP/LOreference/sw/LOreferencePDR.pdf
+   */
+  module loref
+  {
+
+    /**
+     * The CARMA canonical name for this Distributed Object
+     */
+    const string LOREF_NAME = "carma.loref.loReferenceControl";
+
+    /**
+     * %LOReferenceControl interface
+     */
+    interface LOReferenceControl
+    {
+
+      /**
+       * Set a synthesizer frequency and output power.
+       *
+       * @param unsigned long synthesizerIndex One-based index of synthesizer
+       * @param double frequency Frequency to set (Hertz)
+       * @param double power Output power to set (dBm)
+       * @return none.
+       */
+      void setFrequencyPower(
+        in unsigned long synthesizerIndex,  // 1, 2, 3
+        in double frequency,                // Hz
+        in double power                     // dBm
+      )
+      raises ( carma::util::UserException );
+
+      /**
+       * Set a synthesizer frequency.
+       *
+       * @param unsigned long synthesizerIndex One-based index of synthesizer
+       * @param double frequency Frequency to set (Hertz)
+       * @return none.
+       */
+      void setFrequency(
+        in unsigned long synthesizerIndex,  // 1, 2, 3
+        in double frequency                 // Hz
+      )
+      raises ( carma::util::UserException );
+
+      /**
+       * Set a synthesizer output power.
+       *
+       * @param unsigned long synthesizerIndex One-based index of synthesizer
+       * @param double power Output power to set (dBm)
+       * @return none.
+       */
+      void setPower(
+        in unsigned long synthesizerIndex,  // 1, 2, 3
+        in double power                     // dBm
+      )
+      raises ( carma::util::UserException );
+
+      /**
+       * Turn synthesizer RF output on/off.
+       *
+       * @param unsigned long synthesizerIndex One-based index of synthesizer
+       * @param boolean power Output power to set (dBm)
+       * @return none.
+       */
+      void setRFOutput(
+        in unsigned long synthesizerIndex,  // 1, 2, 3
+        in boolean onoff                     // true == on, etc..
+      )
+      raises ( carma::util::UserException );
+
+      /**
+       * Get a synthesizer frequency.
+       *
+       * @param unsigned long synthesizerIndex One-based index of synthesizer
+       * @return double Frequency reported by synthesizer (Hertz)
+       */
+      double getFrequency(
+        in unsigned long synthesizerIndex   // 1, 2, 3
+      )
+      raises ( carma::util::UserException );
+
+      /**
+       * Get a synthesizer output power.
+       *
+       * @param unsigned long synthesizerIndex One-based index of synthesizer
+       * @return double Output power reported by synthesizer (dBm)
+       */
+      double getPower(
+        in unsigned long synthesizerIndex   // 1, 2, 3
+      )
+      raises ( carma::util::UserException );
+
+      /**
+       * Send a raw GPIB/SCPI command and get the response.
+       *
+       * @param unsigned long minor Minor number of the GPIB controller
+       * @param unsigned long address GPIB address of target device
+       * @param string command The command to send
+       * @return string The response
+       */
+      string gpib(
+        in unsigned long minor,
+        in unsigned long address,
+        in string command
+      )
+      raises ( carma::util::UserException );
+
+    };
+  };
+};
+
+#endif /* CARMA_LOREF_IDL */
+
+// vim: set expandtab smarttab sw=2 ts=2 :

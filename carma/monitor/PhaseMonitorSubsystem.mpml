@@ -1,0 +1,271 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- PhaseMonitor Subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="PhaseMonitor" author="Colby Gutierrez-Kraybill">
+
+ <?common MonitorStats.mpml?>
+ <CommonContainer ref="MonitorSubsystemStats" />
+
+  
+  <Common scope="local" author="Andy Beard" >
+    
+    <Container name="Arm" >
+    <description>
+       Monitor points specific to a given arm of the phase monitor.
+    </description>
+   
+    <MonitorPoint name="amplitude" type="float" >
+      <shortName>Amplitude</shortName>
+      <longName>Amplitude</longName>
+      <description>Amplitude</description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="phase" type="float" >
+      <shortName>Phase</shortName>
+      <longName>Phase</longName>
+      <description>Phase</description>
+      <units>Deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="rawQ" type="float" >
+       <shortName>Raw Q</shortName>
+       <description>
+           Raw quadrature component voltage.
+       </description>
+       <errLo>-5.0</errLo>
+       <errHi>5.0</errHi>
+       <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="rawI" type="float" >
+       <shortName>Raw I</shortName>
+       <description>
+           Raw in-phase component voltage.
+       </description>
+       <errLo>-5.0</errLo>
+       <errHi>5.0</errHi>
+       <units>V</units>
+    </MonitorPoint>
+    
+    <MonitorPoint name="calibratedQ" type="float">
+      <shortName>Calibrated Q</shortName>
+      <description>
+        Calibrated quadrature voltage.
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="calibratedI" type="float">
+      <shortName>Calibrated I</shortName>
+      <description>
+        Calibrated in-phase voltage.
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+     
+    <MonitorPoint name="calibrationQoffsetV" type="float">
+      <shortName>Calibration Offset Q</shortName>
+      <longName>Calibration Offset Q Voltage</longName>
+      <description>
+        Q offset voltage from calibration file. This value is added
+        to the raw voltage prior to rotation and scaling.
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+    
+    <MonitorPoint name="calibrationIoffsetV" type="float">
+      <shortName>Calibration Offset I</shortName>
+      <longName>Calibration Offset I Voltage</longName>
+      <description>
+        I offset voltage from calibration file. This value is added
+        to the raw voltage prior to rotation and scaling.
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="calibrationEllipseAngle" type="float">
+      <shortName>Calibration Ellipse Angle</shortName>
+      <description>
+        Angle by which Q and I are rotated prior to scaling to
+        form a circle.
+      </description>
+      <units>Rad</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="calibrationQScale" type="float">
+      <shortName>Calibration Q scale</shortName>
+      <description>
+        Scaling applied to rotated Q voltages in order to form a circle.
+      </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="calibrationIScale" type="float">
+      <shortName>Calibration I scale</shortName>
+      <description>
+        Scaling applied to rotated I voltages in order to form a circle.
+      </description>
+    </MonitorPoint>
+
+    </Container>
+  </Common>
+ 
+    <MonitorPoint name="timestamp" type="absTime">
+        <shortName>10 Min Sample Time</shortName>
+        <description>
+            Time that 10 minute sample data was completed/written.
+        </description>
+        <units>UTC</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="skyRMS" type="float" priority="vital" >
+        <shortName>Sky RMS</shortName>
+        <longName>Sky RMS</longName>
+        <description>
+            Sky RMS over last 10 minute sample period.
+        </description>
+        <precision>0</precision>
+        <units>um</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="groundRMS" type="float" >
+        <shortName>Ground RMS</shortName>
+        <longName>Ground RMS</longName>
+        <description>
+            Ground RMS over last 10 minute sample period.
+        </description>
+        <precision>0</precision>
+        <units>um</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="skyPath" type="int" priority="vital">
+        <shortName>Mean Sky Path</shortName>
+        <longName>Mean 10 Minute Sky Path</longName>
+        <description>
+            Average sky path over last 10 minute sample period.
+        </description>
+        <precision>0</precision>
+        <units>um</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="groundPath" type="int">
+        <shortName>Mean Ground Path</shortName>
+        <longName>Mean 10 Minute Ground Path</longName>
+        <description>
+            Average ground path over last 10 minute sample period.
+        </description>
+        <precision>0</precision>
+        <units>um</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="skyPhase" type="int" >
+        <shortName>1 Sec Sky Phase</shortName>
+        <longName>1 Second Sky Phase</longName>
+        <description>
+            Sky phase for last 1 second sample data.
+        </description>
+        <precision>2</precision>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="groundPhase" type="int" >
+        <shortName>1 Sec Ground Phase</shortName>
+        <longName>Ground Phase</longName>
+        <description>
+            Ground phase for last 1 second sample data.
+        </description>
+        <precision>2</precision>
+        <units>deg</units>
+    </MonitorPoint>
+
+<Container name="Instrument">
+
+    <MonitorPoint name="boxTemp" type="float">
+        <shortName>Box Temp</shortName>
+        <longName>Box Temperature</longName>
+        <description>Temperature of the A/D box</description>
+        <units>C</units>
+        <warnHi>35</warnHi>
+        <errHi>50</errHi>
+    </MonitorPoint>
+    
+    <MonitorPoint name="voltageReadLatency" type="float" >
+        <shortName>Voltage Query Latency</shortName>
+        <description>
+            The amount of time taken to query phase monitor voltages.
+        </description>
+        <units>ms</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="atodReconfigs" type="int">
+        <shortName>A/D Reconfigs</shortName>
+        <description>
+            The number of times the A/D unit has been reconfigured.
+            This happens when there are an excessive number of 
+            continuous sample errors.
+        </description>
+        <warnHi>1</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="sampleErrors" type="int">
+        <shortName>10 Min. Sample Errors</shortName>
+        <longName>10 Minute Sample Errors</longName>
+        <description>
+            Samples tossed out in the current 10 minute sample interval.
+            Individual reasons are tallied below.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="identicalVoltageErrors" type="int" >
+        <shortName>Identical Voltage Errors</shortName>
+        <description>
+            The number of identical voltage sets received. The A/D resolution
+            is small enough that identical voltages indicate identical samples.
+            Since the process samples every second and the A/D integrates a
+            new sample every 1 second, these errors are indicative of timing
+            issues including possible clock drift on the phase monitor.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="badVoltageErrors" type="int" >
+        <shortName>Bad Voltage Errors</shortName>
+        <description>
+            The phase monitor process increments this value when it detects
+            unreasonable voltages from the phase monitor.
+        </description> 
+    </MonitorPoint>
+
+    <MonitorPoint name="invalidResponseErrors" type="int" >
+        <shortName>Invalid Response Errors</shortName>
+        <description>
+            The phase monitor process increments this value when it detects
+            an unexpected response to a command.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="serialCommErrors" type="int" >
+        <shortName>Serial Comm Errors</shortName>
+        <description>
+            This value is incremented when there are errors sending or 
+            receiving data from the serial port.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="otherErrors" type="int" >
+        <shortName>Other Errors</shortName>
+        <description>
+            This value is incremented when errors are detected that 
+            do not fit into any of the other error groups.
+        </description>
+    </MonitorPoint>
+
+</Container> <!-- Instrument -->
+    
+  <CommonContainer ref="Arm" name="NeArm"/>
+  <CommonContainer ref="Arm" name="SwArm"/>
+
+</Subsystem>
+

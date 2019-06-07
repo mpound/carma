@@ -1,0 +1,10 @@
+# $Id: HatCreek.tab,v 1.1 2005/04/06 18:30:23 colby Exp $
+# Phase monitor antenna parameters for old phasemon device/antennas
+#
+# Format:
+# chan 1-4 offset
+# cos/sin pairs for rotations 5-12
+# scaling 12-16
+#
+#chn1 chan2 chan3 chan4  cos  sin  cos  sin  cos  sin  cos  sin sc1 sc2 sc3 sc4
+0.000 0.000 0.000 0.000 -0.5 -0.5 -0.5 -0.5 -0.5 -0.5 -0.5 -0.5 1.0 1.0 1.0 1.0

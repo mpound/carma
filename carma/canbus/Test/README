@@ -1,0 +1,21 @@
+
+CONTENTS
+---------------------------
+This directory contains several directories of tests for the canbus library.  
+
+Only one of the three test directories contain tests meant for automated
+testing - these tests are contained in the StandAloneTests directories...
+
+The DirectCanTest, DioTest and CanIoTest directories contain tests that can
+only be executed on a system with Janz CAN hardware - namely the Carma 
+CAN/Dio board.  
+
+StandAloneTests - Requires no Janz hardware and contains tests of basic 
+carma::canbus class code that doesn't require hardware on target machine.
+These tests require cppUnit alien package.
+
+CanIoTest - Detailed test of the CanIo class.  Requires Janz hardware.
+
+DirectCanTest - Detailed test of the DirectCan class.  Requires Janz hardware.
+
+

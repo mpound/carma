@@ -1,0 +1,5 @@
+The pipeline has detected that duplicate records are being received by
+the catchData process.  
+
+If you cannot find help on the wiki relevant to the alarms listed below,
+email help@mmarray.org.

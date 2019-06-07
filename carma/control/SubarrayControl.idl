@@ -1,0 +1,2527 @@
+#ifndef CARMA_CONTROL_SUBARRAYCONTROL_IDL
+#define CARMA_CONTROL_SUBARRAYCONTROL_IDL
+
+/**
+ * @file
+ *
+ * Interface for the CARMA Control system Subarry controller
+ *
+ *
+ * @author: Steve Scott
+ *
+ * $Id: SubarrayControl.idl,v 1.268 2014/06/04 17:09:16 mpound Exp $
+ *
+ * $CarmaCopyright$
+ *
+ */
+
+#include "carma/antenna/common/CalibratorControl.idl"
+#include "carma/antenna/common/IVCurve.idl"
+#include "carma/antenna/common/PolarizationControl.idl"
+#include "carma/antenna/common/RxControl.idl"
+#include "carma/antenna/common/SwitchState.idl"
+#include "carma/control/CorrelatorInfo.idl"
+#include "carma/control/Drives.idl"
+#include "carma/control/OpticalTelescope.idl"
+#include "carma/control/PadOffsets.idl"
+#include "carma/control/NearestInfo.idl"
+#include "carma/control/SequenceTypedefs.idl"
+#include "carma/control/SignalPath.idl"
+#include "carma/fault/FaultControl.idl"
+#include "carma/monitor/monitorframe.idl"
+#include "carma/observertools/ItemValue.idl"
+#include "carma/observertools/ProjectDatabaseManager.idl"
+#include "carma/util/PhaseSwitching.idl"
+#include "carma/util/UserException.idl"
+
+
+module carma {
+module control {
+
+const string SUBARRAY_CONTROL_NAME = "carma.subarrayControl";
+
+/**
+ * An exception for a timeout
+ * Will throw your msg plus file and line number.
+ * Good client code will supress the file and line number, as this is
+ * a user oriented message, not meant for program debugging.
+ * Usage example:
+ * @code
+ * ostringstream o;
+ * o << "Nobody knows the trouble I've been through..." << moreMessage;
+ * throw CARMA_EXCEPTION(control::TimeoutException, o.str().c_str());
+ * @endcode
+ */
+exception TimeoutException {
+    string errorMsg;
+    string fileName;
+    short  lineNo;
+};
+
+/**
+ * An exception when a monitor point is not valid
+ * @see TimeoutException for usage example
+ */
+exception InvalidMonitorDataException {
+    string errorMsg;
+    string fileName;
+    short  lineNo;
+};
+
+/**
+ * An exception when a monitor point is not found
+ * @see TimeoutException for usage example
+ */
+exception MonitorPointNotFoundException {
+    string errorMsg;
+    string fileName;
+    short  lineNo;
+};
+
+
+/**
+ * Sequence of azimuth and elevation in degrees.
+ */
+typedef sequence<float> AzElSeq;
+
+/**
+ * Sequence of ra & dec in degrees.
+ */
+typedef sequence<double> RaDecSeq;
+
+/**
+ * @brief Antenna assignment for a subarray.
+ */
+struct AntennaAssignment {
+    /**
+     * @brief Carma antenna number.
+     */
+    short  carmaAntennaNo;
+
+    /**
+     * @brief Physical carma name of the antenna.
+     */
+    string carmaAntennaName;
+
+    /**
+     * @brief Physical typed name of the antenna.
+     */
+    string typedAntennaName;
+};
+
+
+
+/**
+ * @brief Sequence of antenna assignments for a subarray.
+ */
+typedef sequence< AntennaAssignment > AntennaAssignmentSeq;
+
+
+/**
+ * Monitor point value from a query
+ */
+struct MonitorPointValue {
+    string                                name; // Full, canonical name
+    string                                stringValue;
+    carma::monitor::TransportMonitorValue value;
+    boolean                               valid;
+    boolean                               found;
+};
+typedef sequence<MonitorPointValue> SeqMonitorPointValue;
+
+/**
+ * Enumerate apertures to use for selecting pointing models
+ */
+enum Aperture {
+    APERTURE_OPTICAL,    /**< Optical telescopes. */
+    APERTURE_RADIO1MM,   /**< Radio 1 mm */
+    APERTURE_RADIO3MM,   /**< Radio 3 mm */
+    APERTURE_RADIO1CM    /**< Radio 1 cm */
+};
+
+/**
+ * Valid items on which to wait
+ */
+enum WaitItem {
+    WAIT_INTERVAL,       /**< Time interval */
+    WAIT_ONSOURCE,       /**< On source */
+    WAIT_TUNED,          /**< Receiver tuning, IVcurve complete */
+    WAIT_CALIBRATOR,     /**< Calibrator in position */
+    WAIT_INTEG,          /**< Integrations complete */
+    WAIT_TILT,           /**< Tilt complete */
+    WAIT_CENTROID,       /**< Centroid complete */
+    WAIT_OPTICS,          /**< Focus, polarizer, or beam selector complete */
+    WAIT_CORRELATOR       /**< Correlator command change complete */
+};
+
+/**
+ * Valid conditions to satisfy a wait
+ */
+enum WaitCondition {
+    WAIT_SINGLE,     /**< Wait for completion on any single antenna */
+    WAIT_ALL,         /**< Wait for completion on all antennas */
+    WAIT_COUNT        /**< Wait for completion of a specific number of antennas */
+};
+
+
+/**
+ * Imaging type describing how the track
+ * is being observed.  This parallels the
+ * obsblock ImgVsSnr monitor point.
+ */
+enum ImagingType {
+   IMG,  ///< Maximize Imaging Fidelity
+   SNR   ///< Maximize Signal to Noise
+};
+
+/**
+ * Current state of the script
+ */
+enum ScriptStateType {
+   RUNNING,    ///< Running
+   COMPLETED,  ///< Completed
+   CRASHED,    ///< Crashed
+   CANCELED    ///< Canceled
+};
+
+//! @brief Fault system blank/flag preference
+enum BlankFlagPref {
+    //! @brief Blank if no explicit setting for fault in dag
+    PREFER_BLANKING,
+
+    //! @brief Flag if no explicit setting for fault in dag
+    PREFER_FLAGGING,
+
+    //! @brief Blank for all faults except missing monitor point data
+    FORCE_BLANKING,
+
+    //! @brief Flag for all faults except missing monitor point data
+    FORCE_FLAGGING
+};
+
+//! @brief ON or OFF source indicator (Singledish observations)
+enum PointStatusType {
+   ON_SOURCE,  ///< Position is on-source.
+   OFF_SOURCE  ///< Position is off-source reference.
+};
+
+//! @brief Use or exclude the input source list when searching for nearest neighbors
+enum NearestActionType {
+   ACTION_INCLUDE , ///< Include (use) the input source list
+   ACTION_EXCLUDE   ///< Exclude the input source list
+};
+
+//! @brief Query internal or swept-volume shadowing
+enum ShadowingType {
+  SHADOW_INTERNAL,
+  SHADOW_SWEPTVOLUME
+};
+
+struct ComponentReady {
+    SeqShort ready;
+    SeqShort notready;
+};
+
+typedef ComponentReady AntennaReady;
+typedef ComponentReady BandReady;
+
+struct AddAntennaResult {
+    SeqShort actuallyAdded;
+    SeqShort alreadyInSubarray;
+    SeqShort ownedByOtherSubarrays;
+};
+
+struct RemoveAntennaResult {
+    SeqShort actuallyRemoved;
+    SeqShort alreadyInMaint;
+    SeqShort ownedByOtherSubarrays;
+};
+
+/**
+ * Structure representing a flux measurement.
+ */
+struct FluxMeasurement {
+    /** Source name */
+    string source;
+    /** Flux in Janskys */
+    float flux;
+    /** The Rms error on the flux, in Jy */
+    float rms;
+    /** Frequency at which flux was measured, GHz */
+    float freq;
+    /** Number of days since the flux was measured at given frequency */
+    float daysback;
+    /** String representation of date flux was measured */
+    string date;
+};
+
+//================================================================
+
+/**
+ * The interface to the CARMA subarray controller.
+ */
+interface SubarrayControl: OpticalTelescope, Drives, SignalPath, 
+              carma::util::PhaseSwitching {
+
+    /**
+     * Query the monitor system and return info.  This method functions
+     * similarly to <i>dumpMonitor</i>.  Values will have a "g" or "b"
+     * appended to them indicating valid or invalid data, respectively.
+     * In general, this method should not be used to query an individual
+     * string or enumeration monitor point;
+     * <i>queryString</i> should be used for that purpose.
+     *
+     * If the locally stored monitor data is more than 1 second old,
+     * the read will be made to the master monitor system.
+     *
+     * @param monitorName A monitor point or container in the monitor system
+     * The name is a case-insensitive full hierarchical name,
+     * e.g. ovro4.az.actual
+     * A prefix of <i>carma</i> or <i>raw</i> can be used to distinguish
+     * between the two different monitor systems, defaulting to <i>carma</i>.
+     * @return a string representing the requested data; a single monitor
+     * point or a hierarchy of monitor points; any numeric monitor point
+     * values are average values.
+     * @ throws MonitorPointNotFoundException if Monitor Component
+     * does not exist
+     */
+    string query(in string monitorName) raises(carma::util::UserException,
+            MonitorPointNotFoundException);
+
+    /**
+     * Query the monitor system and return current value of a string
+     * or enumeration monitor point.  If the type is enumeration, then
+     * its string representation is returned.
+     * If the locally stored monitor data is more than 1 second old,
+     * the read will be made to the master monitor system.
+     * @param monitorPointName A monitor point name
+     * @see query()
+     * @throws UserException if monitor point is not a double or float.
+     * @throws MonitorPointNotFoundException if MP is not found
+     * @throws InvalidMonitorDataException if MP data is invalid
+     */
+    string queryString(in string monitorPointName)
+        raises(carma::util::UserException,
+            InvalidMonitorDataException, MonitorPointNotFoundException);
+
+    /**
+     * Query the monitor system and return current average value of a
+     * numeric MP.
+     * If the locally stored monitor data is more than 1 second old,
+     * the read will be made to the master monitor system.
+     * @param monitorPointName A monitor point name
+     * @see query()
+     * @throws UserException if monitor point is not a double or float.
+     * @throws MonitorPointNotFoundException if MP is not found
+     * @throws InvalidMonitorDataException if MP data is invalid
+     */
+    double queryDouble(in string monitorPointName)
+        raises(carma::util::UserException,
+            InvalidMonitorDataException, MonitorPointNotFoundException);
+
+    /**
+     * Query the monitor system and return current average value.
+     * If the locally stored monitor data is more than 1 second old,
+     * the read will be made to the master monitor system.
+     * @param monitorPointName A monitor point name
+     * @see query()
+     * @throws UserException if monitor point is not
+     * a bool, char, byte, short, or int.
+     * @throws MonitorPointNotFoundException if MP is not found
+     * @throws InvalidMonitorDataException if MP data is invalid
+     */
+    long queryInt(in string monitorPointName)
+    	raises(carma::util::UserException,
+            InvalidMonitorDataException, MonitorPointNotFoundException);
+
+    /**
+     * Query the monitor system and return current average value of
+     * a complex MP.
+     * If the locally stored monitor data is more than 1 second old,
+     * the read will be made to the master monitor system.
+     * @param monitorPointName A complex monitor point name
+     * @see query()
+     * @throws UserException if monitor point is not a MonitorPointComplex.
+     * @throws MonitorPointNotFoundException if MP is not found
+     * @throws InvalidMonitorDataException if MP data is invalid
+     */
+    SeqFloat queryComplex(in string monitorPointName)
+    	raises(carma::util::UserException,
+            InvalidMonitorDataException, MonitorPointNotFoundException);
+
+    /**
+     * Query the monitor system and return current average value of a
+     * boolean MP.
+     * If the locally stored monitor data is more than 1 second old,
+     * the read will be made to the master monitor system.
+     * @param monitorPointName A complex monitor point name
+     * @see query()
+     * @throws UserException if monitor point is not a MonitorPointBool.
+     * @throws MonitorPointNotFoundException if MP is not found
+     * @throws InvalidMonitorDataException if MP data is invalid
+     */
+    boolean queryBool(in string monitorPointName)
+    	raises(carma::util::UserException,
+            InvalidMonitorDataException, MonitorPointNotFoundException);
+
+    /**
+     * Gets values and validity for a sequence of monitor points.
+     * @param monitorComponent a sequence of string names of monitor points
+     * or monitor containers. If it is a container, it will be expanded to
+     * all of the monitor points directly contained. The final sequence
+     * of returned values are structures of monitor points, including values,
+     * types, validities, and whether the input name could be found.
+     * If a name is not found it is included with a default value
+     * and marked as not found.
+     */
+    SeqMonitorPointValue queryMonitorPoint(in SeqString monitorComponent)
+    	raises(carma::util::UserException);
+
+    /**
+     * Set value of a control subsystem monitor point (double/float only).
+     * Useful for debugging or fixing broken state.
+     * @param name Hierarchical control monitor point name, 
+     *  without the leading 'Control.', case insensitive, for a double or float 
+     *  monitor point.
+     * @param value Value of monitor point
+     */
+    void setMonitorPointReal(in string name, in double value)
+    	raises(carma::util::UserException);
+
+    /**
+     * Set a control subsystem monitor point invalid.
+     * Useful for testing.
+     * @param name Hierarchical control monitor point name, 
+     *  without the leading 'Control.', case insensitive.
+     */
+    void setMonitorPointInvalid(in string name)
+    	raises(carma::util::UserException);
+
+    /**
+     * Get the most recent measurement of radio flux of a source.
+     * The method will search in conf/catalogs/FluxSource.cat
+     * for the named source. Windows in both frequency and time
+     * and time are allowed, and the closest match in frequency-time
+     * phase space is returned.
+     * @param source Source name, case insensitive
+     * @param freq   fiducial frequency, GHz
+     * @param deltaFreq  half-width in frequency to search for matches,
+     * in GHz.  Frequency searched will be freq +/- deltafreq.
+     *          Zero means match any frequency.
+     * @param deltaTime  width in time to search for matches, in
+     * days before 'now'.  Zero means match any time.
+     * @return A structure containing the details of the flux
+     * measurement: <br>
+     *  [name, flux, frequency, days since measurement, date of measurement].
+     * @see FluxMeasurement
+     * <br>
+     * This method will throw an exception if there is no match.
+     */
+    FluxMeasurement queryFlux(in string source,
+	       in float freq,
+	       in float deltaFreq,
+	       in float deltaTime)
+    	raises(carma::util::UserException);
+
+    /**
+     * Lookup a star in conf/catalogs/BrightStars.cat
+     * and return its magnitude.
+     * @param starName The star name.  The match is case-insensitive.
+     * @return the V magnitude of the named star.
+     * <br>
+     * This method will throw an exception with error
+     * message "Could not find matching entry [starName]"
+     * if the star name is not in BrightStars.cat
+     */
+    float queryMag(in string starName)
+    	raises(carma::util::UserException);
+    	
+// ------------ Project database commands --------------------
+
+    carma::observertools::ProjectSequence queryProject(
+              in carma::observertools::ItemValueSequence ivSeq )
+    	raises(carma::util::UserException,
+	       carma::observertools::ProjectDatabaseException);
+
+    void projectOscriptAdd(  in string project,
+                             in string obsblock,
+	                     in string subobsblock,
+			     in string scriptFile,
+			     in string catalogFile )
+        raises(carma::util::UserException);
+
+
+    boolean projectEdit( in string project,
+                         in string obsblock,
+	                 in string subobsblock,
+                         in short trial,
+                         in carma::observertools::ItemValueSequence ivSeq,
+                         in carma::observertools::EditStatus action)
+        raises(carma::util::UserException,
+	       carma::observertools::ProjectDatabaseException);
+
+    short projectRun(in string projectID, in string obsblock,
+                     in string subObsblock, in boolean isCommissioning,
+                     in boolean isDualCorr, in string arrayConfig1,
+                     in string arrayConfig2,
+                     in string scriptFile, in string catalogFile)
+        raises(carma::util::UserException,
+	       carma::observertools::ProjectDatabaseException);
+// ---------------------------------------------------------
+
+    /**
+     * Get the subarray number of this subarrayControl
+     */
+    long getSubarrayNo() raises(carma::util::UserException);
+
+    /**
+     * Get the subarray name for this subarrayControl
+     */
+    string getSubarrayName() raises(carma::util::UserException);
+
+    /**
+     * Specify pad on which an antenna resides
+     * @param padNo pad number starting at one
+     * @param carmaAntNo carma antenna number
+     * @throws UserException if parameters are out of range or if an
+     * error occurs in sending info to distributed components
+     * @internal defineState
+     */
+    void pad(in short padNo, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Specify offset from pad nominal position for an antenna.
+     * This offset is the result of a baseline solution.
+     * Suitable for system use, like subarray restoration.
+     * @param east offset in millimeters   Shortname:Easterly
+     * @param north offset in millimeters
+     * @param up offset in millimeters
+     * @param carmaAntNo carma antenna number Shortname:TheCarmaAntennaNo
+     * @see padOffset
+     * @internal CodeGeneration:defineState
+     */
+    void padOffset(in float east, in float north, in float up,
+                   in short carmaAntNo) raises(carma::util::UserException);
+
+    /**
+     * Offset of the phase center for an antenna.
+     * This is a static parameter that is factored out from the
+     * padOffset. For example, the height of the different
+     * antenna types is carried here.
+     * This is part of the baseline specification.
+     *
+     * @param east offset in millimeters
+     * @param north offset in millimeters
+     * @param up offset in millimeters
+     * @param carmaAntNo carma antenna number
+     * @see padOffset
+     * @internal defineState
+     */
+    void antennaOffset(in float east, in float north, in float up,
+                  in short carmaAntNo) raises(carma::util::UserException);
+
+    /**
+     * Convert MIRIAD topocentric antenna positions to pad offsets.
+     * The purpose of this method is to conveniently use antenna
+     * positions solved for by MIRIAD to update the on-line antenna positions.
+     * It takes as input the MIRIAD's antenna positions
+     * (XYZ in <b>nanoseconds</b>)
+     * and returns East, North, Up offsets in <b>meters</b> from a given pad.
+     * The pad is determined by the antenna number of the antenna sitting
+     * on it.  The ENU offsets may then be passed to the <i>padOffset</i>
+     * command to update the on-line antenna positions.
+     * Note the static antenna offsets (see <i>antennaOffsets()</i> have
+     * already been subtracted off of the returned pad offsets.
+     *
+     * @param X coordinate in NANOSECONDS
+     * @param Y coordinate in NANOSECONDS
+     * @param Z coordinate in NANOSECONDS
+     * @param carmaAntNo carma antenna number
+     * @return An array containing East, North, Up offsets in millimeters,
+     * the antenna number, and pad number (in that order).
+     * @see carma::control::PadOffsets
+     */
+    PadOffsets convertBaseline(in double x, in double y, in double z,
+                               in short carmaAntNo)
+              raises(carma::util::UserException);
+
+    /**
+     * Set antpos filename.  
+     * The antpos filename is used to indicated which file was last used to
+     * for system baseline solutions.
+     * @param filename Antpos filename.
+     * @see convertBaseline
+     */
+    void setAntPosFilename( in string filename )
+        raises( carma::util::UserException );
+
+    /**
+     * Non-intersection of the azimuth and elevatin axes for an antenna.
+     * This is a static attribute of an antenna
+     * and is part of the baseline specification.
+     *
+     * @param offset axis non-intersectino offset in millimeters
+     * @param carmaAntNo carma antenna number
+     * @internal defineState
+     */
+    void axisNonintersection(in float offset,
+                  in short carmaAntNo) raises(carma::util::UserException);
+
+    /**
+     * Control the state of the noise source
+     * @param state true equals on, false equals off
+     * @param isReference If true, a reference spectrum is being measured
+     * for passband calibration, and the source name will be changed to
+     * "NOISEREF".  If false, source name will be changed to "NOISE".
+     */
+    void noiseSource(in boolean state, in boolean isReference) 
+        raises(carma::util::UserException);
+
+    /**
+     * Set noise source output power level to the preset value stored in
+     * the module's EEPROM.
+     */
+    void noisePreset( )
+        raises(carma::util::UserException);
+
+    /**
+     * Control the attenuation of the noise source
+     * @param atten  attenuation in dB (integer)
+     * @internal defineState
+     */
+    void noiseAtten(in unsigned short atten)
+        raises(carma::util::UserException);
+
+    /**
+     * Control the attenuation of the quadmods
+     * @param atten  attenuation in dB (integer)
+     */
+    void quadmodAtten(in unsigned short atten)
+        raises(carma::util::UserException);
+
+    /**
+     * Set delay offset for 3mm rx path for a specific antenna.
+     * @param offset in nanoseconds
+     * @param carmaAntNo carma antenna number
+     * @see delayDifference
+     * @internal defineState
+     */
+    void delay(in float offset, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Change the "adjustable delay" for a set of antennas antenna.
+     * @param delay value in nanoseconds
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void adjustableDelay(in float offset,
+                         in SeqShort   carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Set receiver delay difference for a specific antenna.
+     * Difference is 1mm minus 3mm delay.
+     * @param diff delay difference in nanoseconds
+     * @param carmaAntNo carma antenna number
+     * @param rx receiver type
+     * @param pol The polarization input selection for the receiver
+     * @see delay
+     */
+    void delayDifference(in float diff, in short carmaAntNo,
+                           in carma::antenna::common::RxControl::Type rx,
+// argh, this should really be carma::antenna::common::RxControl::Pol_Type pol,
+// I'll have to change this, but right now it has a ripple effect that
+// I don't want to deal with (fitDelays, etc) . MWP
+                           in BlockDCPolarizationType pol)
+         raises(carma::util::UserException);
+
+    /**
+     * Set source to use for doppler tracking.
+     * Velocity and reference frame is gotten from the catalog.
+     * @param source  The source to use, or "none" to turn doppler
+     *                tracking off.  Source name is case-insensitive.
+     * @throws UserException if the source does not exist.
+     * @return the updated frequency.
+     */
+    double doppler(in string source)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the antenna output IFattenuation (PAM attenuation)
+     * @param atten attenuation in dB
+     * @param ifNum IF number (1 or 2, 0=both) - also called polarization
+     * @param carmaAntNoSeq Sequence of carma antenna numbers.
+     *      A sequence containing the single number zero is all antennas.
+     * @param invalidateTsys Optionally invalidate tsys values.
+     */
+    void antennaIFatten(in double power, in short ifNum,
+                        in SeqShort carmaAntNoSeq,
+                        in boolean invalidateTsys )
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the antenna output IF power level (PAM power level)
+     * @param power power level in milliwatts
+     * @param carmaAntNoSeq Sequence of carma antenna numbers.
+     *      A sequence containing the single number zero is all antennas.
+     */
+    void antennaIFpower(in double power, in SeqShort carmaAntNoSeq)
+        raises(carma::util::UserException);
+
+    /**
+     * Sets the antenna output IF power level (PAM power level)
+     * to the preset value.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers.
+     *      A sequence containing the single number zero is all antennas.
+     */
+    void antennaIFpresetPower(in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Stores the antenna IF attenuation from PAM1 into the monitor system
+     * Useful after the PAM has set it to a specific power level.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers.
+     *      A sequence containing the single number zero is all antennas.
+     */
+    void storeAntennaIFattenAmbient(in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Set input power level to preset level for all downconverters.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers.
+     *      A sequence containing the single number zero is all antennas.
+     * @param astroBandNo band number, zero means all
+     * @throws UserException if carmaAntNoSeq or astroBandNo are out of range
+     */
+    void psysPreset(in SeqShort carmaAntNoSeq, in short astroBandNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Set input power level to specified level for all downconverters.
+     * @param level in dBm
+     */
+    void psysLevel(in double level)
+         raises(carma::util::UserException);
+
+    /**
+     * Set input power level to specified level for one downconverter
+     * This method and its implementation demonstrate how to handle
+     * access to single can modules through a master. It is not clear
+     * that we want to implement this in all possible cases as direct
+     * python access may be adequate if this proves to be a debugging
+     * exercise rather than an operational requirement.
+     * @param level in dBm
+     * @param inputNo input number starting at one
+     * @param bandNo band number starting at one
+     * @throws UserException if parameters are out of range
+    void psysLevelSingle(in double level, in short inputNo, in short bandNo)
+         raises(carma::util::UserException);
+     */
+
+    /**
+     * Set IF output power level to preset level for all downconverters.
+     * @throws UserException on communication error to distributed components
+     */
+    void ifoutPreset()
+         raises(carma::util::UserException);
+
+    /**
+     * Set if output power level to specified level for all downconverters.
+     * @param level in dBm
+     * @throws UserException on communication error to distributed components
+     */
+    void ifoutLevel(in double level)
+         raises(carma::util::UserException);
+
+    /**
+     * Turn rf power on/off for all downconverters.
+     * Turning off the rf power makes all fringes go away (except the
+     * noise source), so use this with extreme caution.
+     * @param state true=on, false=off
+     * @throws UserException on communication error to distributed components
+     */
+    void rfPower(in boolean state)
+         raises(carma::util::UserException);
+
+    /**
+     * Set state of subarray control initialization flag
+     * @param state If state if true, the subarray is initialized
+     */
+    void setInitializationFlag(in boolean state)
+         raises(carma::util::UserException);
+
+    /**
+     * Get state of subarray control initialization flag
+     * @return state of initialization flag
+     */
+    boolean getInitializationFlag()
+         raises(carma::util::UserException);
+
+    /**
+     * Set the antenna initialization flag.
+     * @param state If true, antenna is initialized, if false, initialization
+     *        is needed.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers.
+     *      A sequence containing the single number zero is all antennas
+     *      currently in the subarray.
+     */
+    void antennaInitialized(in boolean state, in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+ // ======================= Pointing measurement =========================
+    /**
+     * Record optical pointing datapoint for requested antenna
+     * @param carmaAntNo carma antenna number
+     */
+    void recordPoint(in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Returns the present antenna assignments for the subarray
+     * @return Sequence of antenna assignment structures.
+     * @throws UserException on internal errors
+     */
+    AntennaAssignmentSeq getAntennaAssignments( )
+         raises(carma::util::UserException);
+
+    /**
+     * Adds antennas to this subarray
+     *
+     * @param carmaAntNoSeq Sequence of carma antenna numbers.
+     *                      Zero is not allowed.
+     *
+     * @param skipAntsOwnedByOthers Whether to skip or throw an exception
+     *                              for ants in carmaAntNoSeq that are already
+     *                              owned by another subarray
+     *
+     * @return AddAntennaResult structure detailing what happened.
+     *
+     * @throws UserException on illegal carmaAntNo or input range error
+     */
+    AddAntennaResult addAntenna( in SeqShort carmaAntNoSeq,
+                                 in boolean  skipAntsOwnedByOthers )
+         raises ( carma::util::UserException );
+
+    /**
+     * Removes antennas from this subarray and puts them in
+     * the maintenance subarray
+     *
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     *
+     * @param skipAntsNotOwnedByMe Whether to skip or throw an exception for
+     *                             ant in carmaAntNoSeq that are not owned by
+     *                             this subarray
+     *
+     * @return RemoveAntennaResult structure detailing what happened.
+     *
+     * @throws UserException on illegal carmaAntNo
+     */
+    RemoveAntennaResult removeAntenna( in SeqShort carmaAntNoSeq,
+                                       in boolean  skipAntsNotOwnedByMe )
+         raises ( carma::util::UserException );
+
+    /**
+     * Measure the tilt meter zeros and set
+     * This is a procedure that takes several minutes to complete
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void tilt(in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Assigns a reference LO to this subarray
+     * @param loRefNo reference LO number, 1-3
+     * @throws UserException on illegal refLO number range error
+     */
+    void assignLO(in long loRefNo)
+         raises(carma::util::UserException);
+
+    /**
+     * The Doppler shifted frest will be mapped to the requested IF frequency.
+     * After the initial setup, Doppler tracking will cause small changes
+     * in the IF frequency.
+     * For engineering work it is sometimes desirable to set LO1 directly;
+     * use frest=LO1, sb=USB or LSB, fif=0, doppler=None.
+     * For reference:
+     * <code>
+     *  flo1 = dopplerFactor*(frest - S1*fifIni/dopplerFactorIni)
+     *   where
+     *   flo1: first LO freq
+     *   frest: rest frequency
+     *   fifIni: IF frequency where rest frequency is initially mapped
+     *   S1: LO1 sideband factor; USB=1, LSB=-1
+     *   dopplerFactorIni: Initial doppler factor used for fifIni
+     * </code>
+     * This command implements the following sequence:
+     * <ul>
+     * <li> Sets LO reference synthesizer in control building
+     * <li> Sends LO freq to correlators
+     * <li> Sends LO freq to loberotators
+     * <li> Sends Yig and Gunn freq to antennas
+     * <li> Tells antennas to tune
+     * <li> Waits for antennas to tune (BIMA ants leave amb load in)
+     * <li> If quick mode, exits right here, with BIMA amb loads in
+     * <li> Puts in ambient load
+     * <li> Sets antenna IF power level (PAM)
+     * <li> Sets downconverter power to preset level
+     * <li> Removes ambient load
+     * </ul>
+     * @param frest Rest frequency in GHz
+     * @param sb 1st LO sideband (SB_LOWER/SB_UPPER), upper is fsky > flo
+     * @param fif IF frequency in GHz where Doppler shifted frest will be
+     *            placed when command is issued. The if frequency will change
+     *            by small amounts as the radial velocity changes with time.
+     *            fif always greater than zero.
+     * @param doppler Doppler tracking source; velocity and reference
+     *            frame will be gotten from catalog for source with this name
+     * @param transition Name of the molecular line transition used to
+     *            obtain the rest frequency
+     * @see configAstroBand, checkConfig
+     */
+    void freq(in double frest, in SidebandType sb, in double fif,
+              in string doppler, in string transition)
+        raises(carma::util::UserException,
+               carma::util::CancelException);
+
+    /**
+     * Like freq, except it doesn't wait for the rx to tune,
+     * and hence doesn't set power levels. @see freq.
+     */
+    void qfreq(in double frest, in SidebandType sb, in double fif,
+            in string doppler, in string transition)
+        raises(carma::util::UserException);
+
+    /**
+     * Relooks the oscillator in an antenna, and optionally retunes
+     * the receiver. This can sometimes recover a dropped lock.
+     * Retuning can take up to two minutes on the 6m antennas.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers.
+     *      A sequence containing the single number zero is all antennas.
+     * @param retune a boolean that controls whether the receiver is retuned
+     * @see freq
+     */
+    void refreq(in SeqShort carmaAntNoSeq, in boolean retune)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets reference LO attenuation in the antenna
+     * @param atten reference LO attenuation, [0-31] dB
+     * @param carmaAntNo carma antenna number
+     */
+    void refAtten(in unsigned short atten, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Returns sequence possible harmonics, as pairs refLO and Xband freqs.
+     * The refLO is the first of the pair, and both are in GHz.
+     * @param freq First LO freq in GHz
+     */
+    SeqDouble harmonics(in double freq)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the array configuration name.
+
+     * @param name - array configuration name
+     */
+    void setConfigName(in string name)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the full obsblock name atomically
+     * @param project - project name
+     * @param obsblock - obsblock name
+     * @param subObsblock - subObsblock name
+     * @param trial - trial number
+     */
+    void setObsblock(in string project, in string obsblock,
+                     in string subObsblock, in long trial)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the full obsblock name atomically
+     * @param project1 - project name
+     * @param obsblock1 - obsblock name
+     * @param subObsblock1 - subObsblock name
+     * @param trial1 - trial number
+     * @param project2 - project name
+     * @param obsblock2 - obsblock name
+     * @param subObsblock2 - subObsblock name
+     * @param trial2 - trial number
+     */
+    void setAllObsblocks(in string project1, in string obsblock1,
+			 in string subObsblock1, in long trial1,
+			 in string project2, in string obsblock2,
+			 in string subObsblock2, in long trial2 )
+      raises(carma::util::UserException);
+	  	 
+    /**
+     * Sets the project name.
+     * Note that the dot character
+     * is not allowed in project names, since it is the field separator
+     * for the full obsblock ID string.
+     * @param project - project name
+     */
+    void project(in string project)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the observing block string.
+     * Note that the dot character
+     * is not allowed in observing block strings, since it is the
+     * field separator for the full obsblock ID string.
+     *
+     * @param obsblock - observing block string identifier, may be
+     * alphanumeric.
+     */
+    void obsblock(in string obsblock)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the sub-observing block string.  This is just another nested
+     * observing block.
+     * Note that the dot character
+     * is not allowed in observing block strings, since it is
+     * the field separator for the full obsblock ID string.
+     *
+     * @param subObsblock - sub-observing block string identifier, may be
+     * alphanumeric.
+     */
+    void subObsblock(in string subObsblock)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the trial number
+     * @param number trial number
+     */
+    void trial(in long number)
+         raises(carma::util::UserException);
+
+    /**
+     * Reset the project, obsblock, sub-obsblock, and observing constraints
+     * their default values.
+     */
+    void resetProjectAndObsblock( )
+         raises(carma::util::UserException);
+
+   /**
+    * Defines the observing constraints that must be met for this obsblock to
+    * be observed. The defaults are meant to be extremes such that any
+    * observation will meet the default criteria.  As a recommended practice,
+    * users should override these defaults with values specific to their
+    * science target.  Inputs:
+    * @param  imgType     Imaging type. IMG means maximize imaging fidelity,
+    *                     SNR means maximize signal-to-noise.
+    * @param  minAnts     Minimum number of antennas
+    * @param  calMaxTime  Maximum time in minutes per calibrator-source cycle
+    *                     to spend integrating on the calibrator
+    * @param  calMaxTime   Maximum rms noise in Jansky per calibrator-source cycle
+    *                to obtain for the calibrator.  This will correspond to
+    *                a minimum integration time, based on the system temperature
+    *                at the time of the observation.
+    * @param  maxTsys   maximum system temperature allowed for the observation
+    *                to proceed.
+    * @param  maxRmsPath   Maximum rms atmospheric path length in microns allowed
+    *                for the observation to proceed.  This will be compared against
+    *                the output of the phase monitor.
+    *                Too small a value may greatly reduce the likelihood of the
+    *                obsblock being observed.
+    * @param  maxTau   Maximum 225 GHz opacity allowed for the observation to
+    *                proceed. This will be compared against the output of the
+    *               opacity monitor (aka tipper), or if the tipper is
+    *               unavailable to computed tau225 from the weather station.
+    *               Too small a value may greatly reduce the likelihood of the
+    *               obsblock being observed.
+    *@param  maxDecor  Maximum signal decorrelation desired for this observation.
+    *               This is measured by taking the ratio of the scalar average
+    *               to the vector average of the gain calibrator visibilities.
+    *               A value of 0 means no decorrelation, a value of 1 means
+    *               complete decorrelation.  Too small a value may greatly
+    *               reduce the likelihood of the obsblock being observed.
+    * @param  requiredRms  Desired rms noise in Jansky on the science target.
+    */
+    void setConstraints (
+	    in ImagingType imgType,
+	    in short minAnts,
+	    in float calMaxTime,
+	    in float calMaxRms,
+	    in float maxTsys,
+	    in float maxRmsPathLength,
+	    in float maxTau,
+	    in float maxDecor,
+	    in float requiredRms
+         )
+         raises(carma::util::UserException);
+
+    /**
+     * Use the default obsblock observing constraints.
+     */
+    void setDefaultConstraints ( )
+         raises(carma::util::UserException);
+
+    /**
+     * Define the intent/style of the source observations.
+     * @param sourceName - The source in question
+     * @param purpose - String indicating purpose of the observation.
+     * Choices are:<br>
+     * <b>B</b> &nbsp; - &nbsp; Bandpass calibration <br>
+     * <b>F</b> &nbsp; - &nbsp; Flux calibration <br>
+     * <b>G</b> &nbsp; - &nbsp; Gain (phase and/or amp) calibration <br>
+     * <b>P</b> &nbsp; - &nbsp; Polarization calibration <br>
+     * <b>S</b> &nbsp; - &nbsp; Science target <br>
+     * <b>O</b> &nbsp; - &nbsp; Other<br>
+     * For multi-purpose source, you may concatenate the characters,
+     * e.g. BFP.
+     * If unset, this defaults to O (other).
+     */
+    void setIntent(in string sourceName, in string purpose,
+                   in boolean selfcal, in boolean fastSwitch)
+         raises(carma::util::UserException);
+
+
+    /**
+     * Return true if project code is "ctNNN" with ( 0 < NNN < 014 )
+     *  OR
+     * is a summer school project with csNNN (NNN > 0 )
+     *  OR
+     * is one of the special projects codes that have default intent.
+     * @see http://cedarflat.mmarray.org/statistics/test_projects.txt
+     */
+    boolean isCommissioning( in string project )
+         raises(carma::util::UserException);
+    /**
+     * Turn the camera/flaps/cap for the optical telescope(s) on or off.
+     * This instructs the drive system to use pointing offsets for
+     * the optical aperture and to use an optical refraction correction.
+     * On ovro antennas it turns the power to camera on/off and controls
+     * a lens cap. On bima antennas it controls a flap the to protect the
+     * telescope that is transparent to the infra-red so that bright stars
+     * can be seen during the daytime. The flap cannot be removed during
+     * the day.
+     * @param switchState on or off
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void camera( in carma::antenna::common::SwitchState state,
+                 in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the elevation limit for source up/down calculation.
+     * To use the horizon, pass in limit=0;
+     * The default elevation limit if this method is not called is 10 degrees.
+     * @param limit elevation limit in degrees
+     * @see source, isUp, whenUp, whenDown, whazup, whazupOptical
+     */
+    void elevLimit(in float limit)
+         raises(carma::util::UserException);
+
+    /**
+     * Retrieves source info from catalog and returns as a string
+     * @param sourceName source name
+     * @see elevLimit
+     * @return source parameters, including:
+     * <ul>
+     * <li> ra/dec, current lst, elevation
+     * <li> rise/set time using elevLimit (LST & Local time)
+     * </ul>
+     * @throws UserException if source is not in catalog
+     */
+    string info(in string sourceName)
+         raises(carma::util::UserException);
+
+    /**
+     * Retrieves source info from catalog and returns RA & DEC as doubles
+     * @param sourceName source name
+     * @return a sequence of two doubles containing the RA & DEC in degrees
+     * <ul>
+     * <li> ra/dec, current lst, elevation
+     * <li> rise/set time using elevLimit (LST & Local time)
+     * </ul>
+     * @throws UserException if source is not in catalog
+     */
+    RaDecSeq getRaDec(in string sourceName)
+         raises(carma::util::UserException);
+
+    /**
+     * @Return An array containing float values of the azimuth and
+     * elevation of the source at a specified time.
+     * @param sourceName The source name
+     * @param minutes The time in minutes from now at which
+     * to compute the azimuth and elevation (negative values allowed).
+     * @return a sequence containing the az and el in degrees
+     * @throws UserException if source is not in catalog or if
+     * requested time is outside Ephemeris range ~(Jan 2000-Jan 2050).
+     */
+    AzElSeq azel(in string sourceName, in double minutes)
+         raises(carma::util::UserException);
+
+    /**
+     * Checks whether source is up above the current elevation limit.
+     * @param sourceName source name
+     * @return true if source is currently up, false otherwise
+     * @see elevLimit
+     * @throws UserException if source is not in catalog
+     */
+    boolean isUp(in string sourceName)
+         raises(carma::util::UserException);
+
+    /**
+     * Checks how long before source will set, using current elevation
+     * limit.
+     * @param sourceName source name
+     * @return length of time before source will set, in minutes.
+     * For sources that don't set below the limit, 1440 (24hrs) is returned
+     * If the source has already set, zero is returned.
+     * @see elevLimit
+     * @throws UserException if source is not in catalog
+     */
+    float whenDown(in string sourceName)
+         raises(carma::util::UserException);
+
+    /**
+     * Checks how long before source will rise, using current elevation
+     * limit.
+     * @param sourceName source name
+     * @return length of time before source will rise, in minutes.
+     *
+     * For sources that don't rise above the limit, 1440 (24hrs) is returned
+     * If the source has already risen, zero is returned.
+     * @see elevLimit
+     * @throws UserException if source is not in catalog
+     */
+    float whenUp(in string sourceName)
+         raises(carma::util::UserException);
+
+    /**
+     * Checks how long until/since a source transits, using current
+     * elevation limit.
+     * @param sourceName source name
+     * @return The number of minutes until the source transits.
+     * Positive value indicates the source has not yet transited.
+     * Negative value indicates the source has already transited
+     * and abs(value) is the minutes since transit.
+     * @see elevLimit
+     * @throws UserException if source is not in catalog
+     */
+    float whenTransit(in string sourceName)
+         raises(carma::util::UserException);
+
+    /**
+     * Checks status of brightest radio sources and returns as string
+     * Previously set elevation limit is used in calculations.
+     * @return LST, elevLimit, and source parameters, including:
+     * <ul>
+     * <li> source name
+     * <li> ra/dec
+     * <li> up or down
+     * <li> current elevation
+     * <li> rise/set time using elevLimit (LST & Local Time)
+     * </ul>
+     * @see elevLimit
+     * @throws UserException if source is not in catalog
+     */
+    string whazUp()
+         raises(carma::util::UserException);
+
+    /**
+     * Checks status of brightest optical sources and returns as string
+     * Previously set elevation limit is used in calculations.
+     * @return @see whazup
+     * @see elevLimit
+     * @throws UserException if source is not in catalog
+     */
+    string whazUpOptical()
+         raises(carma::util::UserException);
+
+    /**
+     * Starts up an integration as soon as possible
+     * This version is no frills, just gets pipeline going
+     * @param intTime integration time in seconds;
+     * this will be rounded to the nearest number of half-second frames
+     * and must be more than 2 seconds (system load issues).
+     * @param numInts number of continuous integrations
+     * @param gap The size of the gap between records (seconds).
+     * Used for OTF mosaicking.
+     * A value of zero (or < 0.001) gives contiguous integrations.
+     * @param science When true the data are recorded in the visbrick.
+     * When false data are not recorded in the visbrick,
+     * but self-cal solutions are produced; use this for
+     * control system functions such as pointing, focus, etc.             
+     * @see cancel
+     * @throws UserException if subarray has not been initialized
+     * @see setInitializationFlag
+     */
+    void integrate(in double intTime, in long numInts,
+                   in double gap, in boolean science)
+         raises(carma::util::UserException);
+
+    /**
+     * Cancels any procedure that is currently in progress.
+     * Procedures include integration, waits, tilts, etc.
+     * If none are in progress it returns quietly.
+     * @see integrate
+     */
+    void cancel()
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering: Control fringe tracking in the loberotator
+     * Fringe tracking stops the fringes and is the normal mode for
+     * collecting astronomy data. If fringe tracking is off, the
+     * data will contain the natural fringe rate.
+     * This is a debugging commands that should not be memorized
+     * as part of the system state.
+     * @param on state, if true turns on fringe tracking
+     */
+    void fringeTracking(in boolean on)
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering: Control phase switching in the loberotator
+     * This is a debugging commands that should not be memorized
+     * as part of the system state.
+     * @param on state, if true turns on phase switching
+     * @param chanNo channel number, starting at one, zero is all
+     */
+    void phaseSwitching(in boolean on, in short chanNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering: Control phase offsets in the loberotator
+     * The rates and phases are continuous in absolute time
+     * These are debugging commands that should not be memorized
+     * as part of the system state.
+     * @param on state, if true turns on phase offsets
+     */
+    void lrPhaseOffsetMode(in boolean on)
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering: Control phase offsets in the loberotator
+     * @param phaseOffset phase offset in degrees
+     * @param carmaAntNo carma antenna number
+     */
+    void lrPhase(in float phaseOffset, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering: Control phase offsets in the loberotator
+     * @param rate offset rate, in Hz
+     * @param carmaAntNo carma antenna number
+     */
+    void lrRate(in float phaseRate, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Set calibrator position in antennas
+     * @param cal calibration position
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void cal(
+        in carma::antenna::common::CalibratorControl::Position cal,
+        in SeqShort carmaAntNoSeq) raises(carma::util::UserException);
+
+    /**
+     * Set tiltmeter zeros
+     * @param aftForward the aft/forward zero in arcminutes
+     * @param leftRight the left/right zero in arcminutes
+     * @param carmaAntNo carma antenna number
+     */
+    void tiltZeros(in float aftForward, in float leftRight, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Set aperture pointing constants.
+     * These pointing constants are automatically used whenever the associated
+     * aperture is selected.
+     * @param ap aperture associated with these pointing constants
+     * @param az (actually cross-elevation) collimation offset in arcmin
+     * This offset is an arc on the great circle perpendicular to the
+     * nominal source position.
+     * @param el elevation offset in arcminutes
+     * @param sag elevation offset in arcminutes
+     * Applied as an increment to the request el of sag*cos(el)
+     * @param carmaAntNo carma antenna number
+     */
+    void aperturePointingConstants(in Aperture ap,
+        in float az, in float el, in float sag, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Set phase offset in pipeline for a single band/baseline, or many
+     * @param phaseOffset degrees
+     * @param bandNo band number, starting at one, zero means all
+     * @param antenna1No, antenna number, starting at one, zero means all
+     * @param antenna2No, antenna number, starting at one, zero means all
+     * @return
+     */
+    void phaseOffset(in float phase, in short bandNo,
+                     in short antenna1No, in short antenna2No)
+         raises(carma::util::UserException);
+
+    /**
+     * Control pipeline processing for tsys application to data.
+     * Tsys is not applied to integrations on the noise source.
+     * @param on state, true turns it on
+     */
+    void applyTsys(in boolean on)
+         raises(carma::util::UserException);
+
+    /**
+     * Control pipeline processing for flux application to data.
+     * When the flux is applied to the noise source it is always
+     * scaled by 100 so that the noise source is in percent correlation.
+     * @param on state, true turns it on
+     */
+    void applyFlux(in boolean on)
+         raises(carma::util::UserException);
+
+    /**
+     * Control pipeline processing for focus distance correction to data
+     * @param on state, true turns it on
+     */
+    void applyFocus(in boolean on)
+         raises(carma::util::UserException);
+
+    /**
+     * Control pipeline processing mode for decimation and end channels.
+     * A spectrum with 65 channels, based on 129 lags, would have the
+     * following number of channels:
+     * <UL>
+     * <LI>DECIMATION_ON  32
+     * <LI>DECIMATION_OFF_KEEP_END_CHANS 65
+     * <LI>DECIMATION_OFF_DROP_END_CHANS 63
+     * </UL>
+     * @param mode decimation mode
+     * @param astrobandNo astroband number, one is first, zero is all in the
+     * subarray.
+     */
+    void setDecimationMode(in DecimationMode mode, 
+                           in unsigned short astrobandNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering: Initiate an IVcurve
+     * This routine does not block.  This procedure can take several minutes
+     * to complete during which time a user can use wait(WAIT_TUNED) to wait
+     * on an arbitrary number of antennas or a timeout value.
+     * @param rx receiver type
+     * @param pol polarization type for dual pol receivers.
+     * @param startVjInMv Starting junction voltage in mV (or current in uA).
+     * @param stopVjInMv Ending junction voltage in mV (or current in uA).
+     * @param stepVjInMv Voltage step size in mV (or current in uA).
+     * @param deltaInMs Time between samples in ms (round to nearest 100ms).
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @see getIVcurve
+     */
+    void doIVcurve( in carma::antenna::common::RxControl::Type rx,
+                    in carma::antenna::common::RxControl::Pol_Type pol,
+                    in float startVjInMv,
+                    in float stopVjInMv,
+                    in float stepVjInMv,
+                    in unsigned short deltaInMs,
+                    in boolean doTotalPower,
+                    in SeqShort carmaAntNoSeq )
+        raises ( carma::util::UserException );
+
+    /**
+     * Engineering: Retrieve results of most recent IV curve on an antenna
+     * @param carmaAntNo Carma antenna number, zero not allowed.
+     * @return IVcurve structure with IV curve data
+     */
+    carma::antenna::common::IVCurve getIVcurve(in short carmaAntNo)
+        raises(carma::util::UserException);
+
+    /**
+     * Wait for a specific procedure to complete.
+     * The wait completes when ANY or ALL of the items are ready,
+     * or if the timeout value is exceeded.
+     * @param item specific procedure to wait on , such as
+     *  INTERVAL, ONSOURCE, TUNED, CALIBRATOR, INTEG, TILT, CENTROID, or OPTICS.
+     * @param carmaComponentNoSeq Sequence of carma antenna OR band numbers. A
+     *                      sequence of the single value zero means all
+     *                      subarray antennas or correlator bands.
+     * @param timeout value in seconds, zero or less inhibits timeout
+     * @param condition ANY or ALL of the antennas are complete.
+     *     Also COUNT for a specific number of antennas.
+     * This parameter is only used for ONSOURCE. See return value.
+     * @param count A count of the number of antennas to wait on.
+     * This parameter is only used when the wait item is TRACKING and the
+     * condition is COUNT. If the count is more than the number of
+     * antennas in the antenna sequence, then it will wait for all antennas
+     * and not throw an exception.
+     * If count is negative, it will wait for all except the number in
+     * the negative count.
+     * For example, count=-2 will wait until all antennas
+     * except 2 are on source.
+     * If waiting for ONSOURCE and the noise source has been selected then
+     * the wait is considered successful on the first check.
+     * If waiting for INTERVAL the method blocks for the timeout value.
+     * @throws TimeoutException and InvalidMonitorDataException
+     * The InvalidMonitorDataException is thrown when there are
+     * twenty-four consecutive bad monitor frames for an antenna.
+     * @throws UserException if the wait is cancelled by the cancel() command.
+     * @return a sequence of two sequences, the first containing the completed
+     * carma antenna numbers and the second the non-completed
+     * carma antenna numbers.
+     * The return has no meaning for non-antenna based waits, such as INTEG.
+     */
+    ComponentReady wait(in WaitItem item, in SeqShort carmaComponentNoSeq,
+                in float timeout,
+                in WaitCondition condition,
+                in short count)
+         raises(carma::util::UserException,
+                carma::util::CancelException,
+                carma::control::TimeoutException,
+                carma::control::InvalidMonitorDataException);
+
+    /**
+     * Set z focus position
+     * Suitable for system use, like subarray restoration.
+     * @param position in millimeters - plus is away from the primary
+     * @param carmaAntNo carma antenna number
+     * @see focus
+     */
+    void focusZ(in float position, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Set x focus position
+     * @param position in millimeters - plus is toward increasing azimuth
+     * @param carmaAntNo carma antenna number
+     */
+    void focusX(in float position, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Set y focus position
+     * @param position in millimeters - plus is toward higher elevation
+     * @param carmaAntNo carma antenna number
+     */
+    void focusY(in float position, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Defines equatorial offsets in ra and dec from the input source.
+     * <b>
+     * Note that these are sky offsets, not coordinate offsets;
+     * to convert a Right Ascension coordinate offset to a sky offset,
+     * multiply by cos(dec+ddec).
+     * </b>
+     * This command has no effect if the antennas are not in equatorial mode.
+     * (a warning message is logged in this case).
+     * These offsets are set to zero when a new track command is given.
+     *
+     * @param dra Right Ascension offset, as a sky offset,
+     *            not coordinate offset, arcmin
+     *
+     * @param ddec Declination offset, arcmin
+     *
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     *
+     * @param affectPhaseCenter Whether or not to change the
+     *                          phase center/subarray info
+     * @param whileIntegrating Allow execution while integrating
+     *
+     * @see track, phaseCenterOffset
+     * @throws UserException if integration is in progress
+     */
+    void equatOffset( in double   dra,
+                      in double   ddec,
+                      in SeqShort carmaAntNoSeq,
+                      in boolean  affectPhaseCenter,
+                      in boolean  whileIntegrating)
+         raises(carma::util::UserException);
+
+    /**
+     * Defines equatorial offset from the source for the subarray phase center.
+     * There is one phase center per subarray.  This command does not
+     * change antenna tracking; it modifies the phase center used by
+     * the delay engine to calculate delays.
+     * This command has no effect if the antennas are not in equatorial mode.
+     * (a warning message is logged in this case).
+     * These offsets are set to zero when a new track command is given.
+     * <b>
+     * Note that these are sky offsets, not coordinate offsets;
+     * to convert a Right Ascension coordinate offset to a sky offset,
+     * multiply by cos(dec).
+     * </b>
+     * @param dra Right Ascension offset, as a sky offset, not
+     * coordinate offset, arcmin
+     * @param ddec Declination offset, arcmin
+     * @see track, equatOffset
+     * @throws UserException if integration is in progress
+     */
+    void phaseCenterOffset(in double dra, in double ddec)
+         raises(carma::util::UserException);
+
+    /**
+     * Sets the antenna LOs for the Engineering#2 subarray.
+     * This is an internal command sent by the Engineering#1
+     * subarray when its LO is changed. The Eng2 subarray shares
+     * the same LO, so it must be told about it.
+     * @param freq in GHz
+     */
+    void passiveLO(in double freq)
+         raises(carma::util::UserException);
+
+    /**
+     * Set polarization state
+     * @param polState - polarization state, e.g. RIGHT_CIRC,  HORIZONTAL
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void polarization(
+        in carma::antenna::common::PolarizationControl::State polState,
+        in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Measure system temperatures
+     * Moves in ambient load, waits one second, then returns to sky
+     * and waits another second. The system will automatically update
+     * the system temperature in the monitor stream.
+     * @return a sequence of two sequences, the first containing the completed
+     * carma antenna numbers and the second the non-completed
+     * carma antenna numbers. Completion is defined as having the cal in the
+     * correct position in both cases before the timeout.
+     * @todo define a method to fetch the system temperatures
+     */
+    AntennaReady tsys()
+        raises(carma::util::UserException);
+
+
+    /**
+     * Configures the correlator and sets up the 2nd LO.
+     * Blocks (waits) for correlator configuration to be complete.
+     * The Doppler shifted frest will be placed in the center
+     * of the baseband (0.75GHz). To place the line elsewhere in the baseband,
+     * add an offset to frest. This command should be issued for each band.
+     * The sideband for the specified rest frequency,
+     * after the Doppler shift is applied, is chosen automatically using
+     * the 1st LO. The 2nd LO will vary with a Doppler component. <br>
+     * For reference:
+     * <code>
+     *  flo2 = S1*dopplerFactor*frest - S1*flo1 - S2*(0.75)
+     *   where
+     *   flo1: first LO freq
+     *   flo2: second LO freq
+     *   frest: rest frequency
+     *   S1: LO1 sideband factor; USB=1, LSB=-1
+     *   S2: LO2 sideband factor; USB=1, LSB=-1
+     * </code>
+     * @param bandNo Band number, starting at one; zero means all
+     * @param astroBandConf Astroband configuration, one of "LL","RR","DUALPOL","CARMA23","FULLSTOKES"
+     * @param bandWidth New spectral bandwidth, one of:
+     *                  <UL>
+     *                   <LI>CORR_BW_500MHZ
+     *                   <LI>CORR_BW_250MHZ
+     *                   <LI>CORR_BW_125MHZ
+     *                   <LI>CORR_BW_62MHZ
+     *                   <LI>CORR_BW_31MHZ
+     *                   <LI>CORR_BW_8MHZ
+     *                   <LI>CORR_BW_2MHZ
+     *                  </UL>
+     * @param fcenter rest frequency to map to center of baseband (0.75GHz)
+     *              and Doppler track
+     * @param sb sideband of 2nd LO conversion to baseband
+     *           (SB_LOWER/SB_UPPER/SB_AUTO)
+     *           USB means IF freq greater than 2nd LO.
+     *           AUTO will choose LSB if IF freq is < 3.0 GHz
+     * @param frest rest frequency (GHz) for signal sideband to put in the
+     *                   miriad header to use as a reference in velocity
+     *                   labeling. A value of zero puts nothing in the header.
+     * @param imagefrest rest frequency (GHz) for image sideband to put in the
+     *                   miriad header to use as a reference in velocity
+     *                   labeling. A value of zero puts nothing in the header.
+     * @param online Boolean indicating whether the band is online or not.
+     * @param transition Molecular line transition associated with the rest
+     *                   frequency for the setup sideband.
+     * @param imageTransition Molecular line transition associated with the rest
+     *                   frequency for the image sideband.
+     * @param blockDCpol The polarization input selection for the block
+     *                   downconverter (ignore for wideband correlator)
+     * @param bits       The number of quantization bits for the correlator.
+     *                   This determines the correlator efficiency and
+     *                   number of channels.
+     *                   One of CORR_2BIT, CORR_3BIT, CORR_4BIT
+     *                   This parameter is ignored for COBRA bands
+     *                   which support only 2-bit operation.
+     * @param            Enumeration which indicates the correlator FPGA
+     *                   configuration mode: SINGLEPOL, FULLPOL, CARMA23
+     * @see freq, checkConfig
+     */
+      void configAstroBand( in short astrobandNo,
+              in string astroBandConf,
+              in carma::util::CorrelatorBandWidthType bandwidth,
+              in double fcenter,
+              in SidebandType sb,
+              in double frest,
+              in double imagefrest,
+              in boolean online,
+              in string transition, in string imageTransition,
+              in carma::util::CorrelatorBitType bits
+              )
+        raises(carma::util::UserException);
+
+    /**
+     * Assert the astroband configuration to the correlator bands.
+     * This method will be required for C3G operation.
+     */
+    void assertCorrelatorConfiguration()
+        raises(carma::util::UserException);
+
+    /**
+     * Clear the astroBand configuration for the input astroband.
+     * @param bandNo Band number, starting at one, zero means all
+     */
+    void clearAstroBand(in short astrobandNo)
+        raises(carma::util::UserException);
+  
+    /**
+     * Enable or disable correlations on the wideband correlator.
+     * This is used to reduce heat load during high temperature events.
+     * @param bandNoSeq Sequence of astroband numbers, starting at 1. 
+     * A list consisting of a single zero means all bands.
+     * @parem correlationsEnabled True to enable correlations, False to disable.
+     */
+    void enableCorrelation( in SeqShort bandNoSeq ,
+                            in boolean correlationsEnabled )
+        raises(carma::util::UserException);
+
+    /**
+     * Mark and astroband online or offline.
+     * @param bandNo Band number, starting at one.
+     * @param online Boolean indicating whether the band is online or not.
+     */
+    void astroBandOnline(in short astrobandNo, in boolean online)
+        raises(carma::util::UserException);
+
+    /**
+     * Initiates the correlator hardware threshold optimization routine.
+     * The noise source will be turned ON. No-op for COBRA hardware.
+     * @param bandNoSeq Sequence of astroband numbers, starting at 1. 
+     * A list consisting of a single zero means all bands.
+     */
+    void optimizeThresholds( in SeqShort bandNoSeq )
+     raises(carma::util::UserException);
+
+    /**
+     * Initiates the correlator hardware phase flattening routine.
+     * The noise source will be turned ON.  No-op for COBRA hardware.
+     * @param bandNoSeq Sequence of astroband numbers, starting at 1. 
+     * A list consisting of a single zero means all bands.
+     */
+    void flattenPhases( in SeqShort bandNoSeq )
+     raises(carma::util::UserException);
+
+    /**
+     * Initiates the correlator hardware bandpass calibration routine, which
+     * measures a calibration spectrum and will complex-divide subsequent
+     * spectra by it (real-divide for autocorrelation spectra).
+     * This method should be called twice, once with cache=True, enable=False
+     * then integrate for a few seconds to output the reference spectrum,
+     * then call again with cache=False, enable=True.
+     * No-op for COBRA hardware.
+     * @param bandNoSeq Sequence of astroband numbers, starting at 1. 
+     * A list consisting of a single zero means all bands.
+     * @param intTime Integration time in seconds for the calibration.
+     * This value will be rounded to the nearest half-second (frame).
+     * @param noiseEnabled Whether or not to enable the noise source. For
+     * instance, you would set this to false if doing bandpass calibration on
+     * an astronomical source.
+     * @param cache Set to true cache the result for subsequent division.
+     * @param enable Whether or not to enable bandpass (spectral)
+     * calibration (can be used to toggle it on and off)
+     */
+    void calibrateSpectra( in SeqShort bandNoSeq ,
+                           in boolean noiseEnabled,
+                           in float intTime ,
+                           in boolean cache,
+                           in boolean enable)
+     raises(carma::util::UserException);
+
+    /**
+     * Check that the correlator configuration commands (freq and configAstroBand)
+     * are self consistent. Returns true if they are, false if any band
+     * cannot be setup (e.g. LO2 out of range).
+     * @param quiet if false, throws an exception if there is a configuration
+     *        error with a message describing the error. If true, does
+     *        not throw on errors.
+     * @see freq, configAstroBand
+     */
+    boolean checkConfig(in boolean quiet)
+        raises(carma::util::UserException);
+
+    /**
+     * @return a sequence of CorrelatorBand numbers associated with
+     * a given astroband.  
+     * @param astroBandNoSeq List of astroband numbers
+     * @param includeOfflineBands Boolean to indicate whether correlator 
+     *        bands that have been marked offline should be included in 
+     *        the return list.  True means include offline bands.
+     */
+    SeqShort getCorrelatorBandNoSeq( in SeqShort astroBandNoSeq, 
+                                     in boolean includeOfflineBands )
+        raises(carma::util::UserException);
+    /**
+     * @returns the current local sidereal time in decimal hours
+     */
+    double lst()
+     raises(carma::util::UserException);
+
+    /**
+     * @returns the current Modified Julian Day plus the number of
+     * seconds passed in. Return value is in decimal days,
+     * @param seconds  Number of seconds to add from the
+     * current MJD.
+     */
+    double mjd(in double seconds)
+     raises(carma::util::UserException);
+
+    /**
+     * @returns the current lst as a sexagesimal string
+     */
+    string lstString()
+     raises(carma::util::UserException);
+
+    /**
+     * @returns the current lst, UT and local time as a string;
+     */
+    string times()
+     raises(carma::util::UserException);
+
+    /**
+     * Attempt to reconnect DOs that have lost their connections
+     * @param force true will force all DOs to be reconnected instead of only
+     *              ones that have lost their connection.
+     */
+    void reconnect(in boolean force) raises(carma::util::UserException);
+
+    /**
+     * Set a user catalog.  This is an alternate catalog of sources
+     * that will be searched BEFORE the system catalog.  When a valid
+     * user catalog is set, the requested source
+     * is looked up the user catalog; if not found, it is then
+     * looked up in the system catalog.
+     * The specified catalog must exist in /array/rt/cjjjj
+     * To unset user catalog searching set user catalog to <i>none</i>:
+     * <br>
+     * &nbsp;<tt.s.ucat('none')</tt>
+     * @param  catalog  The catalog name.
+     */
+    void ucat(in string catalog) raises(carma::util::UserException);
+
+    /**
+     * Engineering command;
+     * Tell the DelayEngine whether to use the adjustable delay for a given
+     * antenna.
+     *
+     * @param useIt True or false value.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @return none.
+     * @see Equation 23 of interferometry design document.
+     */
+    void useAdjustableDelay( in boolean useIt, in SeqShort carmaAntNoSeq )
+         raises(carma::util::UserException);
+
+    /**
+     * Tell the DelayEngine whether to use the ionospheric delay for a given
+     * antenna.
+     *
+     * @param useIt True or false value.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @return none.
+     * @see Equation 23 of interferometry design document.
+     */
+    void useIonosphericDelay( in boolean useIt, in SeqShort carmaAntNoSeq )
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering command;
+     * Tell the DelayEngine whether to use the geometric delay for a given
+     * antenna.
+     *
+     * @param useIt True or false value.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @return none.
+     * @see Equation 23 of interferometry design document.
+     */
+    void useGeometricDelay( in boolean useIt, in SeqShort carmaAntNoSeq )
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering command;
+     * Tell the DelayEngine whether to use the additional height delay
+     * for a given antenna.
+     *
+     * @param useIt True or false value.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @return none.
+     * @see Equation 19of interferometry design document.
+     */
+    void useHeightDelay( in boolean useIt, in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering command;
+     * Tell the DelayEngine whether to use the tropospheric delay for a given
+     * antenna.
+     *
+     * @param useIt True or false value.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @return none.
+     * @see Equation 23 of interferometry design document.
+     */
+    void useTroposphericDelay( in boolean useIt, in SeqShort carmaAntNoSeq )
+         raises(carma::util::UserException);
+    /**
+     * Engineering command;
+     * Tell the DelayEngine whether to use the thermal delay for a given
+     * antenna.
+     *
+     * @param useIt True or false value.
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @return none.
+     * @see Equation 23 of interferometry design document.
+     */
+    void useThermalDelay( in boolean useIt, in SeqShort carmaAntNoSeq )
+         raises(carma::util::UserException);
+
+    /**
+     * Set the sideband gain ratio for a given antenna and band.
+     * The ratio is defined as (USB/LSB), and does not include the
+     * atmosphere.
+     * @param ratio The ratio for this band and antenna
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     * @internal defineState
+     */
+    void sbratio(in float ratio, in SeqShort carmaAntNoSeq )
+     raises(carma::util::UserException);
+
+    /**
+     * Select aperture. This is normally done by freq
+     * or by turning on/off the optical cameras. But for some special
+     * experiments finer control is required. Use with caution.
+     * This selects pointing constants associated with the requested
+     * aperture. Does not change any optics, just pointing.
+     * @param useRadio if true then use radio model for current rx/freq
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void radioAperture(in boolean useRadio, in SeqShort carmaAntNoSeq)
+     raises(carma::util::UserException);
+
+    /**
+     * Engineering command:
+     * Set the gain factor for the given antenna.
+     * <i>Note: This command should be deprecated once we have
+     * a good measurement of the gain.</i>
+     * @param gain  Gain in Jy/K, must be greater than 0.
+     *   For reference, a perfect 10.4m antenna has 32.5 Jy/K.
+     * @param carmaAntNo carma antenna number
+     * @return none
+     * @internal defineState
+     */
+    void jyperk(in float gain, in short carmaAntNo)
+         raises(carma::util::UserException);
+
+    /**
+     * Set the ON/OFF indicator for singledish observations.
+     * This flag may also be useful for interferometric mode,
+     * but not required.
+     * @param status ON_SOURCE or OFF_SOURCE
+     * @param carmaAntNoSeq Sequence of carma antenna numbers. A sequence of
+     *                      the single value zero means all subarray antennas.
+     */
+    void pointStatus(in PointStatusType status, in SeqShort carmaAntNoSeq)
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering command: backdoor for the ovro receivers.
+     * @param vj junction voltage
+     * @param carmaAntNo carma antenna number
+     * @return none
+     */
+    void vj( in carma::antenna::common::RxControl::Pol_Type pol,
+             in float vj,
+             in short carmaAntNo )
+         raises(carma::util::UserException);
+
+    /**
+     * Engineering command: backdoor for the ovro receivers.
+     * @param pol Receiver polarization type.
+     * @param ij junction current
+     * @param carmaAntNo carma antenna number
+     * @return none
+     */
+    void ij( in carma::antenna::common::RxControl::Pol_Type pol,
+             in float ij,
+             in short carmaAntNo )
+         raises(carma::util::UserException);
+
+   /**
+    * Internal development command - DO NOT USE
+    *
+    */
+    AntennaReady bogus(in float numSeconds)
+         raises(carma::util::UserException);
+
+    /**
+     * Development command - DO NOT USE
+     */
+    void testAntHandles( in double   aSeconds,
+                         in double   bSeconds,
+                         in long     whichTest,
+                         in double   lateAfterSeconds,
+                         in SeqShort carmaAntNoSeq )
+         raises( carma::util::UserException );
+
+    /**
+     * Development command - DO NOT USE
+     *
+     * @note Using this to increase the trace level in the RTS above 0 will
+     *       severely stress the acc machine. If you must use it in the RTS
+     *       then use it sparingly and only for very brief periods of time.
+     */
+    void setTraceLevel( in short traceLevel )
+         raises( carma::util::UserException );
+    /**
+     * Gets the frequency for a given molecular line transition.
+     * The line must be in the carma line catalog; if not, an exception
+     * is thrown. The catalog is in CARMA/conf/catalogs/SpectralLine.cat
+     * and has aliases for commonly used lines that this code uses.
+     * @param line spectral line transition name alias, case insensitive
+     *   examples "CO", "12CO", "12CO(1-0)", "HCN", "C18O(1-0)"
+     * @return line frequency in GHz
+     * @see
+     */
+    double lineFreq(in string line)
+        raises(carma::util::UserException);
+
+    /**
+     * Gets the frequency for a given molecular line transition.
+     * The line must be in the carma line catalog; if not, an exception
+     * is thrown. The catalog is in CARMA/conf/catalogs/SpectralLine.cat.
+     * Examples of molecule,transition parameters:
+     *  "HCN","1-0,F=2-1"
+     *  "CO", "1-0"
+     * @param molecule the molecule, case insensitive
+     * @param transition spectral line transition for the molecule
+     * @return line frequency in GHz
+     * @see lineFreq
+     */
+    double transitionFreq(in string molecule, in string transition)
+        raises(carma::util::UserException);
+
+
+    /**
+     * Turns the control building alarm on and off
+     * @param state on=true, off=false
+     * @param alarmName determines which sound will be played from watch.tab
+     * @see alarmEnable
+     */
+    void alarm(in boolean state, in string alarmName)
+        raises(carma::util::UserException);
+
+    /**
+     * Disables the control building alarm - no deadman functionality,
+     * ignores the alarm(true) command.
+     * @param state enable=true, disable=false
+     * @see alarm
+     */
+    void alarmEnable(in boolean state)
+        raises(carma::util::UserException);
+
+    /**
+     * Sets the monitor point Control.subarrayN.alarm1mm to
+     * the input value.  If set to true, the fault system should
+     * trigger the audible alarm.
+     * The alarm signals the observer to take action regarding
+     * the frequency at which to observe.  Either switch from
+     * 3mm to 1mm (the weather has improved) or switch from 1mm
+     * to 3mm (the weather has deteriorated).  A comment on which
+     * is which will be written to the RTD composite display based
+     * on the current observing frequency.
+     * @param state enable=true, disable=false
+     * @see alarm
+     */
+    void alarm1mm(in boolean state)
+        raises(carma::util::UserException);
+
+    /**
+     * Insert an observer comment into the data stream.
+     * This will set the monitor point Control.SubarrayN.comment
+     * to the input string.
+     * The comment will end up timestamped in the MIRIAD
+     * history file.
+     * @paramater obsComment The comment string from the observer
+     */
+    void comment(in string obsComment)
+        raises(carma::util::UserException);
+    /**
+     * Insert an entry into the control log at INFO level.
+     * @paramater entry The log string
+     */
+    void log(in string entry)
+        raises(carma::util::UserException);
+
+    /**
+     * Insert an entry into the control log at ERROR level.
+     * @paramater entry The log string
+     */
+    void logError(in string entry)
+        raises(carma::util::UserException);
+
+    /**
+     * Get a script control boolean variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @paramater index index, 1-20
+     * @see setScriptBool, clearScriptAll
+     */
+    boolean getScriptBool(in short index)
+        raises(carma::util::UserException);
+
+    /**
+     * Set a script control boolean variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @param index index, 1-20, a value of zero means all
+     * @param value value
+     * @see getScriptBool, clearScriptAll
+     */
+    void setScriptBool(in short index, in boolean value)
+        raises(carma::util::UserException);
+
+    /**
+     * Get a script control double variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @paramater index index, 1-20
+     * @see setScriptDouble, clearScriptAll
+     */
+    double getScriptDouble(in short index)
+        raises(carma::util::UserException);
+
+    /**
+     * Set a script control double variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @param index index, 1-20, a value of zero means all
+     * @param value value
+     * @see getScriptDouble, clearScriptAll
+     */
+    void setScriptDouble(in short index, in double value)
+        raises(carma::util::UserException);
+
+    /**
+     * Get a script control integer variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @paramater index index, 1-20
+     * @see setScriptInt, clearScriptAll
+     */
+    long getScriptInt(in short index)
+        raises(carma::util::UserException);
+
+    /**
+     * Set a script control integer variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @param index index, 1-20, a value of zero means all
+     * @param value value
+     * @see getScriptInt, clearScriptAll
+     */
+    void setScriptInt(in short index, in long value)
+        raises(carma::util::UserException);
+
+    /**
+     * Get a script control string variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @paramater index index, 1-20
+     * @see setScriptString, clearScriptAll
+     */
+    string getScriptString(in short index)
+        raises(carma::util::UserException);
+
+    /**
+     * Set a script control string variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @param index index, 1-20, a value of zero means all
+     * @param value input string; will be silently truncated at 2000 chars
+     * @see appendScriptString, getScriptString, clearScriptAll
+     */
+    void setScriptString(in short index, in string value)
+        raises(carma::util::UserException);
+
+    /**
+     * Append to a script control string variable.
+     * There are 20 script control variables with indices 1 to 20.
+     * @param index index, 1-20, a value of zero means all
+     * @param value input string; will be silently truncated at 2000 chars
+     * @see setScriptString, getScriptString, clearScriptAll
+     */
+    void appendScriptString(in short index, in string value)
+        raises(carma::util::UserException);
+
+    /**
+     * Add a message to the script history, to be emailed out at the
+     * end of a track.
+     */
+    void addScriptHistory(in string value)
+        raises(carma::util::UserException);
+
+    /**
+     * Retrieve all messages from the script history
+     */
+    string getScriptHistory()
+        raises(carma::util::UserException);
+
+    /**
+     * Query whether the script history is full
+     */
+    boolean getScriptHistoryFull()
+        raises(carma::util::UserException);
+
+    /**
+     * Clear all script control variables.
+     * There are 4 different types of script control variables,
+     * each with 20 elements.
+     * @see setScriptBool,   getScriptBool
+     * @see setScriptDouble, getScriptDouble
+     * @see setScriptInt,    getScriptInt
+     * @see setScriptString, getScriptString
+     * @see addScriptHistory, getScriptHistory
+     */
+    void clearScriptAll()
+        raises(carma::util::UserException);
+
+    /**
+     * Set the script name in the monitor system.
+     * @param name
+     * @see getScriptName
+     */
+    void setScriptName(in string name)
+        raises(carma::util::UserException);
+
+    /**
+     * Get the script name from the monitor system.
+     * @return fully-qualified name
+     * @see setScriptName
+     */
+    string getScriptName()
+        raises(carma::util::UserException);
+
+    /**
+     * Set the script state in the monitor system.
+     * @param state script state (COMPLETED, RUNNING, CRASHED)
+     * @see setScriptName, getScriptState
+     */
+    void setScriptState(in ScriptStateType state)
+        raises(carma::util::UserException);
+
+    /**
+     * Get the script state from the monitor system.
+     * @see setScriptName, setScriptState
+     */
+    ScriptStateType getScriptState()
+        raises(carma::util::UserException);
+
+    /**
+     * Set the drive blanking state in the fault system.
+     * @param inStateIsOn state to set
+     */
+    void setFaultSystemDriveErrorPreference( in carma::fault::EffectPreference inPref )
+        raises ( carma::util::UserException );
+
+    /**
+     * Disable fault system alarms for the given monitor points.
+     * @param inMonitorPointNames sequence of monitor point names
+     */
+    void disableFaultSystemAlarms( in SeqString inMonitorPointNames )
+        raises ( carma::util::UserException );
+
+    /**
+     * Restore fault system alarms to their default enable states
+     * for the given monitor points.
+     * @param inMonitorPointNames sequence of monitor point names
+     */
+    void restoreFaultSystemAlarms( in SeqString inMonitorPointNames )
+        raises ( carma::util::UserException );
+
+    /**
+     * Set the fault system alarm enable state
+     * @param inStateIsOn state to set
+     */
+    void setFaultSystemAlarmEnableState( in boolean inStateIsOn )
+        raises ( carma::util::UserException );
+
+    /**
+     * Resets the 'time since last integration' timer in the pipeline.
+     * This is effectively a dummy integration that can be inserted
+     * into optical pointing, tilts, etc
+     */
+    void resetTimeSinceLastIntegration()
+        raises (carma::util::UserException);
+
+    /**
+     * Save current ControlSubsystem state to a persistent file.
+     * Save the current state of the control subsystem to the specified file.
+     * This file can later be used to restore the state of the ControlSubsystem.
+     * @param filename Name of file to save state to.
+     * @throw UserException on IO error.
+     * @see restoreControlSubsystemFromFile
+     */
+    void saveControlSubsystemState( in string filename )
+        raises (carma::util::UserException);
+
+    /**
+     * Restore ControlSubsystem state from specified persistent file.
+     * Use the specified file to restore the state of the ControlSubsystem.
+     * Keep in mind that this routine does not restore the state of the
+     * subarray itself, but rather just the state of the control subsystem
+     * reflected in the file.  The onus of state restoration is passed on to
+     * client code (probably python) using the restored state of the monitor
+     * control points.
+     * @param filename Name of file to restore state from.
+     * @throw UserException on IO error.
+     * @see saveControlSubsystemState
+     */
+    void restoreControlSubsystemFromFile( in string filename )
+        raises (carma::util::UserException);
+
+    /**
+     * Tell the control system that a state restoration is in progress.
+     * This command is used to distinguish between setting new system
+     * parameters and restoring old ones from saved state. This is necessary
+     * as the commands make no distinction between restoring old values
+     * and setting new ones.  Note this must be called after restoration is
+     * complete.
+     * @param restoring True if restoration is in progress, false otherwise.
+     */
+    void restorationInProgress( in boolean restoring )
+        raises (carma::util::UserException);
+
+    /**
+     * Tell the control system that the ControlSubsystem monitor
+     * container has been restored from a previously saved file.
+     * WARNING: This should only be called by the state restoration
+     * daemon.
+     */
+    void signalControlSubsystemRestored( )
+        raises (carma::util::UserException);
+
+    /**
+     * Search for nearby neighbors of input source, filtering by
+     * various criteria and sorted by distance from target.  This is useful
+     * for, e.g., finding nearby calibrators, optical/radio pointing sources.
+     * @param source - The target source for which to find neighbors
+     *   A name of 'SUBARRAY' (case insensitive) will try to use the ra/dec
+     *   of the current phase center for the subarray. If the subarray
+     *   source name is 'NONE' or invalid then Polaris will be used.
+     *
+     * @param elMin  - minimum elevation filter, degrees
+     *
+     * @param elMax  - maximum elevation filter, degrees
+     *
+     * @param sourceList - a list of source names to exclude or include in the
+     * search, case insensitive.  If you don't want to include the
+     * targe source, put its name here and choose EXCLUDE for action.
+     *
+     * @param action - either INCLUDE or EXCLUDE the sourceList.
+     *
+     * @param numReturn - the number of neighbor sources to return
+     *
+     * @param ignoreNorthSouth - If false, then check that the target soruce
+     * and neighbor source declinations are not on opposite sides of
+     * the telescope latitude AND that the sources are not close to transit.
+     * This will filter out sources that would cause a change in azimuth wrap.
+     *
+     * @param coordsys - one of "azel" or "radec".  "azel" means compute
+     * the distance using the closest in true slewing distance,
+     * so for instance a large azimuth slew for high elevation sources
+     * would be avoided.
+     * "radec" means compute the spherical geometric distance.
+     *
+     * @param optical - if true use optical sources, if false use radio sources
+     *
+     * @param fluxLimit - lowest flux (or faintest magnitude in the case of
+     * optical sources) to include in the return list.
+     *
+     * @param frequency - For radio sources, use this frequency to lookup
+     * a recent flux measurement. Units are GHz. Anything matching
+     * frequency+/-55GHz is deemed acceptable -- keeping the measurement in
+     * the respective waveband.  The lookback time is 100 days.
+     * This parameter is ignored for optical sources.
+     * @see queryFlux
+     *
+     * @return A list of one or more sources close on the sky to the
+     * input source, also matching an additional criteria specified.
+     * The return list is sorted in ascending order of distance in degrees
+     * from the target source.
+     * @see NearestInfo
+     */
+    NearestInfoSeq getNearest( in string source,
+                               in float elMin, in float elMax,
+                               in SeqString sourceList,
+                               in NearestActionType action,
+                               in short numReturn,
+                               in boolean ignoreNorthSouth,
+                               in string coordSys,
+                               in boolean optical,
+                               in float fluxLimit,
+                               in float frequency )
+      raises (carma::util::UserException);
+
+    /**
+     * Tell the control system t} catch ( const util::UserException & ) {
+    throw;
+} catch ( ... ) {
+    rethrowCaughtAsUser();
+    // Just in case rethrowCaughtAsUser() is broken
+    throw util::UserException( "rethrowCaughtAsUser() is broken",
+                               __FILE__, __LINE__ );
+}
+hat a new track has been started.
+     * The control system will stash a timestamp for this event
+     * that will be used to generate an MP.
+     */
+    void startTrack()
+        raises (carma::util::UserException);
+
+  /**
+   * Manual blank/flag/birdie implementation
+   */
+  void addBirdie(
+    in unsigned long type,
+    in unsigned short band,
+    in unsigned short input1,
+    in unsigned short input2)
+    raises (carma::util::UserException);
+
+  void removeBirdie(
+    in unsigned long type,
+    in unsigned short band,
+    in unsigned short input1,
+    in unsigned short input2)
+    raises (carma::util::UserException);
+
+  void clearBirdies(
+    in unsigned long type)
+    raises (carma::util::UserException);
+
+  /**
+   * Add a correlator to be managed by this subarray controller
+   */
+  void addCorrelator(in unsigned long type)
+    raises (carma::util::UserException);
+
+  /**
+   * Remove a correlator from control by this subarray controller
+   */
+  void removeCorrelator(in unsigned long type)
+    raises (carma::util::UserException);
+
+  /**
+   * Check if the specified subarray owns the requested correlator
+   */
+  boolean subarrayOwnsCorrelator(in long subarrayNo, in unsigned long type)
+    raises (carma::util::UserException);
+
+  boolean subarrayOwnsSingleCorrelator(in long subarrayNo)
+    raises (carma::util::UserException);
+
+  boolean subarrayOwnsNoCorrelator(in long subarrayNo)
+    raises (carma::util::UserException);
+
+  string astrobandCorrelator(in long astrobandNo)
+    raises (carma::util::UserException);
+
+  string ownedCorrelator(in long subarrayNo)
+    raises (carma::util::UserException);
+
+  /**
+   * Return a vector of astroband numbers for which a mapping is specified by the named configuration
+   */
+  SeqShort getAstroBandsForConfiguration(in string confName)
+    raises (carma::util::UserException);
+
+  void setInvalidationForMosaics( in boolean invalidate )
+    raises (carma::util::UserException);
+
+  /**
+   * EML: Adding shadowing calculators for various methods of querying
+   */
+  boolean isShadowedNow(in short carmaAntennaNo, in ShadowingType type, in double diameterFraction)
+    raises(carma::util::UserException);
+
+  boolean isShadowedHaDec(in short carmaAntennaNo, in double hourAngleHours, in double decDegrees, in ShadowingType type, in double diameterFraction)
+    raises(carma::util::UserException);
+
+  boolean isShadowedSource(in short carmaAntennaNo, in string sourceName, in double lstHours, in ShadowingType type, in double diameterFraction)
+    raises(carma::util::UserException);
+    
+  // ===================================================
+  // Repetitive task methods
+   
+  /**
+   * Set the name of the repetitive task.
+   * @param taskIndex task index, starting at zero
+   * @param taskName the name of the task, string
+   */ 
+  void setRepTaskName(in long taskIndex, in string taskName)
+    raises(carma::util::UserException);    
+  /**
+   * Set the time interval for the task repetitition .
+   * @param taskIndex task index, starting at zero
+   * @param interval time interval in days 
+   */ 
+  void setRepTaskInterval(in long taskIndex, in double interval)
+    raises(carma::util::UserException);    
+  /**
+   * Set the reminder interval of the repetitive task.
+   * @param taskIndex task index, starting at zero
+   * @param remind reminder interval in days
+   */     
+  void setRepTaskRemind(in long taskIndex, in double remind)
+    raises(carma::util::UserException);    
+  /**
+   * Set the time interval for automatic execution of the repetitive task.
+   * @param taskIndex task index, starting at zero
+   * @param auto time interval for automatic execution
+   */ 
+  void setRepTaskAuto(in long taskIndex, in double auto)
+    raises(carma::util::UserException);    
+  /**
+   * Set the absolute time that the repetitive task was last executed.
+   * @param taskIndex task index, starting at zero
+   * @param mjd absolute time of last execution, as an MJD
+   */ 
+  void setRepTaskCompleted(in long taskIndex, in double mjd)
+    raises(carma::util::UserException);    
+   
+   /* ----------------------------------------------------------------- */
+    // Testing
+    string testMessageSize(in unsigned long size)
+        raises(carma::util::UserException);
+};
+
+
+
+
+}; // end control
+}; // end carma
+
+#endif  // end of conditional include
+
+

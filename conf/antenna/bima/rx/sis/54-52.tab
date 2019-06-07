@@ -1,0 +1,14 @@
+# 54-52.tab
+# based on tests 1002f
+# tweaked based on 1004L
+#
+#|loGHz |t    |v     |i    |dvm  |dvp  |
+#|r     |r    |r     |r    |r    |r    |
+#
+
+# ---- rapid tuning parameters ----
+
+  0.    0.00   10.75   190.     -1   1   // Vgap, Igap
+210.    0.00    8.7    120.     -0.6  0.6 
+240.    0.00    8.7    120.     -0.6  0.6
+260.    0.00    9.2    130.     -0.6  0.6

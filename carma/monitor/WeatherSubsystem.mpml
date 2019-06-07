@@ -1,0 +1,338 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- Weather Subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<!-- The declaration of the priority in the subsystem is inherited by all MPs
+     in the subsystem. -->
+<Subsystem name="Weather" author="Peter Teuben" priority="useful">
+
+   <description>
+      The Weather Station keeps track of the temperature, pressure, wind speed
+      and direction, as well as humidity level. It also publishes a few derived
+      quantities, such as water vapor density and column. The measurements of
+      water in the atmosphere (density, column, opacity) are all based on a
+      dew point sensor.
+   </description>
+
+   <?common MonitorStats.mpml?>
+   <CommonContainer ref="MonitorSubsystemStats" />
+
+   <MonitorPoint name="timestamp" type="absTime" update="10">
+      <shortName>Timestamp</shortName>
+      <longName>packet completion time</longName>
+      <description>
+         Time that packet data was completed/written
+      </description>
+      <units>UTC</units>
+   </MonitorPoint>
+
+   <?common OnlineCommon.mpml?>
+   <CommonMonitorPoint ref="online" />
+
+   <!-- perhaps add a valid until monitor point, as Marc does in delayEngine -->
+
+   <!-- vital for the MIRIAD header, don't muck it up -->
+   <MonitorPoint name="ambientTemperature" type="float" update="10" 
+        priority="vital">
+      <shortName>Ambient Temp</shortName>
+      <units>C</units>
+      <description>
+        Measured ambient air temperature
+      </description>
+      <precision>1</precision>
+      <warnLo>-30</warnLo>
+      <warnHi>30</warnHi>
+      <errLo>-40</errLo>
+      <errHi>40</errHi>
+   </MonitorPoint>
+   
+   <MonitorPoint name="ambientTempF" type="float" update="10" 
+        priority="vital">
+      <shortName>Ambient Temp</shortName>
+      <units>F</units>
+      <description>
+        Ambient air temperature, derived from measurement in C
+      </description>
+      <precision>1</precision>
+      <warnLo>-30</warnLo>
+      <warnHi>90</warnHi>
+      <errLo>-40</errLo>
+      <errHi>105</errHi>
+   </MonitorPoint>
+
+   <MonitorPoint name="dewpointTemperature" type="float" update="10">
+      <shortName>Dewpoint Temp</shortName>
+      <units>C</units>
+      <description>
+         Dewpoint temperature is the highest temperature at which the air
+         is saturated (and thus you will see condensate form).
+      </description>
+      <precision>1</precision>
+      <warnLo>-30</warnLo>
+      <warnHi>80</warnHi>
+      <errLo>-40</errLo>
+      <errHi>100</errHi>
+   </MonitorPoint>
+
+   <!-- vital for the MIRIAD header, don't muck it up -->
+   <MonitorPoint name="pressure" type="float" update="10" priority="vital">
+      <shortName>Pressure</shortName>
+      <units>mbar</units>
+      <description>
+        Measured air pressure.
+      </description>
+      <precision>0</precision>
+      <warnLo>400</warnLo>
+      <warnHi>1200</warnHi>
+      <errLo>300</errLo>
+      <errHi>1300</errHi>
+   </MonitorPoint>
+
+   <!-- vital for the MIRIAD header, don't muck it up -->
+   <MonitorPoint name="humidity" type="float" update="10" priority="vital">
+      <shortName>Humidity</shortName>
+      <units>%</units>
+      <description>
+         Relative humidity (0-100%), derived from the dew point temperature,
+         air temperature, and pressure.
+      </description>
+      <precision>1</precision>
+      <warnLo>1</warnLo>
+      <warnHi>99</warnHi>
+      <errLo>0</errLo>
+      <errHi>100</errHi>
+   </MonitorPoint>
+
+   <!-- vital for the MIRIAD header, don't muck it up -->
+   <MonitorPoint name="windDirection" type="float" update="10" priority="vital">
+      <shortName>Wind Direction</shortName>
+      <units>deg</units>
+      <description>
+        Measured wind direction. 0=north 90=east. This is the direction
+        the wind is coming from, i.e. where the vane points, the opposite
+        of the bulk air speed vector. This is the standard
+        meteorological definition.
+      </description>
+      <precision>0</precision>
+   </MonitorPoint>
+
+   <!-- vital for the MIRIAD header, don't muck it up -->
+   <MonitorPoint name="windSpeed" type="float" update="10" priority="vital">
+      <shortName>Wind Speed</shortName>
+      <units>mph</units>
+      <description>
+        Measured Wind speed, in miles per hour (mph)
+      </description>
+      <precision>1</precision>
+      <errHi>20</errHi>
+      <warnHi>13</warnHi>
+   </MonitorPoint>
+
+   <MonitorPoint name="peakWindSpeed" type="float" update="10">
+      <shortName>Peak Wind Speed</shortName>
+      <units>mph</units>
+      <description>
+        Peak Wind speed, over the last (roughly) 10 minute sample,
+        in miles per hour (mph)
+      </description>
+      <precision>1</precision>
+      <errHi>30</errHi>
+      <warnHi>20</warnHi>
+   </MonitorPoint>
+
+   <MonitorPoint name="averageWindSpeed" type="float" update="10">
+      <shortName>Average Wind Speed</shortName>
+      <units>mph</units>
+      <description>
+        Average Wind speed, over the last (roughly) 10 minute sample,
+        in miles per hour (mph)
+      </description>
+      <precision>1</precision>
+      <errHi>12</errHi>
+      <warnHi>10</warnHi>
+   </MonitorPoint>
+
+   <MonitorPoint name="averageWindDirection" type="float" update="10">
+      <shortName>Average Wind Direction</shortName>
+      <units>deg</units>
+      <description>
+        Average Wind direction, vector averaged over the last (roughly)
+        10 minute sample, in degrees.
+      </description>
+      <precision>0</precision>
+   </MonitorPoint>
+
+   <MonitorPoint name="waterDensity" type="float" update="10">
+      <shortName>Water Vapor Density</shortName>
+      <units>g/m^3</units>
+      <description>
+        Water vapor density in the atmosphere, derived from air temperature,
+        dew point and pressure. This quantity should be of order unity.
+      </description>
+      <precision>1</precision>
+      <warnLo>0.1</warnLo>
+      <warnHi>10</warnHi>
+      <errLo>0</errLo>
+      <errHi>20</errHi>
+   </MonitorPoint>
+
+   <!-- vital for the MIRIAD header, don't muck it up -->
+   <MonitorPoint name="precipWater" type="float" update="10" priority="vital">
+      <shortName>Precipitable Water</shortName>
+      <units>mm</units>
+      <description>
+        Precipitable water vapor column, derived from dew point, air
+        temperature, pressure and an assumed scale height. Reasonable values
+        are 1 to 10, but may be as high as 15 in summer.
+      </description>
+      <precision>1</precision>
+      <warnLo>0.1</warnLo>
+      <warnHi>15</warnHi>
+      <errLo>0</errLo>
+      <errHi>25</errHi>
+   </MonitorPoint>
+
+   <!-- vital for the MIRIAD header, don't muck it up -->
+   <MonitorPoint name="tau225" type="float" update="10" priority="vital">
+      <shortName>225 GHz Opacity</shortName>
+      <longName>Calculated zenith opacity at 225 GHz</longName>
+      <description>
+        Zenith opacity at 225 GHz estimated from temperature, dew point and
+        pressure (not the tipper). Reasonable values are in the range 0 to 2.
+      </description>
+      <units>Np</units>
+      <precision>2</precision>
+      <warnLo>0.001</warnLo>
+      <warnHi>3</warnHi>
+      <errLo>0</errLo>
+      <errHi>5</errHi>
+   </MonitorPoint>
+
+   <MonitorPoint name="batteryVoltage" type="float" update="10">
+      <shortName>Battery Voltage</shortName>
+      <units>V</units>
+      <description>
+        Weather Station battery voltage.
+      </description>
+      <precision>1</precision>
+      <warnLo>0</warnLo>
+      <warnHi>100</warnHi>
+      <errLo>0</errLo>
+      <errHi>110</errHi>
+   </MonitorPoint>
+
+   <MonitorPoint name="weatherMode" type="enum" update="10">
+      <shortName>Weather Station Mode</shortName>
+      <units></units>
+      <description>
+        Weather Station Mode:
+        1) EMULATE
+
+        The weather station process is emulating the data which would be sent
+        from the weather station and dew point sensor.
+
+        2) WEATHER_STATION
+
+        The weather station process is using the weather station hardware
+        exclusively for all values. This includes Ta, Td, and RH.
+
+        3) DEW_POINT_SENSOR
+
+        The weather station process is using the weather station hardware
+        for most values. The dew point sensor is being used for Ta, Td, and
+        RH for increased accuracy.
+      </description>
+      <enum name="EMULATE">
+        <description>
+          The weather station process is emulating the data which would be sent
+          from the weather station and dew point sensor.
+        </description>
+      </enum>
+      <enum name="WEATHER_STATION">
+        <description>
+          The weather station process is using the weather station hardware
+          exclusively for all values. This includes Ta, Td, and RH.
+        </description>
+      </enum>
+      <enum name="DEW_POINT_SENSOR">
+        <description>
+          The weather station process is using the weather station hardware
+          for most values. The dew point sensor is being used for Ta, Td, and
+          RH for increased accuracy.
+        </description>
+      </enum>
+   </MonitorPoint>
+
+   <Container name="WeatherStation">
+      <MonitorPoint name="ambientTemperature" type="float" update="10">
+         <shortName>Ambient Temp.</shortName>
+         <units>C</units>
+         <description>
+            Measured ambient air temperature
+         </description>
+         <precision>1</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="dewpointTemperature" type="float" update="10">
+         <shortName>Dewpoint Temp.</shortName>
+         <units>C</units>
+         <description>
+           Dewpoint temperature, derived from Ta and RH.
+         </description>
+         <precision>1</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="humidity" type="float" update="10">
+         <shortName>Humidity</shortName>
+         <units>%</units>
+         <description>
+            Measured relative Humidity level (0-100%)
+         </description>
+         <precision>1</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="WSTime" type="string" update="10">
+         <shortName>WS Time</shortName>
+         <units>hh:mm:ss</units>
+         <description>
+            Time of last record fetch from WeatherStation ('hh:mm:ss')
+        in units (normally UT) the WS keeps.
+         </description>
+         <width>9</width>
+      </MonitorPoint>
+   </Container>
+
+   <Container name="DewPointSensor">
+      <MonitorPoint name="ambientTemperature" type="float" update="10">
+         <shortName>Ambient Temp.</shortName>
+         <units>C</units>
+         <description>
+            Measured ambient air temperature
+         </description>
+         <precision>1</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="dewpointTemperature" type="float" update="10">
+         <shortName>Dewpoint Temp.</shortName>
+         <units>C</units>
+         <description>
+            Measured Dewpoint temperature
+         </description>
+         <precision>1</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="humidity" type="float" update="10">
+         <shortName>Humidity</shortName>
+         <units>%</units>
+         <description>
+            Humidity level (0-100%), derived from Ta and Td
+         </description>
+         <precision>1</precision>
+      </MonitorPoint>
+
+   </Container>
+
+
+</Subsystem>

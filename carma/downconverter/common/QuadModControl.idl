@@ -1,0 +1,119 @@
+/** @file
+ * Carma Quadrature Modulator control interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.9 $
+ * $Date: 2011/05/17 16:27:46 $
+ * $Id: QuadModControl.idl,v 1.9 2011/05/17 16:27:46 iws Exp $
+ */
+#ifndef CARMA_DOWNCONVERTER_QUADMODCONTROL_IDL
+#define CARMA_DOWNCONVERTER_QUADMODCONTROL_IDL
+
+#include "carma/canbus/devices/DeviceControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module downconverter {
+
+typedef sequence<octet> WalshSequence;
+
+/**
+ * Carma downconverter quadrature modulator control interface.
+ * Both the wideband and spectral-line downconverter systems will use this
+ * interface.
+ */
+interface QuadModControl : carma::canbus::devices::DeviceControl {
+
+    /**
+     * Set output power to preset level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setPoutPreset() raises (carma::util::UserException);
+
+    /**
+     * Set output power to requested level.
+     * @param pout requested power level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setPout(in double pout) raises (carma::util::UserException);
+
+    /**
+     * Set output power attenuation level.
+     * The attenuation level should be in the range of 0-31 dB.
+     * Values outside of this range are ignored by the XAC.
+     * @param atten requested output power attenuation.
+     * @exception carma::util::UserException on failure.
+     */
+    void setPoutAtten(in unsigned short atten) raises
+        (carma::util::UserException);
+
+    /**
+     * Enable quadrature modulation and set output attenuation.
+     * Enables or disables the noise source gain and the Walsh modulation.
+     * @param enable true to enable quadrature modulation,
+     *               false to disable.
+     * @exception carma::util::UserException on failure.
+     */
+    void enableQuadMod(in boolean enable) raises (carma::util::UserException);
+
+    /**
+     * Enable or disable modulation of the noise source sans attenuation.
+     * Enables or disabled noise source modulation but does not change output
+     * attenuation.
+     * @param enable true to enable quadrature modulation, false to disable.
+     */
+    void enableModulationOnly(in boolean enable)
+        raises (carma::util::UserException);
+
+    /**
+     * Load a Walsh sequence.
+     * A single Walsh sequence consists of a sequence of phases:
+     * 0, 90, 180 or 270 degrees. These phases are mapped to 2-bit pairs as
+     * denoted by the assignments below. The loberotator generates the columns
+     * and sends them to the appropriate quad mod. The individual sequence
+     * entries are not indexed; it is assumed that all phase switch operations
+     * will commence at the beginning of the Walsh table column - which
+     * coincides with the next slow phase switch and not at a later point.
+     * The nominal Walsh table column length is 1024 entries.
+     * @param walshSeq Sequence of subsequent 2 bit segments where 00b=0,
+     *        01b=90, 10b=180 and 11b=270 degrees packed 4 to an octet.
+     */
+    void loadWalshSequence( in WalshSequence walshSeq )
+        raises (carma::util::UserException);
+
+    // Engineering commands
+    /**
+     * Is quadrature modulation enabled?
+     * This command is for engineering purposes only!
+     * @return true if enabled false otherwise
+     * @throw carma::util::UserException if device is OFFLINE when this was
+     * invoked.
+     */
+    boolean isEnabled();
+
+    /**
+     * Check that IF Output power is within a specified boundary.
+     * This command is for engineering purposes only!
+     * @return true if it is, false otherwise.
+     * @throw carma::util::UserException if device is OFFLINE when this was
+     * invoked.
+     */
+    boolean checkIfOutPower(in double power, in double delta)
+        raises (carma::util::UserException);
+
+    /**
+     * Check that IF Input power is within a specified boundary.
+     * This command is for engineering purposes only!
+     * @return true if it is, false otherwise.
+     * @throw carma::util::UserException if device is OFFLINE when this
+     * was invoked.
+     */
+    boolean checkIfInPower(in double power, in double delta)
+        raises (carma::util::UserException);
+
+
+}; // End QuadModControl interface
+}; // End downconverter module
+}; // End carma module
+#endif
+

@@ -1,0 +1,10 @@
+# This on-site configuration file sets various directories used 
+# in writing, loading, and archiving of science data products.
+
+# dbxml directory 
+dbDir = /home/friedel/test
+
+# DBXML file name
+dbFile = projectDatabase.dbxml
+
+dbBackup = /home/friedel/test/dbBackup.dat

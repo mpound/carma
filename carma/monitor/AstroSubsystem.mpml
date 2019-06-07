@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+<Subsystem name="Astro" author="Andy Beard" priority="normal" extendFrom="Base">
+    <description>
+        This subsystem is a collation of system monitor points for use in 
+        output data construction by premapping monitor points to astro band,
+        absolute antenna and polarization format.
+    </description>
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <Common scope="local">
+    
+        <MonitorPoint name="Tsys" type="float">
+            <shortName>Tsys</shortName>
+            <longName>System Temperature</longName>
+            <description>Receiver system temperature.</description>
+            <units>K</units>
+            <precision>0</precision>
+            <warnLo>0</warnLo>
+            <warnHi>5000</warnHi>
+        </MonitorPoint>
+        
+        <MonitorPoint name="Coherence" type="float">
+            <shortName>Coherence</shortName>
+            <longName>Coherence</longName>
+            <description>Coherence measurement.</description>
+            <precision>2</precision>
+            <warnLo>0.2</warnLo>
+        </MonitorPoint>
+
+        <Container name="SelfCal">
+
+            <MonitorPoint name="valid" type="bool">
+                <shortName>Validity</shortName>
+                <description>
+                    Indicates if a self cal solution converged.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="antVis" type="complex">
+                <shortName>Visibility</shortName>
+                <longName>Antenna Based Visibility</longName>
+                <description>
+                    Antenna based visibility.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="antVisErr" type="complex" priority="verbose">
+                <shortName>Vis Errors</shortName>
+                <longName>Antenna Based Visibility Error</longName>
+                <description>
+                    Antenna based visibility error.
+                </description>
+            </MonitorPoint>
+            
+            <MonitorPoint name="snr" type="float" priority="debug">
+                <shortName>SNR</shortName>
+                <longName>Signal to Noise Ratio</longName>
+                <description>
+                    Self cal signal to noise ratio.
+                </description>
+            </MonitorPoint>
+
+        </Container> <!-- SelfCal -->
+
+        <Container name="Rx" >
+
+            <description>Antenna receiver based monitor points.</description>
+            
+            <CommonMonitorPoint ref="Tsys" name="Tdsb"/>
+
+            <MonitorPoint name="effectiveTcal" type="float" priority="verbose">   
+                <shortName>Eff Tcal</shortName>
+                <longName>Effective Tcal</longName>
+                <description>
+                    Effective calibration temperature.
+                    This is the effective system temperature multiplied by the
+                    Y factor to obtain the double sideband system temperature.
+                    It consists of the load (ambient) temperature plus
+                    additional components for atmospheric and ground spillover
+                    contributions all minus the atmospheric CMB temperature
+                    component.
+                </description>
+                <units>K</units>
+                <precision>1</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="ambPsys" type="float">
+                <shortName>Amb Psys</shortName>
+                <longName>Last hotload psys value</longName>
+                <description>
+                    Ambient load psys value used for Y factor/Tsys calculation.
+                </description>
+                <units>dBm</units>
+            </MonitorPoint>
+
+            <Container name="Usb" >
+                <CommonMonitorPoint ref="Tsys"/>
+                <CommonContainer ref="SelfCal"/>
+                <CommonMonitorPoint ref="Coherence"/>
+            </Container>
+
+            <Container name="Lsb" >
+                <CommonMonitorPoint ref="Tsys"/>
+                <CommonContainer ref="SelfCal"/>
+                <CommonMonitorPoint ref="Coherence"/>
+            </Container>
+
+        </Container>
+
+    </Common>
+
+    <Container name="Antenna" count="&NUM_ANTENNAS;" priority="vital">
+        <description>
+            Absolute antenna number indexed monitor points.
+        </description>
+
+        <MonitorPoint name="MedianTdsb" type="float">
+            <shortName>Median Tdsb</shortName>
+            <longName>Median Double Sideband System Temperature</longName>
+            <description>
+                Median double sideband tsys for all bands and receivers 
+                connected to this antenna.
+            </description>
+            <units>K</units>
+            <precision>0</precision>
+            <warnLo>0</warnLo>
+            <warnHi>5000</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="MedianAmp" type="float">
+            <shortName>Median Amp</shortName>
+            <longName>Median Self Cal Amplitude</longName>
+            <description>
+                Median amplitude of self calibration solutions for all bands
+                and polarizations connected to this antenna.
+            </description>
+            <units>Jy</units>
+            <precision>1</precision>
+            <width>8</width>
+        </MonitorPoint>
+        
+        <MonitorPoint name="MedianSnr" type="float">
+            <shortName>Median Snr</shortName>
+            <longName>Median Self Cal Signal To Noise Ratio</longName>
+            <description>
+                Median snr of self calibration solutions for all bands
+                and polarizations connected to this antenna.
+            </description>
+            <precision>1</precision>
+            <width>8</width>
+        </MonitorPoint>
+
+        <MonitorPoint name="MaxCoherence" type="float" >
+            <shortName>Coherence</shortName>
+            <longName>Max 30 Minute Coherence</longName>
+            <description>
+                The maximum coherence for this antenna in the last 30 minutes.
+            </description>
+            <precision>2</precision>
+            <warnLo>0.2</warnLo>
+            <errLo>0.15</errLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameMaxCoherence" type="float" >
+            <shortName>Frame Coherence</shortName>
+            <longName>Max Frame Coherence</longName>
+            <description>
+            The maximum coherence for this antenna across all bands this frame.
+            </description>
+            <precision>2</precision>
+            <warnLo>0.2</warnLo>
+            <errLo>0.15</errLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="Shadowed" type="bool">
+            <shortName>Shadowed</shortName>
+            <longName>Shadowed</longName>
+            <description>
+                Indicates if an antenna is shadowed by another antenna.  
+                For antennas whose current pointing positions are known, 
+                shadowing is precisely calculated via U-V baseline projection.
+                For antennas whose current pointing positions are not known,
+                less precise swept-volume based calculations are used.
+            </description>
+            <errHi>true</errHi>
+        </MonitorPoint>
+
+        <Container name="Band" count="&NUM_ASTRO_BANDS;" priority="vital"> 
+            <description>
+                AstroBand indexed monitor points.
+            </description>
+
+            <CommonContainer ref="Rx" name="LeftPol" />
+            <CommonContainer ref="Rx" name="RightPol" />
+
+        </Container>
+        
+    </Container> <!-- name="Band' -->
+
+</Subsystem>

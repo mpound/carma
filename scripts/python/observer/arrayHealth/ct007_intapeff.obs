@@ -1,0 +1,413 @@
+# $Id: ct007_intapeff.obs,v 1.19 2012/12/19 16:42:42 obs Exp $
+# Script to acquire data for interferometric aperture efficiency
+# measurements using three 500 MHz wide bands.
+#
+# Usage:
+#
+#   run('ct007_intapeff', <parameters>)
+#
+# All parameters are optional. They are space or comma separated pairs of
+# <keyword> = <value>. See below or use
+#
+#   run('ct007_intapeff', help = True)
+#
+# for further details.
+#
+# @Author Misty A. La Vigne, University of Maryland
+#
+# History
+# 26-Aug-2010: JWL      Fixed typo.
+# 25-Aug-2010: JWL      Modified to handle 8 spectral line bands.
+# 05-mAY-2010: JWL      Added commands to put bands 4-8 off line. They should
+#                       be included when they have been fully debugged.
+# 07-Apr-2009: JWL      Updated for Steve Scott's run command
+# 19-Sep-2008: JWL      Added keyword to allow re-fill/re-analysis option.
+#                       Corrected results directory name.
+#                       Added keyword to skip tuning.
+# 08-Sep-2008: JWL      Modified output directory to include year.
+#                       Changed analysis to python function call.
+#                       Changed 'track()' to 'etrack()'
+# 30-Jul-2008: JWL      Fixed error in wait for fill logic.
+# 16-Jul-2008: First arrayHealth version
+#
+
+#-------------------------- Help --------------------------
+""" Acquire and analyse data for interferometric aperture efficiency measurements
+
+    Examples:
+
+        run('ct007_intapeff' source = 'Mars')
+        run('ct007_intapeff' do1mm = True, point3mm = False)
+        run('ct007_intapeff' lofreq = 112, trec = 2)
+
+    Parameters:
+
+        source = 'uranus'
+            Astronomical source to use for the calibration. Pick a bright
+            quasar of known flux or choose from the following planet list:
+            Mars, Uranus, Neptune, Venus, or Jupiter.
+
+        do1mm = False
+            If True, do a 1-mm efficiency measurement at an LO frequency of
+            228 GHz. This can be overridden by an 'lofreq' value. If False
+
+        tint = 5.0
+            Total integration time, min
+
+        trec = 10.0
+            Integration time per record, s
+
+        conf = 'DEFAULT'
+            Configuration for configwideastroband
+
+        lofreq = None
+            If specified, the efficiency measurement will be done at this
+            frequency. Otherwise, the measurement will be made at 93 GHz
+            if do1mm = False, and 228 GHz if do1mm = True.
+
+        point3mm = True
+            If True, the script will do a pointing measurement on the source at
+                3-mm, regardless of the LO frequency, before collecting the data
+                for the efficiency. If the measurement is also at 3-mm, the
+                pointing will be done at the same frequency. If the measurement
+                is at 1-mm, the pointing will be done at 93 GHz.
+            If False, the script will do a pointing measurement at the specified
+                LO frequency.
+
+        elevlim = 15
+            Minimum elevation for the measurement
+
+        refant = 13
+            Reference antenna for the analysis. Should be close to the
+            array center.
+
+        flux   = 0.0
+            Flux for source: only needs to be set if the source is not a planet
+            AND the catalog flux is badly out of date.
+
+        mirdata = None
+            If supplied, the script will skip all the observation and just
+            do the data filling and analysis. All other arguments apart from
+            source, lofreq, flux and refant are ignored. If the '.mir' extension
+            is given, the data will not be refilled, only re-analysed.
+            (Note: for any non-standard locations for the files, the function
+            'analysis.analyzeInterfApEff(mirFile, logDir, refant, flux)' in
+            'arrayHealth\intintApeffAnalysis.py' can be used.)
+
+        tune = True
+            If True, the receivers will be tuned and the correlator bands
+            set up. If False, these steps are skipped.
+
+   The downconverters and correlator bands are set up in wideband mode in
+   contiguous frequencies.
+
+   On completion of the data acquisition, the data are filled to Miriad and
+   the analysis script is run.
+"""
+#-------------------------- Help --------------------------
+
+#----Required imports----
+
+import runCommand as rc
+import time
+import subarrayCommands as sc
+import printFunctions as pf
+import arrayHealthUtils as ah
+import radioPoint
+import glob
+import obsdefUtils as ou
+import intApeffAnalysis as analysis
+import os
+
+planets = ['mercury', 'venus', 'mars', 'jupiter', \
+           'saturn', 'uranus', 'neptune']
+
+subarrayNumber = sc.s.getSubarrayNo()
+
+#----Parameters----
+#
+p = rc.Params()
+p.add("source", type = str, default = "uranus",
+       description = "Source to measure efficiency on")
+p.add("do1mm", type = bool, default = False,
+       description = "Make measurement in 1 mm band?")
+p.add("tint", type = float, default = 5.0,
+       description = "Total integration time, min")
+p.add("conf", type = str, default = 'DEFAULT',
+       description = "Configuration for confgiwideastroband")
+p.add("trec", type = float, default = 10.0,
+       description = "Integration time per record, s")
+p.add("lofreq", type = float, default = None,
+       description = "LO frequency, if not using default",
+       noneAllowed = True)
+p.add("point3mm", type = bool, default = True,
+       description = "Point at 3-mm regardless of obs. freq.?")
+p.add("elevlim", type = float, default = 30,
+       description = "Minimum elevation for measurement")
+p.add("refant", type = int, default = 13,
+       description = "Reference antenna for selfcal")
+p.add("flux", type = float, default = 0.0,
+       description = "Source flux, Jy. 0.0 for automatic lookup")
+p.add("mirdata", type = str, default = None,
+       description = "Miriad data set to analyse. Not required for measurement.",
+       noneAllowed = True)
+p.add("tune", type = bool, default = True,
+       description = "Tuning and correlator setup skipped if False")
+
+p.processInputParameters()
+#----End Parameters----
+
+source   = p.source
+do1mm    = p.do1mm
+tint     = p.tint
+trec     = p.trec
+lofreq   = p.lofreq
+point3mm = p.point3mm
+elevlim  = p.elevlim
+refant   = p.refant
+flux     = p.flux
+mirdata  = p.mirdata
+tune     = p.tune
+
+idString = "ct007_intapeff.obs, " + "$Revision: 1.19 $".strip('$')
+pf.printMessage("Starting %s" % idString)
+
+#----Set up logging and directories----
+pathName = time.strftime("web/interferometricApEff/%Y")
+logFileName = "intApEffObs.log"
+apEffDir = '/misc/array/rt/apertureEff/data'
+
+lm = ah.LogMessage("Interf. Aperture Efficiency", pathName, logFileName, idString)
+logDir = lm.logDir
+lm.message("Options:")
+lm.message("  source = %s" % source, noRtd = True)
+lm.message("  do1mm = %s" % str(do1mm), noRtd = True)
+lm.message("  tint = %.1f min" % tint, noRtd = True)
+lm.message("  trec = %d" % trec, noRtd = True)
+lm.message("  lofreq = %s" % lofreq, noRtd = True)
+lm.message("  point3mm = %s" % str(point3mm), noRtd = True)
+lm.message("  elevlim = %d" % elevlim, noRtd = True)
+lm.message("  refant = %d" % refant, noRtd = True)
+lm.message("  flux = %d" % flux, noRtd = True)
+lm.message("  mirdata = %s" % mirdata, noRtd = True)
+
+if lofreq == None :
+    if do1mm :
+        lofreq = 228
+    else :
+        lofreq = 93
+
+if mirdata != None :
+    lm.message("Analyzing existing data set: %s" % mirdata, \
+               noRtd = True)
+else :
+    #----Project info----
+
+    trackFilename = 'ct007_intapeff.py'
+    projectCode   = 'ct007'
+    pi            = 'Array Health'
+    email         = 'arrayhealth@mmarray.org'
+    sc.sendMsg(projectCode, pi, email, trackFilename, start = 1)
+    #----Starting script proper----
+
+    numInt =int((tint * 60) / trec)
+
+    #----Initializations----
+    sc.newProject(projectCode, 'intapeff')
+    sc.sleep(2)
+    blockName = sc.queryString('Control.Subarray%d.obsBlockId' % subarrayNumber)
+    lm.message("Obs block ID = %s" % blockName, noRtd = True)
+
+    sc.intent(source, 'O', True, False)
+    sc.radioInit()
+
+
+    if tune :
+
+        #----Radio pointing on the target source----
+        #
+        if (lofreq > 120) :
+            if point3mm :
+                f0 = 93
+            else :
+                f0 = lofreq
+        else :
+                f0 = lofreq
+
+        f1 = f0 - 1.35
+        f2 = f0 - 2.35
+        f3 = f0 - 3.35
+        f4 = f0 - 4.35
+        f5 = f0 - 5.35
+        f6 = f0 - 6.35
+        f7 = f0 - 7.35
+        f8 = f0 - 8.35
+
+        # Tune receivers
+        lm.message("Tuning to %.3f GHz" % f0)
+        sideband = sc.LSB
+        if f0 > 40: sideband = sc.USB
+        sc.freq(f0, sideband, 0.0, None)
+
+        # Set up correlator for pointing
+        lm.message("Setting up bands: %.3f, %.3f, %.3f GHz, %.3f, %.3f GHz, %.3f GHz, %.3f, %.3f GHz" \
+                   % (f1, f2, f3, f4, f5, f6, f7, f8))
+        sc.configwideastroband(conf=p.conf)
+        sc.optimizeThresholds()
+        sc.flattenPhases()
+        sc.tsys()
+        sc.checkbands()
+
+    sc.tsys(ifsetup = True)
+
+    # Wait until the source is up before doing the radio pointing
+    if (not sc.isup(source)) :
+        lm.message("Waiting for source")
+        timeToSleep = sc.whenup(source) * 60.0
+        if (timeToSleep > 0.0) :
+            lm.message("Waiting %s for %s to rise" % (ah.dhms(timeToSleep), source))
+            sc.sleep(timeToSleep)
+    lm.message("Starting pointing")
+
+    # Point on target source
+    resutls = radioPoint.radioPoint(source)
+    lm.message("Finished pointing")
+    sc.intent(source, 'O', True, False)
+
+    #----Observation of source---
+    #
+    # If observing setup is different from pointing, set up now
+
+    if (lofreq > 120) and point3mm and tune:
+
+        f0 = lofreq
+        f1 = f0 + if1mm - deltaIf1mm
+        f2 = f0 + if1mm
+        f3 = f0 + if1mm + deltaIf1mm
+
+        lm.message("Tuning to %.3f GHz" % f0)
+        sc.freq(f0, sc.USB, 0.0, None)
+
+        lm.message("Setting up bands: %.3f, %.3f, %.3f GHz, %.3f, %.3f GHz, %.3f GHz, %.3f, %.3f GHz" \
+                   % (f1, f2, f3, f4, f5, f6, f7, f8))
+        sc.configwideastroband(conf=p.conf)
+        sc.optimizeThresholds()
+        sc.flattenPhases()
+        sc.tsys()
+        sc.checkbands()
+
+    # Turn off the on-line Tsys and flux calibration
+    sc.applyTsys(False)
+    sc.applyFlux(False)
+
+    # Track source and integrate
+    sc.track(source, waiton = -2, tmo = 500)
+    sc.track(source, waiton = sc.ALL, tmo = 90)
+    lm.message("Doing Tsys")
+    sc.tsys(ifsetup = True)
+    lm.message("Starting integrations")
+    sc.integrate(integTime = trec, reps = numInt, antwait = sc.ALL, tmo = 30)
+
+    # Turn on-line calibrations back on
+    sc.applyTsys(True)
+    sc.applyFlux(True)
+
+    #----Check validity of reference antenna---
+    allAnts = sc.currentAntennaNumbers()
+    if refant not in allAnts :
+        refant = allAnts[0]
+        lm.message("Using antenna %d as reference" % refant)
+
+#----Fill section----
+if mirdata == None :
+    lm.message("Waiting to fill the Miriad file")
+    fill = True
+elif mirdata.endswith('.mir') :
+    mirFile = apEffDir + '/' + mirdata
+    fill = False
+else :
+    lm.message("Waiting to fill the Miriad file", noRtd = True)
+    blockName = mirdata
+    fill = True
+
+if fill :
+    corr = 'SL'
+    if subarrayNumber == 2: corr = 'WB'
+    baseName = '/opt/sdp/astroheader/%sCorrelIntegrated/astrohdr_' % corr + blockName
+    # Make sure that there is a file
+    if not glob.glob(baseName + '.xml*') :
+        if mirdata == None :
+            lm.message("No xml file corresponding to the project can be found.")
+        else :
+            lm.message("No xml file corresponding to the project can be found.", \
+                       noRtd = True)
+        lm.close()
+        raise Exception,"No xml file"
+    # Check if the file has not filled so still '.xml.write' status.
+    lm.message("Waiting for data to fill")
+    iwait=0
+    interval = 3
+    while (iwait < 180):
+        sc.sleep(interval)
+        iwait += interval
+        if(not os.path.exists(baseName + '.xml.write')) :
+            break
+    # Try filling anyway. Can't assume the file extension so get it
+    # Fill the data directly into the aperture efficiency area
+    xmlFile = glob.glob(baseName + '.xml*')[0]
+    mirFile = apEffDir + '/' + blockName + '.mir'
+    fillCmd = '/opt/rt/bin/sdpFiller infile=%s outfile=%s' % (xmlFile, mirFile)
+    if mirdata == None :
+        lm.message('Executing command ' + fillCmd)
+    else :
+        lm.message('Executing command ' + fillCmd, noRtd = True)
+    os.system(fillCmd)
+
+#----Reduction----
+
+# Look up source flux if not given and not a planet
+if ((source.lower() not in planets) and (flux == 0.0)) :
+    flux = ou.getSourceFlux(source, freq = lofreq)
+if mirdata == None :
+    if source in planets :
+        lm.message("Miriad planet model used for %s" % source.capitalize())
+    else :
+        lm.message("Assumed flux for %s = %.4f" % (source, flux))
+    lm.message("Running data analysis")
+    lm.message("Miriad data: %s" % mirFile)
+    lm.message("Directory: %s" % logDir)
+else :
+    if source in planets :
+        lm.message("Miriad planet model used for %s" % source.capitalize(), noRtd = True)
+    else :
+        lm.message("Assumed flux for %s = %.4f" % (source, flux), noRtd = True)
+    lm.message("Running data analysis", noRtd = True)
+    lm.message("Miriad data: %s" % mirFile, noRtd = True)
+    lm.message("Directory: %s" % logDir, noRtd = True)
+analysis.analyzeInterfApEff(mirFile, logDir, refant, flux)
+
+#----Cleanup----
+if mirdata == None :
+    sc.resetProject()
+    sc.alarmon()
+    sc.sendMsg(projectCode, pi, email, trackFilename)
+lm.close()
+
+print
+print 80 * "*"
+try :
+    blockName
+except NameError :
+    pass
+else :
+    print "To refill and analyze:\n"
+    print "    run('ct007_intapeff', source=%s, lofreq=%.3f, mirdata=%s)\n" % \
+           (source, lofreq, os.path.basename(blockName))
+print "To re-run analysis only:\n"
+print "    run('ct007_intapeff', source=%s, lofreq=%.3f, mirdata=%s)" % \
+           (source, lofreq, os.path.basename(mirFile))
+print "\nAdditional keyword arguments 'refant' and/or 'flux' may be used"
+print 80 * "*"
+print
+
+# end ct007_intapeff.obs

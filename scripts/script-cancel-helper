@@ -1,0 +1,40 @@
+#
+# DO NOT RUN THIS SCRIPT BY HAND. IT IS INTENDED FOR USE BY THE
+# SCRIPT /opt/rt/scripts/correlations ONLY.
+#
+
+import sys
+
+CORRELATOR_TYPE_PARAM='@TYPE_PARAM@'
+MODE_PARAM='@MODE_PARAM@'
+
+SUBARRAYS = {
+	1: 'SCI1',
+	2: 'SCI2',
+}
+
+CORRELATORS = {
+	'all': [CORR_WIDEBAND, CORR_SPECTRAL],
+	'spectral': [CORR_SPECTRAL],
+	'wideband': [CORR_WIDEBAND],
+}
+
+# Parameter checks
+if CORRELATOR_TYPE_PARAM not in CORRELATORS:
+	print >> sys.stderr, 'Unknown correlator type parameter'
+
+if MODE_PARAM not in ['off', 'on', 'test']:
+	print >> sys.stderr, 'Unknown mode parameter'
+
+for corr in CORRELATORS[CORRELATOR_TYPE_PARAM]:
+	for (saNo, saName) in SUBARRAYS.items():
+		if subarrayOwnsCorrelator(saNo, corr):
+			if MODE_PARAM == 'off':
+				cancel(saName)
+			elif MODE_PARAM == 'on':
+				# nothing to do
+				pass
+			elif MODE_PARAM == 'test':
+				print 'Issue: cancel(%s)' % saName
+
+# vim: set ts=4 sts=4 sw=4 noet tw=80:

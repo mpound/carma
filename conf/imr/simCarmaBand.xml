@@ -1,0 +1,270 @@
+<!-- $Id: simCarmaBand.xml,v 1.9 2014/06/04 17:09:54 mpound Exp $ -->
+<!-- For inclusion only by sandboxes that are simulating carma hardware (e.g. lab.xml) - this is not separately valid XML -->
+
+    <oad hostname="&SIMBANDSERVER;">
+        <server name="SimSlcBand1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand1"
+                system="correlator"  />
+        
+        <server name="SimSlcBand1CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=1 p=19001 f=correlator/slcorrelator.conf hwtype=carma &LOG;"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand1Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=1 y=false simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimSlcDataFlow1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlDataflow1"
+                system="correlator"  />
+
+        <server name="SimSlcRemapper1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlRemapper1"
+                system="correlator"  />
+
+
+        <server name="SimSlcBand2FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand2"
+                system="correlator"  />
+
+        <server name="SimSlcBand2CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=2 p=19002 f=correlator/slcorrelator.conf hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand2Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=2 y=false simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimSlcBand3FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand3"
+                system="correlator"  />
+
+        <server name="SimSlcDataFlow2FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlDataflow2"
+                system="correlator"  />
+
+        <server name="SimSlcRemapper2FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlRemapper2"
+                system="correlator"  />
+
+        <server name="SimSlcBand3CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=3 p=19003 f=correlator/slcorrelator.conf hwtype=carma"
+                system="correlator" 
+                critical="true" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand3Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=3 y=false simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+        <server name="SimSlcDataFlow3FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlDataflow3"
+                system="correlator"  />
+
+        <server name="SimSlcRemapper3FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlRemapper3"
+                system="correlator"  />
+
+
+        <server name="SimSlcBand4FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand4"
+                system="correlator"  />
+
+        <server name="SimSlcBand4CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=4 p=19004 f=correlator/slcorrelator.conf hwtype=carma"
+                system="correlator" 
+                critical="true" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand4Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=4 y=false simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimSlcDataFlow4FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlDataflow4"
+                system="correlator"  />
+
+        <server name="SimSlcRemapper4FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlRemapper4"
+                system="correlator"  />
+
+
+
+        <server name="SimSlcBand5FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand5"
+                system="correlator"  />
+        
+        <server name="SimSlcBand5CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=5 p=19005 f=correlator/slcorrelator.conf hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand5Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=5 y=false simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimSlcDataFlow5FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlDataflow5"
+                system="correlator"  />
+
+        <server name="SimSlcRemapper5FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlRemapper5"
+                system="correlator"  />
+
+
+        <server name="SimSlcBand6FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand6"
+                system="correlator"  />
+        
+        <server name="SimSlcBand6CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=6 p=19006 f=correlator/slcorrelator.conf hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand6Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=6 y=false simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimSlcDataFlow6FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlDataflow6"
+                system="correlator"  />
+
+        <server name="SimSlcRemapper6FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlRemapper6"
+                system="correlator"  />
+
+        <server name="SimSlcBand7FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand7"
+                system="correlator"  />
+        
+        <server name="SimSlcBand7CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=7 p=19007 f=correlator/slcorrelator.conf hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand7Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=7 y=false simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimSlcDataFlow7FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlDataflow7"
+                system="correlator"  />
+
+        <server name="SimSlcRemapper7FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlRemapper7"
+                system="correlator"  />
+
+
+        <server name="SimSlcBand8FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand8"
+                system="correlator"  />
+        
+        <server name="SimSlcBand8CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=8 p=19008 f=correlator/slcorrelator.conf hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand8Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=8 y=false simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimSlcDataFlow8FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlDataflow8"
+                system="correlator"  />
+
+        <server name="SimSlcRemapper8FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=SlRemapper8"
+                system="correlator"  />
+
+
+<!-- move up or down to add or remove y=false simulated bands 
+-->
+
+     </oad>

@@ -1,0 +1,92 @@
+#!/bin/sh
+
+# test postgres database
+
+usage() {
+    echo "$0 [-c] [-h]"
+    echo "   -c cleanup at end (deletes test database)"
+    echo "   -h print this message and exit"
+    echo "   -v run using valgrind"
+}
+
+cleanup() {
+    if [ $cleanup -eq 1 ] ; then
+        dropdb $testdb
+    fi
+}
+
+fail() {
+    cleanup
+    echo CARMA-TEST: FAIL carma/dbms $0
+    exit 1
+}
+
+cleanup=1
+use_valgrind=0
+for x in $* ; do
+  if [ "X$x" = "X-h" ] ; then
+      usage
+      exit 0
+  elif [ "X$x" = "X-c" ] ; then
+      cleanup=0
+  elif [ "X$x" = "X-v" ] ; then
+      use_valgrind=1
+  else
+     echo "$0: Unknown command line argument $x"
+     usage
+     fail
+  fi
+done
+
+echo "$0: Remove old test database. If this command fails its probably OK - it just means the database doesn't exist"
+
+testdb=monitor_test
+
+dropdb $testdb
+
+echo "$0: Create test database $testdb"
+
+createdb $testdb
+
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+echo "$0: Define the tables in $testdb"
+
+psql -c "\i ${srcdir}/conf/dbms/monitorDatabaseSchema.sql" $testdb
+
+if [ $? -ne 0 ] ; then
+    echo "$0 Error creating tables in $testdb"
+    fail
+fi
+# this command inserts a row which is necessary to test exception throwing
+# in dbmsTest
+psql -c "INSERT INTO Subsystems (subsysID, name) VALUES (7,'Bima7')" $testdb
+psql -c "INSERT INTO MonitorConfig (frameCount, tagID, subsysID, \
+    name, shortName, longName, units, updateInterval, description, datatype, \
+    monitorPointType, persistent, integrateFunction) VALUES (275420235, \
+    524287, 7, 'my.favorite.monitor.point', 'mp5', \
+    'this is a test point inserted directly from $0', 'm/s', 1,\
+    'this is a test description for a monitor point', 5, 1, 1, 'average')"\
+    $testdb
+
+if [ $? -ne 0 ] ; then
+    echo "$0 Error executing insert statement necessary for exception testing"
+    fail
+fi
+
+if [ $use_valgrind -eq 1 ] ; then 
+    valgrind --leak-check=yes carma/dbms/Test/dbmsTest rdbms=postgres
+else
+    carma/dbms/Test/dbmsTest
+fi
+
+if [ $? -ne 0 ] ; then
+    fail
+else
+    cleanup
+    echo "CARMA-TEST: PASS carma/dbms postgreslTest"
+    exit 0
+fi
+

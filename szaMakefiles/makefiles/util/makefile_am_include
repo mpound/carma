@@ -1,0 +1,14 @@
+TOP = @abs_top_srcdir@/carma
+
+include szaMakefiles/makefiles/util/makefile_am_include_libs_auto
+
+
+
+
+
+
+
+
+
+
+

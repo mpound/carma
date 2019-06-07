@@ -1,0 +1,28 @@
+#ifndef _WVRIDL
+#define _WVRIDL
+
+module carma {
+  
+  module antenna {
+    
+    module common {
+      /**
+       * %Water Vapor Radiometer control.
+       * @todo completely undefined
+       */
+      interface WvrControl {
+	/**
+	 * A bogus stub, so I can instantiate a WVR object
+	 */
+	void doNothing();
+	
+      }; // End Wvr interface
+      
+    }; // End common module
+    
+  }; // End antenna module
+  
+}; // End carma module
+
+#endif  // _WVRIDL
+

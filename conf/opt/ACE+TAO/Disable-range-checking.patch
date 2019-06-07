@@ -1,0 +1,16 @@
+Author: Andy Beard
+Unfortunately I do not remember the exact reason for disabling range checking.
+It was likely part of fine tuning during the ACE+TAO upgrade.  I doubt
+it has any measurable effect on our performance but have not bothered
+integrating it out.  YMMV.
+--- ACE_wrappers/TAO/tao/Range_Checking_T.h	2009-10-06 04:02:41.000000000 -0700
++++ ACE+TAO-5.8.1-carma-1.5/TAO/tao/Range_Checking_T.h	2010-10-02 16:12:00.000000000 -0700
+@@ -15,7 +15,7 @@
+ #include "tao/SystemException.h"
+ 
+ #if !defined (TAO_CHECKED_SEQUENCE_INDEXING) && !defined (ACE_NDEBUG)
+-# define TAO_CHECKED_SEQUENCE_INDEXING 1
++# define TAO_CHECKED_SEQUENCE_INDEXING 0 
+ #endif
+ 
+ TAO_BEGIN_VERSIONED_NAMESPACE_DECL

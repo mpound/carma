@@ -1,0 +1,605 @@
+#!/bin/bash
+
+# $Id: taoimrsetupNoSu.in,v 1.30 2014/03/27 21:22:43 iws Exp $
+#
+# Init file for starting up IMR and other related processes
+# Has no assumptions about environment variables, but expects
+# this script to live in <build>/scripts or <install>/scripts.
+#
+# The processes and data files created by this script will have
+# the permissions of the user that runs it. Therefore it is
+# recommended that the "imrsetup" script be used to run this
+# as the control user. The name of this file expresses the
+# fact that no set user command is used here.
+
+################################################
+
+# Define CARMA environment variable for the root of the build/install
+# Figure out the root of the build/install directory
+# The assumption and requirement is that this script is located
+# one level below the build/install root
+# Fixes case where a relative path is given
+INPUT_PATH=`/usr/bin/dirname "$0"`
+ABSPATH=`/bin/sh -c "cd ${INPUT_PATH} > /dev/null; pwd"`
+export CARMA=`/usr/bin/dirname ${ABSPATH}`
+
+# From configure
+export CARMA_TOOLS=@carma_tools@
+
+# Find out what this host's hostname is.  This name will correspond to one IP
+# address.  This host may have other IP addresses (e.g. multiple ethernet
+# interfaces or IP aliases) and we may actually want to bind to one of these
+# other IP addresses instead of the IP address associated with this host's
+# hostname.
+HOSTNAME=`/bin/hostname`
+
+# Make sure we can source our functions
+if ! source "${CARMA}/scripts/imrfuncs"
+then
+    echo "ERROR: Cannot source ${CARMA}/scripts/imrfuncs"
+    exit 1
+fi
+
+# Source logging functions
+if ! source "${CARMA}/scripts/logging"
+then
+    echo "ERROR: Cannot source ${CARMA}/scripts/logging"
+    exit 1
+fi
+
+LOGGING_NDC="[Carma RTS Process Management]"
+LOGGING_FACILITY=$CONTROL_LOGGING_FACILITY
+
+#--------------------------------------------------------------------
+# Defaults for variables
+VERBOSE=0
+IMRINPUT=@imr@
+IMRHOST=
+IMRPORT=
+IMRHOSTPORT=
+MASTERIMR=0
+APPS=YES
+LOG_OPTS="-ORBDebugLevel 0 -ORBVerboseLogging 1 -ORBLogFile \"Imr.log\" -d 2"
+IMRADMIN="${CARMA_TOOLS}/bin/tao_imr -ORBDefaultInitRef"
+IMRSTART="${CARMA_TOOLS}/bin/ImplRepo_Service -ORBUseSharedProfile 1 -ORBStdProfileComponents 1 -t 20"
+if [ $VERBOSE -eq "1" ]; then
+    IMRSTART="$IMRSTART $LOG_OPTS"
+fi
+OADSTART="${CARMA_TOOLS}/bin/ImR_Activator -d 2 -l -ORBDefaultInitRef"
+NAMING_SERVICE="${CARMA_TOOLS}/bin/Naming_Service"
+NOTIFY_SERVICE="${CARMA}/scripts/setstacklimit ${CARMA_TOOLS}/bin/Notify_Service -UseSeparateDispatchingORB 1 -ORBSvcConf ${CARMA}/conf/tao/notify.conf"
+DEFAULT_INIT_REF=
+CARMACONFIG="${CARMA}/bin/imrconfig  addSleep=0 startSleep=0 wait=0"
+CARMA_CONF_FILE=
+IMRSTRING=OAD
+EXIT_FAILURE=1
+EXIT_SUCCESS=0
+
+# OADHOST is the hostname associated with the IP address that the imr process
+# will bind to.  This defaults to the name returned by the hostname program.
+
+OADHOST=$HOSTNAME
+
+# dump of variables
+function dumpVariables {
+    if [ $VERBOSE -eq 0 ]; then return; fi
+
+    echo IMRINPUT:            $IMRINPUT
+    echo IMRHOST:             $IMRHOST
+    echo IMRPORT:             $IMRPORT
+    echo IMRHOSTPORT:         $IMRHOSTPORT
+    echo OADHOST:             $OADHOST
+    echo MASTERIMR:           $MASTERIMR
+    echo APPS:                $APPS
+    echo CARMA_CONF_FILE:     $CARMA_CONF_FILE
+    echo IMRADMIN:            $IMRADMIN
+    echo IMRSTART:            $IMRSTART
+    echo CARMACONFIG:         $CARMACONFIG
+    echo IMRSTRING:           $IMRSTRING
+    echo VERBOSE:             $VERBOSE
+}
+
+#--------------------------------------------------------------------
+
+function info {
+    if [ $VERBOSE -eq 1 ]; then
+        echo $@
+    fi
+}
+
+function error {
+    logerror $@
+    echo -e "$@" >&2
+}
+
+function status {
+    echo $@
+}
+
+function fail {
+        error $*
+        exit $EXIT_FAILURE
+}
+
+function isRegistered {
+    ! $IMRADMIN --get-server-info $1 >> /dev/null
+    return $?
+}
+
+function isImrRunning () {
+    info -n "Checking to see if the imr is running..."
+    $IMRADMIN list &> /dev/null
+    result=$?
+    if [ $result -eq 0 ]; then
+        info " it is."
+    else
+        info " it isn't."
+    fi
+    return $result
+}
+
+function isRunning () {
+    $IMRADMIN list $1 2>&1 | grep -q 'Running at endpoint' &> /dev/null
+    return $?
+}
+
+# Wait upto timeout seconds for imr to startup.
+# Sleeps atleast one second.
+# Inputs: timeout in seconds
+# Return: 0 if running, 1 if timeout
+function waitForImrToStart () {
+    echo -n "Waiting for Imr to start"
+    local timewaiting=0
+    local imrrunning=1
+    while [[ $imrrunning -ne 0 && $((timewaiting++)) -le $1 ]]; do
+        sleep 1
+        isImrRunning >& /dev/null
+        imrrunning=$?
+        echo -n "."
+    done
+
+    echo ""
+
+    [ $timewaiting -le $1 ]
+    return $?
+}
+
+# Wait upto timeout seconds for oad to startup.
+# Sleeps atleast one second.
+# Inputs: timeout in seconds
+# Return: 0 if running, 1 if timeout
+function waitForOadToStart () {
+    info "Waiting for Oad to start"
+    local timewaiting=0
+    local imrrunning=1
+    while [[ $imrrunning -ne 0 && $((timewaiting++)) -le $1 ]]; do
+        sleep 1
+        pgrep -fx "$OADSTART"  1> /dev/null
+        imrrunning=$?
+        if [ $imrrunning == "0" ]; then
+            info " OAD is running."
+        fi
+    done
+
+    echo ""
+
+    [ $timewaiting -le $1 ]
+    return $?
+}
+
+# Wait upto timeout seconds for input service to report 'running'
+# This method blocks until timeout while waiting for the input service to run
+# Inputs: serviceName timeout
+# Return: 0 when running, 1 on timeout
+function waitForServiceToStart () {
+    echo "Waiting for $1 to start"
+    local timewaiting=0
+    local servicerunning=1
+    while [[ $servicerunning -ne 0 && $((timewaiting++)) -le $2 ]]; do
+        sleep 1
+        isRunning $1 >& /dev/null
+        servicerunning=$?
+    done
+
+    echo ""
+
+    [ $timewaiting -le $2 ]
+    return $?
+}
+
+# Wait for input service to report anything other than 'running'
+# This method blocks until timeout while waiting for the input service to stop
+# Inputs: serviceName timeout
+# Return: 0 when stopped, 1 on timeout
+function waitForServiceToStop () {
+    echo -n "Waiting for $1 to stop"
+    local timewaiting=0
+    local servicerunning=0
+    while [[ $servicerunning -eq 0 && $((timewaiting++)) -le $2 ]]; do
+        sleep 1
+        isRunning $1
+        servicerunning=$?
+        echo -n "."
+    done
+    echo ""
+
+    [ $timewaiting -le $2 ]
+    return $?
+}
+
+function getstatus {
+    $IMRADMIN list -v
+}
+
+# Check to see if config file has been input
+function checkConfigInput {
+    # Must specify a config file...
+    if [ -z $CARMA_CONF_FILE ]; then
+        error "ERROR: configuration file must be specified with --file xxx"
+        exit 1
+    fi
+}
+
+# File to indicate imradmin has returned.
+STOPFILE=/tmp/IMRstop.$$
+# # of Seconds to wait for imradmin to finish.
+timetostop=10
+
+# Stop individual imr processes.
+stop_procs_via_imr() {
+
+    /bin/rm -f /tmp/$STOPFILE
+
+    # We're going to attempt here to shutdown ALL carma processes cleanly.
+    # However, we still need to contend with the possibility of imradmin
+    # hanging forever.
+    if [ $MASTERIMR -eq 1 ]; then
+        # Shutdown Notification service first to stop corr & mon data flows.
+        info "Shutting down notification service."
+        $IMRADMIN shutdown NotificationService
+        $IMRADMIN remove NotificationService
+        sleep 2
+    fi
+
+    info "Shutting down carma processes and unregistering from IMR."
+    # Now for everybody else
+    ${CARMACONFIG} stop=true clean=true &> /dev/null
+
+    if [ $MASTERIMR -eq 1 ]; then
+        info "Shutting down NameService"
+        $IMRADMIN shutdown NameService
+        $IMRADMIN remove NameService
+        info "Shutting down implementation repository and all activators"
+        $IMRADMIN shutdown-repo -a
+    else
+        info "Shutting down activator"
+        pkill -f "$OADSTART"
+    fi
+            
+
+    # Let caller know we're done.
+    echo "$?"  > $STOPFILE
+}
+
+#FUNCTION: stop IMR and all its children
+# This just kills things rather than using imradmin, which can hang
+# forever if the imr is hosed.
+function stop {
+
+    checkConfigInput
+
+    # Stop individual IMR processes BEFORE shutting down the imr/oad.
+    # We do this so that procs will be reported as "STOPPED" in rtd
+    # prior to shutting down.  If this isn't done, the oad is unable
+    # to report process status and rtd will improperly display RUNNING.
+    # Not an issue on system restarts but is on moves and maintenance days.
+    if isImrRunning; then
+
+        # Run in background so we don't hang if the IMR has problems.
+        stop_procs_via_imr &
+
+        # Give stop_procs_via_imr to timetostop seconds to finish.
+        while [ $timetostop -gt 0 ]; do
+            timetostop=`expr $timetostop - 1`
+            if [ -f $STOPFILE ]; then
+                break
+            fi
+            sleep 1
+        done
+
+        if [ ! -f $STOPFILE ]; then
+            # Stopfile does not exist so it is likely imradmin hung
+            logerror "Stopfile not found! imradmin is hung and will be killed."
+            pkill -f $IMRADMIN
+        fi
+    fi
+
+    # Give an extra second for processes to terminate.
+    sleep 1
+
+    info "Checking for processes which got away"
+    PGREP_PATTERN='tao_imr|imrconfig|Naming_Service|Notify_Service|ImplRepo_Service|ImR_Activator|ORBServerId'
+    STILL_RUNNING_PIDS=`pgrep -d ' ' -f $PGREP_PATTERN`
+    if [ "$STILL_RUNNING_PIDS" != "" ]; then
+        info "The following PIDs are still running: $STILL_RUNNING_PIDS"
+        STILL_RUNNING_SERVERS=`ps -p "${STILL_RUNNING_PIDS}" -o comm= -o pid=`
+        logerror "imradmin failed to shutdown the following servers " \
+            "which will be killed: $STILL_RUNNING_SERVERS"
+        kill -9 ${STILL_RUNNING_PIDS}
+    else
+        loginfo "Successfully terminated all carma applications"
+    fi
+
+    sleep 1
+
+    STILL_RUNNING_PIDS=`pgrep -d ' ' -f $PGREP_PATTERN`
+    if [ "$STILL_RUNNING_PIDS" != "" ]; then
+        info "The folllowing PIDs are STILL running: $STILL_RUNNING_PIDS."
+        info "I can't seem to kill them - check permissions."
+    fi
+
+    if [ -f $STOPFILE ]; then
+        /bin/rm -f $STOPFILE
+    fi
+
+    if [ $MASTERIMR -eq 0 ]; then
+        info "Cleaning carma services from imr"
+        info "$CARMACONFIG clean=true"
+    fi
+}
+
+function startNamingService {
+    info "Starting naming service..."
+
+	$IMRADMIN add NameService -a manual -l $OADHOST -c "${NAMING_SERVICE} -ORBUseImr 1 ${DEFAULT_INIT_REF}"
+
+    # isRegistered NameService
+    if [ $? -eq 0 ]; then
+        info "NameService is registered with imr."
+    else
+        error "NameService is NOT registered with imr."
+    fi
+
+    sleep 1
+
+    $IMRADMIN start NameService
+
+    waitForServiceToStart NameService 5
+}
+
+function startNotificationService {
+
+    info "Adding notification service to imr"
+
+    #isRegistered NotifyService
+    if [ $? -eq 0 ]; then
+        info "NotificationService is registered with imr."
+    else
+        error "NotificationService is NOT registered with imr."
+    fi
+
+    $IMRADMIN add NotificationService -l $OADHOST -a manual -c "${NOTIFY_SERVICE} -ORBUseImr 1 ${DEFAULT_INIT_REF}"
+
+    $IMRADMIN start NotificationService
+
+    waitForServiceToStart NotificationService 5
+}
+
+function startImr {
+
+    # see if IMR is already running; if yes then exit
+    local imrid=`pgrep -fx "$IMRSTART"`
+    if [ -n "${imrid[0]}" ]; then
+        error "$IMRSTRING is already running; Try a stop or a restart..."
+        ps -fp ${imrid[0]}
+        exit $EXIT_FAILURE
+    fi
+
+    # start imr in administrative mode
+    info "Starting $IMRSTRING "
+    $IMRSTART >& $IMR_LOG_FILE &
+    IMRID=$!
+
+    waitForImrToStart 5
+}
+
+function startOad {
+
+    # see if IMR is already running; if yes then exit
+    local oadid=`pgrep -fx "$OADSTART"`
+    if [ -n "${oadid[0]}" ]; then
+        error "$OADSTRING is already running; Try a stop or a restart..."
+        ps -fp ${oadid[0]}
+        exit $EXIT_FAILURE
+    fi
+
+    # start imr in administrative mode
+    info "Starting $OADSTART"
+    $OADSTART < /dev/null 2>&1 | /bin/grep 'ImR\ Activator' 2>/dev/null | /bin/logger -t ImR_Activator -p local2.info &> /dev/null &
+    OADID=$!
+
+    waitForOadToStart 5
+}
+#FUNCTION: start IMR and services running on this machine
+function start {
+
+    checkConfigInput
+
+    if [ $MASTERIMR -eq 1 ]; then
+        startImr
+    fi
+
+    startOad
+
+    if [ $MASTERIMR -eq 1 ]; then
+        startNamingService
+        startNotificationService
+    fi
+
+    # Exit if we're not starting apps
+    if [ $APPS = NO ]; then exit $EXIT_SUCCESS; fi
+
+	info "Configuring $IMRSTRING with carma services..."
+    info "$CARMACONFIG start=true"
+
+    # On slaves, start processes in waves specified by priority
+    $CARMACONFIG priority=0-9 start=true waitOnEachPriority=true
+
+    return $EXIT_SUCCESS
+}
+
+#FUNCTION: call command that is passed through command line
+# Always does a db clean for slave on start and restart
+function callCommand {
+    case "$1" in
+	start)
+	    start
+        return $?
+	    ;;
+	stop)
+	    stop
+        return $?
+	    ;;
+	status)
+	    getstatus
+	    ;;
+	restart)
+	    stop
+	    start
+        return $?
+	    ;;
+	help | --help | -h)
+	    echo
+	    echo "Usage: $0 [options] --file confFile command"
+	    echo
+	    echo "Options: --imr IMRHOST[:IMRPORT] - IMR master is at "
+        echo "                              IMRHOST[:IMRPORT]"
+	    echo "         --oadhost HOSTNAME - activator process will bind to IP"
+		echo "                              address associated with HOSTNAME"
+	    echo "         --noapps - don't start carma apps; just corba services."
+		echo "         IMRHOST defaults to 'imr'; IMRPORT defaults to 20000"
+		echo '         HOSTNAME defaults to `hostname`' "($HOSTNAME)"
+	    echo
+	    echo "Commands: start - starts IMR, Name and Notification Services"
+	    echo "                  or OAD only if imr running on another hostname"
+	    echo "          stop - stops IMR/OAD, Name and Notification Services"
+	    echo "          restart - stops and starts"
+	    echo "          status - checks to see if services are running"
+		echo
+	    ;;
+     usage)
+        echo ""
+        echo "Usage: $0 {start|restart|stop|status|help}"
+        echo ""
+	    ;;
+     *)
+        return $EXIT_FAILURE
+        ;;
+    esac
+    return $EXIT_SUCCESS
+}
+
+#FUNCTION: decode option and set appropriate variables
+function processOption {
+    case "$1" in
+	--imr)
+        IMRINPUT=${2}
+		# Support "localhost" and "LOCALHOST" as special cases to really
+		# mean `hostname`.
+		# To really use localhost as IMRHOST, use mixed case
+		# (e.g. "--imr Localhost").
+	    ;;
+	--oadhost)
+	    OADHOST=$2
+	    ;;
+ 	--file)
+	    CARMA_CONF_FILE=$2
+	    ;;
+	--noapps)
+	    APPS=NO
+	    ;;
+	--verbose)
+	    VERBOSE=1
+        LOGGING_ECHO_TO_TERMINAL="Sure"
+	    ;;
+
+    esac
+}
+
+function setVariables {
+
+    MASTERIMR=0
+
+    # Tear apart host and port and reassemble
+    parse_imr_host_port "${IMRINPUT}"
+    # Interpret single case localhost to be hostname;
+    # If you really want to use localhost, put it in mixed case
+    if [ $IMRHOST = localhost -o $IMRHOST = LOCALHOST ]; then
+        IMRHOST=$HOSTNAME
+    fi
+
+    IMRHOSTPORT="${IMRHOST}:${IMRPORT:-20000}"
+
+    if [ ${IMRHOST} == ${OADHOST} ]
+    then
+        MASTERIMR=1
+    fi
+    if [ "${IMRPORT}" == "20000" ]; then
+        IMRPORT=
+    fi
+
+    DEFAULT_INIT_REF="-ORBDefaultInitRef corbaloc::${IMRHOSTPORT}"
+
+    OADSTART="$OADSTART corbaloc::${IMRHOSTPORT} -n $OADHOST"
+    OAD_LOG_FILE=oad_startup.log
+
+    if [ $MASTERIMR -eq 1 ]; then
+        IMRSTART="${IMRSTART} -ORBListenEndpoints iiop://${IMRHOSTPORT}"
+        IMR_LOG_FILE=/dev/null
+        IMRSTRING=IMR
+    fi
+
+    CARMACONFIG="${CARMACONFIG} imr=$IMRHOSTPORT oad=$OADHOST file=$CARMA_CONF_FILE"
+
+    IMRADMIN="${IMRADMIN} corbaloc::$IMRHOSTPORT"
+}
+
+
+# Process all the command line options and set variables...
+# arg1: number of arguments in argList to process
+function getOptions {
+
+    # run through arguments to check for options
+    for (( i=$1-1; i+1; i=i-1 ));
+    do
+        processOption "${argList[$i]}" "${argList[$i+1]}"
+    done
+
+    setVariables
+}
+
+# Do all the commands
+function doCommands {
+    # run through arguments for commands
+    for (( i=$1; i+1; i=i-1 ));
+    do
+        callCommand "${argList[$i]}"
+    done
+}
+
+
+# ===============================================================
+# Executable part of the script
+
+if [ $# == 0 ]; then
+    callCommand "usage"
+fi
+
+# get list of arguments
+argList=($*)
+
+getOptions $#
+
+doCommands $#
+
+exit 0

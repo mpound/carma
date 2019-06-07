@@ -1,0 +1,3 @@
+The requested LO reference frequency does not match the measured frequency.
+This can be a serious error. There is a separate LO reference for each 
+subarray. Inspect the LOref RTD pages and notify help@mmarray.org.

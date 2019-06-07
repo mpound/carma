@@ -1,0 +1,105 @@
+; begin odbc.ini
+[ODBC Data Sources]
+myodbc3       = MySQL ODBC 3.51 Driver DSN 
+myodbc3_test  = MySQL ODBC 3.51 Driver DSN for testing 
+;postgres      = PostgreSQL ODBC Driver
+;postgres_test = PostgreSQL ODBC Driver, test db
+
+[myodbc3]
+; this needs to be defined in terms of @carma_tools@, so we use a .in file
+#Driver = @carma_tools@/lib/libmyodbc3
+Driver = @carma_tools@/lib/libmyodbc5.so
+Description = MySQL ODBC 3.51 Driver DSN
+Server = localhost
+PORT = 3306
+SOCKET = /tmp/mysql.sock
+;USER = root
+:Password = 
+Database = carma
+;ReadOnly = no
+;ServerType = MySQL
+;FetchBufferSize = 99
+:ServerOptions =
+:ConnectOptions =
+;:OPTION = 3
+;TraceFile = /longterm1/odbc/log/mysql_test_trace.log
+;Trace = 1
+;DebugFile = /longterm1/odbc/log/mysql_test_debug.log
+;Debug = 1
+
+[myodbc3_test]
+Driver = @carma_tools@/lib/libmyodbc5.so
+Description = MySQL ODBC 3.51 Driver DSN
+Server = localhost
+SOCKET = /tmp/mysql.sock
+:USER = root
+Database = carma_test
+ReadOnly = no
+ServerType = MySQL
+TraceFile = /appl/beren/dmehring/mysql_test_trace.log
+Trace = 1
+DebugFile = /appl/beren/dmehring/mysql_test_debug.log
+Debug = 1
+
+
+;[postgres]
+;Driver = @carma_tools@/lib/libodbcpsql.so
+;Setup  = @carma_tools@/lib/libodbcpsqlS.so
+;Description = PostgreSQL Data Source
+;DSN = postgres
+;Servername = localhost
+;Port = 5432
+;;Socket = 4096
+;Protocol = 7.4
+;UserName = dmehring
+;;Password = valid_passwd
+;Database = monitor
+;ReadOnly = no
+;ServerType = Postgres
+;FetchBufferSize = 99
+;ServerOptions =
+;ConnectOptions =
+;Options = 3
+;Trace = 1
+;TraceFile = /appl/beren/dmehring/appl/var/log/PostgreSQL_test_trace.log
+;Debug = 1
+;DebugFile = /appl/beren/dmehring/appl/var/log/PostgreSQL_test_debug.log
+
+
+
+;[Default]
+;Driver = /usr/lib/psqlodbc.so
+;Description = PostgreSQL Data Source
+;Server = localhost
+;Port = 5432
+;UserName = dmehring
+;Password = valid_passwd
+;Socket = 4096
+
+
+;[postgres_test]
+;Driver = /appl/beren/dmehring/carma_tools/lib/libodbcpsql.so
+;:Setup  = /appl/beren/dmehring/carma_tools/lib/libodbcpsqlS.so
+;:Driver = /appl/beren/dmehring/appl/encap/psqlodbc-07.03.0200/lib/psqlodbc.so
+;:Setup = /appl/beren/dmehring/appl/encap/psqlodbc-07.03.0200/lib/psqlodbc.la
+;:Driver = /appl/beren/dmehring/appl/encap/psqlodbc-7.2.5/lib/psqlodbc.so
+;Description = PostgreSQL Data Source
+;DSN = postgres
+;Servername = localhost
+;Port = 5432
+;Protocol = 7.4
+;UserName = dmehring
+;Database = monitor_test
+;ReadOnly = no
+;ServerType = Postgres
+;FetchBufferSize = 99
+;ServerOptions =
+;ConnectOptions =
+;Options = 3
+;Trace = 1
+;TraceFile = /appl/beren/dmehring/appl/var/log/PostgreSQL_test_trace.log
+;Debug = 1
+;DebugFile = /appl/beren/dmehring/appl/var/log/PostgreSQL_test_debug.log
+
+;end odbc.ini
+

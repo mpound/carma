@@ -1,0 +1,93 @@
+$Id: ExceptionNotes.txt,v 1.1 2010/04/09 21:15:43 mpound Exp $
+A few notes on exceptions
+
+1. CARMA C++ exceptions are derived from carma::util::BaseException.
+   BaseException automatically inserts the file and line number from
+   which the exception arose.
+
+1b. Most are actually derived from carma::util::ErrorException which
+    itself derives from BaseException
+
+2. CARMA CORBA exceptions are derived from carma::util::UserException,
+   defined in carma/util/UserException.idl
+
+4. Any exception that goes across the wire must be a UserException.
+This includes an error that must be ultimately raised at the python
+sac interface level.
+
+5. There are many classes derived from BaseException for common cases:
+e.g. NotFoundException, IllegalArgumentException etc.  
+See carma/util/*Exception.h
+
+6.  Tom Costa's carma/util/ExceptionUtils.h has great features like
+    including the backtrace in the exception message and makes exception
+    handling exceedinly simple.  For instance, a common pattern you'll
+    see in CARMA code is:
+
+    #include "carma/util/ExceptionUtils.h"
+
+    try {
+        whatever
+    } catch (...) {
+        rethrowCaughtAsUser();
+    }
+
+    Which will catch anything and rethrow it as a UserException.
+
+7.  There is a useful macro for throwing other types of exceptions:
+
+   #include "carma/util/ErrorException.h"
+  
+   foo() {
+      // macro that throws an ErrorException
+      if (something bad happened) 
+         throw CARMA_ERROR("something bad happened");
+   } 
+
+
+   or for a named exception, e.g something not found:
+
+   #include "carma/util/BaseException.h"
+   #include "carma/util/NotFoundException.h"
+   using namespace carma::util;
+
+     if ( not_found ) {
+         ostringstream os;
+         os << " Could not find " << whateverString;
+         throw CARMA_EXCEPTION( NotFoundException, os ) 
+         // throw CARMA_EXCEPTION( NotFoundException, os.str()  ) // also works 
+     }
+
+
+8.  You can look at the APIs
+
+
+http://www.mmarray.org/project/system/API/carma/cplusplus/html/classcarma_1_1util_1_1BaseException.html
+
+http://www.mmarray.org/project/system/API/carma/cplusplus/html/exceptioncarma_1_1util_1_1UserException.html
+
+
+9.  Exception handling is often coupled with logging.   Log messages are
+written at the standard Unix syslog priority levels. In descending order
+these are: CRITICAL, ERROR, WARN, NOTICE, INFO, DEBUG 
+Again, Tom Costa has written some nice easy to use methods to wrap CARMA
+logging:
+
+  #include "carma/util/programLogging.h"
+
+  try {
+
+     whatever;
+
+  } catch( a problem but not fatal ) {
+     programLogWarnIfPossible("I caught an error");
+     rethrowCaughtAsUser();
+  } catch( something bad ) {
+     programLogErrorIfPossible("I caught an error");
+     rethrowCaughtAsUser();
+  } catch( something horribly wrong that will cause program exit ) {
+     programLogCriticalIfPossible("I caught something fatal");
+     rethrowCaughtAsUser();
+  }
+
+

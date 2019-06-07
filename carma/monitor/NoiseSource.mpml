@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global" author="Andy Beard">
+
+<?common NoiseStatusCommon.mpml?>
+
+    <Container name="NoiseSource" priority="useful" >
+        <description>
+            The Noise Source CAN module provides rf noise to the quadrature
+            modulators.
+        </description>
+
+        <CommonMonitorPoint ref="noiseStatus" />
+
+        <MonitorPoint name="noiseAtten" type="byte" >
+            <shortName>Noise Atten</shortName>
+            <longName>Noise Attenuator Value</longName>
+            <description>Noise attenuator value</description>
+            <units>dB</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="toneStatus" type="enum" >
+            <shortName>Tone Source</shortName>
+            <longName>Tone Source Status</longName>
+            <enum name="DISABLED"/> <!-- 0x00 -->
+            <enum name="ENABLED">   <!-- 0x01 -->
+                <description>
+                    Tone input and output enabled.
+                </description>
+            </enum>
+            <enum name="CHANGING">  <!-- 0x02 -->
+                <description>
+                    Changing during last blanking frame period.
+                </description>
+            </enum>
+            <warnHi>CHANGING</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="toneAtten" type="byte" >
+            <shortName>Tone Atten</shortName>
+            <longName>Tone Attenuator Value</longName>
+            <description>Tone attenuator value</description>
+            <units>dB</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="powerOut" type="float" >
+            <shortName>Log Pout</shortName>
+            <longName>Log Output Power</longName>
+            <description>Output power measured by log amp.</description>
+            <units>dBm</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="noiseSwitchState" type="bool" >
+            <shortName>Noise On</shortName>
+            <longName>Noise Switch State</longName>
+            <description>Noise switch control bit state.</description>
+        </MonitorPoint>
+
+        <MonitorPoint name="toneSwitchState" type="bool" >
+            <shortName>Tone On</shortName>
+            <longName>Tone Switch State</longName>
+            <description>Tone switch control bit state.</description>
+        </MonitorPoint>
+
+        <MonitorPoint name="outputSwitchState" type="bool" >
+            <shortName>Output Enabled</shortName>
+            <description>Output bit control state.</description>
+        </MonitorPoint>
+
+        <MonitorPoint name="temp" type="float" >
+            <shortName>Module Temp</shortName>
+            <longName>Module Temperature</longName>
+            <description>CAN module temperature</description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5v1" type="float" >
+            <shortName>+5V Analog</shortName>
+            <longName>+5V Analog Power Supply</longName>
+            <description>+5V analog power supply voltage.</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5v2" type="float" >
+            <shortName>-5V Analog</shortName>
+            <longName>-5V Analog Power Supply</longName>
+            <description>-5V analog power supply voltage</description>
+            <units>V</units>
+            <warnHi>-4.85</warnHi>
+            <warnLo>-5.15</warnLo>
+            <errHi>-4.75</errHi>
+            <errLo>-5.25</errLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5v3" type="float" >
+            <shortName>+5V Digital</shortName>
+            <longName>+5V Digital Power Supply</longName>
+            <description>+5V digital power supply voltage</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps7v" type="float" >
+            <shortName>+7V Digital</shortName>
+            <longName>+7V Digital Power Supply</longName>
+            <description>+7V digital power supply voltage</description>
+            <units>V</units>
+            <warnLo>6.75</warnLo>
+            <warnHi>7.25</warnHi>
+            <errLo>6.50</errLo>
+            <errHi>7.50</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps12v" type="float" >
+            <shortName>+12V Supply</shortName>
+            <longName>+12V Power Supply</longName>
+            <description>+12V power supply voltage</description>
+            <units>V</units>
+            <warnLo>11.5</warnLo>
+            <warnHi>12.5</warnHi>
+            <errLo>11.0</errLo>
+            <errHi>13.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps24v" type="float" >
+            <shortName>+24V Supply</shortName>
+            <longName>+24V Power Supply</longName>
+            <description>+24V power supply voltage</description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+    </Container>
+
+</Common>

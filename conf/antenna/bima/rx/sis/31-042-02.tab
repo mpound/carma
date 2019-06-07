@@ -1,0 +1,13 @@
+# 31-042-02.tab
+# derived from scans on 20feb07 with WBA13 #104D
+#   operated at Idrain=7 mA to reduce oscillations
+# 21mar07 change voltage bias from 8.5 to 8.0 after installing big magents
+#
+#|loGHz |t    |v     |i    |dvm  |dvp  |
+#|r     |r    |r     |r    |r    |r    |
+#
+210.	3.00    8.8    100.     -1.  1.
+210.	4.00    8.8    100.     -1.  1.
+#
+270.	3.00    8.2    100.     -1.  1.
+270.	4.00    8.2    100.     -1.  1.

@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+    
+<Common scope="global">
+
+    <?common PipelineCommon.mpml?>
+
+    <CommonContainer ref="PipelineStatus"/>
+
+    <Container name="CatchDataStageContainer">
+        <CommonContainer ref="StageStats"/>
+        <CommonContainer ref="CatchDataStage"/>
+    </Container>
+
+    <Container name="CoherenceStageContainer">
+        <CommonContainer ref="StageStats" />
+    </Container>
+
+    <Container name="DecimatorStageContainer">
+        <CommonContainer ref="StageStats"/>
+    </Container>
+
+    <Container name="PassBandStageContainer">
+        <CommonContainer ref="StageStats"/>
+    </Container>
+
+    <Container name="TsysStageContainer">
+        <CommonContainer ref="StageStats"/>
+        <CommonContainer ref="TsysStage" />
+    </Container>
+
+    <Container name="BlankFlagStageContainer">
+        <CommonContainer ref="StageStats"/>
+        <CommonContainer ref="BlankFlagStage"/>
+    </Container>
+
+    <Container name="LinelengthStageContainer">
+        <CommonContainer ref="StageStats"/>
+    </Container>
+
+    <Container name="IFcorrectionStageContainer">
+        <CommonContainer ref="StageStats"/>
+    </Container>
+
+    <Container name="WvrStageContainer">
+        <CommonContainer ref="StageStats"/>
+    </Container>
+
+    <Container name="SelfCalStageContainer">
+        <CommonContainer ref="StageStats"/>
+    </Container>
+
+    <Container name="CorrelatorPublisherContainer">
+        <CommonContainer ref="StageStats"/>
+        <CommonContainer ref="CorrelatorPublisherStage"/>
+    </Container>
+
+    <Container name="IntegratorStageContainer">
+        <CommonContainer ref="StageStats"/>
+        <CommonContainer ref="IntegratorStage"/>
+    </Container>
+    
+    <Container name="SelfCalIntegStageContainer">
+        <CommonContainer ref="StageStats"/>
+    </Container>
+
+    <Container name="VisBrickStageContainer">
+        <CommonContainer ref="StageStats"/>
+        <CommonContainer ref="VisBrickStage"/>
+    </Container>
+
+</Common>

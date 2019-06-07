@@ -1,0 +1,4 @@
+include szaMakefiles/makefiles/util/makefile_am_include_szaarrayutils
+include szaMakefiles/makefiles/util/makefile_am_include_szaslalib
+include szaMakefiles/makefiles/util/makefile_am_include_szautil
+include szaMakefiles/makefiles/util/makefile_am_include_szapgutil

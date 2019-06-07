@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "/home/scott/carma/install/optimized/bin">
+        <!ENTITY DEFAULT_DIR "/home/scott">
+        <!ENTITY EMULATE "true">
+        <!ENTITY ANT "ovro4">
+]>
+
+<!-- SZA system configuration description - Place CARMA applications which
+     will be under the control of the IMR here. See 
+     carma/conf/exampleCarmaConfig.xml for a detailed tag description. -->
+
+<!-- @version: -->
+<domain>
+    <!-- Configure the sza acc -->
+    <oad hostname="szanet.localnet">
+        <!-- FrameCollator must run on acc (szanet) to reap monitor points
+             from the various subsystems.                              -->
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+            args="" directory="&DEFAULT_DIR;"  />
+    </oad>
+    <!-- Configure the sza downconverter host machine.  This machine hosts
+         the carmaWbdcHost, LobeRotator and DelayEngine applications. -->
+    <oad hostname="dcon0.localnet">
+        <server name="HostWbdc" path="&BIN_DIR;/carmaWbdcHost"
+            args="board=0" directory="&DEFAULT_DIR;" />
+
+<!--   ***Temporarily removed***
+        <server name="HostLobeRotator" path="&BIN_DIR;/carmaLoberotatorHost"
+            args="board=1" directory="&DEFAULT_DIR;" />
+ -->           
+ 
+        <server name="HostDelayEngine" path="&BIN_DIR;/DelayEngine"
+            args="" 
+            directory="&DEFAULT_DIR;" />
+        <!-- We need three instances of frameScriberPublisher running on this
+             machine.  One for each subsystem.  Note that each instance must
+             be registered with the IMR under a different name.          -->
+        <server name="FSPwbdc" 
+            path="&BIN_DIR;/frameScriberPublisher"
+            args="subsystem=wbdc delay=300"
+            directory="&DEFAULT_DIR;">
+        </server>
+        <server name="FSPloberotator" 
+            path="&BIN_DIR;/frameScriberPublisher"
+            args="subsystem=loberotator"
+            directory="&DEFAULT_DIR;" />
+        <server name="FSPdelayEngine"
+            path="&BIN_DIR;/frameScriberPublisher"
+            args="subsystem=delayengine"
+            directory="&DEFAULT_DIR;" />
+        <server name="RemoteCanServerWbdc" path="&BIN_DIR;/canOverIpServer"
+            directory="&DEFAULT_DIR;"  
+            args=""  />
+     </oad>
+</domain>

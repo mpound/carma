@@ -1,0 +1,13 @@
+$Id: jar2exe.notes,v 1.1 2006/01/18 16:34:55 cgwon Exp $
+
+Some notes on jar2exe that might be useful (CSG - 01/18/06)
+
+TODO:
+- figure out automation on version number (could add directly to jar2exe script)
+- possibly move the .exe file from conf/launch4j to some other directory?
+
+
+scripts/jar2exe is a wrapper that will call launch4j.  It takes a
+single argument: an xml file with tags that launch4j understands.  The
+example to look at is conf/launch4j/carmartd.xml.in (which takes the
+carmartd.jar and converts it to carmartd.exe).

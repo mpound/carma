@@ -1,0 +1,32 @@
+# dewar10.tab
+# notes from 13-nov-97 
+
+cyl 6418, motor 6584
+rapid warmup heaters: stage 1 is 350 ohm pwr resistor, all
+	soldered (with weak little wires); stage 2 is 300 ohm
+	resistor, wires screwed to resistor but soldered to 
+	thermoswitch
+heater on stage 3: 2 600-ohm Dale resistors in parallel; 
+	resistor on band B has 1 tab sheared off to fit block
+heater on stage 2: power resistor, 200 ohms, connected thru
+	Microtech connector
+
+sensors: 47102, 96946, 7386, 7395, 22577
+
+band B:
+mixer 31-011-4 with separate bias tee, 100 ohms to gnd
+HEMT 7
+mixer and bias tee connected to spider with 0.010"
+	thick copper straps
+0.20" diam magnet
+19.08 uA at 1 mV bias, room temp
+
+band D:
+mixer 31-015A-6 (W20) with built in bias board, not a matching
+	network but just straight 50 ohms; 100 ohms to gnd
+	front block is labeled 31-015A-7
+at room temp, 1 mv =  19.6 uA
+0.010 copper strap from back of mixer to spider
+HEMT #14
+simple pole pieces, 0.20 diam magnet
+

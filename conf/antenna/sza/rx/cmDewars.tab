@@ -1,0 +1,32 @@
+#-----------------------------------------------------------------------
+# This is the configuration file for 1cm receivers on the SZA antennas
+# This supersedes the internal initialization in the SZA antenna code,
+# and any changes to receivers or HEMTs should be reflected here.
+#
+# Note that if you change something in this file, you don't have to restart the
+# antenna process to have it take effect.  From the SAC, you can type:
+#
+#   s = getObj('carma.sza1.Antenna')
+#   s.reloadBiasTables()
+#
+# (where 'sza1' should be replaced with the relevant antenna) 
+# to accomplish the same thing
+#
+#-----------------------------------------------------------------------
+#
+# units  | V     | mA    | V     | mA    | V     | mA    | V     | mA    |
+#
+#|name   |Vd1    |Id1    |Vd2    |Id2    |Vd3    |Id3    |Vd4    |Id4    |
+#|s      |r      |r      |r      |r      |r      |r      |r      |r      |
+#rx1      1.2	 4.0	 1.2	 6.1	 1.5	 5.0	 1.2	 5.0	 	
+rx1      1.0	 3.0	 1.2	 3.0	 1.5	 5.0	 1.5	 5.0	 	
+rx2      1.0     3.0     1.2     3.0     1.5     5.0     1.5     5.0    
+rx3      1.0     3.0     1.2     3.0     1.5     5.0     1.5     5.0    
+rx4      1.0     3.0     1.2     3.0     1.5     5.0     1.5     5.0    
+rx5      1.0     3.0     1.2     3.0     1.5     5.0     1.5     5.0    
+rx6      1.0     3.0     1.2     3.0     1.5     5.0     1.5     5.0    
+rx7      1.0     3.0     1.2     3.0     1.5     5.0     1.5     5.0    
+rx8      1.0     3.0     1.2     3.0     1.5     5.0     1.5     5.0    
+
+
+

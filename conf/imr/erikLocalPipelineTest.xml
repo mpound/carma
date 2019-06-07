@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "./bin/">
+    <!ENTITY STATE_DIR "/tmp/eml/state/">
+    <!ENTITY RUN_DIR "/home/eml/projects/carma/Carma/devel/build/">
+    <!ENTITY DEFAULT_DIR "/home/eml/projects/carma/Carma/devel/build/">
+    <!ENTITY MODE "shared">
+    <!ENTITY DBMS "useDBMS=false">
+    <!ENTITY USE_DB "useDBMS=false">
+    <!ENTITY LOG "">
+    <!ENTITY STATE "shared">
+    <!ENTITY SIMCARMAINI "correlator/carma15-test.ini">
+    <!ENTITY SIMCARMABANDXML SYSTEM "simCarmaBand.xml">
+    <!ENTITY SIMBANDSERVER "localhost">
+    <!ENTITY SIMCOBRASERVER "localhost">
+    <!ENTITY SIMWIDEBANDXML SYSTEM "simWideBand.xml" >
+    <!ENTITY SIMCOBRAINI "correlator/sza16Sim.ini" >
+    <!ENTITY SIMULATE "true">
+]>
+
+<domain>
+
+    <oad hostname="s3.carma.pvt">
+
+       <server name="FrameCollator" 
+                path="&BIN_DIR;frameCollator"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; delay=600" 
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                system="monitor"
+                critical="true"
+                startup-priority="&monitor-core;"/>
+        
+       <server name="FaultSystem" 
+                path="&BIN_DIR;faultSystem"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; outputCMS=intermediate"
+                system="monitor"
+                startup-priority="&monitor;"/>
+
+        <server name="signalPathFSP" 
+                path="&BIN_DIR;/frameScriberPublisher"
+	        directory="&RUN_DIR;" 
+	        args="&LOG; &DBMS;  
+                subsystem=signalpath delay=145"
+                startup-priority="&monitor;" />
+    
+        <server name="SignalPathMapper" 
+                path="&BIN_DIR;/carmaSignalPathMapper"
+	        directory="&RUN_DIR;" 
+                args="&LOG;"
+                startup-priority="&subsystem;"/>
+
+        <server name="Subarray1" 
+                path="&BIN_DIR;/subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=1 runSAT=true &LOG; &DBMS;"
+                optargs="-ORBSvcConf &BIN_DIR;/../conf/tao/fc.conf"
+                system="control" critical="true" 
+                startup-priority="&control;"/>
+
+        <server name="Subarray2" 
+                path="&BIN_DIR;/subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=2 runSAT=true &LOG; &DBMS; " 
+                optargs="-ORBSvcConf &BIN_DIR;/../conf/tao/fc.conf"
+                system="control" critical="true"
+                startup-priority="&control;"/>
+
+        <server name="ControlState" path="&BIN_DIR;/carmaControlState"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; statedir=&STATE_DIR;"
+                system="control" critical="false" />
+
+        <server name="ControlFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=control"
+                system="monitor"
+                startup-priority="&monitor;"/>
+        
+        <server name="CorrDataRemapper" 
+                path="&BIN_DIR;carmaCorrelatorDataRemapper"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;"
+                startup-priority="&subsystem-core;"
+                system="data"
+                critical="true" />
+
+        <server name="AstroFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=astro delay=400" 
+                startup-priority="&monitor;"/>
+
+<!-- ************************************************************ -->
+<!-- Spectral line pipeline core components -->
+<!-- ************************************************************ -->
+
+        <server name="SlcDataCatcher" 
+                path="&BIN_DIR;catchData"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=sl"
+                system="data" critical="true"
+                startup-priority="&subsystem;"/>
+
+        <server name="SlPipelineFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=slpipeline delay=400" 
+                startup-priority="&monitor;"/>
+
+        <server name="SlPipeline" 
+                path="&BIN_DIR;pipeline"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=sl vbdir=/tmp/eml monitorDelay=350 traceLevel=0" 
+                system="data" critical="true"
+                startup-priority="&subsystem;" />
+
+<!-- ************************************************************ -->
+<!-- Spectral sim server for SLC band 1 -->
+<!-- ************************************************************ -->
+
+        <server name="SimSlcBand1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; subsystem=CarmaSlcBand1"
+                system="correlator" />
+        
+        <server name="SimSlcBand1CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=1 p=19001 f=correlator/slcorrelator.conf hwtype=carma &LOG;"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimSlcBand1Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&RUN_DIR;" 
+                args="&LOG; y=true b=1 simulate=&SIMULATE; i=&SIMCARMAINI;" 
+                critical="true" 
+                system="correlator" 
+                startup-priority="&subsystem;"/>
+
+    </oad>
+
+</domain>

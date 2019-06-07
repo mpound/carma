@@ -1,0 +1,16 @@
+#ifndef CARMA_CORBA_TEST_NOTIFICATION_IDL
+#define CARMA_CORBA_TEST_NOTIFICATION_IDL
+module carma {
+module corba {
+module test {
+
+    const string TEST_CHANNEL_NAME = "carma.test.channel";
+
+    struct Notification {
+        unsigned long count_;
+        double sendMJD;
+        boolean stop;
+    };
+
+};};};
+#endif

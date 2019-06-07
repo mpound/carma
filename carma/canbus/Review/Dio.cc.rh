@@ -1,0 +1,307 @@
+/**
+ * $Id: Dio.cc.rh,v 1.1 2003/07/16 20:02:24 rick Exp $
+ *
+ * Class for digital Input and Output access to Janz TTL cards.
+ * 
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ *  $Date: 2003/07/16 20:02:24 $
+ *  
+ */
+
+// System includes
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+// Janz includes
+#include "janz/mttl.h"
+
+// Carma includes
+#include "carma/canbus/Dio.h"
+#include "carma/canbus/Error.h"
+
+using namespace carma::canbus;
+using namespace std;
+	
+// -----------------------------------------------------------------------------
+Dio::Dio() : emulate_(true)
+{
+    try {
+        ioType mttldev;
+        
+        // Try to open /dev/null.
+        mttldev.name = "/dev/null";
+        mttldev.fd = open(mttldev.name.c_str(), O_WRONLY);
+
+        if (mttldev.fd < 0) {
+            throw carma::canbus::Error("Dio::Dio() - Unable to open /dev/null."
+                    + (string)strerror(errno));
+        }
+        
+        // Add the device to the devs_ vector.
+        devs_.push_back(mttldev);
+        pthread_mutex_init(&(devs_[0].mutex), NULL);
+                
+/*** REVIEW
+ * Reviewer: rh
+ * Comments: let users decide what to do(ie. exit)
+ */
+    } catch (carma::canbus::Error &err) {
+        err.report();
+        exit(EXIT_FAILURE);
+    } catch (...) {
+        cerr << "Dio::Dio() - Unknown exception caught.  Exiting." << endl;
+    }
+}
+    
+        
+// -----------------------------------------------------------------------------
+Dio::Dio(char *dev, bool resetOnStart) : emulate_(false) 
+{
+    try {
+        int fd;	
+        ioType mttldev;
+
+        // Open the ttl device
+        fd = open(dev, O_RDONLY, 0);
+
+        if (fd < 0) {
+            throw carma::canbus::Error("Error opening device " +
+                    (string)dev + " " + (const string)strerror(errno));
+        }
+
+        // Clear all bits.
+        if (mttl_write(fd, CLEAR) < 0) {
+            throw carma::canbus::Error("Dio::Dio() - Error writing to mttl "
+                    + (string)dev + (const string)strerror(errno));
+        }	
+
+        mttldev.fd = fd;
+        mttldev.name = dev;
+        mttldev.state = CLEAR;
+
+        devs_.push_back(mttldev);
+        
+        pthread_mutex_init(&(devs_[0].mutex), NULL);
+
+        if (resetOnStart) {
+            resetHi();
+        }
+    } catch (carma::canbus::Error &err) {
+        err.report();
+        exit(EXIT_FAILURE);
+    } catch (...) {
+        cerr << "Dio::Dio() - Unexpected exception caught." << endl;
+        exit(EXIT_FAILURE);
+    }
+}	
+
+// -----------------------------------------------------------------------------
+Dio::Dio(char *dev0, char *dev1, bool resetOnStart) : emulate_(false)
+{
+    try {
+        int fd;
+        ioType mttldev;
+
+        fd = open(dev0, O_RDONLY, 0);
+        if (fd < 0) {
+            throw carma::canbus::Error((string)"Dio::Dio() - Error opening "
+                    "device. " + dev0 + " " + (string)strerror(errno));
+        }
+
+        // Clear all bits.
+        if (mttl_write(fd, CLEAR) < 0) {
+            throw carma::canbus::Error((string)"Dio::Dio() - Error writing "
+                    "to device " + dev0 + " " + (const string)strerror(errno));
+        }	
+
+        // Add to the device list    
+        mttldev.fd = fd;
+        mttldev.name = dev0;
+        mttldev.state = CLEAR;
+
+        devs_.push_back(mttldev);
+        pthread_mutex_init(&(devs_[0].mutex), NULL);
+
+        fd = open(dev1, O_RDONLY, 0);
+        if (fd < 0) {
+            throw carma::canbus::Error("Dio::Dio() - Error opening device "
+                    + (string)dev1 + " " + (const string)strerror(errno));
+        }
+
+        // Clear all bits.
+        if (mttl_write(fd, CLEAR) < 0) {
+            throw carma::canbus::Error("Dio::Dio() - Error writing to device "
+                    + (string)dev1 + (const string)strerror(errno));
+        }	
+
+        mttldev.fd = fd;
+        mttldev.name = dev1;
+        mttldev.state = CLEAR;
+
+        devs_.push_back(mttldev);
+        pthread_mutex_init(&(devs_[1].mutex), NULL);
+
+        if (resetOnStart) {
+            resetHi();
+        }
+    } catch (carma::canbus::Error &err) {
+        cerr << "Dio::Dio() - Caught carma canbus error." << endl;
+        err.report();
+        exit(EXIT_FAILURE);
+    } catch (...) {
+        cerr << "Dio::Dio() - Unexpected exception caught." << endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
+// -----------------------------------------------------------------------------
+Dio::~Dio() 
+{
+   // Close all devices.
+   for (int i = 0; i < devs_.size(); i++) {
+      close(devs_[i].fd);
+   } 
+}
+
+
+// -----------------------------------------------------------------------------
+int Dio::mttlWrite(int fd, int data) 
+{
+   if (!emulate_) {
+       return mttl_write(fd, data);
+   } else {
+       // Write to /dev/null.
+       return write(fd, &data, sizeof data);
+   }
+}
+
+// -----------------------------------------------------------------------------
+void Dio::powerOn() 
+{
+    int status;
+	for (int i=0; i < devs_.size(); i++) {
+		
+        pthread_mutex_lock(&(devs_[i].mutex));
+        
+        devs_[i].state &= POWER;  // Turn on the POWER bit.
+        status = mttlWrite(devs_[i].fd, devs_[i].state);
+        
+		if (status < 0) {
+            throw carma::canbus::Error("Dio::powerOn() - TTL write failed "
+                    + devs_[i].name + (const string)strerror(errno));
+        }
+        pthread_mutex_unlock(&(devs_[i].mutex));
+	}
+}
+
+// -----------------------------------------------------------------------------
+void Dio::powerOff() 
+{
+    int status;
+    for (int i = 0; i < devs_.size(); i++) {
+        pthread_mutex_lock(&(devs_[i].mutex));
+        devs_[i].state |= (~POWER);
+        status = mttlWrite(devs_[i].fd, devs_[i].state);
+
+        if (status < 0) {
+            throw carma::canbus::Error("Dio::powerOff() - TTL write failed "
+                    + devs_[i].name + (const string)strerror(errno));
+        }
+        pthread_mutex_unlock(&(devs_[i].mutex));
+    }
+}
+
+// -----------------------------------------------------------------------------
+void Dio::resetHi() 
+{
+    int status = 0;
+	for (int i = 0; i < devs_.size(); i++) {
+        pthread_mutex_lock(&(devs_[i].mutex));
+        
+        // Turn the RESET bit on while leaving other bits alone.
+        devs_[i].state &= RESET; 
+        status = mttlWrite(devs_[i].fd, devs_[i].state);
+        
+		if (status < 0) {
+            throw carma::canbus::Error("Dio::resetHi() - Error writing to "
+                    + devs_[i].name + (const string)strerror(errno));
+		}
+        pthread_mutex_unlock(&(devs_[i].mutex));
+	}
+}
+
+// -----------------------------------------------------------------------------
+void Dio::resetLo() 
+{
+    int status = 0;
+
+	for (int i = 0; i < devs_.size(); i++) {
+        pthread_mutex_lock(&(devs_[i].mutex));
+        
+        // Turn off RESET bit only.
+        devs_[i].state |= (~RESET);
+        status = mttlWrite(devs_[i].fd, devs_[i].state);
+		if (status < 0) {
+            throw carma::canbus::Error("Dio::resetLo() - Write failed "
+                    + devs_[i].name + (const string)strerror(errno));
+		}
+        pthread_mutex_unlock(&(devs_[i].mutex));
+	}
+}
+
+// -----------------------------------------------------------------------------
+void Dio::reservedHi() 
+{	
+    int status = 0;
+	for (int i = 0; i < devs_.size(); i++) {
+        pthread_mutex_lock(&(devs_[i].mutex));
+       
+        // Turn on RESERVED bit but don't overwrite any other bits.
+        devs_[i].state &= RESERVED;
+        status = mttlWrite(devs_[i].fd, devs_[i].state);
+		if (status < 0) {
+            throw carma::canbus::Error("Dio::reservedHi() - Write failed "
+                    + devs_[i].name + (const string)strerror(errno));
+		}
+        pthread_mutex_unlock(&(devs_[i].mutex));
+	}
+}
+
+// -----------------------------------------------------------------------------
+void Dio::reservedLo() 
+{	
+    int status = 0;
+	for (int i = 0; i < devs_.size(); i++) {
+        pthread_mutex_lock(&(devs_[i].mutex));
+        
+        // Turn off RESERVED bit only.
+        devs_[i].state |= (~RESERVED);
+        status = mttlWrite(devs_[i].fd, devs_[i].state);
+		if (status < 0) {
+            throw carma::canbus::Error("Dio::reservedLo() - Write failed "
+                    + devs_[i].name + (const string)strerror(errno));
+		}
+        pthread_mutex_unlock(&(devs_[i].mutex));
+	}
+}
+
+// -----------------------------------------------------------------------------
+void Dio::clear() 
+{	
+    int status = 0;
+	for (int i = 0; i < devs_.size(); i++) {
+        pthread_mutex_lock(&(devs_[i].mutex));
+        
+        devs_[i].state = CLEAR;
+        status = mttlWrite(devs_[i].fd, devs_[i].state);
+		if (status < 0) {
+            throw carma::canbus::Error("Dio::clear() - Write failed "
+                    + devs_[i].name + (const string)strerror(errno));
+		}
+        pthread_mutex_unlock(&(devs_[i].mutex));
+	}
+}

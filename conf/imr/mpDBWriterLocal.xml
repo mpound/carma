@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+	<!ENTITY BIN_DIR "/data/beren/dmehring/carma_build/bin">
+	<!ENTITY DEFAULT_DIR "/data/beren/dmehring/carma_build">
+]>
+
+<!-- Configuration for standalone testing all of carma on a single machine.
+     
+     Note: the use of "localhost" is fine is this file for a single machine
+     but very hazardous in a multi-machine configuration.
+ -->
+
+<!-- @version -->
+<domain>
+ 
+    
+    <oad hostname="localhost">
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args=""/>
+        <server name="FSPwbdc" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=wbdc delay=300"/>
+        <server name="FSPtest" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=test"/>
+
+        <server name="WRtest" path="&BIN_DIR;/testMPwriterReader"
+                directory="&DEFAULT_DIR;" 
+                args="" />
+        <server name="HostWbdc" path="&BIN_DIR;/carmaWbdcHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=true"/>
+        <server name="wbPipelineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=wbpipeline" />
+<!--
+        <server name="WbDataCatcher" path="&BIN_DIR;/catchData"
+                directory="&DEFAULT_DIR;"  
+                args=" &LOG; mode=wb" />                
+        <server name="WbIntegrator" path="&BIN_DIR;/correlatorIntegrator"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; " />
+-->
+    </oad>
+
+
+
+
+</domain>
+    

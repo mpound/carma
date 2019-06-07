@@ -1,0 +1,25 @@
+# $Id: Simple.cat,v 1.2 2004/10/22 21:38:56 davidm Exp $
+#
+# This is a simple source catalog for testing
+# It was created from BIMA's j2000.cat
+#
+#-----------------------------------------------------------------------------------------------------------------------------------
+#Source     RA (2000)    DEC (2000)  Parallax Velocity VelFrame VelDef   Proper Motion      ID       Comments
+#                                    (arcsec) (km/s)		       (arcsec/jul.cent.) (unused)
+#                                                                        ra       dec
+#-----------------------------------------------------------------------------------------------------------------------------------
+3C48     01:37:41.305   33:09:35.394	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX:  1.70         -vla  
+OCET     02:19:20.787  -02:58:36.870	0.0    45.7      LSR     RADIO  0.000    0.000	    1	    A.J. 99, 1299 Wright    -jrf  
+W3OH     02:27:03.870   61:52:24.600	0.0   -48.0      LSR     RADIO  0.000    0.000	    1	    2" HII; changed lsr -66 -jrf  
+3C84     03:19:48.160   41:30:42.106	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX: 55.00         -vla  
+ORIMSR   05:35:14.505  -05:22:30.450	0.0     9.0      LSR     RADIO  0.000    0.000	    1	     A.J. 99, 1299 Wright   -jrf  
+3C147    05:42:36.127   49:51:07.178	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX:  2.70         -vla  
+RLEO     09:47:33.480   11:25:44.150	0.0    -2.4      LSR     RADIO  0.000    0.000	    1	     A.J. 99, 1299 Wright   -jrf  
+3C273    12:29:06.700   02:03:08.598	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX: 34.00         -vla  
+VIRGO    12:30:49.424   12:23:28.044	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX:  1.10         -yjk  
+3C279    12:56:11.167  -05:47:21.527	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX: 11.00         -vla  
+ARCTURUS 14:15:39.600   19:10:57.000    0.0     0.0      LSR     RADIO -0.00073 -0.0184	    1	    alias a-boo S100944     -mchw
+3C309.1  14:59:07.553   71:40:19.760	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX:  1.30         -vla  
+3C345    16:42:58.810   39:48:36.993	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX: 13.00         -vla  
+DR21     20:39:01.200   42:19:34.900	0.0    -2.5      LSR     RADIO  0.000    0.000	    1	    H II regions            -**   
+BLLAC    22:02:43.291   42:16:39.982	0.0     0.0      LSR     RADIO  0.000    0.000	    1	    2cm FLUX:  3.50         -vla

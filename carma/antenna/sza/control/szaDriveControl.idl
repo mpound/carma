@@ -1,0 +1,135 @@
+/**
+ * @author Erik Leitch
+ */
+#ifndef CARMA_ANTENNA_SZA_CONTROL_SZADRIVECONTROL_IDL
+#define CARMA_ANTENNA_SZA_CONTROL_SZADRIVECONTROL_IDL
+
+#include "carma/antenna/common/DriveControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+  module antenna {
+    module sza {
+      module control {
+
+	/**
+	 * SZA antenna-specific drive control interface.
+	 */
+	interface DriveControl : carma::antenna::common::DriveControl {
+
+	  /**
+	   * Specify the encoder counts per turn for the encoders
+	   *
+	   * @param azCountsPerTurn Az encoder counts per turn
+	   * @param elCountsPerTurn El encoder counts per turn
+	   */
+	  void setEncoderCountsPerTurn(in unsigned long azCountsPerTurn, in unsigned long elCountsPerTurn)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Specify encoder limits, in encoder counts
+	   *
+	   * @param azMinCount      Minimum allowed az encoder count
+	   * @param azMaxCount      Maximum allowed az encoder count
+	   * @param elMinCount      Minimum allowed el encoder count
+	   * @param elMaxCount      Maximum allowed el encoder count
+	   */
+	  void setEncoderLimits(in unsigned long azMinCount, in unsigned long azMaxCount,
+				in unsigned long elMinCount, in unsigned long elMaxCount)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set encoder zeros for this antenna
+	   *
+	   * @param azEncZeroDeg    Azimuth encoder zero, in degrees
+	   * @param elEncZeroDeg    Elevation encoder zero, in degrees
+	   */
+	  void setEncoderZeros(in double azEncZeroDeg, in double elEncZeroDeg)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set tilts for this antenna
+	   *
+	   * @param haTiltDeg       Hour-angle tilt, in degrees
+	   * @param latTiltDeg      Latitude tilt, in degrees
+	   * @param elTiltDeg       Elevation tilt, in degrees
+	   */
+	  void setTilts(in double haTiltDeg, in double latTiltDeg, in double elTiltDeg)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set collimation terms for this antenna
+	   *
+	   * @param aperture        RADIO(1CM/1MM/3MM) or OPTICAL
+	   * @param xCollimation    X great circle offset, degrees
+	   * @param yCollimation    Y great circle offset, degrees
+	   */
+	  void setCollimation(in DriveControl::Aperture ap, in double xCollimation, in double yCollimation)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set flexure terms for this antenna
+	   *
+	   * @param aperture        RADIO(1CM/1MM/3MM) or OPTICAL
+	   * @param sinCoeff        Deflection per sin(el), degrees
+	   * @param cosCoeff        Deflection per cos(el), degrees
+	   */
+	  void setFlexure(in DriveControl::Aperture ap, in double sinCoeff, in double cosCoeff)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Sets all mount pointing constants at one go
+	   *
+	   * @param azEncoderCountsPerTurn     AZ encoder calibration (counts per turn)
+	   * @param elEncoderCountsPerTurn     AZ encoder calibration (counts per turn)
+	   *
+	   * @param azMinEncoderCounts         Minimum AZ limit (encoder counts)
+	   * @param azMaxEncoderCounts         Maximum AZ limit (encoder counts)
+	   *
+	   * @param elMinEncoderCounts         Minimum EL limit (encoder counts)
+	   * @param elMaxEncoderCounts         Maximum EL limit (encoder counts)
+	   *
+	   * @param azEncoderZeroDegrees       AZ encoder zero (degrees)
+	   * @param elEncoderZeroDegrees       EL encoder zero (degrees)
+	   *
+	   * @param haTiltDegrees              Hour-angle tilt (degrees)
+	   * @param latTiltDegrees             Latitude tilt (degrees)
+	   * @param elTiltDegrees              Elevation tilt (degrees)
+	   *
+	   * @param opticalXCollimationDegrees Optical collimation great-circle (x) angle (degrees)
+	   * @param opticalYCollimationDegrees Optical collimation great-circle (y) angle (degrees)
+	   *
+	   * @param opticalFlexureSinDegrees   Optical flexure sin term (degrees per sin elevation)
+	   * @param opticalFlexureCosDegrees   Optical flexure cos term (degrees per sin elevation)
+	   *
+	   * @param radioXCollimationDegrees   Radio collimation great-circle (x) angle (degrees)
+	   * @param radioYCollimationDegrees   Radio collimation great-circle (y) angle (degrees)
+	   *
+	   * @param radioFlexureSinDegrees     Radio flexure sin term (degrees per sin elevation)
+	   * @param radioFlexureCosDegrees     Radio flexure cos term (degrees per sin elevation)
+	   *
+	   */
+	  void setMountPointingConstants(in unsigned long azEncoderCountsPerTurn, in unsigned long elEncoderCountsPerTurn,
+					 in unsigned long azMinEncoderCounts,     in unsigned long azMaxEncoderCounts,
+					 in unsigned long elMinEncoderCounts,     in unsigned long elMaxEncoderCounts,
+					 in double        azEncoderZeroDegrees,   in double        elEncoderZeroDegrees,
+					 in double        haTiltDegrees,  in double latTiltDegrees, in double elTiltDegrees,
+					 in double        opticalXCollimationDegrees, in double   opticalYCollimationDegrees,
+					 in double        opticalFlexureSinDegrees,   in double   opticalFlexureCosDegrees,
+					 in double        radioXCollimationDegrees,   in double   radioYCollimationDegrees,
+					 in double        radioFlexureSinDegrees,     in double   radioFlexureCosDegrees)
+	    raises (carma::util::UserException);
+
+	  /**
+	   * Set the wrap mode (azimuth only -- others ignored
+	   */
+	  void setWrapMode(in DriveControl::AzWrapMode mode)
+	    raises (carma::util::UserException);
+
+	}; // End LOControl interface
+      };
+    };
+  };
+}; // End carma::antenna::sza::control module
+
+#endif

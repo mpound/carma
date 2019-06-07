@@ -1,0 +1,154 @@
+/** @file
+ * $Id: DirectCan.h.eml,v 1.2 2003/07/11 16:57:09 eleitch Exp $
+ *
+ * DirectCAN class for CAN bus access through shared memory.
+ *
+ * Author: Andy Beard
+ * Version: $Revision: 1.2 $
+ * $Date: 2003/07/11 16:57:09 $
+ */
+#ifndef CARMA_CANBUS_DIRECTCAN_H
+#define CARMA_CANBUS_DIRECTCAN_H
+
+// Carma Includes
+#include "carma/canbus/Message.h"
+#include "carma/canbus/Error.h"
+#include "carma/util/IPQwriter.h"
+#include "carma/util/IPQreader.h"
+
+namespace carma {
+namespace canbus {
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: In general very nicely documented!
+ */
+
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: should there be a _separate_ style guide entry regarding
+ * correct spelling in comments? :-P
+ */
+    /** 
+     * The DirectCan class is intended for use as a way to access
+     * the CANbus from multiple seperate processes.  It makes use
+     * of shared memory queues of CAN messages to get and post
+     * messages to the CAN bus.
+     * It is required that a CAN host process be running on the 
+     * CANbus(ses) requiring direct CAN access.  This is due to 
+     * the fact that DirectCAN was designed to concurrently run
+     * with the DO model.  If no DOs exist on the system in question
+     * then the user may be better off directly accessing the CAN 
+     * bus with the CanIo or CanDio classes.  May it be noted that
+     * this class may be extremely useful for debugging DOs.
+     * 
+     * @see carma::canbus::CanIo
+     * @see carma::canbus::CanDio
+     * 
+     * The base CanIo class contains logic for transmit flow control
+     * to avoid overrunning onboard message queues and dropping CAN
+     * messages.  However, there is one exceptional situation where
+     * this logic will throw an exception:  If no devices are on a
+     * bus we are trying to send messages to, the queues will all
+     * eventually fill up and no messages will be removed from the queues.
+     * In this case, the CanIo overflow logic trys several times to
+     * resend messages and if unable to will throw an exception.  It is
+     * not possible to propagate exceptions among processes, thus the 
+     * user of this class will need to be cognizant of this possible 
+     * error condition.  In the event of this error, DirectCan will 
+     * essentially block forever on reads.  It can be checked by assuring
+     * that the CanMaster process (canHost, antennaCanHost, etc) is 
+     * running.
+     * 
+     * BusId:  It is important that the user of this class understand 
+     * how BusIds are used in the system.  Since multiple CAN Masters
+     * each controlling multiple CAN busses but all requiring Direct CAN
+     * access may be running on any given target host, it was necessary
+     * to devise a system assuring unique busIds.  This was accomplished
+     * by parsing the input device name (i.e. /dev/dpm_00) into a busId.
+     * As a result, it is not directly obvious which busId a DirectCan 
+     * user will need to access (what is the BusId of the device you are
+     * controlling).  Thus in general a user will need to determine the 
+     * busId of the device he or she is controlling by calling msg.getBusId()
+     * from a msg known to come from his/her device.  The blanket busId
+     * carma::canbus::ALL_BUSSES is provided to allow a DirectCan user to 
+     * send to all busses and this may be used initially to assure 
+     * communication with your device until the BusId is retrieved.
+     * @see carma::canbus::busIdType
+     * @see carma::canbus::Message
+     * @see carma::canbus
+     */   
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: API conforms to the design document, except that polling
+ * methods (bool getMessage() methods) are not present.  Do we need these?
+ */
+    class DirectCan {
+        public:
+
+            /**
+             * Constructor
+             */
+            DirectCan();
+
+            /**
+             * Destructor
+             */
+            ~DirectCan();
+
+            /**
+             * Get a message from the CAN Message IPQ.
+             * Blocks until next message is retrieved from
+             * CAN bus.  This routine will throw an exception if it
+             * trys to retrieve a message that has been overwritten
+             * by the writer.  In this case, the user is not reading
+             * from the interprocess queues quickly enough and messages
+             * are being lost.  
+             * @return Message CAN Message object.
+             * @throw carma::canbus::Error if messages were lost.
+             */
+            Message getMessage() throw (carma::canbus::Error);
+            
+            /**
+             * Get a specific message from the CAN Message IPQ.
+             * Blocks until next message with a matching id is retrieved 
+             * from the CAN bus.  Note that if the message is never 
+             * received, this will block forever.  Also note that
+             * any messages received between the time we call getMessage
+             * and the time when the desired message is received will
+             * be lost to this object!
+             * @param id Full 29 bit CAN id to await.
+             * @return Message CAN Message object.
+             * @throw carma::canbus::Error if messages were lost
+             * @see carma::canbus::getMessage
+             */
+            Message getMessage(idType id) throw (carma::canbus::Error);
+
+            /**
+             * Post a message to the CAN bus. 
+             * If no device is available to receive the message, the 
+             * CAN controller will continuously try to send the message
+             * and block subsequent messages from being sent.
+             * @param msg to CAN bus.
+             */
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: This method can result in an exception being thrown, but
+ * is not documented as such: see comments in DirectCan.cc.  This
+ * raises an issue of scope whose answer is not obvious to me --
+ * should you declare a method as throwing an exception only when it
+ * throws that exception directly, or also when another class used by
+ * that method throws an exception?  The latter puts a pretty
+ * stringent requirement on the users of those classes, but when
+ * possible, it would be nice to know that an exception can be thrown.
+ */
+            void postMessage(Message msg);
+
+        private:
+
+            carma::util::IPQreader<carma::canbus::Message> *readIpq_;
+            carma::util::IPQwriter<carma::canbus::Message> *writeIpq_;
+
+    }; // End of class DirectCan
+} // End of namespace canbus
+} // End of namespace carma
+#endif

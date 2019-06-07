@@ -1,0 +1,114 @@
+#######################################################################
+# List of all programs
+#######################################################################
+
+antenna_sza_bins = bin/szaAntennaControl bin/szaMpmlGenerator bin/szaTestRemoteSensors bin/tRrdCollector bin/systemStatus
+bin_PROGRAMS   += $(antenna_sza_bins)
+
+#######################################################################
+# Generic defines for all SZA executables
+#######################################################################
+
+antenna_sza_bins_ldadd = \
+	$(lib_libcarmaSzaArrayutils_la) \
+	$(lib_libcarmaSzaUtil_la) \
+	$(lib_libcarmaSzaSlalib_la) \
+	$(lib_libcarmaSzaCfitsio_la) \
+	$(lib_libcarmaSzaAntennaCanbus_la) \
+	$(lib_libcarmaSzaAntennaControl_la) \
+	$(lib_libcarmaSzaAntennaCorba_la) \
+	$(antenna_common_la) \
+	$(antenna_sza_la) \
+	$(dbms_la) \
+	$(monitor_la) \
+	$(services_la) \
+	$(environment_la) \
+	$(correlator_la) \
+	$(pipeline_la) \
+	$(util_la) \
+	-llog4cpp \
+	-ljanz \
+	-lmir \
+	-lmysqlclient \
+	-lodbc \
+	-lxerces-c \
+	-lnovas \
+	-lgslcblas \
+	-lgsl \
+	-lunits \
+	-lfftw3 \
+	-lACE \
+	-lTAO \
+	-lTAO_AnyTypeCode \
+	-lTAO_AnyTypeCode \
+	-lTAO_CosNaming \
+	-lTAO_CosNotification \
+	-lTAO_ObjRefTemplate \
+	-lTAO_PortableServer \
+	-lTAO_CosNotification_Serv \
+	-lTAO_CosNotification_MC \
+	-lTAO_Utils \
+	-ldl \
+	-lreadline \
+	-lcurl \
+	-lrt \
+	-lX11
+
+antenna_sza_bins_cppflags = $(AM_CPPFLAGS) -DTOP="\"$(TOP)"\" -DCARMA=$(CARMA) -D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 -DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 -DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0  -DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated
+
+antenna_sza_bins_cxxflags = $(AM_CXXFLAGS) -fPIC
+
+#######################################################################
+# szaAntennaControl
+#######################################################################
+
+bin_szaAntennaControl_SOURCES = \
+	carma/antenna/sza/executables/szaAntennaControl.cc
+bin_szaAntennaControl_LDADD    = $(antenna_sza_bins_ldadd)
+bin_szaAntennaControl_CPPFLAGS = $(antenna_sza_bins_cppflags)
+bin_szaAntennaControl_CXXFLAGS = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# mpml generator for SZA monitor points
+#######################################################################
+
+bin_szaMpmlGenerator_SOURCES = \
+	carma/antenna/sza/executables/szaMpmlGenerator.cc
+bin_szaMpmlGenerator_LDADD     = $(antenna_sza_bins_ldadd)
+bin_szaMpmlGenerator_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_szaMpmlGenerator_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# Read remote sensors
+#######################################################################
+
+bin_szaTestRemoteSensors_SOURCES = \
+	carma/antenna/sza/executables/szaTestRemoteSensors.cc
+bin_szaTestRemoteSensors_LDADD     = $(antenna_sza_bins_ldadd)
+bin_szaTestRemoteSensors_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_szaTestRemoteSensors_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+
+#######################################################################
+# Test RrdCollector class
+#######################################################################
+
+bin_tRrdCollector_SOURCES = \
+	carma/antenna/sza/executables/tRrdCollector.cc
+bin_tRrdCollector_LDADD     = $(antenna_sza_bins_ldadd)
+bin_tRrdCollector_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_tRrdCollector_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+#######################################################################
+# System status executable
+#######################################################################
+
+bin_systemStatus_SOURCES = \
+	carma/antenna/sza/executables/systemStatus.cc
+bin_systemStatus_LDADD     = $(antenna_sza_bins_ldadd)
+bin_systemStatus_CPPFLAGS  = $(antenna_sza_bins_cppflags)
+bin_systemStatus_CXXFLAGS  = $(antenna_sza_bins_cxxflags)
+
+
+
+

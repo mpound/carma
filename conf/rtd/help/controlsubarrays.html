@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--
+=====================================================================
+=====================================================================
+
+    ERROR - RTD CLIENT DOES NOT HAVE HTML HELP TEXT SUPPORT!!!
+
+    IF YOU ARE SEEING THIS COMMENT THEN YOUR RTD CLIENT IS TOO OLD
+    YOU NEED TO UPDATE IT TO VIEW THIS HELP CONTENT AS HTML
+
+=====================================================================
+=====================================================================
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>CONTROL STATUS WINDOW HELP</title>
+</head>
+<body>
+<center><h1>Control Status Window Help</h1></center>
+<p>
+This window displays control information for all carma subarrays.
+Each folder represents subarray information for the named subarray.
+Shows subarray status (active/inactive), source, antenna status and correlator
+status.
+</p>
+<p>Note that the reachable status will only return to green if:</p>
+<ol>
+    <li>An operation involving the remote object is attempted.</li>
+    <li>
+        The monitor subsystem associated with the remote object is
+        &#x201c;alive&#x201d;.
+    </li>
+    <li>The operation succeeds in being dispatched.</li>
+</ol>
+<p>
+One way to artifically force an operation to be attempted on all presently
+disconnected remote objects is to call <tt>s.reconnect(False)</tt>
+from a sac session.
+</p>
+<p>
+<A href="http://www.mmarray.org">CARMA public front page</A>
+</p>
+</body>
+</html>

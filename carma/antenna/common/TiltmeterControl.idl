@@ -1,0 +1,99 @@
+/** @file
+ * Ovro carma::antenna::ovro::TiltmeterControl interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.3 $
+ * $Date: 2011/05/17 16:27:31 $
+ * $Id: TiltmeterControl.idl,v 1.3 2011/05/17 16:27:31 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_COMMON_TILTMETERCONTROL_IDL
+#define CARMA_ANTENNA_COMMON_TILTMETERCONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module common {
+
+/**
+ * TiltmeterControl nameserver name.
+ */
+const string TILTMETER_NAME = "Tiltmeter";
+
+/**
+ * Antenna Tiltmeter Control interface.
+ */
+interface TiltmeterControl {
+
+    /**
+     * Thermal control loop operation mode enumerations.
+     */
+    enum OpMode {LOOP_ON, LOOP_OFF, MANUAL};
+
+    /**
+     * Set the desired temperature for the tiltmeter.
+     * @param temp Desired temperature in Celcius.
+     */
+    void setTemperature(in float temp) raises (carma::util::UserException);
+
+    /**
+     * Regulate the temperature.
+     * @param opmode Loop state and/or manual control.
+     * @param pwrfract Fraction of maximum power from PWM controller in % max.
+     */
+    void regulateTemperature(in OpMode mode, in float pwrfract)
+        raises (carma::util::UserException);
+
+    /**
+     * Set loop gain.
+     * Set a new value for the loop gain.  This parameter is updated immediately
+     * but an additional command is required to store them into EEPROM for use
+     * upon reset.
+     * @param gain Loop gain in (percent max pwr)/K.
+     * @see writeLoopParametersToEEPROM
+     */
+    void setLoopGain(in float gain) raises (carma::util::UserException);
+
+    /**
+     * Set loop integration constant.
+     * Set a new value for the loop integration constant.  As before, this
+     * parameter is updated immediately but an additional command is required
+     * to store them into EEPROM for use upon reset.
+     * @param loopInteg Loop gain for integrator in (percent max. pwr.)/K.
+     * @see writeLoopParametersToEEPROM
+     */
+    void setLoopIntegrationConstant(in float loopInteg)
+        raises (carma::util::UserException);
+
+    /**
+     * Set loop rate constant.
+     * Set a new value for the error derivative gain.  This parameter is
+     * updated immediately but again an addition command is required to store
+     * it into EEPROM for use upon reset.
+     * @param rateConst Loop derivative gain in (percent max. pwr.)/K.
+     * @see writeLoopParametersToEEPROM
+     */
+    void setLoopRateConstant(in float rateConst)
+        raises (carma::util::UserException);
+
+    /**
+     * Set loop bandwidth.
+     * Set a new value for the loop bandwidth.  As before, this parameter is
+     * updated immediately but an additional command is required to store them
+     * into EEPROM for use upon reset.
+     * @param bw Bandwidth (inverse of sample and correction interval) in Hz.
+     * @see writeLoopParametersToEEPROM
+     */
+    void setLoopBandwidth(in float bw) raises (carma::util::UserException);
+
+    /**
+     * Write loop parameters to EEPROM.
+     * Write the current set of loop parameters to EEPROM.
+     */
+    void writeLoopParametersToEEPROM() raises (carma::util::UserException);
+
+}; // End TiltmeterControl interface
+};};}; // End carma::antenna::common module
+#endif

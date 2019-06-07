@@ -1,0 +1,348 @@
+#ifndef CARMA_MONITOR_IDL
+#define CARMA_MONITOR_IDL
+
+#include "carma/util/UserException.idl"
+
+/**
+ * $Id: monitorframe.idl,v 1.41 2012/12/19 00:15:56 abeard Exp $
+ */
+
+/**
+ * @file monitorframe.idl
+ * This is the IDL file for the monitorframe structures.
+ * @author N. S. Amarnath
+ *
+ * File containing IDL declarations for CARMA monitor frame structures.
+ * The primary structures are VarSubsystemFrame, used primarily by
+ * monitor subsystems, and MonitorSystemFrame, used only within the
+ * Array Control Computer (ACC).
+ *
+ * Convention - in all monitor namespace names, 'ss' used as a prefix denotes
+ * subsystem, in particular, a monitor subsystem as defined in the Monitor
+ * design document for CARMA -
+ *
+ * Andy Beard, September 2010: Data structures were redesigned for our
+ * conversion from ORBacus to TAO.  In particular, the marshalling of
+ * unions and enums in TAO resulted in unacceptable performance.  The
+ * redesign focused exclusively on removing these, though the union still
+ * exists for legacy side uses (e.g. python).
+ *
+ * @see http://www.mmarray.org/project/WP/Monitoring/monitoringDesign.pdf
+ */
+
+module carma
+{
+
+module monitor
+{
+
+  const string MONITOR_CHANNEL_NAME = "CARMAmonitor";
+
+ /**
+  * @typedef short MonitorValueType
+  * @brief Enumeration of possible types for monitor point values.
+  *
+  * Changes in this enum definition should also change the union
+  * MonitorValue switch definition below.
+  *
+  * Note this has been modified from an enum to a short due to extremely
+  * inefficient marshaling and demarshaling in TAO.
+  */
+  typedef short MonitorValueType;
+  const MonitorValueType MONITOR_VALUE_TYPE_BYTE = 0;
+  const MonitorValueType MONITOR_VALUE_TYPE_SHORT = 1;
+  const MonitorValueType MONITOR_VALUE_TYPE_INTEGER = 2;
+  const MonitorValueType MONITOR_VALUE_TYPE_BOOLEAN = 3;
+  const MonitorValueType MONITOR_VALUE_TYPE_FLOAT = 4;
+  const MonitorValueType MONITOR_VALUE_TYPE_DOUBLE = 5;
+  const MonitorValueType MONITOR_VALUE_TYPE_COMPLEX = 6;
+  const MonitorValueType MONITOR_VALUE_TYPE_STRING = 7;
+  const MonitorValueType MONITOR_VALUE_TYPE_SERIAL_NUMBER = 8;
+
+ /**
+  * @union MonitorValue
+  * @brief Type representing a monitor point sample value.
+  *        Note that marshalling and demarshalling of unions in TAO is
+  *        extremely inefficient.
+  *
+  * IDL                 C++                 Word Size
+  * char                CORBA::Char         8-bit signed
+  * short               CORBA::Short        16-bit signed
+  * long                CORBA::Long         32-bit signed
+  * long long           CORBA::LongLong     64-bit signed
+
+  * octet               CORBA::Octet        8-bit unsigned
+  * unsigned short      CORBA::UShort       16-bit unsigned
+  * unsigned long       CORBA::ULong        32-bit unsigned
+  * unsigned long long  CORBA::ULongLong    64-bit unsigned
+
+  * float               CORBA::Float        32-bit IEEE single precision
+  * double              CORBA::Double       64-bit IEEE double precision
+  * boolean             CORBA::Boolean      8-bit ???
+  */
+  union TransportMonitorValue switch (MonitorValueType)
+  {
+      case MONITOR_VALUE_TYPE_BYTE:             char c;
+      case MONITOR_VALUE_TYPE_SHORT:            short s;
+      case MONITOR_VALUE_TYPE_INTEGER:          long i;
+      case MONITOR_VALUE_TYPE_BOOLEAN:          boolean b;
+      case MONITOR_VALUE_TYPE_FLOAT:            float f;
+      case MONITOR_VALUE_TYPE_DOUBLE:           double d;
+      case MONITOR_VALUE_TYPE_COMPLEX:          float complex[2];
+      case MONITOR_VALUE_TYPE_STRING:           char str[8];
+      case MONITOR_VALUE_TYPE_SERIAL_NUMBER:    long sn;
+  };
+
+  typedef sequence<TransportMonitorValue> TransportMonitorValueSeq;
+
+  // A monitor point is a combination of a MonitorHeader and a sequence of
+  // one or more MonitorSampleValues
+
+  /**
+   * Transport monitor value metadata.
+   * This structure contains all data associated with a single monitor sample.
+   * In additon to carma specific data, it also provides type and indexing
+   * information to allow for packing and unpacking of the sample.
+   */
+  struct TransportMonitorValueMetadata
+  {
+
+      /**
+       * The data type of the actual value.
+       * Actual values are stored in type specific sequences
+       * indexed into via TransportMonitorValueMetadata::sequenceIdx.
+       */
+      MonitorValueType dataType;
+
+      /**
+       * Index into data type specific sequence carrying actual value.
+       */
+      unsigned long sequenceIdx;
+
+      /**
+       * @var ushort pointID
+       * @brief Identifier for the monitor point, represented as a
+       *        ushort.
+       */
+      unsigned short pointID;
+
+      /**
+       * @var unsigned char validityFlags
+       * @brief Bit fields indicating whether sample value is valid.
+       */
+      octet	validityFlags;
+
+      /**
+       * @var unsigned char iSample
+       * @brief Sample number (that is, if there are n samples in
+       *        a sampling cycle, then this is the i'th sample of n).
+       */
+      octet	iSample;
+  };
+
+  struct ComplexFloat
+  {
+      float real;
+      float imag;
+  };
+
+  typedef sequence<MonitorValueType> MonitorValueTypeSeq;
+  typedef sequence<unsigned short> UShortSeq;
+  typedef sequence<octet> ValidityFlagSeq;
+  typedef sequence<octet> iSampleSeq;
+  typedef sequence<char,8> Char8;
+  typedef sequence<char>  CharSeq;
+  typedef sequence<short> ShortSeq;
+  typedef sequence<long> LongSeq;
+  typedef sequence<boolean> BoolSeq;
+  typedef sequence<float> FloatSeq;
+  typedef sequence<double> DoubleSeq;
+  typedef sequence<ComplexFloat> ComplexSeq;
+  typedef sequence<Char8> StringSeq;
+  typedef sequence<long> SerialNumberSeq;
+  typedef sequence<TransportMonitorValueMetadata> MonitorSampleValueMetadataSeq;
+
+  // For local (subsystem to FSP) transport as well as publishing (FSP to ACC)
+  struct MonitorSampleValues
+  {
+      // Metadata
+      MonitorValueTypeSeq dataType;
+      LongSeq sequenceIdx;
+      UShortSeq pointID;
+      ValidityFlagSeq validityFlags;
+      iSampleSeq iSample;
+
+      // MonitorSampleValueMetadataSeq metadata;
+      // Values
+      CharSeq charValues;
+      ShortSeq shortValues;
+      LongSeq longValues;
+      BoolSeq boolValues;
+      FloatSeq floatValues;
+      DoubleSeq doubleValues;
+      ComplexSeq complexValues;
+      StringSeq stringValues;
+      SerialNumberSeq serialNumberValues;
+  };
+
+  /**
+   * @struct TransportSubsystemFrame
+   * @brief Contains sample values from all monitor points in a monitor
+   *        subsystem.
+   *
+   * @see http://www.mmarray.org/project/WP/Monitoring/monitoringDesign.pdf
+   */
+  struct TransportSubsystemFrame
+  {
+     /**
+      * @var unsigned short numMonitorPoints
+      * @brief Number of monitor points in the frame, as defined by the
+      *        number of configured monitor points.
+      */
+      unsigned short	numMonitorPoints; // specified as # of monitor points
+
+     /**
+      * @var unsigned short numSamples
+      * @brief Total number of monitor sample values in the frame, as defined
+      *        by the sum of the number of samples for each of the configured
+      *        monitor points.
+      */
+      unsigned short	numSamples; // specified as # of sample values
+
+     /**
+      * @var unsigned short subsystemID
+      * @brief Subsystem ID for the monitor subsystem.
+      */
+      unsigned short	subsystemID; // same as the subsystemID
+
+     /**
+      * @var unsigned short statusFlags
+      * @brief Bit fields with the state of the subsystem frame - complete,
+      *        partial, empty, sent, received.
+      */
+      unsigned short	statusFlags; // bit flags for bookkeepping
+
+     /**
+      * @var unsigned short maxMonitorPoints
+      * @brief Maximum number of monitor points possible for this subsystem.
+      */
+      unsigned short	maxMonitorPoints; // specified as # of monitor points
+
+     /**
+      * @var unsigned short maxSamples
+      * @brief Maximum number of monitor sample values in the frame
+      */
+      unsigned short	maxSamples; // specified as # of sample values
+
+     /**
+      * @var unsigned short maxSamples
+      * @brief Number of monitor points in the frame with a single sample value
+      */
+      unsigned short	numSingleSamplePoints; // specified as # of monitor points
+
+     /**
+      * @var unsigned long frameCount
+      * @brief Timestamp for the frame, measured in half-seconds from
+      *        the Epoch.
+      */
+      unsigned long	frameCount;
+
+
+     /**
+      * @var double lastWriterDelay (delay offset in seconds)
+      * @brief Offset from half-second at which writer is set to write
+      *        to ScriberPublisher.
+      */
+      double                lastWriterDelay;
+
+     /**
+      * @var double lastWriteTime (MJD)
+      * @brief Time at which data was last written to ScriberPublisher.
+      */
+      double                lastWriteTime;
+
+     /**
+      * @var double scriberWriteDelay (delay offset in seconds)
+      * @brief Offset from half-second at which scriberPublisher is set to
+      *        write to local (subsystem) IPQ.
+      */
+      double                scriberWriteDelay;
+
+     /**
+      * @var double scriberWriteTime (MJD)
+      * @brief Time at which frame was written to local (subsystem) IPQ
+      *        - as MJD, obtained from the carma/util/Time class.
+      */
+      double                scriberWriteTime;
+
+     /**
+      * @var double publishTime (MJD)
+      * @brief Time at which frame was published from the subsystem computer,
+      *        as MJD, obtained from the carma/util/Time class.
+      */
+      double	publishTime;
+
+     /**
+      * @var double receiveTime (MJD)
+      * @brief Time at which frame was received at the ACC, as MJD,
+      *        obtained from the carma/util/Time class.
+      */
+      double	receiveTime;
+
+    // array of header offsets - once header is accessed, then monitor
+    // point definitions are accessible
+
+     /**
+      * @var MonitorSampleValues monitorValues
+      * @brief Structure containing monitor sample values.
+      *        Each monitor point is associated with a group of
+      *        two or more monitor values, with the first representing an
+      *        average value for integral, number types.
+      */
+      MonitorSampleValues monitorValues;
+  };
+
+
+ /**
+  * @interface monitorPointSeqUpdate
+  * @brief  CORBA service that allows a process within a monitor subsystem
+  *         to each write a set of monitor points (which form a strict
+  *         subset of the set of monitor points for the subsystem) to
+  *         the monitor subsystem frame.
+  *
+  *         This method does not detect conflicts due to overlap between
+  *         the various subsets written by different processes. Intended
+  *         to be used in situations where monitor point sample values are
+  *         provided by multiple processes. Developers should use
+  *         SubsystemFrame based methods to update an entire subsystem frame
+  *         using a unique process.
+  *
+  * @param values This input parameter is a structure of monitor points.
+  * @param frameTime This input parameter is a long representing the
+  *                  UTC half-second to which this data belongs.
+  *                  If the FrameScriberPublisher finds that its current
+  *                  frame time is not equal to the frametime, then it
+  *                  discards the data in dataSeq.
+  * @param writeDelay This input parameter is a double representing the
+  *                  delay from the UTC half-second at which the auto writer
+  *                  thread is set to write to the monitor stream.
+  *                  If the write is done manually, then this valus is set
+  *                  to 0.0D.
+  * @return none.
+  * @author N. S. Amarnath
+  */
+
+  interface MonitorPointUpdate
+  {
+      double monitorPointSampleUpdate(
+        in MonitorSampleValues values,
+        in long frameTime,
+        in double writeDelay ) raises( carma::util::UserException );
+  };
+
+}; // End module monitor
+
+}; // End module carma
+
+
+#endif	/* CARMA_MONITOR_IDL */

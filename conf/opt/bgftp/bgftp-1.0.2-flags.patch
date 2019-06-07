@@ -1,0 +1,37 @@
+diff -Nru bgftp-1.0.2.orig/configure.ac bgftp-1.0.2/configure.ac
+--- bgftp-1.0.2.orig/configure.ac	2009-04-24 14:15:29.000000000 -0700
++++ bgftp-1.0.2/configure.ac	2012-01-13 15:46:41.950324554 -0800
+@@ -92,8 +92,8 @@
+ AC_SUBST([GLOBUS_DIR])
+ 
+ # Compiler flags
+-CFLAGS=
+-CXXFLAGS=
++#CFLAGS=
++#CXXFLAGS=
+ 
+ # Set base optimization/debug level for C and C++
+ if test $DEBUG = yes; then
+diff -Nru bgftp-1.0.2.orig/src/cpp/jni/Makefile.am bgftp-1.0.2/src/cpp/jni/Makefile.am
+--- bgftp-1.0.2.orig/src/cpp/jni/Makefile.am	2006-08-28 12:21:30.000000000 -0700
++++ bgftp-1.0.2/src/cpp/jni/Makefile.am	2012-01-13 15:53:34.641236531 -0800
+@@ -8,9 +8,17 @@
+ 
+ lib_LTLIBRARIES = libbgftp.la
+ libbgftp_la_SOURCES = ArchiveJni.cc
+-libbgftp_la_CXXFLAGS = $(BG_CXXFLAGS) $(AM_CXXFLAGS) -I$(JAVA_HOME)/include \
++libbgftp_la_CXXFLAGS = \
++	$(AM_CXXFLAGS) $(CXXFLAGS) $(BG_CXXFLAGS) \
++	-I$(JAVA_HOME)/include \
+ 	-I$(JAVA_HOME)/include/$(LHOSTOS)
+-libbgftp_la_LDFLAGS = -version-info 1:0:0
++libbgftp_la_LDFLAGS = \
++	$(AM_LDFLAGS) $(LDFLAGS) -version-info 1:0:0 \
++	-L$(JAVA_HOME)/jre/lib/i386/server \
++	-Wl,-rpath,$(JAVA_HOME)/jre/lib/i386/server \
++	-L$(JAVA_HOME)/jre/lib/amd64/server \
++	-Wl,-rpath,$(JAVA_HOME)/jre/lib/amd64/server
++libbgftp_la_LIBADD = -ljvm
+ 
+ CLEANFILES = ArchiveJni.cc
+ 

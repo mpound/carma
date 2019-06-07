@@ -1,0 +1,61 @@
+lib_libcarmaSzaArrayutils_la = lib/libcarmaSzaArrayutils.la
+
+lib_LTLIBRARIES += $(lib_libcarmaSzaArrayutils_la)
+
+lib_libcarmaSzaArrayutils_la_SOURCES = \
+	carma/antenna/sza/arrayutils/arcfile.cc \
+	carma/antenna/sza/arrayutils/arraymap.cc \
+	carma/antenna/sza/arrayutils/arraytemplate.cc \
+	carma/antenna/sza/arrayutils/astrom.cc \
+	carma/antenna/sza/arrayutils/cache.cc \
+	carma/antenna/sza/arrayutils/control.cc \
+	carma/antenna/sza/arrayutils/datatype.cc \
+	carma/antenna/sza/arrayutils/date.cc \
+	carma/antenna/sza/arrayutils/expr.cc \
+	carma/antenna/sza/arrayutils/file_monitor.cc \
+	carma/antenna/sza/arrayutils/freelist.cc \
+	carma/antenna/sza/arrayutils/hash.cc \
+	carma/antenna/sza/arrayutils/im_monitor_stream.cc \
+	carma/antenna/sza/arrayutils/input.cc \
+	carma/antenna/sza/arrayutils/list.cc \
+	carma/antenna/sza/arrayutils/lprintf.cc \
+	carma/antenna/sza/arrayutils/monitor_stream.cc \
+	carma/antenna/sza/arrayutils/netbuf.cc \
+	carma/antenna/sza/arrayutils/net_im_monitor.cc \
+	carma/antenna/sza/arrayutils/net_monitor.cc \
+	carma/antenna/sza/arrayutils/netobj.cc \
+	carma/antenna/sza/arrayutils/output.cc \
+	carma/antenna/sza/arrayutils/pathname.cc \
+	carma/antenna/sza/arrayutils/print.cc \
+	carma/antenna/sza/arrayutils/procedure.cc \
+	carma/antenna/sza/arrayutils/quad.cc \
+	carma/antenna/sza/arrayutils/regcal.cc \
+	carma/antenna/sza/arrayutils/regdata.cc \
+	carma/antenna/sza/arrayutils/regmap.cc \
+	carma/antenna/sza/arrayutils/regset.cc \
+	carma/antenna/sza/arrayutils/regtemplate.cc \
+	carma/antenna/sza/arrayutils/rtcnetcoms.cc \
+	carma/antenna/sza/arrayutils/scancache.cc \
+	carma/antenna/sza/arrayutils/scan.cc \
+	carma/antenna/sza/arrayutils/scope.cc \
+	carma/antenna/sza/arrayutils/script.cc \
+	carma/antenna/sza/arrayutils/slprintf.cc \
+	carma/antenna/sza/arrayutils/source.cc \
+	carma/antenna/sza/arrayutils/spline.cc \
+	carma/antenna/sza/arrayutils/statement.cc \
+	carma/antenna/sza/arrayutils/stringmem.cc \
+	carma/antenna/sza/arrayutils/stringpool.cc \
+	carma/antenna/sza/arrayutils/szaregsAll.cc \
+	carma/antenna/sza/arrayutils/szaregsAntenna.cc \
+	carma/antenna/sza/arrayutils/szaregsArray.cc \
+	carma/antenna/sza/arrayutils/szaregsCan1.cc \
+	carma/antenna/sza/arrayutils/szaregsCan2.cc \
+	carma/antenna/sza/arrayutils/szaregsCan3.cc \
+	carma/antenna/sza/arrayutils/szaregsCorrelator.cc \
+	carma/antenna/sza/arrayutils/tcpip.cc \
+	carma/antenna/sza/arrayutils/TransactionManager.cc \
+	carma/antenna/sza/arrayutils/variable.cc
+
+lib_libcarmaSzaArrayutils_la_CXXFLAGS = -fPIC
+
+lib_libcarmaSzaArrayutils_la_CPPFLAGS = $(AM_CPPFLAGS) -DTOP="\"$(TOP)"\" -D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 -DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 -DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0 -DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated

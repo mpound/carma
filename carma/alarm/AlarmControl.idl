@@ -1,0 +1,101 @@
+#ifndef CARMA_ALARM_IDL
+#define CARMA_ALARM_IDL
+
+#include "carma/util/UserException.idl"
+
+/**
+ * @file AlarmControl.idl
+ *
+ * This is the IDL file for the Alarm subsystem.
+ *
+ * @author Colby Gutierrez-Kraybill
+ *
+ * @version $Id: AlarmControl.idl,v 1.6 2011/05/17 16:27:27 iws Exp $
+ *
+ * This describes the DO interface for the Alarm subsystem.
+ *
+ * @see http://www.mmarray.org/project/WP/nothereyet
+ */
+
+module carma
+{
+  /**
+   * Namespace for the Alarm system.
+   * @see http://cvs.mmarray.org/project/WP/nothereyet
+   */
+  module alarm
+  {
+
+    /**
+     * The CARMA canonical name for this Distributed Object
+     */
+    const string ALARM_NAME = "carma.alarm.AlarmControl";
+
+    /**
+     * Possible extension in the future.  Send sound
+     * data in PCM format to the alarm server to play.
+     * This will allow for completely arbitrary sounds
+     * to be played.
+     */
+    struct sound
+    {
+      unsigned long length;     /** Length of PCM data in bytes */
+      sequence<octet>soundData; /** PCM encoded sound data */
+    };
+
+    /**
+     * %AlarmControl interface
+     */  
+    interface AlarmControl
+    {
+
+      /**
+       * Tell the alarm to turn on.
+       *
+       * @param string alarmName Name of alarm to sound (described in sounds.tab)
+       * @param string mp Monitor point that lead to this alarm
+       * @param string reason Further explanation about alarm
+       * @param bool repeat Have the alarm system repeat the sound over and over...
+       * @return none.
+       */
+      void turnOn(
+          in string alarmName,
+          in string mp,
+          in string reason,
+          in boolean repeat )
+        raises ( carma::util::UserException );
+
+      /**
+       * Tell the alarm to turn off.
+       *
+       * @return none.
+       */
+      void turnOff()
+        raises ( carma::util::UserException );
+
+      /**
+       * Let the alarm system know that the acc is still alive
+       * This call is generally called only by the carmaAlarm process
+       * running on the acc, which is listening to the fault system.
+       *
+       * @return none.
+       */
+      void updateDeadMan()
+        raises ( carma::util::UserException );
+
+      /**
+       * Globally enable or disable alarm
+       *
+       * @param bool enable True, enable, False, disable
+       *
+       * @return none.
+       */
+      void enableAlarm ( in boolean enable ) raises ( carma::util::UserException );
+
+    };
+  };
+};
+
+#endif /* CARMA_ALARM_IDL */
+
+// vim: set expandtab smarttab sw=2 ts=2 :

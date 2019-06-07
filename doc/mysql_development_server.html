@@ -1,0 +1,1034 @@
+<HTML>
+<HEAD>
+<STYLE type="text/css">
+PRE.OUTPUT {color: red}
+</STYLE>
+</HEAD>
+<TITLE>
+CARMA MySQL Development Server How To
+</TITLE>
+<BODY>
+<CENTER><H1>CARMA MySQL Development Server How To</H1></CENTER>
+<CENTER><H2>Dave Mehringer</H2></CENTER>
+<CENTER><H2>UIUC/NCSA</H2></CENTER>
+<CENTER><H2>$Id: mysql_development_server.html,v 1.25 2011/01/03 19:43:59 iws Exp $</H2></CENTER>
+
+<OL>
+<H1><LI>Introduction</LI></H1>
+This document describes the steps necessary for configuring and running
+your own private mysql server as well as how to create your own
+private carma database. Command output is shown in red.
+Multiple MySQL servers can run on a single
+machine. Important points to remember are that each server must listen
+on its own port and must have its own unix socket for local
+connections. 
+<!-- FIXME need to check this, certainly this is true for writable
+tables, but perhaps not for readonly tables? -->
+Different MySQL servers should not share the same
+databases.
+Other than that, no special privileges are needed to run
+a MySQL server or to create and manipulate databases.<P>
+In addition, in section 3 I describe how to ingest monitor data into a 
+development database. 
+<P>
+<H1><LI>MySQL Server Configuration and CARMA Database Initialization</LI></H1>
+Here are the steps to follow.
+<P>
+<OL>
+<LI> Edit config files
+<P>
+From the top of your build tree 
+<pre>
+unix% cd conf/dbms
+unix% cp dbms.devel.conf dbms.$USER.conf
+unix% cp mysql.devel.conf mysql.$USER.conf
+unix% cp odbc.devel.ini odbc.$USER.ini
+</pre>
+<P>
+Edit <code>dbms.$USER.conf</code> which is read by
+<CODE>carma::dbms::DBConfigurator</CODE> and is used 
+by <CODE>carma::dbms::DBConnection</CODE> for configuring database
+connections. In this file, change the value of the <code>odbcini</code>
+key to the name of the <code>odbc.$USER.ini</code> file you just
+created in the previous copy step. In addtion, modify the
+<code>socket</code> and <code>port</code> variables to reflect the
+values for your configuration; these should be identical to values you
+are using in the <code>odbc.$USER.ini</code> and
+<code>mysql.$USER.conf</code> files (see below). The values of the
+<code>port</code> and <code>socket</code> keys in the
+<code>dbms.$USER.conf</code> file are used by the native DBMS
+DBConnection descendent classes
+(e.g. <code>carma::dbms::MySQLDBConnection</code>) to configure native
+(as opposed to ODBC) connections to the RDBMS backend. Such
+connections are necessary for loading data from flat files (e.g., as
+happens with the <code>carma/dbms/monitorDataLoader</code> and 
+<code>carma/dbms/logDataLoader</code> applications).
+<P>
+Edit <code>mysql.$USER.conf</code> and follow the instructions in this file.  
+This file is read by various MySQL applications, including the server
+and various clients. Any directories
+you specify in this file must be created by hand; the server will not
+create them for you and will fail to start if they do not exist.
+<B>Please only use the default port of 3306 and the default socket of 
+/tmp/mysql.sock for your server only if you are certain you will be
+the only person running a MySQL server on your target machine.</B>
+<P>
+Edit odbc.$USER.ini. This file is read by the ODBC driver manager
+(currently unixODBC) in order to figure out what ODBC driver to use
+and how to connect to the RDBMS backend. PORT and SOCKET values must
+be identical to those specified in mysql.$USER.conf. Note that the
+original source file (conf/dbms/odbc.ini.in) corresponding to this
+file uses the <code>@carma_tools@</code> configure directive to set
+the path to the default 
+driver. It's easy to verify that this is set correctly; simply "ls" the
+path specified by the Driver variable. If nothing exists there, you
+have a problem.
+<P>
+<LI> Install the database
+<P>
+Run the command
+
+<pre>
+unix% $CARMA_TOOLS/bin/mysql_install_db --defaults-file=$PWD/mysql.$USER.conf
+</pre>
+Output will look something like
+<pre class="OUTPUT">
+Preparing db table
+Preparing host table
+Preparing user table
+Preparing func table
+Preparing tables_priv table
+Preparing columns_priv table
+Installing all prepared tables
+040731 10:10:25  /appl/beren/dmehring/carma_tools/libexec/mysqld:
+Shutdown Complete
+ 
+ 
+To start mysqld at boot time you have to copy
+support-files/mysql.server
+to the right place for your system
+ 
+PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL root USER !
+To do so, start the server, then issue the following commands:
+/appl/beren/dmehring/carma_tools/bin/mysqladmin -u root password
+'new-password'
+/appl/beren/dmehring/carma_tools/bin/mysqladmin -u root -h
+maxwell.ncsa.uiuc.edu password 'new-password'
+See the manual for more instructions.
+ 
+You can start the MySQL daemon with:
+cd /appl/beren/dmehring/carma_tools ;
+/appl/beren/dmehring/carma_tools/bin/mysqld_safe &
+ 
+You can test the MySQL daemon with the benchmarks in the 'sql-bench'
+directory:
+cd sql-bench ; perl run-all-tests
+ 
+Please report any problems with the
+/appl/beren/dmehring/carma_tools/bin/mysqlbug script!
+ 
+The latest information about MySQL is available on the web at
+http://www.mysql.com
+Support MySQL by buying support/licenses at https://order.mysql.com
+</pre>
+
+This will create two databases (directories), <code>mysql</code> and 
+<code>test</code>, in the
+directory you specified as datadir in mysql.$USER.conf. Go ahead and
+check to make sure these directories exist.  If not, you have a problem.
+<P>
+<LI> Start your mysql server
+<P>
+cd to the top of your build tree (<code>cd ../..</code> should do it) and run
+<pre>
+unix% scripts/mysqld start conf/dbms/mysql.$USER.conf
+</pre>
+Output will look something like
+<pre class="OUTPUT">
+using conf/dbms/mysql.dmehring.conf
+Waiting 6 seconds to make sure the daemon started...
+Starting mysqld daemon with databases from
+/export/scr0/dmehring/test/mysql_data/data
+Starting mysqld:                                           [  OK  ]
+</pre>
+
+If all is configured properly and no one is running on your specified
+port or using your specified socket, the server should start. 
+If you get [ FAILED ] instead of [  OK  ], you have a problem.  You
+can be more certain 
+the server started by checking to see if the socket you specified in
+mysql.$USER.conf exists (just "ls" it) and by telneting to the port on
+which the server should be running.
+<pre>
+unix% telnet localhost [your specified MySQL port number]
+</pre>
+Output should look like
+<pre class="OUTPUT">
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+NHost 'localhost.localdomain' is not allowed to connect to this MySQL
+serverConnection closed by foreign host.
+</pre>
+For future reference (i.e., don't do it now :) ), the server can be
+shutdown by running from the top of your build tree
+<pre>
+unix% scripts/mysqld stop conf/dbms/mysql.$USER.conf
+</pre>
+<pre class="OUTPUT">
+040731 11:12:26  mysqld ended
+ 
+Stopping mysqld:                                           [  OK  ]
+</pre>
+<P>
+
+<LI> Initialize the carma database
+<P>
+The first time you connect to your MySQL server, you must connect as
+the root database user (which has nothing to do with the root unix
+user).  Your root database user currently has no password. The
+<code>mysql</code> 
+application is a client which provides a command line interface to your
+MySQL server.
+
+<pre>
+unix% $CARMA_TOOLS/bin/mysql --defaults-file=conf/dbms/mysql.$USER.conf -u root
+</pre>
+Note that the <code>--defaults-file</code> switch must precede the
+<code>-u</code> switch. 
+Output:
+<pre class="OUTPUT">
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 2 to server version: 4.0.20
+ 
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+</pre>
+and you should be left at the <code>mysql&gt;</code> command prompt.
+You're in (I hope)! Now create the <code>carma</code> database as well as the
+auxiliary <code>scratch</code> database by running the
+<code>conf/dbms/createCarmaDB.sql</code> SQL script:
+<pre>
+mysql&gt; \. conf/dbms/createCarmaDB.sql
+</pre>
+Output will look like
+<pre class="OUTPUT">
+Query OK, 1 row affected (0.03 sec)
+ 
+Database changed
+Query OK, 0 rows affected (0.03 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.01 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.01 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.02 sec)
+ 
+Query OK, 0 rows affected (0.01 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.07 sec)
+ 
+Query OK, 0 rows affected (0.01 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.01 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.01 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 1 row affected (0.02 sec)
+ 
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+ 
+Database changed
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+ 
+Query OK, 0 rows affected (0.00 sec)
+</pre>
+
+This script creates the databases, tables, users, and privileges
+necessary for CARMA. For example, you can see the tables in the carma
+database by first changing to this database:
+<pre>
+mysql&gt; \u carma
+</pre>
+<pre class="OUTPUT">
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+ 
+Database changed
+</pre>
+and then issuing the <code> show tables</code> command:
+<pre>
+mysql&gt; show tables;
+</pre>
+<pre class="OUTPUT">
++------------------------------+
+| Tables_in_carma              |
++------------------------------+
+| AggregateSubsystems          |
+| AstronomicalIntegrations     |
+| BlankingFlags                |
+| Devices                      |
+| Locations                    |
+| LogMessages                  |
+| MonitorConfigChangeableParms |
+| MonitorConfigStaticParms     |
+| MonitorDataShelfIndex        |
+| MonitorDataTableIndex        |
+| MonitorEnumeratorIndex       |
+| MonitorEnumerators           |
+| MonitorPointDataTypes        |
+| MonitorPointTypes            |
+| Partitions                   |
+| Subsystems                   |
+| TagIDNameSignatures          |
+| Validities                   |
++------------------------------+
+18 rows in set (0.00 sec)
+</pre>
+
+Note that your output might not look exactly like this; the dbms
+package is still in development and the database schema is changing
+with time.<P>
+
+You can get more information on a specific table with MySQL's
+<code>describe [tablename]</code> command,
+where <code>[tablename]</code> is one of the tables in the output from
+the <code> show tables</code> command.  For example,
+<pre>
+describe MonitorConfigStaticParms;
+</pre>
+
+<pre class="OUTPUT">
++--------------+--------------+------+-----+---------+-------+
+| Field        | Type         | Null | Key | Default | Extra |
++--------------+--------------+------+-----+---------+-------+
+| tagID        | int(11)      |      | PRI | 0       |       |
+| subsysID     | smallint(6)  |      | MUL | 0       |       |
+| name         | text         |      |     |         |       |
+| units        | varchar(255) | YES  |     | NULL    |       |
+| dataTypeID   | smallint(6)  |      | MUL | 0       |       |
+| mpTypeID     | smallint(6)  |      | MUL | 0       |       |
+| isPersistent | smallint(6)  |      |     | 1       |       |
+| isSpectrum   | smallint(6)  |      |     | 0       |       |
+| locationID   | smallint(6)  |      | MUL | 0       |       |
+| deviceID     | smallint(6)  |      | MUL | 0       |       |
++--------------+--------------+------+-----+---------+-------+
+10 rows in set (0.00 sec)
+</pre>
+Again, your output may not look exactly like this.
+That's all you need to worry about as the root
+database user. Go ahead and exit.
+<pre>
+mysql> \q
+</pre>
+
+<LI>Load monitor configuration data.
+<P>It will take several (13 on a lightly loaded 1.5 GHz P4 machine)
+minutes to ingest configuration data into the database. 
+
+<pre>
+unix% scripts/monitorConfigurationLoader conffile=dbms/dbms.$USER.conf
+</pre>
+
+This should produce the following type of output:
+<PRE class="OUTPUT">
+file ../carma_src/carma/monitor/BimaSubsystem.mpml
+BimaSubsystem.mpml.tmp
+../carma_src/scripts/mpmlgen/mpmlgen -L
+/data/beren/dmehring/carma_build/BimaSubsystem.mpml.tmp
+../carma_src/carma/monitor/BimaSubsystem.mpml
+/data/beren/dmehring/carma_build/bin/monitorConfigurationLoader
+mpml=BimaSubsystem.mpml.tmp conffile=conf/dbms/dbms.dmehring.conf
+conffile conf/dbms/dbms.dmehring.conf
+BimaSubsystem.mpml.tmp: total number of points 9
+9 descriptions successfully loaded into the database
+</PRE>
+repeated for each subsystem mpml file in carma/monitor. If you see
+messages about not being able to connect to the database, that's not a
+good sign.  Send me the output and I'll try and figure it out.
+Normally, if you have configured things correctly, this won't be a
+problem. If the configuration data loading is successful, reconnect to
+the database to inspect what you have just achieved 
+
+<PRE>
+unix% $CARMA_TOOLS/bin/mysql --defaults-file=conf/dbms/mysql.$USER.conf -u carmauser carma
+</PRE>
+
+List the contents of the Subsystems table. You should see about 60 rows.
+
+
+<PRE>
+mysql> select * from Subsystems;
+</PRE>
+
+<PRE class="OUTPUT">
++----------+----------------+
+| subsysID | subsysName     |
++----------+----------------+
+|        1 | Bima1          |
+|        2 | Bima2          |
+|        3 | Bima3          |
+|        4 | Bima4          |
+|        5 | Bima5          |
+|        6 | Bima6          |
+|        7 | Bima7          |
+|        8 | Bima8          |
+|        9 | Bima9          |
+|       32 | CentralIf      |
+|       33 | Control        |
+|       25 | DelayEngine    |
+|       31 | LineLength     |
+|       24 | Loberotator    |
+|       27 | LoRef          |
+|       28 | MasterClock    |
+|       30 | OpacityMonitor |
+|       10 | Ovro1          |
+|       11 | Ovro2          |
+|       12 | Ovro3          |
+|       13 | Ovro4          |
+|       14 | Ovro5          |
+|       15 | Ovro6          |
+|       29 | PhaseMonitor   |
+|       52 | SlcBand1       |
+|       53 | SlcBand2       |
+|       54 | SlcBand3       |
+|       55 | SlcBand4       |
+|       56 | SlcBand5       |
+|       57 | SlcBand6       |
+|       58 | SlcBand7       |
+|       59 | SlcBand8       |
+|       35 | Sldc           |
+|       16 | Sza1           |
+|       17 | Sza2           |
+|       18 | Sza3           |
+|       19 | Sza4           |
+|       20 | Sza5           |
+|       21 | Sza6           |
+|       22 | Sza7           |
+|       23 | Sza8           |
+|       60 | Test           |
+|       36 | WbcBand1       |
+|       45 | WbcBand10      |
+|       46 | WbcBand11      |
+|       47 | WbcBand12      |
+|       48 | WbcBand13      |
+|       49 | WbcBand14      |
+|       50 | WbcBand15      |
+|       51 | WbcBand16      |
+|       37 | WbcBand2       |
+|       38 | WbcBand3       |
+|       39 | WbcBand4       |
+|       40 | WbcBand5       |
+|       41 | WbcBand6       |
+|       42 | WbcBand7       |
+|       43 | WbcBand8       |
+|       44 | WbcBand9       |
+|       34 | Wbdc           |
+|       26 | Weather        |
++----------+----------------+
+60 rows in set (0.01 sec)
+</PRE>
+
+<!-- not as carmauser any longer :)
+You can even add your own subsystems:
+
+<PRE>
+mysql> insert into Subsystems VALUES(85,'MyPrivateSubsystem');
+mysql> select * from Subsystems;
+</PRE>
+You should see your newly added subsystem at the end of the result set.
+<P>
+-->
+Want to see some monitor configuration data?
+The following query will probably produce more data than you care to
+see (currently about 15000 records), but it will give you a sense of
+accomplishment :) 
+<PRE>
+mysql> select * from MonitorConfigStaticParms;
+</PRE>
+Nope, I'm not listing all that output here :).
+OK, filter the last query so you get a better idea of what is going on
+(this query currently selects 480 records)
+<PRE>
+mysql> select * from MonitorConfigStaticParms where subsysID=10;
+</PRE>
+Here's the header plus one of the rows in the result set:
+<PRE class="OUTPUT">
++--------+----------+-----------------------------------------------------+---------+------------+----------+--------------+------------+------------+----------+
+| tagID  | subsysID | name                                                | units   | dataTypeID | mpTypeID | isPersistent | isSpectrum | locationID | deviceID |
++--------+----------+-----------------------------------------------------+---------+------------+----------+--------------+------------+------------+----------+
+| 655362 |       10 | Ovro1.AntennaCommon.Drives.Azimuth.requestedAzimuth | degrees |       1060 |     3210 |            1 |          0 |          0 |        0 |
++--------+----------+-----------------------------------------------------+---------+------------+----------+--------------+------------+------------+----------+
+
+</PRE>
+Again, your mileage may vary.
+<P>
+<LI> Reinitializing monitor configuration tables
+<P>
+This section describes what to do if you want (or feel you need to)
+reinitialize your monitor configuration tables.  Normally this
+shouldn't be necessary. For example, if new monitor points are added
+to an mpml file, the simplest way to load these into the database is
+simply to run scripts/monitorConfigurationLoader using the
+mpml=[modified mpml file] command line switch.  However, if someone
+changes a static monitor configuration parameter of a configuration
+already in the database, this script will fail (of course, this is not
+allowed in production but may happen as development proceeds).  You
+can either remove the offending point from the database and then try
+to reload it with scripts/monitorConfigurationLoader, or if this
+proves too annoying and you have time, you can just reinitialize your
+monitor config tables.
+<P>
+The SQL TRUNCATE
+command removes all records from a specified table, but does not remove
+the table itself (SQL DROP removes an entire table). To reinitialize
+your configuration tables, you should TRUNCATE at least four tables
+from the mysql command line interface:
+<!-- FIXME add mysql output for command sequence below -->
+<PRE>
+unix% $CARMA_TOOLS/bin/mysql --defaults-file=conf/dbms/mysql.$USER.conf -u mdl carma
+
+
+mysql> TRUNCATE MonitorEnumerators;
+mysql> TRUNCATE MonitorEnumeratorIndex;
+mysql> TRUNCATE MonitorConfigChangeableParms;
+mysql> TRUNCATE MonitorConfigStaticParms;
+</PRE>
+These commands should be run in the above order since the first tables
+which are truncated have foreign keys which reference other tables
+which come afterward in the command sequence.  Your configration
+tables can then be reloaded by the procedure outlined in section 2.5.
+</OL>
+<H1><LI>Ingesting Monitor Data Into a Development Database</LI></H1>
+This section describes the steps necessary for ingesting monitor data into
+your development database. In this section, you will learn about the two key
+applications which make this happen. The <code>monitorAverageWriter</code>
+application reads data from the monitor stream and writes these data to flat
+files.  These flat files are in turn read by the 
+<code>monitorDataLoader</code> application, which ingests them into the
+database.  A third application, <code>monitorDataDeleter</code> removes the
+flat files and associated symbolic links from disk once they have been ingested
+into the database.  In production, <code>monitorAverageWriter</code> runs on
+the ACC and writes flat files to a local disk partition. This disk partition
+is shared via NFS with the database computer which runs 
+<CODE>monitorDataLoader</CODE> and <code>monitorDataDeleter</code>. However,
+all these applications can run on a single machine, without the need for
+NFS.  This is the configuration which forms the basis for the following
+description of how to ingest monitor data into a development database.
+<P>
+<OL>
+<LI>Determine the message digest of the canonical names to tag IDs map 
+and insert it into the database.
+<P>
+In order to ensure database integrity, there is a scheme in place to check 
+that the canonical name to tag ID map which is being used by 
+monitorAverageWriter is the same as the one which is in the database.
+Differences can arise if, for example, monitorAverageWriter is run in a
+mode in which it configures <CODE>carma::monitor::TagIDAuthority</CODE> to
+create tag IDs on the fly, rather than getting them from the database.
+At the beginning of each flat file, <CODE>monitorAverageWriter</CODE> writes
+the message digest of the name/tagID map it is using.  
+<CODE>monitorDataLoader</CODE> reads this digest from the flat file, and if
+the digest doesn't match the "blessed" digest stored in the database, 
+<CODE>monitorDataLoader</CODE> treats the file as being corrupt and will not
+ingest its data. NOTE: As of this writing (2005Jan06), this scheme is not
+yet fully implemented, however, it is planned for full implementation by
+2005Feb01.<P>
+The application which calculates the blessed message digest and writes it to 
+the database is <CODE>canonicalNamesToTagIDsConfFileWriter</CODE>. This 
+application also produces a file with the blessed canonical name to tag ID
+mappings.  This file is used in production in cases when the database cannot
+be contacted, but is not needed for loading data into your development database
+(since, in order to accomplish this, your database server needs to be running).
+From the top of your build/install tree, run this application:
+<PRE>
+unix% bin/canonicalNamesToTagIDsConfFileWriter conffile=dbms/dbms.$USER.conf
+</PRE>
+As mentioned previously, this application creates a file in the directory
+from which it was run named <CODE>canonicalNamesToTagIDs.conf</CODE>. As also
+mentioned, for this discussion this file is not needed, so you can delete it.
+Confirm that the application has inserted a record into the database. Connect
+to the database using the <CODE>mysql</CODE> CLI.
+<PRE>
+unix% $CARMA_TOOLS/bin/mysql --defaults-file=conf/dbms/mysql.$USER.conf -u carmauser carma
+</PRE>
+List the contents of the TagIDNameSignatures table.
+<PRE>
+mysql> select * from TagIDNameSignatures;
+</PRE>
+You should see a single record, something like
+<PRE class="OUTPUT">
++------------+------------------------------------------+
+| frameCount | signature                                |
++------------+------------------------------------------+
+|  316709306 | 290a5a3095c7472c3215f6dfa461fd6b2977b61f |
++------------+------------------------------------------+
+1 row in set (0.00 sec)
+</PRE>
+
+<LI>Choose the directory where the monitor data flat files and associated
+symlinks will be written.
+<P>
+You now need to choose where the monitor data flat files will be written on 
+your system.  Pick a partition with ample space; the data
+rate produced by <CODE>monitorAverageWriter</CODE> is of order 1 MB/sec for 
+30,000 monitor  
+points. If you will also run <CODE>monitorDataDeleter</CODE>, this rate 
+effectively goes to zero once <CODE>monitorDataLoader</CODE> begins to load
+data (although the data rate of <CODE>monitorDataLoader</CODE> is, not
+coincidentally, essentially the same as <CODE>monitorAverageWriter</CODE>). 
+<P>
+Let's say you have chosen to have chosen this top-level directory to be
+<CODE>/scr/monitor_data</CODE>. There is a utility which will create all
+the necessary directories and subdirectories for you. This is the
+<CODE>makeMPDataDirs</CODE> script.  The script takes a single argument, which
+is the directory where the monitor data directories are to be written.
+<PRE>
+unix% scripts/makeMPDataDirs /scr/monitor_data
+</PRE>
+
+<PRE class="OUTPUT">
+mkdir -p /scr/monitor_data/monitorData/frame/numeric
+mkdir -p /scr/monitor_data/monitorData/frame/complex
+mkdir -p /scr/monitor_data/monitorData/frame/short
+mkdir -p /scr/monitor_data/monitorData/frame/string
+mkdir -p /scr/monitor_data/monitorData/minute/numeric
+mkdir -p /scr/monitor_data/monitorData/minute/complex
+mkdir -p /scr/monitor_data/monitorData/minute/short
+mkdir -p /scr/monitor_data/monitorData/minute/string
+mkdir -p /scr/monitor_data/monitorData/wbcorrel/numeric
+mkdir -p /scr/monitor_data/monitorData/wbcorrel/complex
+mkdir -p /scr/monitor_data/monitorData/wbcorrel/short
+mkdir -p /scr/monitor_data/monitorData/wbcorrel/string
+mkdir -p /scr/monitor_data/monitorData/slcorrel/numeric
+mkdir -p /scr/monitor_data/monitorData/slcorrel/complex
+mkdir -p /scr/monitor_data/monitorData/slcorrel/short
+mkdir -p /scr/monitor_data/monitorData/slcorrel/string
+mkdir -p /scr/monitor_data/dbload/frame/numeric
+mkdir -p /scr/monitor_data/dbload/frame/complex
+mkdir -p /scr/monitor_data/dbload/frame/short
+mkdir -p /scr/monitor_data/dbload/frame/string
+mkdir -p /scr/monitor_data/dbload/minute/numeric
+mkdir -p /scr/monitor_data/dbload/minute/complex
+mkdir -p /scr/monitor_data/dbload/minute/short
+mkdir -p /scr/monitor_data/dbload/minute/string
+mkdir -p /scr/monitor_data/dbload/wbcorrel/numeric
+mkdir -p /scr/monitor_data/dbload/wbcorrel/complex
+mkdir -p /scr/monitor_data/dbload/wbcorrel/short
+mkdir -p /scr/monitor_data/dbload/wbcorrel/string
+mkdir -p /scr/monitor_data/dbload/slcorrel/numeric
+mkdir -p /scr/monitor_data/dbload/slcorrel/complex
+mkdir -p /scr/monitor_data/dbload/slcorrel/short
+mkdir -p /scr/monitor_data/dbload/slcorrel/string
+mkdir -p /scr/monitor_data/transfer/frame/numeric
+mkdir -p /scr/monitor_data/transfer/frame/complex
+mkdir -p /scr/monitor_data/transfer/frame/short
+mkdir -p /scr/monitor_data/transfer/frame/string
+mkdir -p /scr/monitor_data/transfer/minute/numeric
+mkdir -p /scr/monitor_data/transfer/minute/complex
+mkdir -p /scr/monitor_data/transfer/minute/short
+mkdir -p /scr/monitor_data/transfer/minute/string
+mkdir -p /scr/monitor_data/transfer/wbcorrel/numeric
+mkdir -p /scr/monitor_data/transfer/wbcorrel/complex
+mkdir -p /scr/monitor_data/transfer/wbcorrel/short
+mkdir -p /scr/monitor_data/transfer/wbcorrel/string
+mkdir -p /scr/monitor_data/transfer/slcorrel/numeric
+mkdir -p /scr/monitor_data/transfer/slcorrel/complex
+mkdir -p /scr/monitor_data/transfer/slcorrel/short
+mkdir -p /scr/monitor_data/transfer/slcorrel/string
+</PRE>
+As you can see, numerous directories are created.  There are three parallel 
+directory trees created under <CODE>/scr/monitor_data</CODE> which are the 
+<CODE>monitorData</CODE>, <CODE>dbload</CODE>, and <CODE>transfer</CODE> trees.
+The <CODE>transfer</CODE> tree is used only by the Archiving system and so 
+will not be discussed further here. Flat monitor data files are written
+in the <CODE>monitorData</CODE> tree.  When a file in this tree has been
+completely written, a symbolic link to it is created in the corresponding
+subdirectory of the <CODE>dbload</CODE> tree. The creation of the symlink
+is <CODE>monitorDataLoader</CODE>'s signal that the file has been written 
+and its data are ready to be ingested.
+<P>
+Now that the directories have been created, you must modify
+<CODE>conf/dbms/dbms.$USER.conf</CODE> so
+<CODE>monitorAverageWriter</CODE> and <CODE>monitorDataLoader</CODE>
+know where to find them.  Because the CARMA software recognizes and
+expands macros in name=value configuration files, this is a simple
+task.  In <CODE>conf/dbms/dbms.$USER.conf</CODE>, simply change the
+value of the <CODE>top</CODE> key to your top level directory.  In our
+case,
+<PRE>
+top = /scr/monitor_data
+</PRE>
+Because all of the monitor data directory keys use this macro, they will
+all expand to the correct values.
+<P>
+<LI>Choose the directory where the monitor data database tables will be
+written.
+<P>
+Now you must choose where the monitor data database tables will be written.
+Again, choose a partition with ample space.  You will need to create the
+directory by hand.  For this discussion, let's say we want our monitor data 
+tables to live in the <CODE>/scr1/monitor_tables</CODE> directory.  Go ahead
+and create it.
+<PRE>
+unix% mkdir -p /scr1/monitor_tables
+</PRE>
+As before, <CODE>monitorDataLoader</CODE> must be configured to use this
+directory.  The configuration information for this area lives in the database
+itself, so you must add it there.  Start the <CODE>mysql</CODE> CLI, this
+time as the <CODE>mdl</CODE> (monitor data loader) user (which has permission 
+to insert records into CARMA database tables).
+<PRE>
+unix% $CARMA_TOOLS/bin/mysql --defaults-file=conf/dbms/mysql.$USER.conf -u mdl carma
+</PRE>
+The configuration information needs to be inserted into the <CODE>Partitions
+</CODE> table.
+<PRE>
+mysql> describe Partitions;
+</PRE>
+
+<PRE class="OUTPUT">
++--------------+---------+------+-----+---------+-------+
+| Field        | Type    | Null | Key | Default | Extra |
++--------------+---------+------+-----+---------+-------+
+| partitionID  | int(11) |      | PRI | 0       |       |
+| partition    | text    |      |     |         |       |
+| minFreeSpace | int(11) |      |     | 0       |       |
++--------------+---------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+</PRE>
+As you can see, this table holds records having three fields. The 
+<CODE>partiionID</CODE> field is simply an identifier, and can be any 
+unique integer.  The <CODE>partition</CODE> field is the name of the
+directory in which monitor data tables can be written.  The 
+<CODE>minFreeSpace</CODE> field is the minimum space (in MB) which needs to be
+available on this partition for a data table to be written.  In production
+mode, we will generally be using several partitions to hold monitor data
+tables, but for this discussion we are limiting ourselves to one.  If
+<CODE>monitorDataLoader</CODE> has created a number of monitor tables, and
+the amount of free space on the available partition drops below the value
+specified in the <CODE>minFreeSpace</CODE> field, the application will first
+delete old monitor data tables until the amount of free space on the partition
+increases above the threshold value, and then will create the new table.
+Insert a record into this table.
+<PRE>
+mysql> insert into Partitions (partitionID, partition, minFreeSpace) VALUES (1,'/scr1/monitor_tables',1000);
+</PRE>
+
+<PRE class="OUTPUT">
+Query OK, 1 row affected (0.01 sec)
+</PRE>
+
+In this case, we have configured things so that the partition on which
+we are going to write monitor tables has a free space threshold of 1 GB 
+before old monitor data tables are purged.
+<P>
+<LI>Start the monitor system processes.
+<P>
+You have now successfully configured the various applications.  Before
+you can run them successfully, you must start the IMR and the various
+monitor system processes which will write monitor data to the monitor
+stream which is read by <CODE>monitorAverageWriter</CODE>. A detailed
+description of how configure these services can be found in
+the <A
+HREF="http://www.mmarray.org/computing/carmaRuntimeConfiguration.pdf">
+CARMA Runtime Configuration</A> document. In general,
+the IMR etc. can be started on your local machine with the command
+<PRE>
+unix% scripts/rc.carma --nosu --file &lt;xml conf file&gt; --dir /tmp/log/imr --imr localhost start
+</PRE>
+where <CODE>&lt;xml conf file&gt;</CODE> is the name of the xml file containing
+the IMR configuration. If you have not seen one of these before, you can
+have a look at the various files in the <CODE>conf/imr</CODE> directory of
+the source/build/install tree.  The file I normally use for producing 
+monitor data to ingest into the database is 
+<CODE>mpDBWriterLocal.xml</CODE>, and so I issue the following command
+to start the IMR
+<PRE>
+unix% scripts/rc.carma --nosu --file imr/mpDBWriterLocal.xml --dir /tmp/log/imr --imr localhost start
+</PRE>
+<PRE class="OUTPUT">
+rc.carma begins on host maxwell.ncsa.uiuc.edu:Thu Jan 6 18:28:48 CST 2005
+Cleaning out old IMR database and log files,
+   removing all files and subdirectories in /tmp/log/imr/
+IMR information will be placed in /tmp/log/imr directory
+Disabling gcc suballocator with GLIBCCP_FORCE_NEW=1
+Starting IMR
+Starting naming service...
+  initializing naming service
+  restarting naming service
+Adding notification service to imr
+Configuring IMR with carma services...
+Parsing successful. 5 servers described on 1 oads.
+ConfigureImr::addServers() - OAD maxwell.ncsa.uiuc.edu is up, adding servers.
+domain
+`-- maxwell.ncsa.uiuc.edu  (up)
+    |-- NamingService (running)
+    |   |-- RootContextPOA  (active)
+    |   `-- ContextPOA  (active)
+    |-- NotifyService (running)
+    |   `-- NotifyServicePOA  (active)
+    |-- FrameCollator (forked)
+    |-- FSPwbdc (forked)
+    |-- FSPtest (forked)
+    |-- WRtest (forked)
+    `-- HostWbdc (forked)
+rc.carma ends on host maxwell.ncsa.uiuc.edu:Thu Jan 6 18:29:06 CST 2005
+</PRE>
+<P>
+<LI>Run <CODE>monitorAverageWriter</CODE> and <CODE>monitorDataLoader</CODE>
+<P>
+The only thing left to do is to run the database applications. The
+applications <CODE>monitorAverageWriter</CODE>,
+<CODE>monitorDataLoader</CODE>, and <CODE>monitorDataDeleter</CODE>
+all accept the <CODE>frames=[n]</CODE> command line argument, where
+<CODE>n</CODE> is a non-negative integer.  If <CODE>n=0</CODE>, the
+application will run until stopped by some external force (such as a
+control-C). If <CODE>n&gt;0 </CODE>, the application will run for the
+specified number of half-second frames, clean up, and exit.  Until you
+feel comfortable with these applications, my suggestion is to set
+<CODE>n</CODE> to be fairly small, say 150. I would also suggest specifying 
+<CODE>traceLevel=7</CODE> so you can see what the applications are doing.
+If any of them fail to produce trace output after a couple of minutes,
+there is probably something wrong.
+<P>
+So, run <CODE>monitorAverageWriter</CODE>
+<PRE>
+unix% bin/monitorAverageWriter frames=150 traceLevel=7 dbconffile=dbms/dbms.$USER.conf
+</PRE>
+
+
+<PRE class="OUTPUT">
+2005-01-07T01:12:24.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:323: monitorAverageWriter starting}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/monitor/TagIDAuthority.cc:49: TagIDAuthority constructor called}
+2005-01-07T01:12:24.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:996: Attempting to create connection to MySQL database}
+2005-01-07T01:12:24.0 {NOTICE} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/MySQLDBConnection.cc:39: ODBC connection to MySQL database carma using connect string DSN=myodbc3;UID=mdl successful
+}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:70: closing ODBC connection}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:874: begin closeODBCConnection(}2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:889: freeing henv...0x80646f0}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:891: henv successfully freed0x80646f0}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:876: end closeODBCConnection(}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:74: ODBC connection closed}
+2005-01-07T01:12:24.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:996: Attempting to create connection to MySQL database}
+2005-01-07T01:12:24.0 {NOTICE} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/MySQLDBConnection.cc:39: ODBC connection to MySQL database carma using connect string DSN=myodbc3;UID=mdl successful
+}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:70: closing ODBC connection}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:874: begin closeODBCConnection(}2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:889: freeing henv...0x80646f0}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:891: henv successfully freed0x80646f0}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:876: end closeODBCConnection(}
+2005-01-07T01:12:24.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/DBConnection.cc:74: ODBC connection closed}
+2005-01-07T01:12:26.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:478: beginning intial monitor system read}
+2005-01-07T01:12:26.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:480: intial monitor system read complete}
+2005-01-07T01:12:26.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:526: Begin loop}
+2005-01-07T01:12:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/short/short_316751090-316751120.mpdat->/scr/monitorData/frame/short/short_316751090-316751120.mpdat}
+2005-01-07T01:12:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:12:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/numeric/numeric_316751090-316751120.mpdat->/scr/monitorData/frame/numeric/numeric_316751090-316751120.mpdat}
+2005-01-07T01:12:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:12:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/string/string_316751090-316751120.mpdat->/scr/monitorData/frame/string/string_316751090-316751120.mpdat}
+2005-01-07T01:12:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:12:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:248: Removing file which contains no monitor data /scr/monitorData/frame/complex/complex_316751090-316751120.mpdat}
+2005-01-07T01:12:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:260: /scr/monitorData/frame/complex/complex_316751090-316751120.mpdat removed}
+2005-01-07T01:12:41.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:558: Opening new frame data files at frameCount 316751120}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/short/short_316751121-316751160.mpdat->/scr/monitorData/frame/short/short_316751121-316751160.mpdat}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/numeric/numeric_316751121-316751160.mpdat->/scr/monitorData/frame/numeric/numeric_316751121-316751160.mpdat}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/string/string_316751121-316751160.mpdat->/scr/monitorData/frame/string/string_316751121-316751160.mpdat}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:248: Removing file which contains no monitor data /scr/monitorData/frame/complex/complex_316751121-316751160.mpdat}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:260: /scr/monitorData/frame/complex/complex_316751121-316751160.mpdat removed}
+2005-01-07T01:13:01.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:558: Opening new frame data files at frameCount 316751160}
+2005-01-07T01:13:01.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:573: Writing minute averaged data at frameCount 316751160}
+2005-01-07T01:13:01.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:579: Opening new minute averaged data files at frameCount 316751160}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/minute/short/short_316751160.mpdat->/scr/monitorData/minute/short/short_316751160.mpdat}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/minute/numeric/numeric_316751160.mpdat->/scr/monitorData/minute/numeric/numeric_316751160.mpdat}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/minute/string/string_316751160.mpdat->/scr/monitorData/minute/string/string_316751160.mpdat}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:248: Removing file which contains no monitor data /scr/monitorData/minute/complex/complex_316751160.mpdat}
+2005-01-07T01:13:01.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:260: /scr/monitorData/minute/complex/complex_316751160.mpdat removed}
+2005-01-07T01:13:21.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/short/short_316751161-316751200.mpdat->/scr/monitorData/frame/short/short_316751161-316751200.mpdat}
+2005-01-07T01:13:21.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:21.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/numeric/numeric_316751161-316751200.mpdat->/scr/monitorData/frame/numeric/numeric_316751161-316751200.mpdat}
+2005-01-07T01:13:21.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:21.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/string/string_316751161-316751200.mpdat->/scr/monitorData/frame/string/string_316751161-316751200.mpdat}
+2005-01-07T01:13:21.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:21.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:248: Removing file which contains no monitor data /scr/monitorData/frame/complex/complex_316751161-316751200.mpdat}
+2005-01-07T01:13:21.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:260: /scr/monitorData/frame/complex/complex_316751161-316751200.mpdat removed}
+2005-01-07T01:13:21.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:558: Opening new frame data files at frameCount 316751200}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/short/short_316751201-316751240.mpdat->/scr/monitorData/frame/short/short_316751201-316751240.mpdat}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/numeric/numeric_316751201-316751240.mpdat->/scr/monitorData/frame/numeric/numeric_316751201-316751240.mpdat}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:266: creating symlink /scr/dbload/frame/string/string_316751201-316751240.mpdat->/scr/monitorData/frame/string/string_316751201-316751240.mpdat}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:276: symlink creation successful}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:248: Removing file which contains no monitor data /scr/monitorData/frame/complex/complex_316751201-316751240.mpdat}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:260: /scr/monitorData/frame/complex/complex_316751201-316751240.mpdat removed}
+2005-01-07T01:13:41.0 {INFO} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:558: Opening new frame data files at frameCount 316751240}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:248: Removing file which contains no monitor data /scr/monitorData/frame/short/short_316751241-316751280.mpdat}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:260: /scr/monitorData/frame/short/short_316751241-316751280.mpdat removed}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:248: Removing file which contains no monitor data /scr/monitorData/frame/numeric/numeric_316751241-316751280.mpdat}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:260: /scr/monitorData/frame/numeric/numeric_316751241-316751280.mpdat removed}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:248: Removing file which contains no monitor data /scr/monitorData/frame/complex/complex_316751241-316751280.mpdat}
+2005-01-07T01:13:41.0 {DEBUG} {carma.util.Trace.ostream.monitorAverageWriter} {} { From ../carma_src/carma/dbms/monitorAverageWriter.cc:260: /scr/monitorData/frame/complex/complex_316751241-316751280.mpdat removed}
+</PRE>
+You can see the files which <CODE>monitorAverageWriter</CODE> has created
+by issuing
+<PRE>
+unix% find /scr/monitorData -type f
+</PRE>
+
+<PRE class="OUTPUT">
+/scr/monitorData/frame/numeric/numeric_316751090-316751120.mpdat
+/scr/monitorData/frame/numeric/numeric_316751121-316751160.mpdat
+/scr/monitorData/frame/numeric/numeric_316751161-316751200.mpdat
+/scr/monitorData/frame/numeric/numeric_316751201-316751240.mpdat
+/scr/monitorData/frame/short/short_316751090-316751120.mpdat
+/scr/monitorData/frame/short/short_316751121-316751160.mpdat
+/scr/monitorData/frame/short/short_316751161-316751200.mpdat
+/scr/monitorData/frame/short/short_316751201-316751240.mpdat
+/scr/monitorData/frame/string/string_316751090-316751120.mpdat
+/scr/monitorData/frame/string/string_316751121-316751160.mpdat
+/scr/monitorData/frame/string/string_316751161-316751200.mpdat
+/scr/monitorData/frame/string/string_316751201-316751240.mpdat
+/scr/monitorData/minute/numeric/numeric_316751160.mpdat
+/scr/monitorData/minute/short/short_316751160.mpdat
+/scr/monitorData/minute/string/string_316751160.mpdat
+</PRE>
+Each "frame" file contains 40 frames worth of data.  Each "minute" file
+contains a single set of minute averages. You can also see that <CODE>
+monitorAverageWriter</CODE> has created symbolic links to these files:
+<PRE>
+unix% find /scr/dbload/ -type l -ls
+</PRE>
+
+<PRE class="OUTPUT">
+5423135    0 lrwxrwxrwx   1 dmehring adil           81 Jan  6 19:12 /scr/dbloadframe/numeric/numeric_316751090-316751120.mpdat -> /scr/monitorData/frame/numeric/numeric_316751090-316751120.mpdat
+5423139    0 lrwxrwxrwx   1 dmehring adil           81 Jan  6 19:13 /scr/dbloadframe/numeric/numeric_316751121-316751160.mpdat -> /scr/monitorData/frame/numeric/numeric_316751121-316751160.mpdat
+5423144    0 lrwxrwxrwx   1 dmehring adil           81 Jan  6 19:13 /scr/dbloadframe/numeric/numeric_316751161-316751200.mpdat -> /scr/monitorData/frame/numeric/numeric_316751161-316751200.mpdat
+5423148    0 lrwxrwxrwx   1 dmehring adil           81 Jan  6 19:13 /scr/dbloadframe/numeric/numeric_316751201-316751240.mpdat -> /scr/monitorData/frame/numeric/numeric_316751201-316751240.mpdat
+3031074    0 lrwxrwxrwx   1 dmehring adil           77 Jan  6 19:12 /scr/dbloadframe/short/short_316751090-316751120.mpdat -> /scr/monitorData/frame/short/short_316751090-316751120.mpdat
+3031075    0 lrwxrwxrwx   1 dmehring adil           77 Jan  6 19:13 /scr/dbloadframe/short/short_316751121-316751160.mpdat -> /scr/monitorData/frame/short/short_316751121-316751160.mpdat
+3031078    0 lrwxrwxrwx   1 dmehring adil           77 Jan  6 19:13 /scr/dbloadframe/short/short_316751161-316751200.mpdat -> /scr/monitorData/frame/short/short_316751161-316751200.mpdat
+3031079    0 lrwxrwxrwx   1 dmehring adil           77 Jan  6 19:13 /scr/dbloadframe/short/short_316751201-316751240.mpdat -> /scr/monitorData/frame/short/short_316751201-316751240.mpdat
+5423136    0 lrwxrwxrwx   1 dmehring adil           79 Jan  6 19:12 /scr/dbloadframe/string/string_316751090-316751120.mpdat -> /scr/monitorData/frame/string/string_316751090-316751120.mpdat
+5423140    0 lrwxrwxrwx   1 dmehring adil           79 Jan  6 19:13 /scr/dbloadframe/string/string_316751121-316751160.mpdat -> /scr/monitorData/frame/string/string_316751121-316751160.mpdat
+5423145    0 lrwxrwxrwx   1 dmehring adil           79 Jan  6 19:13 /scr/dbloadframe/string/string_316751161-316751200.mpdat -> /scr/monitorData/frame/string/string_316751161-316751200.mpdat
+5423149    0 lrwxrwxrwx   1 dmehring adil           79 Jan  6 19:13 /scr/dbloadframe/string/string_316751201-316751240.mpdat -> /scr/monitorData/frame/string/string_316751201-316751240.mpdat
+3031076    0 lrwxrwxrwx   1 dmehring adil           72 Jan  6 19:13 /scr/dbloadminute/numeric/numeric_316751160.mpdat -> /scr/monitorData/minute/numeric/numeric_316751160.mpdat
+2965579    0 lrwxrwxrwx   1 dmehring adil           68 Jan  6 19:13 /scr/dbloadminute/short/short_316751160.mpdat -> /scr/monitorData/minute/short/short_316751160.mpdat
+3031077    0 lrwxrwxrwx   1 dmehring adil           70 Jan  6 19:13 /scr/dbloadminute/string/string_316751160.mpdat -> /scr/monitorData/minute/string/string_316751160.mpdat
+</PRE>
+You are now ready to ingest these data into the CARMA database. Run 
+<CODE>monitorDataLoader</CODE>
+<PRE>
+unix% bin/monitorDataLoader frames=30 traceLevel=7 conffile=dbms/dbms.$USER.conf
+</PRE>
+There is a significant amount of output generated which I cannot reproduce
+here.  Suffice it to say you should see messages about data being loaded, etc.
+If you inspect the links directory now
+<PRE>
+unix% find /scr/dbload/ -type l -ls
+</PRE>
+You will see
+<PRE class="OUTPUT">
+5423144    0 lrwxrwxrwx   1 dmehring adil           81 Jan  6 19:13 /scr/dbload/frame/numeric/numeric_316751161-316751200.mpdat.done -> /scr/monitorData/frame/numeric/numeric_316751161-316751200.mpdat
+5423148    0 lrwxrwxrwx   1 dmehring adil           81 Jan  6 19:13 /scr/dbload/frame/numeric/numeric_316751201-316751240.mpdat.done -> /scr/monitorData/frame/numeric/numeric_316751201-316751240.mpdat
+5423135    0 lrwxrwxrwx   1 dmehring adil           81 Jan  6 19:12 /scr/dbload/frame/numeric/numeric_316751090-316751120.mpdat.done -> /scr/monitorData/frame/numeric/numeric_316751090-316751120.mpdat
+5423139    0 lrwxrwxrwx   1 dmehring adil           81 Jan  6 19:13 /scr/dbload/frame/numeric/numeric_316751121-316751160.mpdat.done -> /scr/monitorData/frame/numeric/numeric_316751121-316751160.mpdat
+3031078    0 lrwxrwxrwx   1 dmehring adil           77 Jan  6 19:13 /scr/dbload/frame/short/short_316751161-316751200.mpdat.done -> /scr/monitorData/frame/short/short_316751161-316751200.mpdat
+3031079    0 lrwxrwxrwx   1 dmehring adil           77 Jan  6 19:13 /scr/dbload/frame/short/short_316751201-316751240.mpdat.done -> /scr/monitorData/frame/short/short_316751201-316751240.mpdat
+3031074    0 lrwxrwxrwx   1 dmehring adil           77 Jan  6 19:12 /scr/dbload/frame/short/short_316751090-316751120.mpdat.done -> /scr/monitorData/frame/short/short_316751090-316751120.mpdat
+3031075    0 lrwxrwxrwx   1 dmehring adil           77 Jan  6 19:13 /scr/dbload/frame/short/short_316751121-316751160.mpdat.done -> /scr/monitorData/frame/short/short_316751121-316751160.mpdat
+5423145    0 lrwxrwxrwx   1 dmehring adil           79 Jan  6 19:13 /scr/dbload/frame/string/string_316751161-316751200.mpdat.done -> /scr/monitorData/frame/string/string_316751161-316751200.mpdat
+5423149    0 lrwxrwxrwx   1 dmehring adil           79 Jan  6 19:13 /scr/dbload/frame/string/string_316751201-316751240.mpdat.done -> /scr/monitorData/frame/string/string_316751201-316751240.mpdat
+5423136    0 lrwxrwxrwx   1 dmehring adil           79 Jan  6 19:12 /scr/dbload/frame/string/string_316751090-316751120.mpdat.done -> /scr/monitorData/frame/string/string_316751090-316751120.mpdat
+5423140    0 lrwxrwxrwx   1 dmehring adil           79 Jan  6 19:13 /scr/dbload/frame/string/string_316751121-316751160.mpdat.done -> /scr/monitorData/frame/string/string_316751121-316751160.mpdat
+3031076    0 lrwxrwxrwx   1 dmehring adil           72 Jan  6 19:13 /scr/dbload/minute/numeric/numeric_316751160.mpdat.done -> /scr/monitorData/minute/numeric/numeric_316751160.mpdat
+2965579    0 lrwxrwxrwx   1 dmehring adil           68 Jan  6 19:13 /scr/dbload/minute/short/short_316751160.mpdat.done -> /scr/monitorData/minute/short/short_316751160.mpdat
+3031077    0 lrwxrwxrwx   1 dmehring adil           70 Jan  6 19:13 /scr/dbload/minute/string/string_316751160.mpdat.done -> /scr/monitorData/minute/string/string_316751160.mpdat
+</PRE>
+That is, the symlinks have been renamed with <CODE>.done</CODE> extensions
+indicating the files they point to have been successfully ingested into 
+the database. You can see the monitor tables that have been created, first
+by inspecting the filesystem
+<PRE>
+unix% ls /scr1/monitor_tables
+</PRE>
+<PRE class="OUTPUT">
+FrameNumericMonitorData_316753546_0.MYD
+FrameNumericMonitorData_316753546_0.MYI
+FrameShortMonitorData_316753575_0.MYD
+FrameShortMonitorData_316753575_0.MYI
+FrameStringMonitorData_316753574_0.MYD
+FrameStringMonitorData_316753574_0.MYI
+MinuteIntegratedNumericMonitorData_316753572_0.MYD
+MinuteIntegratedNumericMonitorData_316753572_0.MYI
+MinuteIntegratedShortMonitorData_316753581_0.MYD
+MinuteIntegratedShortMonitorData_316753581_0.MYI
+MinuteIntegratedStringMonitorData_316753575_0.MYD
+MinuteIntegratedStringMonitorData_316753575_0.MYI
+</PRE>
+And then by inspecting the contents of the database
+<PRE>
+unix% $CARMA_TOOLS/bin/mysql --defaults-file=conf/dbms/mysql.$USER.conf -u carmauser carma
+mysql> show tables like '%MonitorData%';
+</PRE>
+<PRE class="OUTPUT">
++------------------------------------------------+
+| Tables_in_carma (%MonitorData%)                |
++------------------------------------------------+
+| FrameNumericMonitorData_316753546_0            |
+| FrameShortMonitorData_316753575_0              |
+| FrameStringMonitorData_316753574_0             |
+| MinuteIntegratedNumericMonitorData_316753572_0 |
+| MinuteIntegratedShortMonitorData_316753581_0   |
+| MinuteIntegratedStringMonitorData_316753575_0  |
+| MonitorDataShelfIndex                          |
+| MonitorDataTableIndex                          |
++------------------------------------------------+
+8 rows in set (0.00 sec)
+</PRE>
+
+You can remove the monitor data flat files and the associated symlinks
+by running <CODE>monitorDataDeleter</CODE>
+<PRE>
+unix% bin/monitorDataDeleter frames=1 traceLevel=7 conffile=dbms/dbms.$USER.conf
+</PRE>
+</OL>
+
+</BODY>
+</HTML>

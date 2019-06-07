@@ -1,0 +1,215 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- LineLength Subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="LineLength" priority="normal" author="David MacMahon">
+
+   <shortName>LineLength</shortName>
+   <longName>Line Length Subsystem</longName>
+   <description>
+      The Line Length subsystem is used to monitor the small changes in fiber
+      length caused by thermal expansion and contraction. It works by measuring
+      the round trip phases of the LO reference signals which each antenna
+      reflects back through the fiber. In addition to measuring the line length
+      phases, the Line Length subsystem also computes the phase correction for
+      the LO1 freqeuncies.
+   </description>
+
+   <?common MonitorStats.mpml?>
+   <CommonContainer ref="MonitorSubsystemStats" />
+
+   <?common TimestampCommon.mpml?>
+   <CommonMonitorPoint ref="timestamp" />
+
+   <?common OnlineCommon.mpml?>
+   <CommonMonitorPoint ref="online" />
+
+      <MonitorPoint name="PhaseRefRms" type="double" persistent="true" count="3">
+         <shortName>PhaseRefRms</shortName>
+         <longName>Line Length Reference Phase RMS</longName>
+         <description>
+            This is the standard deviation of the data used to compute
+            the phase of an LO reference signal.
+         </description>
+         <units>rad</units>
+         <width>6</width>
+         <precision>6</precision>
+         <integrate>error</integrate>
+         <warnHi>0.001</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="PhaseRef" type="double" persistent="true" count="3">
+         <shortName>PhaseRef</shortName>
+         <longName>Line Length Reference Phase</longName>
+         <description>
+            This is the phase of an LO reference signal fiber determined by
+            fitting a sinusoid to a down-mixed to 50 Hz version of the LO
+            reference signal.
+         </description>
+         <units>rad</units>
+         <width>9</width>
+         <precision>6</precision>
+         <integrate>last</integrate>
+      </MonitorPoint>
+
+      <MonitorPoint name="AgcRef" type="double" persistent="true" count="3">
+         <shortName>AgcRef</shortName>
+         <longName>Line Length Reference Receiver AGC Level</longName>
+         <description>
+            The AGC level of the reference line length receiver is measured
+            using an A/D channel of a data acquisition board.
+         </description>
+         <units>V</units>
+         <width>10</width>
+         <precision>3</precision>
+         <integrate>last</integrate>
+         <warnLo>0.5</warnLo>
+         <errLo>0.3</errLo>
+      </MonitorPoint>
+
+      <MonitorPoint name="RefRFPower" type="double" persistent="true" count="3">
+         <shortName>RefRFPower</shortName>
+         <longName>Line Length Reference Receiver RF Power</longName>
+         <description>
+            The RF power of the reference line length receiver is measured
+            using an A/D channel of a data acquisition board.
+         </description>
+         <units>dBm</units>
+         <width>10</width>
+         <precision>3</precision>
+         <integrate>last</integrate>
+         <warnLo>8</warnLo>
+         <errLo>0</errLo>
+      </MonitorPoint>
+
+
+      <MonitorPoint name="PhaseRefComplex" type="complex" persistent="true" count="3">
+         <shortName>PhaseRefComplex</shortName>
+         <longName>Line Length Phase, Complex</longName>
+         <description>
+            The complex line length reference phase. [-1,1]
+         </description>
+         <units></units>
+         <width>9</width>
+         <precision>6</precision>
+         <integrate>last</integrate>
+      </MonitorPoint>
+
+      <MonitorPoint name="OffsetFreqLocked" type="bool" persistent="true" count="3">
+         <shortName>OffsetFreqLocked</shortName>
+         <longName>Line Length Offset Frequency Phase Locked Status</longName>
+         <description>
+            This is the phase-lock status of the offset oscillator used to
+            generate the LO reference offset frequency.
+         </description>
+         <errHi>false</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="RefChan" type="int" persistent="true" count="24">
+         <shortName>RefChan</shortName>
+         <longName>Reference channel used to smooth out this channel</longName>
+         <description>
+           Each channel has reference phase information removed.  This monitor point
+           reports which reference channel (or in other words, which synth) was used
+           to remove noise from the channel.
+         </description>
+         <units></units>
+      </MonitorPoint>
+
+      <MonitorPoint name="PhaseRms" type="double" persistent="true" count="24">
+         <shortName>PhaseRms</shortName>
+         <longName>Line Length Phase RMS</longName>
+         <description>
+            This is the standard deviation of the data used to determine the
+            corresponding line length phase of a fiber.
+         </description>
+         <units>rad</units>
+         <width>6</width>
+         <precision>6</precision>
+         <integrate>rms</integrate>
+         <warnHi>0.001</warnHi>
+         <errHi>0.01</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="initialized" type="bool" count="24">
+         <shortName>Initialized</shortName>
+         <description>
+            This is a flag to indicate whether the LineLength system has been
+            properly initialized for this antenna.
+         </description>
+         <errLo>false</errLo>
+         <errHi>false</errHi>
+      </MonitorPoint>
+
+      <!-- vital for the MIRIAD header, don't muck it up -->
+      <MonitorPoint name="LineLength" type="double" persistent="true" count="24" priority="vital">
+         <shortName>Length</shortName>
+         <longName>Line Lengths</longName>
+         <description>
+            This is the calculated length of the fiber based on known nominal
+            length, LO reference frequency, LO reference phase, and line length
+            phase.
+         </description>
+         <units>ns</units>
+         <integrate>last</integrate>
+      </MonitorPoint>
+
+      <!-- vital for the MIRIAD header, don't muck it up -->
+      <MonitorPoint name="Phase" type="double" persistent="true" count="24" priority="vital">
+         <shortName>Phase</shortName>
+         <longName>Line Length Phase</longName>
+         <description>
+            This is the line length phase of a fiber determined by fitting a
+            sinusoid to the returned (and down-mixed to 50 Hz) LO Reference
+            signal. [-pi,pi]
+         </description>
+         <units>rad</units>
+         <width>6</width>
+         <precision>6</precision>
+         <integrate>last</integrate>
+      </MonitorPoint>
+
+      <MonitorPoint name="PhaseComplex" type="complex" persistent="true" count="24">
+         <shortName>PhaseComplex</shortName>
+         <longName>Line Length Phase, Complex</longName>
+         <description>
+            The complex line length phase. [-1,1]
+         </description>
+         <units></units>
+         <width>9</width>
+         <precision>6</precision>
+         <integrate>last</integrate>
+      </MonitorPoint>
+
+      <MonitorPoint name="OptPwr" type="double" persistent="true" count="24">
+         <shortName>Optical Power</shortName>
+         <longName>Received Optical Power</longName>
+         <description>
+            This is the optical power level at the photodiode receiver. [0,~4]
+         </description>
+         <units>mW</units>
+         <precision>4</precision>
+         <integrate>last</integrate>
+         <warnLo>0.15</warnLo>
+         <errLo>0.01</errLo>
+      </MonitorPoint>
+
+      <MonitorPoint name="Agc" type="double" persistent="true" count="24">
+         <shortName>AGC</shortName>
+         <longName>Line Length Receiver AGC Level</longName>
+         <description>
+            The AGC level of the line length receiver is measured using an A/D
+            channel of a data acquisition board. [0,5]
+         </description>
+         <units>V</units>
+         <precision>3</precision>
+         <integrate>last</integrate>
+         <warnLo>0.5</warnLo>
+         <errLo>0.3</errLo>
+      </MonitorPoint>
+
+</Subsystem>
+
+<!-- vim: set expandtab smarttab smartindent sw=3 ts=3 syntax=xml : -->

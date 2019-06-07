@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Control Subsystem common monitor point for correlator enum
+
+   - $Id: ControlCorrelEnum.mpml,v 1.9 2014/06/04 17:09:23 mpound Exp $
+   - $Revision: 1.9 $
+   - $Date: 2014/06/04 17:09:23 $
+   -->
+                                                                           
+<Common scope="global" author="Steve Scott">
+
+<MonitorPoint name="correlatorDesignation" type="enum" persistent="true" bitmask="true">
+    <shortName>Correl</shortName>
+    <description>
+        The correlator designation.
+    </description>
+    <!-- note we do not explicitly list NONE here because the bitmask type -->
+    <!-- creates that by default -->
+    <enum name="SPECTRAL"> 
+    <description>
+        Spectral line correlator
+    </description>
+    </enum>
+    <enum name="WIDEBAND"> 
+    <description>
+        Wideband correlator
+    </description>
+    </enum>
+    <enum name="C3GMAX8"> 
+    <description>
+        CARMA 3G correlator, 8 station maximum
+    </description>
+    </enum>
+    <enum name="C3GMAX23"> 
+    <description>
+        CARMA 3G correlator, 23 station maximum
+    </description>
+    </enum>
+    <warnLo>NONE</warnLo>
+</MonitorPoint>
+
+<MonitorPoint name="ManualFlagPreference" type="enum" bitmask="true" persistent="true">
+  <description>
+    The blank/flag/birdie preference.
+  </description>
+  <enum name="BLANK" />
+  <enum name="FLAG" />
+  <enum name="BIRDIE" />
+</MonitorPoint>
+
+</Common>

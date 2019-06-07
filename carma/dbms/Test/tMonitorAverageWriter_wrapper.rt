@@ -1,0 +1,28 @@
+#!/bin/sh
+
+maw="`dirname $0`/tMonitorAverageWriter.rt"
+if [ $USER = "build" -a $HOST = "dana" ] ; then
+   tdir="$HOME/maw_runs"
+   logdir="$tdir/maw.$$"
+   mkdir -p $logdir
+   traceFile="$logdir/trace.log"
+   logfile="$logdir/log.log"
+   cmd="$maw logdir=$logdir traceLevel=7 traceFile=$traceFile logfile=$logfile email=\"dmehring@astro.uiuc.edu\""
+   echo build user
+   echo $cmd 
+   # cant use tee because then the exit code (in $?) of $cmd is lost
+   $cmd >& $logdir/script.log
+   res=$?
+   cat $logdir/script.log
+   if [ $res -eq 0 ] ; then
+      mv $logdir $tdir/success.$$
+   else      
+      mv $logdir $tdir/failure.$$
+   fi
+else
+   cmd="$maw"
+   echo $cmd
+   $cmd
+   res=$?
+fi   
+exit $res

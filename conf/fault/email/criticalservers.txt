@@ -1,0 +1,5 @@
+This alarm is caused when one of the critical control system processes
+stops/crashes.
+
+Look here for instructions on how to fix this:
+http://cedarflat.mmarray.org/wiki/Alarms#Imr.numNotRunningCriticalServers

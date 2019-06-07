@@ -1,0 +1,4 @@
+The fault system has detected that an antenna is uninitialized in a science
+subarray.  To initialize the antenna call removeAntenna() followed by 
+addAntenna().  If addAntenna() fails remove the antenna, proceed without it
+and notify RTS and the hardware groups.  

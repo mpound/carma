@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+<!-- Wideband correlator data remapper monitor subsystem definitions
+   - $Id: WbRemapperSubsystem.mpml,v 1.1 2013/06/25 18:54:25 mpound Exp $
+  -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="WbRemapper" author="Marc Pound" priority="normal" count="&NUM_WBC_BANDS;">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+    <?common OnlineCommon.mpml?>
+    <CommonMonitorPoint ref="online" />
+    <?common CorrDataflowCommon.mpml?>
+
+    <CommonMonitorPoint ref="astrobandNo"/>
+    <CommonMonitorPoint ref="numValidBaselines"/>
+    <CommonMonitorPoint ref="numConjugated"/>
+    <CommonMonitorPoint ref="publishedObject"/>
+    <CommonMonitorPoint ref="receivedTime"/>
+    <CommonMonitorPoint ref="publishedTime"/>
+
+</Subsystem>

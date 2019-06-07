@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!-- $Id: carmaEml.xml,v 1.9 2013/04/09 22:48:04 abeard Exp $  -->
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY TOP_DIR "/home/eml/projects/carma/Carma/devel/build">
+        <!ENTITY BIN_DIR "/home/eml/projects/carma/Carma/devel/build/scripts/imrSingleton /home/eml/projects/carma/Carma/devel/build/bin">
+        <!ENTITY BIN_DIR_DUMPCORE "/home/eml/projects/carma/Carma/devel/build/scripts/imrSingleton -c /home/eml/projects/carma/Carma/devel/build/bin">
+        <!ENTITY DEFAULT_DIR "/home/eml">
+        <!ENTITY EMULATE "true">
+        <!ENTITY LOG "traceFile=syslog traceLevel=0">
+        <!ENTITY USE_DB "useDBMS=false">
+        <!ENTITY SCRIPT_STATE "scriptStateDir=/home/eml/state">
+        <!ENTITY ACC "acc3.carma.pvt">
+        <!ENTITY DATABASE "db2.carma.pvt">
+        <!ENTITY ENVIRONMENT "environment.carma.pvt">
+        <!ENTITY TESTINI "/home/control/correlator/rt/etc/cobra/carma15-2pol.ini">
+        <!ENTITY CARMACOREXML SYSTEM "carmaCoreEml.xml">
+        <!ENTITY WIDEBANDXML SYSTEM "wideband.xml">
+        <!ENTITY SZAANTSXML SYSTEM "szaAnts.xml">
+        <!ENTITY VLBIXML SYSTEM "vlbi.xml">
+        <!ENTITY MPSTORE SYSTEM "mpstore.xml">
+]>
+
+<domain>
+
+<!-- @version -->
+
+<!-- Include core components of the system -->
+&CARMACOREXML;
+
+<!-- Include wideband correlator-->
+&WIDEBANDXML;
+
+<!-- Include sza ants-->
+&SZAANTSXML;
+
+<!-- Include VLBI components. 
+&VLBIXML;
+-->
+
+<!-- Include mpstore-->
+&MPSTORE;
+
+</domain>

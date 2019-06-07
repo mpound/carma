@@ -1,0 +1,11 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE dag SYSTEM "alarm.dtd" [
+]>
+
+<dag type="alarmoutput">
+	<!-- structure is bad - structure validation should fail -->
+
+	<!-- duplicate monitor points -->
+	<mp canon="Sldc.Band1.Input1.state" />
+	<mp canon="Sldc.Band1.Input1.state" />
+</dag>

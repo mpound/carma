@@ -1,0 +1,18 @@
+
+$Id: getaframe.README,v 1.4 2005/03/08 19:56:35 colby Exp $
+
+To Compile in current directory (carma/antenna/common/Test):
+
+% g++ -g -I. -I../../../../ -o getaframe getaframe.cc fg.cc
+
+see bttv.README and it must have the cPCI framegrabber installed with the
+video feed connected to the "top" BNC connector.  That is input "1".
+
+% ./getaframe > test.pnm
+
+Now you can use the netpbm tools to convert the image into something usable
+by say, a web browser:
+
+% pnmtopng test.pnm > test.png
+
+

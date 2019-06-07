@@ -1,0 +1,1047 @@
+% this will be the CDR
+%
+%  
+
+\documentclass[11pt]{article}
+
+% PS fonts
+\usepackage{mathptmx,courier,pifont,helvet}
+\usepackage[T1]{fontenc}
+
+\addtolength{\textheight}{1.75truein}
+\addtolength{\topmargin}{-1truein}
+\addtolength{\textwidth}{1.5truein}
+\addtolength{\oddsidemargin}{-0.75truein}
+\addtolength{\evensidemargin}{-0.75truein}
+
+\newcommand{\method}[2]{
+\item{\tt #1}\\[0.2em]
+  #2
+}
+
+\newcommand{\monpoint}[4]{
+\item
+  \makebox[50ex][l]{\tt #1}(type: {\it #2}; units: {\it #3})\\[0.2em]
+  #4
+}
+
+\begin{document}
+\begin{center}
+{\LARGE\bf Weather Station:\\
+(--CDR--)}\\
+Peter Teuben \\
+Version 2.10\\
+Updated: January 3, 2007
+\end{center}
+
+
+\section{Functionality and Scope}
+
+\subsection{Overview} 
+
+The weather station provides the observatory with basic weather
+information (temperature, pressure, wind speed etc.), and
+publishes these (and some derived) variables  to the
+standard CARMA monitor system. Several subsystems need this weather
+information for proper operation:
+
+\begin{enumerate}
+
+\item hazardous weather conditions, most notably wind speed. The fault
+system will be looking at these.
+
+\item system temperature: the ambient temperature is important to
+obtain an accurate value for $T_{sys}$.
+
+\item refraction: it is mostly the pressure that 
+determines the amount of refraction (several arcmin at low
+elevation), and depending on required accuracy the temperature,
+humidity level and observing frequency are also needed.
+
+\item delays: need a {\it good} atmospheric model, and again pressure, 
+temperature and to some extent humidity are important here.
+
+\item {\it should add something about required accuracy for
+some of these items}
+\end{enumerate}
+
+Two identical weatherstations (a Campbell Scientific CR10X datalogger)
+have been in operation for a few years, one at SZA and one
+to sample data at the CARMA site
+(the circular buffer of the datalogger can contain many months of
+weather info at 5 minute samples).
+We plan to use this as our weatherstation (WS).
+In addition, there is a separate 
+dew point sensor (DPS) for very accurate measurements of the
+ambient and dewpoint temperature (most simple weatherstations
+have questionable humidity sensors).  Initial comparisons showed
+that the Relative Humidity given by the WS and computed from the DSP
+differ by a few percent, and the Dew Point Temperatures can be
+off by 1-2 degrees Celsius.
+
+% See also: $CARMA/sza/array/code/vxworks/rtc_src/weather.{h,c}    old DASI code
+%                  sza/translator/WxCommunicator and WxControl     current SZA
+
+%Both the WS and DPS firmware make the data available on a serial port.
+
+
+The opacity monitor (tipper) is part of another package.
+
+
+% peter<->steve
+% > maybe a silly question, but why do we need that high accuracy for the 
+% > dewpoint?
+% 
+% no, it is a good question. we have never had a tipper on site, so we have 
+% relied on the local water vapor density to choose projects and it works 
+% quite well (along with a phase monitor). the tipper is very old (2nd hand 
+% from nrao site tests for alma), and if it breaks the time to repair would be 
+% very long, so we would have only the surface measurements to guide us.
+% 
+
+\subsection{Measured variables}
+
+\subsubsection{WS variables}
+The following variables are read from the weather station, currently
+available every 5 minutes on station ID 222.  Every 24 hours 
+some averaged quantities are available on station ID 333, which
+we will ignore.
+
+\footnotesize
+\begin{verbatim}
+  WX_STN_ID,     /* The station ID character (222/333) */
+  WX_YEAR,       /* The year number (eg. 1998) */
+  WX_DAY,        /* The day number (eg. 232) */
+  WX_TIME,       /* The time-of-day (eg. 1934 [ie. 19 hours, 34 minutes]) GMT */
+  WX_INT_TEMP,   /* The internal temperature of the weather station (C) */
+  WX_BATTERY,    /* The battery voltage (V) */
+  WX_AIR_TEMP,   /* The outside temperature (C) */
+  WX_HUMIDITY,   /* The relative humidity (%) */
+  WX_WIND_SPEED, /* The wind speed (m/s) */
+  WX_WIND_DIR,   /* The wind direction (degrees East of North) */
+  WX_PRESSURE,   /* The atmospheric pressure (mb) */
+\end{verbatim}
+\normalsize
+
+The WS is actually completely programmable. Depending on the modules one buys with it,
+and how the internal panel has been properly wired, various instruments can deliver
+variables. Thanks to Erik Leitch, some code is now available by which this can be done
+via Linux uploading new firmware. We expect to change the 5 minute information cycle
+down to whatever we need.
+
+\subsubsection{DPS variables}
+
+The DPS: returns only the ambient and dew point temperature, both in Fahrenheit.
+
+
+\subsection{A little weather background}
+
+At low altitudes our atmosphere has roughly an exponential scaleheight 
+of 8.3km, thus the barometric pressure, to first order, can be given by
+as a function of the altitude as follows:
+$$
+     P(alt) \approx 1000  ~~~ e^{-alt[m]/8300}  [mbar]
+$$
+This formulae is actually used in the offline ephemeris if no weather
+information is available.
+\smallskip
+The dew point temperature is defined as the temperature to which the air
+would have to cool (at constant pressure and constant water vapor
+content) in order to reach saturation. 
+\smallskip
+The relationship between Ambient temperature, Dew Point temperature and
+Relative Humidity have various approximations. We currently use the
+version by Hoffman \& Welch from the BIMA code:
+$$
+        {RH \over 100 }= e^{    5370 ({1\over T_a} - {1\over T_d}) }
+$$
+where temperatures are in Kelvin. Conversion routines using this relationship
+can be found in the class
+{\tt carma::environment::Atmosphere}, though alternative formulae
+(e.g. Clausius-Clapeyron) are also available.
+\footnote{see also {\tt http://www.faqs.org/faqs/meteorology/temp-dewpoint/}}
+
+\subsection{Control Input}
+
+The weather station is an autonomous unit and does not need to be
+set into an operational mode. Hence no IDL code is needed.
+
+\subsection{Output}
+
+Software output consists of monitor data and occasional logging and tracing.
+The monitor points are described in detail in Section~\ref{monitor_points}.
+Logging can occur if the weather station looses power (e.g. low voltage battery)
+Also, dangerous weather conditions should set an alarm and possible put the
+array into a ``safe mode'', however this is the responsibility of the fault
+system.
+
+\subsection{Administrative Summary}
+\subsubsection{Estimated FTE Effort}
+\begin{tabular}{lc}
+Design:& 0.25\\
+Implementation:& 0.5\\
+Testing and integration:& 0.5\\
+& ----\\
+TOTAL:& 1.25
+\end{tabular}
+(numbers are in man-months)
+\subsubsection{Schedule}
+
+\begin{tabular}{lll}
+Package status:& open&\\
+Work Package Analysis: & completed:    &  08/27/2002\\
+Conceptual design:& completed: & n/a\\
+Preliminary design:& completed:& 02/03/2005\\
+Critical design:&     & 05/06/2005\\
+\hline
+\end{tabular}
+
+
+\section{Design}
+
+Monitoring functions for the weather station will be realized
+through a simple RS232 serial port. New code is needed
+for publishing the associated CORBA distributed object (DO) that
+external clients contact to activate its control functionality. 
+An existing flexible serial port access routine (converted to C++) 
+from the WASP project will be used to access the serial port.
+
+% The equivalent SZA code, though elegant, was deemed too intrusive and involved in the current build systems
+
+\subsection{Control API}
+\label{control}
+
+The weather station has no controls, 
+polling occurs on the RS232 port, though the firmware for
+both the DPS and WS can be enabled in an asynchronous mode.
+
+
+\subsection{Monitor Points}
+\label{monitor_points}
+The following is the complete set of monitor points in the 
+{\tt carma.environment.weatherStation} hierarchy.
+All monitor points should be published at a 2~Hz rate.
+
+\begin{itemize}
+\monpoint{ambientTemperature}{float}{C}{
+Outside ambient temperature. Measured with DPS or WS. 
+See also weatherMode below.
+}
+\monpoint{dewpointTemperature}{float}{C}{
+Dewpoint temperature. 
+Either measured (DPS) or derived (WS).
+See also weatherMode below.
+}
+\monpoint{humidity}{float}{\%}{
+Relative Humidity, between 0 and 100\%. 
+Either measured (WS) or derived (DPS).
+See also weatherMode below.
+}
+\monpoint{pressure}{float}{mbar}{
+Measured Barometric pressure.
+}
+\monpoint{windSpeed}{float}{m/s}{
+Measured Wind speed.
+}
+\monpoint{waterDensity}{float}{g/m$^3$}{
+Water vapor density
+}
+\monpoint{precipWater}{float}{mm}{
+Derived precipitable water vapor. 
+}
+\monpoint{batteryVoltage}{float}{V}{
+Measured Voltage of the weather station battery. 
+}
+\monpoint{weatherMode}{integer}{n/a}{
+Weather station mode. 1=WS only. 2=DPS only. 3=WS+DPS. 
+}
+
+
+
+\monpoint{DewpointSensor.ambientTemperature}{float}{C}{
+Outside ambient temperature. Measured with DPS.
+}
+\monpoint{DewpointSensor.dewpointTemperature}{float}{C}{
+Dewpoint temperature. Measured with DPS.
+}
+\monpoint{WeatherStation.ambientTemperature}{float}{C}{
+Outside ambient temperature. Measured WS.
+}
+\monpoint{WeatherStation.humidity}{float}{\%}{
+Relative Humidity, between 0 and 100\%. 
+Measured WS.
+}
+
+
+\end{itemize}
+
+\section{Dew Point Sensor}
+
+The program {\tt wx} runs on {\tt inyo} (a Sun) and connects
+to the WinNT (an old P5-75 Gateway) box and its output
+looks as follows:
+
+\footnotesize
+\begin{verbatim}
+Fast "Snapshot" Data
+--------------------------------------------------------
+Local OVRO Time/Date:       PST Mon Mar 14 19:30:03 2005
+Universal Time/Date:        UTC Tue Mar 15 03:30:03 2005
+Modified Julian Date:       53444.14587 days
+
+Temperature, Ambient:         9.1 deg C    48.4 deg F
+             Dewpoint:      -16.4 deg C     2.4 deg F
+
+Barometeric Pressure:       880.6 millibars
+Water Vapor Pressure:         1.7 millibars
+            Density:          1.3 g/m^3
+
+Columnar H2O Content*:        2.6 millimeters
+Relative Humidity:           15 %
+Wind Speed:                  11.7 mph     5.2 m/sec
+     Direction:             311.5 deg    (NW)
+     North Vector:            7.8 mph     3.5 m/sec
+     East Vector:            -8.8 mph    -3.9 m/sec
+
+*From local H2O density assuming 2 km scale height
+--------------------------------------------------------
+Current Generator Status
+
+Fault              Warning            Status
+(   )Low Oil Press (   )Low Oil Press ( X )Array on Util
+(   )High Eng Temp (   )High Eng Temp ( X )Ctrl Bld Util
+(   )Overspeed     (   )Low Eng Temp  (   )Generator Run
+(   )Overcrank     (   )Low Fuel      (   )Array on Gen
+(   )Not in Auto   (   )Fuel Tank Rpt (   )Ctrl Bld Gen
+\end{verbatim}
+\footnotesize
+
+\section{Implementation}
+
+
+
+User-level access to the weather system is provided by a C++ class named
+Weather, which contain the WS and DPS classes that directly talk to the
+serial port.
+
+\subsection{Code Reuse}
+
+SZA is using the same instrument (two identical systems were baught
+in year-????). Erik reported that in theory the firmware can be modified
+to have the weatherstation asynchronously send weather info at a
+pre-programmed rate (via firmware settings, not something we would
+want to control via IDL). This was never working according to
+advertised interfaces. However it's working fine by polling the
+serial port.
+
+\small\noindent
+Some of the old code on the old OVRO WindowsNT3.5 based weather
+station box probably has some algorithms for the derived quantities 
+that can be added to the current ones in {\tt Atmosphere}.
+
+\small\noindent
+WS up/downloading firmware code has been made available by Erik Leitch.
+
+
+\section{Programs}
+
+This package does not currently supply any programs.When the server runs, it
+locks up the serial ports and using even one of the test programs would
+result in crashing the server and/or producing bogus numbers.
+
+\noindent
+{\tt carma/environment/Test/tAtmosphere} : can be used to
+excersize the conversion routines between ambient temperature, dewpoint
+temperature and humidity.
+
+\section{Notes}
+\begin{itemize}
+
+
+%% \item dewpoint sensor has not been discussed, it should also be part of this package.
+
+\item battery : it can also be monitored, returns battery voltage. does the new weatherstation have it?
+
+%%\item straight RS232 vs. CAN micro (via an XAC3 module?) Firmware needed would argue RS232
+%%is earier ( or use serial-to-ethernet converter, SZA uses a Lantronix RS232-TCP/IP converter)
+
+%%\item 2HZ monitoring on RS232 (9600baud) should be ok.
+
+%%\item conversion of RS232 to fiber to avoid lightning damage to the computer
+%%(wouldn't you think these are protected against that?)
+
+%%\item rapid variable wind vs. slowly varying temp/press
+
+%%\item averaging here, and publish as a monitor point, or let the monitor system do this?
+
+%%\item wx200d-1.3 (wx200d.sourceforge.net, \$200; open2300.sourceforge.net)
+
+%%\item differential refraction; override if bad weather info?
+
+%%\item at various stages one linux machine has been identified from which we
+%%run several serial ports: phone monitor, tipper, weather station and dewpoint
+%%sensor.  If so, we may need a muliport solution, or use serial-to-ethernet
+%%converters.
+
+\item 
+Paul tried a fiber-to-RS232 converter, which works fine for the DPS, but not for
+the WS.
+
+\end{itemize}
+
+%
+%\section{References}
+%
+%{\tt http://www.campbellsci.com}
+
+% Serial Programming Guide for POSIX Operating Systems
+% http://www.easysw.com/~mike/serial/serial.html
+
+% http://parker.uchicago.edu/sza/peripherals/weather_station.html
+% needs a username/password to get access
+
+\section*{Acknowledgements}
+
+The author wishes to thank Curt G, Steve Scott, Paul Daniel and Jim F(?) 
+for help during the initial hardware integration and Chul Gwon for
+patiently explaining some CORBA internals for the examples.
+
+
+% \appendix
+\newpage
+\section{Appendix A: Weather Station}
+
+The weather station is a CRX10 datalogger from
+Campbell Scientific\footnote{{\tt http://www.campbellsci.com}}
+consisting of the following: a 3 meter tall UT3 tower, a Vaisala HMP35 temp and RH probe with 
+solar radiation shield, a Vaisala CS105, PTB101B Barometer (600 to 1060 
+mbar), a 05103 RM Young Wind Monitor, a CR10X-1M Datalogger with 1Meg 
+memory module and wiring panel, a 12 volt battery power supply with 
+charge regulator, an MSX10 10 watt solar panel, and an ENC 16/18 
+Enclosure 16" x 18". A SC32B optical isolator is needed to converted
+the non-standard 9pin RS232 signal to a regular serial line, to enable
+the ``normal'' communication modes used on PCs.
+
+\subsection{Wiring}
+
+Currently a complex change through the required optical isolator to
+various forms of serial cables (9 pin, 25 pine, rj11).
+
+\subsection{Debugging}
+
+It is easy on serial lines to get your wires crossed, no pun intended. DCE, DTE, and 
+remember RS232 cables are different from telecon RJ11(?) cables, and they've been
+used in various locations. See pictures on the 
+weatherstation page\footnote{current {\tt http://www.astro.umd.edu/\~ teuben/carma/weather}}
+
+\subsubsection{USB serial}
+
+Once the {\tt environment} has booted,  the modules
+{\tt keyspan} and {\tt usbserial} should have been loaded, and via
+for example {\tt dmesg} you should see sections such as:
+
+
+\footnotesize
+\begin{verbatim}
+...
+usbserial.c: USB Serial support registered for Generic
+usbserial.c: USB Serial Driver core v1.4
+usbserial.c: USB Serial support registered for Keyspan - (without firmware)
+usbserial.c: USB Serial support registered for Keyspan 1 port adapter
+usbserial.c: USB Serial support registered for Keyspan 2 port adapter
+usbserial.c: USB Serial support registered for Keyspan 4 port adapter
+usbserial.c: Keyspan 4 port adapter converter detected
+usbserial.c: Keyspan 4 port adapter converter now attached to ttyUSB0 (or usb/tts/0 for devfs)
+usbserial.c: Keyspan 4 port adapter converter now attached to ttyUSB1 (or usb/tts/1 for devfs)
+usbserial.c: Keyspan 4 port adapter converter now attached to ttyUSB2 (or usb/tts/2 for devfs)
+usbserial.c: Keyspan 4 port adapter converter now attached to ttyUSB3 (or usb/tts/3 for devfs)
+...
+keyspan.c: v1.1.4:Keyspan USB to Serial Converter Driver
+
+\end{verbatim}
+\footnotesize
+
+
+\subsubsection{minicom}
+
+\footnotesize
+\begin{verbatim}
+   Serial line:    9600 8N1: 9600 baud, 8 bit, no parity, 1 stop bit
+
+   Set them manually in the file /etc/minirc.ws
+
+# Machine-generated file - use "minicom -s" to change parameters.
+pr port             /dev/ttyUSB0
+pr bits             8
+pr parity           N
+pr stopbits         1
+pu baudrate         9600
+pu minit            
+pu mreset           
+
+   after which the command will be:
+
+
+   % minicom ws
+
+   assuming of course it has been stuck in the KEYSPAN #1 port!
+
+   You should (perhaps after hitting the RETURN key a few times) see a * prompt.
+   For debugging, the most important commands are:
+      A   get the current status and memory counters
+      B   backup a record
+      C   get the time
+      D   dump a record
+   
+
+   *C
+   Y05 D0077  T19:06:18 C1294
+   *A
+   R+245610. F+573441. V3 A1 L+245610. E99 79 99 M1280   B+3.2132 C3336
+   *B
+   A1 L+245598 C0806
+   *D
+   01+0222.  02+2005.  03+0077.  04+1905.  05+17.75  06+18.87  07+0874.  08+2.854  
+   09+1.098  10+164.2  11+40.66  12+0.000                                          
+                                                                                
+   A1 L+245610 C6312 
+   *
+ 
+
+   ??   should we see Online of Offline in minicom's status line at the botttom now ??
+
+   !!   this is an example of a good data record. The 'C' time (19:06:18) is less than
+        5 minutes from the 4th data item in the 'D' line  (1905)
+\end{verbatim}
+\footnotesize
+
+\subsubsection{Command Mode}
+
+The weather station program actually runs every 3 seconds and puts the data into
+intermediate storage locations. To get to the intermediate
+storage locations, use minicom and do a carriage return or 2 to get the 
+familiar * prompt. Then
+issue a 7H (enter) to put the weather station into command mode. This
+can be verified by the prompt changing to a $>$. Then issue a *6. The
+weather station will respond with, MODE 06:0000. Use, Enter, to step
+through the intermediate locations or use, \#N, where N is the number of
+the desired intermediate location. There are 28 intermediate locations
+of which only 19 are used by this program. The ones of interest to you
+are: 01 (Battery Volts, weather station power supply), 03 (Wind Speed in
+miles per hour), 04 (Wind Direction in degrees), 05 (Barometric Pressure
+in mbar), 06 (Air Temperature in degrees C), 07 (Relative Humidity in
+percent), 08 (Vapor Pressure of water in mbar), 09 (Saturation Vapor
+Pressure of water at the current air temperature in mbar), and 14 (Water
+Vapor Density in grams per cubic meter). The other intermediate
+locations used by this program are for intermediate calculation storage.
+
+\footnotesize
+\begin{verbatim}
+
+*
+*
+*7H                                                                                                                                        
+                                                                                                                                           
+>                                                                                                                                          
+MODE 06:0000
+01:+13.901   voltage
+02:+4145.5   
+03:+3.5803   wind speed (mph)
+04:+299.73   wind dir (deg)
+05:+786.43   pressure (mbar)
+06:+8.4432   air temp (C)
+07:+18.851   rel humidity (%)                                                                                                                  
+08:+1.1048   vapor pressure (mbar)
+09:+11.048   saturdation vapor pressure
+10:+.18851                                                                                                                                 
+11:+2.0914
+12:+281.61
+13:+453.18
+14:+1.6092   water vapor density (g/m3)
+15:+.52184
+16:+2.0000
+17:+.37276
+18:+.09099
+19:+.08613
+20:+0.0000
+21:+0.0000
+...
+          
+\end{verbatim}
+\footnotesize
+
+\subsubsection{tWS}
+
+The test program {\tt carma/environment/Test/tWS} can be used to debug communications:
+
+\footnotesize
+\begin{verbatim}
+
+   % cd $CARMA_BUILD
+   % carma/environment/Test/tWS repeat=5
+WS:   i=5 FC=337314686 Ta=15.66 Td=8.87881 RH=63.95 P=872 wSpeed=0.913 wDir=54.92 Batt=53.52 some=8.53 Rain=0
+WS:   i=4 FC=337314692 Ta=15.66 Td=8.87881 RH=63.95 P=872 wSpeed=0.913 wDir=54.92 Batt=53.52 some=8.53 Rain=0
+WS:   i=3 FC=337314697 Ta=15.66 Td=8.87881 RH=63.95 P=872 wSpeed=0.913 wDir=54.92 Batt=53.52 some=8.53 Rain=0
+WS:   i=2 FC=337314702 Ta=15.66 Td=8.87881 RH=63.95 P=872 wSpeed=0.913 wDir=54.92 Batt=53.52 some=8.53 Rain=0
+WS:   i=1 FC=337314708 Ta=15.66 Td=8.87881 RH=63.95 P=872 wSpeed=0.913 wDir=54.92 Batt=53.52 some=8.53 Rain=0
+
+   % carma/environment/Test/tWS traceLevel=1
+{...  A: A R+400462. F+573441. V3 A1 L+400462. E99 99 99 M1280   B+3.2485 C3345  *}
+{...  D: D A1 L+400462 C0814  *}
+{...  B: B A1 L+400450 C0786  *}
+{...  C: C Y05 D0126  T01:13:48 C1281  *}
+{...  D: D01+0222.  02+2005.  03+0126.  04+0110.  05+15.75  06+63.58  07+0872.  08+08.53 09+0.888  10+34.47  11+077.0  12+0.000  A1 L+400462 C6292  *}
+
+    !! this is an example of a good (not ``flatlined'') data sample. The WS time is 01:13:48, and
+       the last sample time is less then a 5 minutes from this (0110).
+       
+\end{verbatim}
+\normalsize
+
+\newpage
+\section{Appendix B: Dew Point Sensor}
+
+% 2005: current model appears to be model 1088
+
+The Dew Point Hygrothermometer is a Model 1063 
+(aquired 1991 from Technical Services 
+Laboratory\footnote{{\tt http://www.tslinc.com/}}, 
+and returns the ambient temperature 
+and a direct measurement of the dewpoint temperature 
+from a chilled mirror hygrothermometer.  It currently
+is configured in a mode where it returns the two
+temperatures (in 23 bytes) every 2 seconds accross
+a 600 baud serial line. This theoretically
+takes 0.345 seconds to transmit.
+
+\subsection{Wiring}
+
+Serial line at the DPS (currently on the roof of the 
+OVRO control building) is converted to fiber, braught
+into the building and converted back to a serial line.
+
+\subsection{Debugging}
+
+
+\subsubsection{minicom}
+
+\footnotesize
+\begin{verbatim}
+   Serial line:    600 8N1: 600 baud, 8 bit, no parity, 1 stop bit
+
+   Note that minicom doesn't support this speed from the menus, but you can
+   edit them manually in the file /etc/minirc.dps
+
+# Machine-generated file - use "minicom -s" to change parameters.
+pr port             /dev/ttyUSB1
+pr bits             8
+pr parity           N
+pr stopbits         1
+pu baudrate         600
+pu minit            
+pu mreset           
+
+
+   after which the command will be:
+
+
+   % minicom dps
+
+   assuming of course it has been stuck in the KEYSPAN #2 port!
+
+   Since the DPS is an autonomous machine, you can't talk to it, it will
+   spit out numbers every 2 seconds:
+
+.T+ 58.3/D+ 18.6 P68.
+.T+ 58.5/D+ 18.6 P6A.
+.T+ 58.6/D+ 18.5 P6A.
+.T+ 58.7/D+ 18.6 P6C.
+.T+ 58.8/D+ 18.6 P6D.
+
+   The 58.* values are the ambient temperature in Fahrenheit, where 
+   the 18.* values are the dew point temperature.  The P6* values are
+   a checksum (which we ignore) to validate the two preceding numbers 
+   are ok. The T+ and D+ are equally so important, they indicate
+   good values....
+
+\end{verbatim}
+\footnotesize
+
+\subsubsection{tDPS}
+
+The test program {\tt carma/environment/Test/tDPS} can be used to debug
+communications:
+
+\footnotesize
+\begin{verbatim}
+
+   % cd $CARMA_BUILD
+   % carma/environment/Test/tDPS repeat=5
+DPS:  i=5 FC=335733070 dFC=1 Ta=22.6667 Td=-4.44444 RH=16.0163
+DPS:  i=4 FC=335733074 dFC=4 Ta=22.6111 Td=-4.44444 RH=16.071
+DPS:  i=3 FC=335733078 dFC=4 Ta=22.6111 Td=-4.38889 RH=16.1375
+DPS:  i=2 FC=335733082 dFC=4 Ta=22.5556 Td=-4.38889 RH=16.1926
+DPS:  i=1 FC=335733086 dFC=4 Ta=22.5    Td=-4.38889 RH=16.248
+
+    where it should be noted that RH has been derived from Ta and Td, not measured.
+    Note these are not the raw measured values, the instrument returns
+    two temperatures in Fahrenheit, and have been converted to Celcius
+    for readability here. Increasing traceLevel will show the raw measured
+    values in the mostly readable output from the serial port:
+
+    % carma/environment/Test/tDPS traceLevel=2
+{.... buffer[23]="T+ 58.0/D+ 28.5 P65"}
+{.... T+ offset by 1 bytes}
+DPS:  i=1 FC=337314227 dFC=1 Ta=14.4444 Td=-1.94444 RH=32.3566
+
+\end{verbatim}
+\normalsize
+% $
+
+\newpage
+\section{Appendix C: Linux cautionary notes}
+
+\subsection{Setup}
+
+Given a standard CARMAlized linux workstation, the follow items need to be in place
+for the weather station:
+
+\begin{itemize}
+
+\item wider permission on {\tt /dev/ttyUSB*}. We used {\tt chmod 666 /dev/ttyUSB*}
+The permissions on a serial device may be reset upon a reboot, which is related
+to the new udev filesystem.  The official udev way is to set those
+permissions in the file {\tt /etc/udev/permissions.d/50-udev.permissions}.
+
+
+\item sudo more mortal users to use minicom: 
+add the line {\tt Cmnd\_Alias   MINICOM = /usr/bin/minicom}
+to the file {\tt /etc/sudoers}. 
+This will allow you to make {\tt /etc/minirc.ws} and
+{\tt /etc/minirc.dps} if you desire to debug with {\tt minicom}.
+
+\item {\it anything else Paul?}
+
+\end{itemize}
+
+Since we are using the KEYSPAN 4port serial-USB converted a few cautionary
+words for systems that don't auto(un)load their modules
+so well. Once the KEYSPAN is plugged
+into the USB port, a {\bf red light} should show up on the base right under the USB
+(open circle) symbol. This means the drivers were loaded. Once you
+connect a serial device, the moment the software opens the port
+a {\bf green light} will be on
+at the port (1,2,3 or 4) that is being used. 
+{\bf Never disconnect the USB cable at this stage}, 
+though it's safe to disconnect the serial device itself. If you would, the
+device would most likely lock up and a reboot is needed to clear the status.
+
+\subsection{Runtime}
+
+The weather station normally runs on {\tt environment.carma.pvt} as the task
+{\tt weatherStation}. Since it keeps the serial port to both DPS and WS open,
+running test programs like {\tt tWS} and {\tt tDPS} will either crash
+{\tt weatherStation} (for {\tt tWS}) or
+return nonsense (for {\tt tDPS}), depending how the hardware deals with
+multiple attempts to access.
+
+\footnotesize
+\begin{verbatim}
+
+WS:  if a 2nd client comes in, 1st one dies and 2nd takes over
+DPS: 2nd client just returns no data, need to stop the server
+
+## on the server (normally acc.carma.pvt)
+
+
+% /opt/rt/bin/imradmin --imr corba --get-server-info WeatherHost
+% /opt/rt/bin/dumpMonitor frames=1 component=Weather
+
+
+% /opt/rt/bin/imradmin --imr corba --stop-server WeatherHost
+% /opt/rt/bin/imradmin --imr corba --reset-server WeatherHost
+
+% /opt/rt/bin/imradmin --imr corba --start-server WeatherHost
+
+
+## on the hostmachine (normally environment.carma.pvt):
+
+% /opt/rt/bin/dumpMonitor frames=1 subsystem=Weather
+
+
+% /opt/rt/bin/imradmin --imr corba --set-server WeatherHost args "imr=corba.carma.pvt:20000 traceFile=syslog traceLevel=0 useDBMS=true emulate=false sleep=1 dps=false ws=true --"
+
+
+## tinkering with the args or executable, good for debugging via your own 
+
+% /opt/rt/bin/imradmin --imr corba --get-server-info WeatherHost
+% /opt/rt/bin/imradmin --imr corba --set-server WeatherHost args "imr=corba.carma.pvt:20000 traceFile=syslog traceLevel=0 useDBMS=true emulate=false sleep=1 dps=false ws=true --"
+
+% /opt/rt/bin/imradmin --imr corba --set-server WeatherHost exec /home/teuben/carma/build/bin/weatherStation
+
+
+
+Server WeatherHost:
+    ID:                       15
+    Status:                   stopped
+    Name:                     WeatherHost
+    Host:                     environment.carma.pvt
+    Path:                     /opt/rt/bin/weatherStation
+    RunDir:                   /home/control
+    Arguments:                imr=corba.carma.pvt:20000 traceFile=syslog traceLevel=1 useDBMS=true imrpoa=true emulate=false sleep=1 dps=false ws=true --
+    Activation Mode:          shared
+    POA Activation:           true
+    Update timeout (ms):      500
+    Failure timeout (secs):   15
+    Maximum spawn count:      2
+    Started manually:         no
+    Number of times spawned:  0
+
+\end{verbatim}
+\footnotesize
+
+\subsection{Testing on a localhost}
+
+Just for completeness, here's an example annoted shell session of 
+running a weather station server and monitor on an isolate localhost.
+
+\footnotesize
+\begin{verbatim}
+
+       # rc.carma will take a few seconds until the shell prompt returns
+1% scripts/rc.carma --nosu --imr localhost --file imr/controlTestLocal.xml --dir /tmp/carma --noapps start
+
+       # this will start carma_tools/bin/{imr,nameserv,notserv}
+2% bin/frameScriberPublisher imr=localhost subsystem=weather &  ==  (client)
+3% bin/frameCollator imr=localhost &    === acc (server)
+4% bin/weatherStation imr=localhost sleep=1 &
+
+       # subsystem= on the client, component= on the server
+5% bin/dumpMonitor subsystem=Weather stats=t
+6% bin/dumpMonitor subsystem=Weather frames=2
+
+       # if ready to stop
+7% scripts/rc.carma --nosu --imr localhost --file imr/controlTestLocal.xml --dir /tmp/carma --noapps stop
+
+\end{verbatim}
+\footnotesize
+
+\subsection{Testing on environment}
+
+Here's an example annoted shell session of running the weather station server on {\tt environment},
+and being careful about not interfering with the system itself 
+
+
+\footnotesize
+\begin{verbatim}
+
+       # rc.carma will take a few seconds until the shell prompt returns
+       # notice the new non-conflicting port number (carma uses 20000) and FQN usage
+       # if you do want to post monitor points to the system just use 20000 instead
+1% scripts/rc.carma --nosu --imr environment.carma.pvt:30000 --file imr/controlTestLocal.xml --dir /tmp/carma --noapps start
+1% scripts/rc.carma --nosu --imr corba.carma.pvt:20000       --file imr/wx.xml --dir /tmp/carma --noapps start
+       # this will have started carma_tools/bin/{imr,nameserv,notserv}
+
+2% bin/frameScriberPublisher imr=environment.carma.pvt:30000 subsystem=weather &
+3% bin/frameCollator imr=environment.carma.pvt:30000 &
+4% bin/weatherStation imr=environment.carma.pvt:30000 sleep=1 emulate=false ws=true dps=false &
+       # this will oddly (?) also publish them as monitor points, so you can monitor them with e.g. rtd
+
+       # subsystem= on the client, component= on the server
+5% bin/dumpMonitor subsystem=Weather stats=t
+6% bin/dumpMonitor subsystem=Weather frames=2
+
+       # if ready to stop
+7% scripts/rc.carma --nosu --imr environment.carma.pvt:30000 --file imr/controlTestLocal.xml --dir /tmp/carma --noapps stop
+
+\end{verbatim}
+\footnotesize
+
+\section{Appendix D: Monitor Points}
+
+There is no good recipe for adding a new monitor point, but here are some points that certainly would
+have to be taken care of. Examples are taken from the weather station(s) code, a relatively simple
+CARMA component in itself:
+
+\begin{enumerate}
+
+\item
+Add the monitor point in the appropriate spot into {\tt carma/monitor/WeatherSubsystem.mpml}
+
+\item
+Add the appropriate item in e.g. {\tt carma/environment/WS.h}, and grab it from the instrument
+in {\tt carma/environment/WS.cc}
+
+\item
+Add the item to {\tt carma/environment/Weather.h} and grab it from WS in
+{\tt carma/environment/Weather.cc}
+
+\item
+grab and publish the value in the DO {\tt  carma/environment/weatherStation.cc} in
+something like
+{\tt  wss.weatherStation().lastTime().setValue(w.getWSLastTime());}
+
+\item
+If needed, modify {\tt carma/ui/rtd/windows/rtdweather.cc}
+
+\end{enumerate}
+
+\end{document}
+
+station 222 and 333 are different styles of output, e.g.
+
+D01+0222.  02+2005.  03+0125.  04+2355.  05+18.73  06+45.89  07+0872.  08+07.36 09+1.546  10+204.4  11+29.15  12
+D01+0333.  02+2005.  03+0125.  04+2400.  05+09.54  06+3328.  07+17.52  08+20.01 09+49.97  10+07.45  11+24.51  12+13.64  13+13.52  14+245.9  15+0.000  16+227.1 17+076.5  18+16.58  19+0876.  20-69
+D01+0222.  02+2005.  03+0126.  04+0015.  05+17.39  06+54.78  07+0872.  08+08.11 09+0.408  10+139.9  11+15.97  12
+D01+0222.  02+2005.  03+0126.  04+0030.  05+17.58  06+44.62  07+599.6  08+6.678 09+0.746  10+182.3  11+24.05  12
+
+
+control  22010 95.0  2.3 57372 24376 ?       Rsl  09:25   0:00 /opt/rt/bin/weatherStation imr=corba:20000 traceFile=syslog traceLevel=0 useDBMS=true imrpoa=true emulate=false dps=false ws=true -- -ORBServerId WeatherHost -ORBserver_instance 1128011145
+
+/opt/rt/bin/frameScriberPublisher 
+   is now running twice....
+
+
+Sep 29 09:25:45 environment.carma.pvt weatherStation:  {2005} {NOTICE} {carma.environment.weatherStation} {} {Program starting, pid=22010}  
+Sep 29 09:25:45 environment.carma.pvt /opt/rt/bin/weatherStation:  {2005} {WARN} {carma.environment.weatherStation} {} {Database cannot be contacted, so using the canonical name to tagId map in conf file /home/control/rt/UPDATE-2005-09-28-1706-2-6-9-11-ELsmp/conf/monitor/canonicalNamesToTagIDs.conf. It had better match that in the database or db integrity will be compromised}  
+Sep 29 09:25:46 environment.carma.pvt /opt/rt/bin/weatherStation:  {2005} {INFO} {carma.environment.weatherStation} {[carma::util::CarmaThreadGroup::getDefaultCarmaThreadGroup]} {carma::util::CarmaThread::start: starting thread CarmaThread.defaultSignalHandler with id 3061857200 }  
+Sep 29 09:25:46 environment.carma.pvt /opt/rt/bin/weatherStation:  {2005} {INFO} {carma.environment.weatherStation} {} {WS:open /dev/ttyUSB0 -> 12}  
+Sep 29 09:25:47 environment.carma.pvt /opt/rt/bin/weatherStation:  {2005} {INFO} {carma.environment.weatherStation} {} {Ta/Td/RH/Ta/Td/RH/P/wS,wD,h2o= 0 0 100 13.99 -3.94567 28.51 1.705 21.65  7.23962 210 0}  
+Sep 29 09:25:48 environment.carma.pvt /opt/rt/bin/weatherStation:  {2005} {ERROR} {carma.environment.weatherStation} {Exception Handlers Watchdog} { Program received signal - SIGHUP - hangup signal with number 1 and is being terminated  }  
+Sep 29 09:25:48 environment.carma.pvt /opt/rt/bin/weatherStation:  {2005} {NOTICE} {carma.environment.weatherStation} {Exception Handlers Watchdog} { Program weatherStation(22010) terminating...  }  
+
+
+
+---
+
+
+**A
+ R+205061. F+205060. V3 A1 L+205061. E99 99 99 M1280   B+3.2713 C3324  
+**B
+ A1 L+205049 C0793  
+****C
+ Y05 D0322  T01:43:27 C1279  
+**C
+ Y05 D0322  T01:43:28 C1280  
+**D
+01+0222.  02+2005.  03+0321.  04+1040.  05-1.042  06+39.42  07+0788.  08+1.749 
+09+4.755  10+327.7  11+5.423  12+0.000 
+                                                                                                                                                                                                                                  
+ A1 L+205061 C6286                                                            
+
+---
+
+*A                                                                                                                                                                                                                                
+ R+205061. F+205060. V3 A1 L+205061. E99 99 99 M1280   B+3.2713 C3324                                                                                                                                                             
+*B                                                                                                                                                                                                                                
+ A1 L+205049 C0793                                                                                                                                                                                                                
+*C                                                                                                                                                                                                                                
+ Y05 D0322  T01:45:28 C1282                                                                                                                                                                                                       
+*D
+01+0222.  02+2005.  03+0321.  04+1040.  05-1.042  06+39.42  07+0788.  08+1.749
+09+4.755  10+327.7  11+5.423  12+0.000
+                                                                                                                                                                                                                                  
+ A1 L+205061 C6286                                     
+
+
+
+-----
+
+Eric algorithm:
+
+send A:
+    R+205061. F+205060. V3 A1 L+205061. E99 99 99 M1280   B+3.2713 C3324
+
+find 'C' getLastRecordNo ->  between L+ and .  -> 205061
+
+send '205061G':
+    A1 L+205061 C1094
+
+--- recover from long flatline
+*1D                                                                                                                           
+01+0222.  02+2005.  03+0322.  04+1440.  05-5.459  06+42.53  07+0.000  08+1.321                                                
+09+6.211  10+333.8  11+0.000  12+0.000                                                                                        
+                                                                                                                              
+ A1 L+205073 C6291                                                                                                            
+*B                                                                                                                            
+ A1 L+205061 C0787                                                                                                            
+*B                                                                                                                            
+ A1 L+205049 C0793                                                                                                            
+*1D                                                                                                                           
+01+0222.  02+2005.  03+0321.  04+1040.  05-1.042  06+39.42  07+0788.  08+1.749                                                
+09+4.755  10+327.7  11+5.423  12+0.000                                                                                        
+                                                                                                                              
+ A1 L+205061 C6367                                   
+
+
+i see an error code?
+
+E10 04
+intermediate storage full?
+
+
+
+ 04+1455.  A1 L+205109 C6305
+
+
+E10 96  
+E10 04                                                                                                                        
+*                                                                                                                             
+*                                                                                                                             
+E10 96 A                                                                                                                      
+ R+205289. F+205288. V3 A1 L+205289. E99 99 99 M1280   B+16.748 C3734                                                         
+*                                                                                                                             
+E10 04 B                                                                                                                      
+ A1 L+205277 C1149                                                                                                            
+*C                                                                                                                            
+ Y05 D0322  T16:14:01 C1275                                                                                                   
+*D                                                                                                                            
+E10 04                                                                                                                        
+01+0222.  02+2005.  03+0322.  04+1610.  05+09.36  06+15.08  07-6999.  08+1.360                                                
+09+1.827  10+123.7  11+0.000  12+0.000                                                                                        
+                                                                                                                              
+ A1 L+205289 C6638                                                                                                            
+*                                                                                                                             
+E10 04                                                              
+
+E10 04                                                                                                                        
+E10 10                                                                                                                        
+E10 04                                                                                                                        
+E10 04 
+
+e10 11
+
+*A
+ R+2917387. F+2917386. V3 A1 L+2090621. E99 00 31 M0000   B+3.2352 C3476  
+*B
+ A1 L+2090591 C0847  
+*C
+ Y05 D0322  T16:53:35 C1285  
+*D
+01+0172.  02+54.62  03+0344.  04-453.9  05+205.9  06-3904.  07+3934.  08-30.61 
+09-573.0  10+6.742  11+169.8  12+2.936  13+69.58  14-604.5  15-4.738  16-6.001 
+17-64.36  18+035.8  19-3.393  20+3.871  21-345.0  22-044.5  23+62723  24+3357. 
+25+19.63  26+.H5126 
+
+ A1 L+2090621 C4773  
+
+====
+
+
+on non-corba mahines imr's are also running in OAD mode (the -s flag)
+
+/opt/carmaTools/bin/imr -a -s -ORBconfig /var/carma/imr/bima1.carma.pvt_20000/oad.conf
+
+
+on corba:
+
+/opt/carmaTools/bin/imr -a -ORBconfig /var/carma/imr/corba.carma.pvt_20000/imr.conf
+/opt/carmaTools/bin/nameserv -ORBDefaultInitRef .....
+/opt/carmaTools/bin/notserv -ORBDefaultInitRef ....
+
+
+building:
+
+
+make lib/libcarmaenvironment.so
+make AR:= RANLIB:= install 

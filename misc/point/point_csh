@@ -1,0 +1,13 @@
+# csh startup to run point locally where it was built
+
+set dir=`pwd`/lib
+
+if ($?LD_LIBRARY_PATH) then
+	setenv LD_LIBRARY_PATH ${dir}:${LD_LIBRARY_PATH}
+else
+	setenv LD_LIBRARY_PATH $dir
+endif
+
+if ($?PGPLOT_DIR == 0) then
+   setenv PGPLOT_DIR $dir
+endif

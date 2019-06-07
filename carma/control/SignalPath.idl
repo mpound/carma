@@ -1,0 +1,56 @@
+#ifndef CARMA_CONTROL_SIGNALPATH_IDL
+#define CARMA_CONTROL_SIGNALPATH_IDL
+
+#include "carma/control/SequenceTypedefs.idl"
+#include "carma/util/UserException.idl"
+
+/**
+ * @file
+ *
+ * Interface for the SignalPathMapper related portions of
+ * the Subarray controller.
+ *
+ * $Id: SignalPath.idl,v 1.3 2011/05/17 16:27:40 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+
+module carma {
+module control {
+
+/**
+ * Signal path mapping control portion of SubarrayControl interface
+ * The interface is split into several pieces because the idl parser overflows.
+ */
+interface SignalPath {
+
+      void initializeCableMap(in string fileName)
+        raises (carma::util::UserException);
+
+      void loadConfiguration(in string fileName, in string confName, in string astroBandConfName)
+        raises (carma::util::UserException);
+
+      string queryConfiguration()
+        raises (carma::util::UserException);
+
+/* Do we really need this at python level ? */
+      void checkConfigurationSuccess(in short astroBandNo)
+        raises (carma::util::UserException);
+
+/* Do we really need this at python level ? */
+      void checkConfigurationValidity(in short astroBandNo, in string confName)
+        raises (carma::util::UserException);
+
+/*
+ Skipping this for now because it creates dependency on signalpath subsystem.
+ Engineers can make the direct DO call if they really need this.
+
+      void assignWalshColumn(in carma::signalpath::SignalPathMapperControl::WalshColumnAssignment wca)
+        raises (carma::util::UserException);
+*/
+
+}; // end interface SignalPath
+}; // end control
+}; // end carma
+
+#endif

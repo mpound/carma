@@ -1,0 +1,4 @@
+This alarm usually occurs when a script crashes.
+
+Look here for solutions:
+http://cedarflat.mmarray.org/wiki/Alarms#Control.SubarrayX.scriptState

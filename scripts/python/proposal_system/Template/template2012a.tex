@@ -1,0 +1,169 @@
+\documentclass[preprint, letterpaper, 10pt]{aastex}
+\usepackage[table,rgb]{xcolor}
+\usepackage{hhline}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{helvet}
+\usepackage[letterpaper]{geometry}
+\usepackage{array}
+\usepackage{url}
+\usepackage{filecontents}
+\usepackage{ltxtable}
+\usepackage{hyphenat}
+
+\pagestyle{empty}
+\geometry{left=0.5in, right=0.5in, top=0.5in, bottom=0.5in}
+
+\begin{document}
+\sffamily
+\def\UrlFont{\sffamily}
+
+\color{black}
+\rowcolors{1}{gray!20}{gray!20}
+\setlength\doublerulesep{0pt}
+\newcolumntype{Z}{>{\centering\arraybackslash}X}
+
+\newlength{\sectitlelength}
+\newcommand{\sectitle}[1]{
+  \setlength{\sectitlelength}{\parindent}
+  \setlength{\parindent}{0in}
+  \vskip 0.15in
+  \begin{tabularx}{\textwidth}{@{}l@{}}
+    \hiderowcolors
+    {\Large \textbf{#1}} \\
+    \showrowcolors
+  \end{tabularx}
+  \setlength{\parindent}{\sectitlelength}
+}
+\newcommand{\sectitlel}[1]{
+  \setlength{\sectitlelength}{\parindent}
+  \setlength{\parindent}{0in}
+  \vskip 0.15in
+  \begin{tabularx}{\textwidth}{@{}l@{}}
+    \hiderowcolors
+    {\Large \textbf{#1}} \\
+    \hline
+    \showrowcolors
+  \end{tabularx}
+  \setlength{\parindent}{\sectitlelength}
+  \vskip -0.3cm
+}
+
+\newlength{\carmaindent}
+\setlength{\carmaindent}{\parindent}
+\setlength{\parindent}{0in}
+\setlength{\parskip}{0in}
+  \mbox{\includegraphics[scale=.2]{../../static/carma.eps}}
+  \newlength{\carmaheight}
+  \settoheight{\carmaheight}{\includegraphics[scale=.2]{../../static/carma.eps}}
+  \hfill
+  \parbox[b][\carmaheight][t]{4in}{
+    \begin{center}
+      \textbf{
+        \LARGE
+        Combined Array for Research in Millimeter-wave Astronomy\\
+        \vskip .25in
+        \large
+        Observing Proposal Cover Sheet\\}
+    \end{center}
+    \vfill}
+  \hfill
+  \fbox{\parbox[b][\carmaheight]{1.5in}{
+      {\centering \ \textbf{Proposal Number} \\}
+      \vspace*{\fill}
+      {\vskip -0.075in \centering \ \LARGE{\textbf{${propno}}} \\}
+      \vspace*{\fill}
+      {\centering \ \textbf{${semester}} \\}
+    }
+  }
+\setlength{\parindent}{\carmaindent}
+\setlength\arrayrulewidth{1pt}
+\setlength\minrowclearance{0pt}
+
+\small
+
+\sectitle{General Proposal Information}
+\begin{tabularx}{\textwidth}{
+>{\hsize=0.8\hsize}Z
+>{\hsize=0.76\hsize}Z
+>{\hsize=1.48\hsize}Z
+>{\hsize=1.5\hsize}Z
+>{\hsize=0.82\hsize}Z
+>{\hsize=0.82\hsize}Z
+>{\hsize=0.82\hsize}Z
+}
+  \hhline{-------}
+  \rowcolor{gray!45}
+  \multicolumn{4}{>{\hsize=5.089\hsize}Z}{\cellcolor{gray!45}\textbf{Title}} &
+  \multicolumn{3}{>{\hsize=2.8265\hsize}Z}{\cellcolor{gray!45}\textbf{Scientific Category}}\\
+  \multicolumn{4}{>{\hsize=5.089\hsize}Z}{\cellcolor{gray!20} ${title}} &
+  \multicolumn{3}{>{\hsize=2.8265\hsize}Z}{\cellcolor{gray!20} ${scientific_category}}\\
+  \rowcolor{gray!45}
+  \textbf{Date} & \textbf{Key Project} & \textbf{TOO/Time Critical} & \textbf{Level of Help Required} & \textbf{1cm Project} & \textbf{3mm Project}& \textbf{1mm Project}\\
+  ${date} & ${key_project} & ${toe} & ${help_required} & ${1cm} & ${3mm} & ${1mm}\\
+  \hhline{-------}
+\end{tabularx}
+
+\sectitle{Authors}
+\begin{tabularx}{\textwidth}{
+>{\hsize=0.1\hsize}Z
+>{\hsize=1.65\hsize}X
+>{\hsize=1.95\hsize}X
+>{\hsize=1.2\hsize}X
+>{\hsize=1.4\hsize}X
+>{\hsize=0.4\hsize}Z
+>{\hsize=0.3\hsize}Z
+}
+  \hhline{-------}
+  \rowcolor{gray!45}
+  \textbf{\#} & \textbf{Name} & \textbf{E-mail} & \textbf{Phone} & \textbf{Institution} & \textbf{Thesis} & \textbf{Grad} \\
+${author_lines}
+\multicolumn{7}{c}{\cellcolor{gray!37}\textbf{Advisor must send a supporting letter if Thesis is checked. See Instructions.}} \\
+  \hhline{-------}
+\end{tabularx}
+
+\sectitlel{Abstract}
+${abstract}
+
+\newlength{\oldtabcolsep}
+\setlength{\oldtabcolsep}{\tabcolsep}
+\setlength{\tabcolsep}{2pt}
+\sectitle{Source Information}\vskip -0.65cm
+\begin{filecontents*}{source.tex}
+\begin{longtable}{
+>{\hsize=0.3\hsize}Z
+>{\hsize=2.3\hsize}Z
+>{\hsize=0.8\hsize}Z
+>{\hsize=1.0\hsize}Z
+>{\hsize=1.0\hsize}Z
+>{\hsize=0.5\hsize}Z
+>{\hsize=0.5\hsize}Z
+>{\hsize=0.5\hsize}Z
+>{\hsize=0.5\hsize}Z
+>{\hsize=0.5\hsize}Z
+>{\hsize=0.55\hsize}Z
+>{\hsize=1.05\hsize}Z
+>{\hsize=1.8\hsize}Z
+>{\hsize=1.3\hsize}Z
+>{\hsize=1.0\hsize}Z
+}
+  \hhline{---------------}
+  \rowcolor{gray!45}
+  \textbf{\#} & \textbf{Source} & \textbf{RA} & \textbf{DEC} & \textbf{Freq} & \textbf{C} & \textbf{D} & \textbf{E} & \textbf{SH} & \textbf{SL} & \textbf{Type} & \textbf{\# Fields} & \textbf{Species} & \textbf{Imag/SNR} & \textbf{Flex.HA}\endhead
+  \multicolumn{15}{c}{\cellcolor{gray!37}\footnotesize Continued on next page. \normalsize } \\
+  \hhline{---------------}\endfoot
+\multicolumn{15}{c}{\cellcolor{gray!37}\textbf{Total Hours: ${total_time}}}\\
+  \hhline{---------------}\endlastfoot
+${source_data}
+\end{longtable}
+\end{filecontents*}
+\LTXtable{\textwidth}{source.tex}
+\setlength{\tabcolsep}{\oldtabcolsep}
+
+\sectitlel{Special Requirements}
+${special_requirements}
+
+\sectitlel{Status of Prior CARMA Observations}
+${prior_obs}
+
+\end{document}

@@ -1,0 +1,21 @@
+# default: on
+# description: The master server for real time displays for
+# carma. The display info is served to java clients for display.
+# Note that the path for the rtdmaster program *must* appear in the
+# declaration of PATH for the environment!!
+#
+# This version uses the useDBMS=false option and is much much faster on
+# development systems.
+service rtdmaster
+{
+        flags           = REUSE
+        socket_type     = stream
+        wait            = no
+        user            = control
+        server          = /opt/rt/bin/rtdmaster
+        server_args     = traceLevel=0 traceFile=syslog useDBMS=false
+        env = PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/X11R6/bin:/opt/rt/bin
+# Not needed anymore
+#    env += LD_ASSUME_KERNEL=2.4.1
+}
+

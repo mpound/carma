@@ -1,0 +1,22 @@
+#ifndef CARMA_UTIL_PROCESSMONITOR_IDL
+#define CARMA_UTIL_PROCESSMONITOR_IDL
+
+module carma {
+module util {
+
+    const string PROCESS_MONITOR_NAME = "carma.util.ProcessMonitor";
+
+    interface ProcessMonitor {
+
+        /**
+         * Tell the process monitor you're alive.
+         * @param serverId Server id as specified by -ORBServerId parameter.
+         */
+        void alive( in string serverId );
+
+    };
+
+
+}; }; // module carma::util
+
+#endif // #ifndef CARMA_UTIL_PROCESSMONITOR_IDL

@@ -1,0 +1,280 @@
+#!@carma_tools@/bin/python
+
+# Script to manipulate Baytech DS62 and DS72 network attached power strips.
+#
+# This script automatically detects the strip type, and then runs the
+# model specific commands as necessary.
+
+import telnetlib
+import argparse
+import socket
+import time
+import sys
+
+# Read from the client until we get the expected response, otherwise
+# throw an exception
+def read_until(t, response, timeout=2.0):
+	r = t.read_until(response, timeout)
+	if not r.endswith(response):
+		raise Exception('Did not get expected response: expected "%s", actual "%s"' % (response, r))
+
+	return r
+
+# Write a single character (with a delay afterwards)
+def write_one_char(t, c):
+	t.write(c)
+
+	# 100ms delay between each character
+	time.sleep(0.1)
+
+# Flush the end of a line
+def write_flush(t):
+	write_one_char(t, '\r')
+
+# Write a message to the client, with optional line flush
+def write_unchecked(t, message, flushline=True):
+	for mchar in message:
+		write_one_char(t, mchar)
+
+	if flushline:
+		write_flush(t)
+
+# Write a message to the client, expecting a certain response after each
+# character, with optional line flush
+def write_checked(t, message, response, timeout=2.0, flushline=True):
+	for (mchar, echar) in zip(message, response):
+		write_one_char(t, mchar)
+		rchar = t.read_until(echar, timeout)
+		if not rchar.endswith(echar):
+			raise Exception('Did not get expected response: expected="%s", actual="%s"' % (echar, rchar))
+
+	if flushline:
+		write_flush(t)
+
+# Cleanup the status message to remove extraneous crap
+def cleanup_status(s):
+	start = s.find('Circuit Breaker:')
+	end = s.find('DS-RPC>')
+	return s[start:end].strip()
+
+# Authenticate with a Baytech DS62 Module
+def ds62_auth(t):
+	write_unchecked(t, 'power')
+	read_until(t, 'Password: ')
+	write_unchecked(t, 'power')
+	read_until(t, 'Enter Request :')
+
+# Authenticate with a Baytech DS72 Module
+def ds72_auth(t):
+	write_checked(t, 'power', '*****')
+	read_until(t, 'Login successful.')
+	read_until(t, 'Enter Request :')
+
+# Get the status messages from a Baytech DS62/DS72 Module
+def dsx2_status(t):
+	write_unchecked(t, '5')
+	read_until(t, 'Enter Password: ')
+	write_checked(t, 'power', '*****')
+	r = read_until(t, 'DS-RPC>')
+	print cleanup_status(r)
+
+# Change the status of one or more outlets on a Baytech DS62/DS72 Module
+def dsx2_change_outlets(t, outlets, state, pretend=True):
+	write_unchecked(t, '5')
+	read_until(t, 'Enter Password: ')
+	write_checked(t, 'power', '*****')
+	r = read_until(t, 'DS-RPC>')
+
+	for num in outlets:
+		write_unchecked(t, '%s %d' % (state, num))
+		read_until(t, ' (Y/N)? ')
+
+		# yes or no
+		mchar = 'n' if pretend else 'y'
+		write_unchecked(t, mchar)
+
+		r = read_until(t, 'DS-RPC>')
+
+	# print final status
+	print cleanup_status(r)
+
+# Map outlet names to outlet numbers on the power strip.
+# This is done by convention, not by actually reading the power strip
+# configuration.
+def get_outlet_numbers(outlet):
+	d = dict()
+	d['pxe']		= [1]
+	d['vax']		= [2]
+	d['vme']		= [3]
+	d['phone']		= [4]
+
+	d['sidecab']	= [1]
+	d['ebox']		= [2]
+	d['chiller']	= [3]
+	d['heater']		= [4]
+
+	d['1']			= [1]
+	d['2']			= [2]
+	d['3']			= [3]
+	d['4']			= [4]
+
+	d['all']		= [1, 2, 3, 4]
+
+	try:
+		return d[outlet]
+	except KeyError:
+		raise Exception('Unknown outlet: %s' % outlet)
+
+# Check the hostname, warning on anything that we don't already know about
+def get_hostname(stripname):
+	ants = []
+	ants += ['c%d' % num for num in range(1, 24)]
+	ants += ['ovro%d' % num for num in range(1, 7)]
+	ants += ['bima%d' % num for num in range(1, 10)]
+	ants += ['sza%d' % num for num in range(1, 9)]
+
+	if stripname in ants:
+		return 'power' + stripname + '.carma.pvt'
+	elif stripname.startswith('power'):
+		return stripname
+	else:
+		print 'WARNING: unknown power strip, assuming you entered a valid hostname'
+		return stripname
+
+# Authenticate with either a DS62 or a DS72 module
+def my_authenticate(t, args):
+	DS62_PROMPT = 'login: '
+	DS72_PROMPT = 'Login:'
+
+	result = t.expect([DS62_PROMPT, DS72_PROMPT])
+	rstring = result[2]
+
+	if rstring.endswith(DS62_PROMPT):
+		if args.debug:
+			print 'Detected Baytech DS62 Module'
+
+		ds62_auth(t)
+	elif rstring.endswith(DS72_PROMPT):
+		if args.debug:
+			print 'Detected Baytech DS72 Module'
+
+		ds72_auth(t)
+	else:
+		raise Exception('Unable to determine power strip type: %s' % rstring)
+
+def get_description():
+	return 'CARMA Baytech Power Strip Control'
+
+def get_epilog():
+	return '''
+Examples:
+
+  power c1 status
+  power c1 pxe reboot
+  power c1 heater off
+  power c1 chiller on
+  power c1 all off
+'''
+
+def main():
+	parser = argparse.ArgumentParser(
+		formatter_class=argparse.RawDescriptionHelpFormatter,
+		description=get_description(),
+		epilog=get_epilog())
+
+	parser.add_argument('--debug', help='Enable telnet debugging', action='store_true')
+	parser.add_argument('--pretend', help='Do not change outlet status', action='store_true')
+	parser.add_argument('antenna', nargs='?', help='antenna name (c1-c23, ovro1-ovro6, etc.)')
+	parser.add_argument('args', nargs=argparse.REMAINDER, help='either "status" or "<outlet> <action>"')
+	args = parser.parse_args()
+
+	if args.debug:
+		print 'ARGS:', args
+
+	if args.antenna is None or len(args.args) == 0:
+		parser.print_help()
+		sys.exit(1)
+
+	# lowercase the args array
+	args.args = [elem.strip().lower() for elem in args.args]
+
+	# check the number of arguments
+	if len(args.args) > 2:
+		print 'ERROR: too many arguments specified'
+		print
+		parser.print_help()
+		sys.exit(1)
+
+	status = False
+	outlets = []
+	action = None
+
+	if args.antenna is None or len(args.args) == 0:
+		# no hostname or arguments means that we should output the help
+		parser.print_help()
+		sys.exit(1)
+	elif len(args.args) == 1:
+		# one argument should always be the 'status' command
+		if args.args[0] != 'status':
+			print 'ERROR: unknown command specified: %s' % args.args[0]
+			print
+			parser.print_help()
+			sys.exit(1)
+
+		status = True
+	elif len(args.args) == 2:
+		# two arguments should be a outlet name/number and action
+		try:
+			outlets = get_outlet_numbers(args.args[0])
+		except Exception, ex:
+			print 'ERROR: %s' % str(ex)
+			print
+			parser.print_help()
+			sys.exit(1)
+
+		if args.args[1] not in ('on', 'off', 'reboot'):
+			print 'ERROR: unknown action: %s' % args.args[1]
+			print
+			parser.print_help()
+			sys.exit(1)
+
+		action = args.args[1]
+	else:
+		# too many arguments, error
+		print 'ERROR: too many arguments'
+		print
+		parser.print_help()
+		sys.exit(1)
+
+	try:
+		hostname = get_hostname(args.antenna)
+		t = telnetlib.Telnet(hostname, timeout=2.0)
+
+		# enable telnet debugging
+		if args.debug:
+			t.set_debuglevel(100)
+
+		try:
+			# authenticate with power strip
+			my_authenticate(t, args)
+
+			# run the requested command
+			if status:
+				dsx2_status(t)
+			else:
+				dsx2_change_outlets(t, outlets, action, args.pretend)
+
+		finally:
+			t.close()
+
+	except socket.timeout:
+		print 'ERROR: timeout when connecting to: %s' % hostname
+		sys.exit(1)
+	except Exception, ex:
+		print 'ERROR: unknown exception: %s' % str(ex)
+		sys.exit(1)
+
+if __name__ == '__main__':
+	main()
+
+# vim: set ts=4 sts=4 sw=4 noet tw=112:

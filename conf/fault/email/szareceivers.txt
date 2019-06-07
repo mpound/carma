@@ -1,0 +1,4 @@
+The receiver is bad on an SZA telescope.
+
+See this page for help on resolving the problem:
+http://cedarflat.mmarray.org/wiki/Alarms#SzaX.AntennaCommon.Receivers.rxState

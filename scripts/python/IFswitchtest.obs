@@ -1,0 +1,118 @@
+"""
+Script to test the IFswitch.
+Changes IF switch position using direct DO access and the selectBand method.
+After switching it uses the monitor system to see if the requested state
+is attained. Use the verbose option to display the timing of each switch.
+
+You must specify the beginning and ending antenna numbers (abeg and aend).
+All parameters are visible using the standard
+ run("IFswitchtest", help=True)
+
+$Id: IFswitchtest.obs,v 1.6 2013/07/10 19:34:08 mpound Exp $
+Author: Steve Scott
+"""
+
+
+
+import runCommand as rc
+p = rc.Params()
+
+p.add("abeg",required=True, type=int, description="First carma antno")
+p.add("aend",required=True, type=int, description="Last carma antno")
+p.add("reps", default=1000, type=int, description="Reps to do")
+p.add("sim", default=False, type=bool, description="Don't access hardware")
+p.add("verbose", default=False, type=bool, description="Print timing on each switch")
+
+p.processInputParameters()
+
+#Control handles
+cants = [carma1,carma2,carma3,carma4,carma5,carma6,
+           carma7,carma8,carma9,carma10,carma11,carma12,carma13,carma14,carma15,
+           carma16,carma17,carma18,carma19,carma20,carma21,carma22,carma23]
+
+abeg = p.abeg
+aend = p.aend
+reps = p.reps
+
+def checkit(IFcon, mp, p, antno, verbose) :
+    INITIALWAIT  = 0.8
+    POLLINTERVAL = 0.1
+    TMO          = 3.0
+    t0 = time.time()
+    IFcon.selectBand(p)
+    wait(tmo=INITIALWAIT)
+    done = False
+    while (not done) :
+        pos = queryInt(mp) 
+        if p == pos:
+            done = True
+            if verbose :
+                deltat = time.time()-t0
+                m = "C%d acquired position(%d) in %.1f secs" %(antno,p,deltat)
+                return [True, m]
+            else: 
+                return [False, ""]
+        else:
+            deltat = time.time()-t0
+            if deltat >= TMO:
+                m  = "C%d actual position(%d) not equal to " %(antno,pos)
+                m +=  "requested position(%d) " %p
+                m += "with timeout of %.1f secs" %deltat
+                done = True
+                return [True, m]
+    return [True, "Shouldn't get here"]  
+
+def antloop(sim, verbose, a):
+    prnt = False
+    i = a-1
+    c = cants[i]
+    if not sim: 
+        R = c.rxSelect().Rx(RX1CM)
+        IFcon = R.IF(carma.antenna.common.RxControl.IF1)
+    commonIFmp = "AntennaIfContainer1.AntennaIF.ifSwitchStat"
+    if a < 7:
+        mp = "Ovro%d.%s" %(a,commonIFmp)
+    elif a < 16:
+        mp = "Bima%d.%s" %((a-6),commonIFmp)
+    else:
+        mp = "Sza%d.Ifmod.ifSwitchState" %(a-15)
+    if not sim:
+        m = ""
+        r = checkit(IFcon, mp, 1, a, verbose)
+        prnt = prnt or r[0]
+        if r[0]:
+            if prnt: m += "\n" 
+            m += r[1]
+        r = checkit(IFcon, mp, 2, a, verbose)
+        if r[0]: 
+            if prnt: m += "\n" 
+            m += r[1]
+        prnt = prnt or r[0]
+        return [prnt, m]
+    else:  
+        print "MP:", mp 
+        return [True, "MP: %s" %mp]
+        
+nl = True
+for n in range(reps):
+  for a in range(abeg, aend+1):
+    r = antloop(p.sim, p.verbose, a) 
+    m = r[1]
+    if r[0]: 
+        if not nl: 
+            m = "\n"+m
+        print m
+    nl = True
+  if (((n+1)%50) == 0) or (n ==(reps-1)):
+      if nl: m = ""
+      else:  m = " " 
+      sys.stdout.write("Repetition %s%d/%d\n" %(m, n+1, reps))
+      sys.stdout.flush()
+      nl = True
+  elif not r[0]:
+      sys.stdout.write(".")
+      sys.stdout.flush()
+      nl = False
+        
+    
+    

@@ -1,0 +1,29 @@
+#!/bin/csh 
+# $Id: crossTest,v 1.1 2004/07/08 14:23:34 mpound Exp $
+#
+#A simple test of the geometric delays can be done using an array
+#that has antennas stationed in a simple cross pattern (X,Y,Z) in meters:
+#
+#
+#          (0, 1, 0)
+# (1,0,0)  (0, 0, 0) (-1,0,0)
+#          (0,-1, 0)
+#
+# I also added (0,0,-1) and (0,0,+1) to the test pattern.
+# 
+# The geometric delay values in nanoseconds at hour angle=0 should be:
+#
+# Antenna    Delay
+#   0         0.0
+#   1       -2.5485e+00   [-cos(Dec)/C]   (C in meters/nanosec)
+#   2         0.0
+#   3        2.5485e+00   [+cos(Dec)/C]   (C in meters/nanosec)
+#   4         0.0
+#   5       -2.1521e+00   [-sin(Dec)/C]   (C in meters/nanosec)
+#   6        2.1521e+00   [+sin(Dec)/C]   (C in meters/nanosec)
+
+
+carma/interferometry/Test/DelayEngineTestHarness imr=`hostname` \
+  antparam="carma/interferometry/Test/cross_test.antparam" \
+  decstart=40.18 decend=40.18 decstep=10.0 timestep=30.0 \
+  harange=6.0 traceFile=delayEngine.trace traceLevel=7

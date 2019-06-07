@@ -1,0 +1,486 @@
+<!-- $Id: simWideBand.xml,v 1.6 2014/06/04 17:09:54 mpound Exp $ -->
+<!-- For inclusion only by sandboxes that are simulating carma hardware (e.g. lab.xml) - this is not separately valid XML -->
+
+    <oad hostname="&SIMCOBRASERVER;">
+        <server name="SimWbBand9FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand1"
+                system="correlator"  />
+        
+        <server name="SimWbBand9CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=9 p=19001 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand9Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=9 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow9FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow1"
+                system="correlator"  />
+
+        <server name="SimWbRemapper9FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper1"
+                system="correlator"  />
+
+
+        <server name="SimWbBand10FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand2"
+                system="correlator"  />
+
+        <server name="SimWbBand10CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=10 p=19002 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand10Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=10 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow10FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow2"
+                system="correlator"  />
+
+        <server name="SimWbRemapper10FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper2"
+                system="correlator"  />
+
+        <server name="SimWbBand11FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand3"
+                system="correlator"  />
+
+        <server name="SimWbBand11CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=11 p=19003 f=correlator/wbcorrelator.conf hwtype=cobra "
+                system="correlator" 
+                critical="true" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand11Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=11 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow11FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow3"
+                system="correlator"  />
+
+        <server name="SimWbRemapper11FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper3"
+                system="correlator"  />
+
+
+        <server name="SimWbBand12FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand4"
+                system="correlator"  />
+
+        <server name="SimWbBand12CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=12 p=19004 f=correlator/wbcorrelator.conf hwtype=cobra "
+                system="correlator" 
+                critical="true" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand12Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=12 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow12FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow4"
+                system="correlator"  />
+
+        <server name="SimWbRemapper12FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper4"
+                system="correlator"  />
+
+        <server name="SimWbBand13FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand5"
+                system="correlator"  />
+        
+        <server name="SimWbBand13CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=13 p=19005 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand13Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=13 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow13FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow5"
+                system="correlator"  />
+
+        <server name="SimWbRemapper13FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper5"
+                system="correlator"  />
+
+        <server name="SimWbBand14FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand6" />
+        
+        <server name="SimWbBand14CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=14 p=19006 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand14Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=14 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow14FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow6"
+                system="correlator"  />
+
+        <server name="SimWbRemapper14FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper6"
+                system="correlator"  />
+
+        <server name="SimWbBand15FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand7" />
+        
+        <server name="SimWbBand15CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=15 p=19007 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand15Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=15 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow15FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow7"
+                system="correlator"  />
+
+        <server name="SimWbRemapper15FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper7"
+                system="correlator"  />
+
+        <server name="SimWbBand16FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand8"
+                system="correlator"  />
+        
+        <server name="SimWbBand16CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=16 p=19008 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand16Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=16 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow16FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow8"
+                system="correlator"  />
+
+        <server name="SimWbRemapper16FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper8"
+                system="correlator"  />
+
+        <server name="SimWbBand17FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand9"
+                system="correlator"  />
+        
+        <server name="SimWbBand17CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=17 p=19009 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand17Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=17 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow17FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow9"
+                system="correlator"  />
+
+        <server name="SimWbRemapper17FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper9"
+                system="correlator"  />
+
+        <server name="SimWbBand18FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand10"
+                system="correlator"  />
+        
+        <server name="SimWbBand18CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=18 p=19010 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand18Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=18 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow18FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow10"
+                system="correlator"  />
+
+        <server name="SimWbRemapper18FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper10"
+                system="correlator"  />
+
+        <server name="SimWbBand19FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand11"
+                system="correlator"  />
+
+        <server name="SimWbBand19CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=19 p=19011 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand19Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=19 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow19FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow11"
+                system="correlator"  />
+
+        <server name="SimWbRemapper19FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper11"
+                system="correlator"  />
+        
+
+        <server name="SimWbBand20FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand12"
+                system="correlator"  />
+
+        <server name="SimWbBand20CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=20 p=19012 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand20Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=20 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow20FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow12"
+                system="correlator"  />
+
+        <server name="SimWbRemapper20FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper12"
+                system="correlator"  />
+
+        <server name="SimWbBand21FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand13"
+                system="correlator"  />
+
+        <server name="SimWbBand21CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=21 p=19013 f=correlator/wbcorrelator.conf hwtype=cobra "
+                system="correlator" 
+                critical="true" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand21Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=21 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+
+        <server name="SimWbDataFlow21FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow13"
+                system="correlator"  />
+
+        <server name="SimWbRemapper21FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper13"
+                system="correlator"  />
+
+
+        <server name="SimWbBand22FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand14"
+                system="correlator"  />
+
+        <server name="SimWbBand22CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=22 p=19014 f=correlator/wbcorrelator.conf hwtype=cobra "
+                system="correlator" 
+                critical="true" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand22Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=22 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow22FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow14"
+                system="correlator"  />
+
+        <server name="SimWbRemapper22FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper14"
+                system="correlator"  />
+
+        <server name="SimWbBand23FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand15"
+                system="correlator"  />
+        
+        <server name="SimWbBand23CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=23 p=19015 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand23Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=23 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+        
+        <server name="SimWbDataFlow23FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow15"
+                system="correlator"  />
+
+        <server name="SimWbRemapper23FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper15"
+                system="correlator"  />
+
+        <server name="SimWbBand24FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=wbcBand16" />
+        <server name="SimWbBand24CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="b=24 p=19016 f=correlator/wbcorrelator.conf hwtype=cobra "
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SimWbBand24Server" path="&BIN_DIR;/CorrelatorBandServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG;  b=24 y=false simulate=&SIMULATE; i=&SIMCOBRAINI;" 
+                startup-priority="&subsystem;"/>
+
+        <server name="SimWbDataFlow24FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbDataflow16"
+                system="correlator"  />
+
+        <server name="SimWbRemapper24FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &USE_DB; subsystem=WbRemapper16"
+                system="correlator"  />
+
+     </oad>

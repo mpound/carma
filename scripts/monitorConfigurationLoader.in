@@ -1,0 +1,144 @@
+#!/bin/sh
+
+# this script loads monitor point descriptions from mpml files into the 
+# database
+#
+
+usage() {
+    echo "usage: $0 [-n] [-nodie] [srcdir=<top of carma src tree>] [mpml=<mpml file>] [conffile=<db config file>] [traceLevel=[0]] [logfile=[default carma log file]]"
+    echo "  -n       do not remove temporary mpml files (useful for debugging)"
+    echo "  -nodie   Continue processing if there is an error."
+    echo "  -oldmode Throw an exception rather than logging incompatible MPs."
+    echo "  srcdir   the directory which is the top of the source tree"
+    echo "           defaults to @abs_top_srcdir@"
+    echo "  mpml     the mpml file to load. If not specified, all subsystem"
+    echo "           mpml files under <srcdir>/carma/monitor will be processed"
+    echo "  conffile the db configuration file to use"
+    echo "  traceLevel traceLevel to pass to the monitorConfigurationLoader"
+    echo "             binary"
+    echo "  logfile  file to which to log messages from the"
+    echo "           monitorConfigurationLoader binary"
+}
+
+loadIt() {
+    tmpmpml=`basename $1`.tmp
+    #echo $tmpmpml
+    cmd="${mpml2cpp} -L $PWD/${tmpmpml} $1"
+    echo $cmd
+    $cmd
+    if [ $? -ne 0 ] ; then
+        echo "$cmd failed"
+        exit 1
+    fi
+    cmd="${monitorConfigurationLoader} mpml=${tmpmpml} traceLevel=${traceLevel} ${oldmode} $logfile"
+    if [ $conffile ]; then 
+        cmd="$cmd conffile=${conffile}"
+    fi
+    echo $cmd
+    $cmd
+    err=$?
+    if [ $err -ne 0 ] ; then
+        echo "$cmd failed"
+	if [ $nodie -eq 0 ]; then
+	    exit 1
+	fi
+    fi
+    # Don't remove file if there was an error.
+    if [ $cleanup -ne 0 -a $err -eq 0 ]; then
+        rm ${tmpmpml}
+    fi
+}
+
+# begin script execution
+
+cleanup=1
+nodie=0
+traceLevel=0
+logfile=""
+oldmode=""
+srcdir=@abs_top_srcdir@
+for x in $*
+do
+  case $x in
+      -n) cleanup=0
+      ;;
+      -nodie) nodie=1
+      ;;
+      -oldmode) oldmode="noinsertdenied=false"
+      ;;
+      srcdir=*) srcdir=`echo $x | grep srcdir | awk -F = '{print $2}'`
+      ;;
+      mpml=*) mpml=`echo $x | grep mpml | awk -F = '{print $2}'`
+      ;;
+      conffile=*) conffile=`echo $x | grep conffile | awk -F = '{print $2}'`
+      ;;
+      -h) usage ; exit 0
+      ;;
+      --help) usage ; exit 0
+      ;;
+      -help) usage ; exit 0
+      ;;
+      traceLevel=*) traceLevel=`echo $x | grep traceLevel | awk -F = '{print $2}'`
+      ;;
+      logfile=*) logfile=`echo $x | grep logfile | awk -F = '{print $2}'`
+      logfile="logfile=$logfile"
+      ;;
+      *) echo "Unknown command line parameter $x";  usage; exit 1
+  esac
+done
+
+if [ ! $srcdir ] ; then
+  usage
+  echo "srcdir= not specified"
+  exit 1
+fi
+
+if [ ! -d $srcdir ] ; then
+  usage
+  echo "specified srcdir $srcdir is not a directory"
+  exit 1
+fi
+
+# if [ $conffile ] ; then
+#  if [ ! -f $conffile ] ; then
+#    echo "specified conffile $conffile is not a file or doesn't exist"
+#    exit 1
+#  fi
+# fi
+
+
+SCRIPTS_DIR=`/usr/bin/dirname "$0"`
+CARMA_BUILD=`/bin/sh -c "cd ${SCRIPTS_DIR}/.. > /dev/null; pwd"`
+
+monitorConfigurationLoader="${CARMA_BUILD}/bin/monitorConfigurationLoader"
+
+if [ ! -f ${monitorConfigurationLoader} ] ; then
+    echo "${monitorConfigurationLoader} doesn\'t exist, you need to make it"
+fi
+
+export ODBCINI="${CARMA_BUILD}/conf/dbms/odbc.ini"
+
+if [ ! -f ${ODBCINI} ] ; then
+  echo "Unable to locate the ODBC config file $ODBCINI, bailing out"
+  exit 1
+fi
+
+# mpml2cpp is not located in the source tree
+mpml2cpp="${CARMA_BUILD}/scripts/mpmlgen/mpmlgen"
+
+if [ "x$mpml" = "x" ] ; then
+    mpmlFilesDir=${srcdir}/carma/monitor
+    fileList="AlarmSubsystem.mpml AstroSubsystem.mpml BimaSubsystem.mpml CarmaSlcBandSubsystem.mpml CentralIfSubsystem.mpml ControlSubsystem.mpml DataflowSubsystem.mpml DelayEngineSubsystem.mpml FaultSubsystem.mpml ImrSubsystem.mpml LineLengthSubsystem.mpml LoberotatorSubsystem.mpml LoRefSubsystem.mpml MasterClockSubsystem.mpml OpacityMonitorSubsystem.mpml OvroSubsystem.mpml PhaseMonitorSubsystem.mpml ProjectDatabaseManagerSubsystem.mpml SignalPathSubsystem.mpml SldcSubsystem.mpml SlPipelineSubsystem.mpml SystemStatus.mpml SzaSubsystem.mpml TestSubsystem.mpml VlbiSubsystem.mpml WbcBandSubsystem.mpml WbdcSubsystem.mpml WbPipelineSubsystem.mpml WeatherSubsystem.mpml"
+
+    for  mpmlFile in $fileList ; do
+      file="${mpmlFilesDir}/${mpmlFile}"
+      echo file $file
+      loadIt ${file}
+    done
+else 
+    loadIt ${mpml}
+fi
+
+
+exit 0
+

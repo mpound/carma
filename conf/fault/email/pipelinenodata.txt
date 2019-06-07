@@ -1,0 +1,19 @@
+The pipeline has been instructed to integrate but is not receiving correlator
+data. The most likely cause of this is that the astroband configuration has
+been cleared but not redefined via configastroband prior to integrating. This
+can be caused by either a script logic error or certain processes crashing.
+
+First verify that there is not an active instance of the integrate command
+running with many records specified. This might be the case if for instance
+one was trying to adjust delays or something else requiring integrations to be
+running in the background.
+
+Next verify that the CorrDataRemapper, WbDataCatcher and SlDataCatcher
+applications are running via the processes RTD and processStatus() SAC
+commands. If CorrDataRemapper needs restarted, you will need to stop the
+current track in both subarrays, and then reconfigure the correlator.
+Restarting the current tracks should be sufficient, however you MUST make sure
+that they perform correlator setup.
+
+If none of the above mentioned problems is present, this condition likely
+indicates a script error.

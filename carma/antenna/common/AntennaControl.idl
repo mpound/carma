@@ -1,0 +1,51 @@
+/** @file
+ * Common Antenna Control interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.15 $
+ * $Date: 2011/05/17 16:27:31 $
+ * $Id: AntennaControl.idl,v 1.15 2011/05/17 16:27:31 iws Exp $
+ */
+#ifndef CARMA_ANTENNA_COMMON_ANTENNACONTROL_IDL
+#define CARMA_ANTENNA_COMMON_ANTENNACONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module common {
+
+    /**
+     * AntennaControl distributed object name.
+     * This is the name the AntennaControl DO will be published on the
+     * nameserver with.
+     */
+    const string ANTENNA_NAME = "Antenna";
+
+    /**
+     * Antenna Control interface reincarnate.
+     * This interface is meant for miscellaneous control commands which don't
+     * correspond to major antenna subsystems.  Unlike the original
+     * AntennaControl DO, it does not hierarchically contain all antenna
+     * subsystem control DOs.
+     */
+    interface AntennaControl {
+
+        /**
+         * Reset all CAN modules on the antenna.
+         * Resets all CAN modules by triggering the digital reset lines on
+         * all CAN busses.
+         */
+        void resetAllCanModules() raises (carma::util::UserException);
+
+        /**
+         * Set antenna initialization state.
+         */
+        void setInitialization( in boolean state ) raises (carma::util::UserException);
+
+    }; // End AntennaControl
+
+}; // End module common
+}; // End module antenna
+}; // End module carma
+#endif

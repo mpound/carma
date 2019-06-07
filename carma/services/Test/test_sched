@@ -1,0 +1,11 @@
+# $Id: test_sched,v 1.1 2008/02/22 20:32:07 mpound Exp $
+# Test schedule for mksched.
+#
+#|  project_name | obsblock | source_name            | RA         | Dec     | Flex_HA       | configuration | numeric_grade   | Institution    | TAC_allocation | meets_cutoff |  Freq
+#| s             | i        | s                      | hms        | dms     | i             | i             | r               | i              | r              | i            |   r
+#|               |          |                        |            |         |               |               |                 |                |                |              |  GHz
+c0002            1          RV_Tau                     12:05:00     46:00:00         0              C             4.9               Visitor             8.25             1           100
+c0003            1          RV_Tau                     20:01:00     56:00:00         1              C             4.8               CIT                 9.0             1           100
+c0004            1          OphB11                     16:25:00     -24:38:00        1              C             4.7               UMD                 8.0             1           115.271
+c0005            1          XXXX                       10:25:00     00:38:00        0              C             3.7                UCB                16.0             1           115.271
+c0001            1          RV_Tau                     04:01:00     46:00:00         0              C             3.0               UIUC                14             1           100

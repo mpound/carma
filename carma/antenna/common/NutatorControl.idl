@@ -1,0 +1,30 @@
+#ifndef _NUTATORIDL
+#define _NUTATORIDL
+
+module carma {
+
+  module antenna {
+
+    module common {
+      /**
+       *  The nutator will only be implemented on OVRO antennas
+       * @todo this interface is completely undefined.
+       */
+      interface NutatorControl {
+	/**
+	 * A bogus stub, so I can instantiate a Nutator object
+	 */
+	void doNothing();
+
+      }; // End Nutator interface
+
+    }; // End common module
+
+  }; // End antenna module
+
+}; // End carma module
+
+#endif  // _NUTATORIDL
+
+
+

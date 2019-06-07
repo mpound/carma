@@ -1,0 +1,97 @@
+About the corba::Server and corba::Client classes.
+
+What Do They Do?
+-------------------------
+In a nutshell, the Server and Client classes wrap up the ridiculous amount
+of boilerplate and knowledge required to create a functional and correct CORBA
+server.  
+
+The knowledge curve for creating a CORBA server and client is large,
+limiting the adoption and implementation of the technology.  The Server
+and Client classes wrap up a huge portion of this knowledge in a safe way
+by assuming a simplified, but universal, usage of CORBA in CARMA.  
+
+The tradeoff for the user is that they don't need to learn about ORBs, POAs,
+and a miriad of other CORBA constructs at the expense of understading a 
+slightly more complicated-than-average use of C++ templates.  
+
+For details of exactly what the corba::Server and Client class do, see below.
+
+What Do I Still Need to Know about CORBA?
+-------------------------------------------
+You'll still need to understand how to implement an IDL interface, though you 
+DO NOT need to (and shouldn't) use inheritance to do this.  The only CORBA
+constructs you should use in your implementation are CORBA basic types.  Your 
+interface implementations need to be prototype identical to the stubs generated
+by the IDL compiler.  
+
+In addition, for each interface, you'll need to include the following IDL 
+generated stubs in the translation unit which calls Server::addServant for 
+your servant (assumes IDL interface is named MyInterface.idl):
+
+#include "MyInterface.h" // Client stub
+#include "MyInterface_skel.h" // Server stub
+#include "MyInterface_skel_tie.h" // Server Tie Class
+#include "MyInterfaceImpl.h" // Your implementation
+
+Finally you'll need to associate your servant implementation with the server by
+calling Server::addServant.  The structure of the call is:
+
+addServant< POA_namespace::MyInterface_tie >( myInterfaceImplInstance );
+
+Note that myInterfaceImplInstance is a local instance of the MyInterfaceImpl.
+
+Aside from that, common sense is all that is required: Mainly, don't delete or
+otherwise manipulate instance memory after adding the servant since the server 
+is obviously using that memory. Once the Server has been stopped and indicates
+terminated, you can do whatever you want with your instance.
+
+----------------
+Additional Details
+----------------
+Exactly What Does the corba::Server Class Do?
+----------------
+corba::Server addresses the following problems specifically:
+
+1) CORBA servants and C++ servants are traditionally highly coupled via
+inheritance from CORBA or IDL generated classes.
+corba::Server *completely* decouples a C++ servant from a CORBA servant.  This
+provides lots of advantages:
+ a) Stand alone classes are much easier to test.
+ b) Stand alone classes can be reused in other non-corba environments.
+ c) Stand alone classes are simpler and easier to understand.
+
+2) CORBA servants are notoriously complex - combining many abstract concepts 
+  (POAs, ORBs, etc) with a dizzying array of policies.  corba::Server hides 
+  these constructs and their complexity replacing them with simple calls.
+
+3) CORBA has complex memory management rules, often requiring that certain 
+objects be created on the heap or requiring purposeful leaking of memory.  
+corba::Server Eliminates most of these requirements, mostly by the complete
+decoupling noted in above.  Developers are free to manage C++ servants however 
+they want, the only restraint is that they exist while the Server itself is 
+running.
+
+------------------------------
+Notification Server Support 
+------------------------------
+corba::Server supports notifications via the addNotificationServantFunctor 
+method.  The user will need to define a functor class with 
+operator()( Notification & N ) which defines how to process the notification.
+When notifications are received on that channel, the functor will be called back
+to process them.  
+
+corba::Client supports notifications via the Client::sendNotification method.
+
+Notification support, both before and after corba::Server suffer from resource 
+leaks on the notification server itself.  Proxy consumers and suppliers are not 
+properly cleaned up on the notification server and as a result excessive proxy 
+creation can cause memory issues eventually.  This is not likely to happen in 
+the lifetime of CARMA but anybody who takes this code on should be aware of it
+(incidently, the same problem exists with names on the nameserver).  
+The CosNotifyCommAdmin interfaces provide interfaces for destroying proxies, 
+but it is not possible to *guarantee* that these resources get called as part 
+of normal stack unwinding in client or server apps.  The main problem here is 
+that the CORBA runtime is typically not available by the time we'd go tell a 
+proxy to delete itself.  
+

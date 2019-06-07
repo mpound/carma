@@ -1,0 +1,91 @@
+#!/bin/bash
+# Reads a data file containing MP table info and
+# plots size and # of MP tables vs time.
+# 
+VERSION="1.0 071102"
+
+# File containing MP table usage info.
+timedata=/home/carmadba/data/mpTableUsage.log
+# Gnuplot command file to create.
+plotfile=/tmp/plotMPCmd.$$
+
+# If 1, remove the gnuplot command file after plotting.
+cleanplot=1
+# If 1, run gnuplot
+doplot=1
+
+usage() {
+    echo "usage: $0 [-n] [-ncleanplot] [-noplot] [-h]"
+    echo " Plots MP database table sizes and counts vs. time."
+    echo "  -n		Do not remove temporary files."
+    echo "  -noplot	Don't run gnuplot. Sets -n."
+    echo "  -h		Display this message."
+    echo "  plotfile=<file> Use <file> for the plot command file. Sets ncleanplot."
+    echo "		Default is '$plotfile'."
+    echo "  timedata=<file> Use <file> as the input data file."
+    echo "		Default is '$timedata'."
+}
+
+for x in $*
+do
+  case $x in
+      -n) cleanplot=0
+      ;;
+      -h) usage ; exit 0
+      ;;
+      --help) usage ; exit 0
+      ;;
+      -help) usage ; exit 0
+      ;;
+      -noplot) doplot=0; cleanplot=0;
+      ;;
+      plotfile=*) plotfile=`echo $x | grep plotfile | awk -F = '{print $2}'`;
+      cleanplot=0
+      ;;
+      timedata=*) timedata=`echo $x | grep timedata | awk -F = '{print $2}'`;
+      ;;
+      *) echo "Unknown command line parameter $x";  usage; exit 1
+  esac
+done
+
+if [ ! -r $timedata ]; then
+    echo "Can not read $timedata ]"
+    exit 1
+fi
+
+#	printf "set yrange [0:%d]\n", max1;\
+#	printf "set y2range [0:%d]\n", max2;\
+
+
+awk ' {if( start=="") start=$1 " " $2; end=$1 " " $2; if(max1 < $13) max1=$13; if(max2<$14)max2=$14;}\
+    END { \
+	print "#set terminal postscript landscape color";\
+	print "#set output \"/tmp/mpTableUsage.ps\"";\
+	print "set xdata time";\
+	print "set timefmt \"%m/%d/%y %H:%M\"";\
+	printf "set xrange [\"%s\":\"%s\"]\n", start, end;\
+	print "set yrange [0:*]";\
+	print "set y2range [0:*]";\
+	print  "set ytics nomirror auto";\
+	print "set y2tics axis auto";\
+	print "set title \"MP Database Usage For Various Table Types\"";\
+	print "set ylabel \"Number of Tables\"";\
+	print "set y2label \"Size of Tables(GB)\" 2.0,0";\
+	printf	"plot	\"%s\" using 1:4 t \"# Frame\",\\\n", timedata;\
+	printf	"	\"%s\" using 1:7 t \"# SLCorrel\",\\\n", timedata;\
+	printf "	\"%s\" using 1:10 t \"# Minute\",\\\n", timedata;\
+	printf "	\"%s\" using 1:13 t \"Total #\",\\\n", timedata;\
+	printf "	\"%s\" using 1:5 with linespoints axis x1y2 t \"Frame(GB)\",\\\n", timedata;\
+	printf "	\"%s\" using 1:8 with linespoints axis x1y2 t \"SLCorrel(GB)\",\\\n", timedata;\
+	printf "	\"%s\" using 1:11 with linespoints axis x1y2 t \"Minute(GB)\",\\\n", timedata;\
+	printf "	\"%s\" using 1:14 with linespoints axis x1y2 t \"Total(GB)\"\n", timedata;\
+	print "pause -1 \"Press <enter> to continue: \"";\
+	}' timedata=$timedata $timedata > $plotfile
+
+if [ $doplot -eq 1 ]; then
+	gnuplot $plotfile
+fi
+
+if [ $cleanplot -eq 1 ]; then
+	rm $plotfile
+fi

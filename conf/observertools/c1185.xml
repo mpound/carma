@@ -1,0 +1,1481 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+    <projectID>c1185</projectID>
+    <projectStatus>INCOMPLETE</projectStatus>
+    <callForProposals term="2013b"/>
+    <totalTime>6.9</totalTime>
+    <title>High Resolution Studies of Chemically Diverse Clouds</title>
+    <investigators>
+        <numberOfInvestigators>1</numberOfInvestigators>
+        <PI>
+            <name>Douglas Friedel</name>
+            <email>friedel@astro.illinois.edu</email>
+            <affiliation>UIUC</affiliation>
+            <US>true</US>
+        </PI>
+    </investigators>
+    <targetOfOpportunity>false</targetOfOpportunity>
+    <keyProject>false</keyProject>
+    <category>CHEMISTRY-ISM</category>
+    <abstract>Based on a successful observation campaign of the Orion-KL and W3 regions and ongoing observations of W51, W75N and G34.3, we are proposing to expand our understanding of the processes and physical conditions behind the formation of large molecules in the interstellar medium. We wish to complete our observations, at high resolution, in order to add to our expanding knowledge of the chemistry of these regions. These data, in addition to those already collected, will give us a very detailed picture of the chemistry and physical conditions of high mass star forming regions on multiple spatial scales and will be used to refine existing astrochemical models. </abstract>
+<obsblock>
+    <obsblockID>1B_95G343</obsblockID>
+    <parentProject>c1185</parentProject>
+    <documentName>c1185.1B_95G343</documentName>
+    <obsblockStatus>INCOMPLETE</obsblockStatus>
+    <exceedTAC>false</exceedTAC>
+    <allocatedTime min="8" max="8"/>
+    <priority>236</priority>
+    <obsLikelihood>NONE</obsLikelihood>
+    <totalObservedTime>0</totalObservedTime>
+    <remainingTime>8</remainingTime>
+    <requestedHaCoverage low="-3.32" high="3.32"/>
+    <reqRaCoverage low="4.08" high="5.81"/>
+    <actualHaCoverage/>
+    <observationType>SINGLEPOL</observationType>
+    <receiverBand>3MM</receiverBand>
+    <restFrequency>95</restFrequency>
+    <arrayConfiguration>B</arrayConfiguration>
+    <isFlex>false</isFlex>
+<subObsblock>
+    <subObsblockID/>
+    <parentProject>c1185</parentProject>
+    <parentObsblock>1B_95G343</parentObsblock>
+    <documentName>c1185.1B_95G343</documentName>
+    <subObsblockStatus>INCOMPLETE</subObsblockStatus>
+    <lastTrial>3</lastTrial>
+    <subObsblockObservedTime>0</subObsblockObservedTime>
+<trial>
+    <trialID>1</trialID>
+    <parentProject>c1185</parentProject>
+    <parentObsblock>1B_95G343</parentObsblock>
+    <parentSubObsblock/>
+    <documentName>c1185.1B_95G343.1</documentName>
+    <trialStatus>COMPLETE</trialStatus>
+    <trialObservationDate start="2013-12-05T19:29:44" end="2013-12-05T23:53:34"/>
+    <trialObservationLength>4.4</trialObservationLength>
+    <trialObservedLST lstStart="4.34679" lstEnd="5.50113"/>
+    <fastSwitch>false</fastSwitch>
+    <grade>
+        <averagePhase>262.51</averagePhase>
+        <averageOpacity>0.11</averageOpacity>
+        <DQAOverallGrade>76</DQAOverallGrade>
+        <obsGrade>78</obsGrade>
+        <comments>[2013-12-07 19:39]K. Jameson : C14 was not tracking. Weather was marginal, but the data look useable.</comments>
+    </grade>
+    <numberOfPointings>1</numberOfPointings>
+    <pointingOffsets>0.00000,0.00000</pointingOffsets>
+    <numberOfAntennas>15</numberOfAntennas>
+    <target>
+        <molecule>Various</molecule>
+        <transition>
+    </transition>
+    </target>
+    <objects>
+        <source>
+            <sourceName>G34</sourceName>
+            <ephemeris>false</ephemeris>
+            <RA>4.944997787475586</RA>
+            <DEC>0.02180691994726658</DEC>
+            <file>astrohdr_c1185.1B_95G343.1.xml</file>
+            <velocity>57</velocity>
+            <veltype>VELO-LSR</veltype>
+            <selfcalibratable>false</selfcalibratable>
+            <observationLength>2.65556</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </source>
+        <calibrator>
+            <calibratorName>NOISE</calibratorName>
+            <type>B</type>
+            <RA>4.402703285217285</RA>
+            <DEC>-0.3915690779685974</DEC>
+            <file>astrohdr_c1185.1B_95G343.1.xml</file>
+            <observationLength>0.00833333</observationLength>
+            <correlatorSetup>1</correlatorSetup>
+            <correlatorSetup>2</correlatorSetup>
+        </calibrator>
+        <calibrator>
+            <calibratorName>MWC349</calibratorName>
+            <type>F</type>
+            <RA>5.37892484664917</RA>
+            <DEC>0.709653913974762</DEC>
+            <file>astrohdr_c1185.1B_95G343.1.xml</file>
+            <observationLength>0.0833333</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </calibrator>
+        <calibrator>
+            <calibratorName>1927+739</calibratorName>
+            <type>B</type>
+            <RA>5.095524787902832</RA>
+            <DEC>1.290969491004944</DEC>
+            <file>astrohdr_c1185.1B_95G343.1.xml</file>
+            <observationLength>0.166667</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </calibrator>
+        <calibrator>
+            <calibratorName>1751+096</calibratorName>
+            <type>G</type>
+            <RA>4.675505638122559</RA>
+            <DEC>0.1684278100728989</DEC>
+            <file>astrohdr_c1185.1B_95G343.1.xml</file>
+            <observationLength>0.6</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </calibrator>
+    </objects>
+    <correlator>
+        <setupNumber>1</setupNumber>
+        <numberOfWindows>16</numberOfWindows>
+        <window>
+            <windowNumber>1</windowNumber>
+            <bandwidth>62.33724148571491</bandwidth>
+            <resolution>0.1627604216337204</resolution>
+            <numberOfChannels>383</numberOfChannels>
+            <minfreq>89.29175058810412</minfreq>
+            <maxfreq>89.35408782958984</maxfreq>
+        </window>
+        <window>
+            <windowNumber>2</windowNumber>
+            <bandwidth>62.33724148571491</bandwidth>
+            <resolution>0.1627604216337204</resolution>
+            <numberOfChannels>383</numberOfChannels>
+            <minfreq>90.21675363986193</minfreq>
+            <maxfreq>90.27909088134766</maxfreq>
+        </window>
+        <window>
+            <windowNumber>3</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>96.72850952148437</minfreq>
+            <maxfreq>96.85311889648438</maxfreq>
+        </window>
+        <window>
+            <windowNumber>4</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>96.38750610351562</minfreq>
+            <maxfreq>96.51211547851562</maxfreq>
+        </window>
+        <window>
+            <windowNumber>5</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>94.22350463867187</minfreq>
+            <maxfreq>94.34811401367188</maxfreq>
+        </window>
+        <window>
+            <windowNumber>6</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>89.54660949707031</minfreq>
+            <maxfreq>89.67121887207031</maxfreq>
+        </window>
+        <window>
+            <windowNumber>7</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>93.08661041259765</minfreq>
+            <maxfreq>93.21121978759766</maxfreq>
+        </window>
+        <window>
+            <windowNumber>8</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>92.01050720214843</minfreq>
+            <maxfreq>92.13511657714844</maxfreq>
+        </window>
+        <window>
+            <windowNumber>9</windowNumber>
+            <bandwidth>62.33724148571491</bandwidth>
+            <resolution>0.1627604216337204</resolution>
+            <numberOfChannels>383</numberOfChannels>
+            <minfreq>106.3579025268555</minfreq>
+            <maxfreq>106.4202397683412</maxfreq>
+        </window>
+        <window>
+            <windowNumber>10</windowNumber>
+            <bandwidth>62.33724148571491</bandwidth>
+            <resolution>0.1627604216337204</resolution>
+            <numberOfChannels>383</numberOfChannels>
+            <minfreq>105.4328994750977</minfreq>
+            <maxfreq>105.4952367165834</maxfreq>
+        </window>
+        <window>
+            <windowNumber>11</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>98.85887908935547</minfreq>
+            <maxfreq>98.98348846435547</maxfreq>
+        </window>
+        <window>
+            <windowNumber>12</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>99.19987487792969</minfreq>
+            <maxfreq>99.32448425292969</maxfreq>
+        </window>
+        <window>
+            <windowNumber>13</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>101.3638763427734</minfreq>
+            <maxfreq>101.4884857177734</maxfreq>
+        </window>
+        <window>
+            <windowNumber>14</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>106.0407791137695</minfreq>
+            <maxfreq>106.1653884887695</maxfreq>
+        </window>
+        <window>
+            <windowNumber>15</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>102.5007781982422</minfreq>
+            <maxfreq>102.6253875732422</maxfreq>
+        </window>
+        <window>
+            <windowNumber>16</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>103.5768814086914</minfreq>
+            <maxfreq>103.7014907836914</maxfreq>
+        </window>
+    </correlator>
+    <correlator>
+        <setupNumber>2</setupNumber>
+        <numberOfWindows>16</numberOfWindows>
+        <window>
+            <windowNumber>1</windowNumber>
+            <bandwidth>62.50000190734863</bandwidth>
+            <resolution>0.3255208432674408</resolution>
+            <numberOfChannels>192</numberOfChannels>
+            <minfreq>89.29158782768249</minfreq>
+            <maxfreq>89.35408782958984</maxfreq>
+        </window>
+        <window>
+            <windowNumber>2</windowNumber>
+            <bandwidth>62.50000190734863</bandwidth>
+            <resolution>0.3255208432674408</resolution>
+            <numberOfChannels>192</numberOfChannels>
+            <minfreq>90.2165908794403</minfreq>
+            <maxfreq>90.27909088134766</maxfreq>
+        </window>
+        <window>
+            <windowNumber>3</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>96.72811889648438</minfreq>
+            <maxfreq>96.85311889648438</maxfreq>
+        </window>
+        <window>
+            <windowNumber>4</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>96.38711547851562</minfreq>
+            <maxfreq>96.51211547851562</maxfreq>
+        </window>
+        <window>
+            <windowNumber>5</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>94.22311401367188</minfreq>
+            <maxfreq>94.34811401367188</maxfreq>
+        </window>
+        <window>
+            <windowNumber>6</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>89.54621887207031</minfreq>
+            <maxfreq>89.67121887207031</maxfreq>
+        </window>
+        <window>
+            <windowNumber>7</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>93.08621978759766</minfreq>
+            <maxfreq>93.21121978759766</maxfreq>
+        </window>
+        <window>
+            <windowNumber>8</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>92.01011657714844</minfreq>
+            <maxfreq>92.13511657714844</maxfreq>
+        </window>
+        <window>
+            <windowNumber>9</windowNumber>
+            <bandwidth>62.50000190734863</bandwidth>
+            <resolution>0.3255208432674408</resolution>
+            <numberOfChannels>192</numberOfChannels>
+            <minfreq>106.3579025268555</minfreq>
+            <maxfreq>106.4204025287628</maxfreq>
+        </window>
+        <window>
+            <windowNumber>10</windowNumber>
+            <bandwidth>62.50000190734863</bandwidth>
+            <resolution>0.3255208432674408</resolution>
+            <numberOfChannels>192</numberOfChannels>
+            <minfreq>105.4328994750977</minfreq>
+            <maxfreq>105.495399477005</maxfreq>
+        </window>
+        <window>
+            <windowNumber>11</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>98.85887908935547</minfreq>
+            <maxfreq>98.98387908935547</maxfreq>
+        </window>
+        <window>
+            <windowNumber>12</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>99.19987487792969</minfreq>
+            <maxfreq>99.32487487792969</maxfreq>
+        </window>
+        <window>
+            <windowNumber>13</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>101.3638763427734</minfreq>
+            <maxfreq>101.4888763427734</maxfreq>
+        </window>
+        <window>
+            <windowNumber>14</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>106.0407791137695</minfreq>
+            <maxfreq>106.1657791137695</maxfreq>
+        </window>
+        <window>
+            <windowNumber>15</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>102.5007781982422</minfreq>
+            <maxfreq>102.6257781982422</maxfreq>
+        </window>
+        <window>
+            <windowNumber>16</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>103.5768814086914</minfreq>
+            <maxfreq>103.7018814086914</maxfreq>
+        </window>
+    </correlator>
+    <constraints>
+        <imgVsSnr value="IMG"/>
+        <gainCalibrator maxTime="100" maxRms="100"/>
+        <maxSystemTemperature temp="20000"/>
+        <minNumberOfAntennas num="3"/>
+        <maxOpacity tau="10000"/>
+        <maxRmsPathLength length="10000"/>
+        <maxDecorellationRatio ratio="1"/>
+        <requiredSourceRms rms="1e-05"/>
+    </constraints>
+    <script>
+    </script>
+    <catalog>
+    </catalog>
+    <systemScripts>
+    </systemScripts>
+    <scriptParametarization>
+</scriptParametarization>
+</trial>
+<trial>
+    <trialID>2</trialID>
+    <parentProject>c1185</parentProject>
+    <parentObsblock>1B_95G343</parentObsblock>
+    <parentSubObsblock/>
+    <documentName>c1185.1B_95G343.2</documentName>
+    <trialStatus>COMPLETE</trialStatus>
+    <trialObservationDate start="2013-12-07T19:47:46" end="2013-12-08T00:42:19"/>
+    <trialObservationLength>4.9</trialObservationLength>
+    <trialObservedLST lstStart="4.46009" lstEnd="5.74883"/>
+    <fastSwitch>false</fastSwitch>
+    <grade>
+        <averagePhase>205.66</averagePhase>
+        <averageOpacity>0.1</averageOpacity>
+        <DQAOverallGrade>85</DQAOverallGrade>
+        <obsGrade>75</obsGrade>
+        <comments>[2013-12-07 19:35]K. Jameson : Noisy phase coherence, but looks useable.[ Thu Mar 20 18:27:05 2014 UT ] NV : data look usable, but decimation erroneously enabled</comments>
+    </grade>
+    <numberOfPointings>1</numberOfPointings>
+    <pointingOffsets>0.00000,0.00000</pointingOffsets>
+    <numberOfAntennas>15</numberOfAntennas>
+    <target>
+        <molecule>Various</molecule>
+        <transition>
+    </transition>
+    </target>
+    <objects>
+        <source>
+            <sourceName>G34</sourceName>
+            <ephemeris>false</ephemeris>
+            <RA>4.944997787475586</RA>
+            <DEC>0.02180691994726658</DEC>
+            <file>astrohdr_c1185.1B_95G343.2.xml</file>
+            <velocity>57</velocity>
+            <veltype>VELO-LSR</veltype>
+            <selfcalibratable>false</selfcalibratable>
+            <observationLength>3</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </source>
+        <calibrator>
+            <calibratorName>NOISE</calibratorName>
+            <type>B</type>
+            <RA>4.441074371337891</RA>
+            <DEC>-0.3956326246261597</DEC>
+            <file>astrohdr_c1185.1B_95G343.2.xml</file>
+            <observationLength>0.00944444</observationLength>
+            <correlatorSetup>1</correlatorSetup>
+            <correlatorSetup>2</correlatorSetup>
+        </calibrator>
+        <calibrator>
+            <calibratorName>MWC349</calibratorName>
+            <type>F</type>
+            <RA>5.37892484664917</RA>
+            <DEC>0.709653913974762</DEC>
+            <file>astrohdr_c1185.1B_95G343.2.xml</file>
+            <observationLength>0.0833333</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </calibrator>
+        <calibrator>
+            <calibratorName>1927+739</calibratorName>
+            <type>B</type>
+            <RA>5.095524787902832</RA>
+            <DEC>1.290969491004944</DEC>
+            <file>astrohdr_c1185.1B_95G343.2.xml</file>
+            <observationLength>0.166667</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </calibrator>
+        <calibrator>
+            <calibratorName>1751+096</calibratorName>
+            <type>G</type>
+            <RA>4.675505638122559</RA>
+            <DEC>0.1684278100728989</DEC>
+            <file>astrohdr_c1185.1B_95G343.2.xml</file>
+            <observationLength>0.7</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </calibrator>
+    </objects>
+    <correlator>
+        <setupNumber>1</setupNumber>
+        <numberOfWindows>16</numberOfWindows>
+        <window>
+            <windowNumber>1</windowNumber>
+            <bandwidth>62.33724148571491</bandwidth>
+            <resolution>0.1627604216337204</resolution>
+            <numberOfChannels>383</numberOfChannels>
+            <minfreq>89.29175058810412</minfreq>
+            <maxfreq>89.35408782958984</maxfreq>
+        </window>
+        <window>
+            <windowNumber>2</windowNumber>
+            <bandwidth>62.33724148571491</bandwidth>
+            <resolution>0.1627604216337204</resolution>
+            <numberOfChannels>383</numberOfChannels>
+            <minfreq>90.21675363986193</minfreq>
+            <maxfreq>90.27909088134766</maxfreq>
+        </window>
+        <window>
+            <windowNumber>3</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>96.72850952148437</minfreq>
+            <maxfreq>96.85311889648438</maxfreq>
+        </window>
+        <window>
+            <windowNumber>4</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>96.38750610351562</minfreq>
+            <maxfreq>96.51211547851562</maxfreq>
+        </window>
+        <window>
+            <windowNumber>5</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>94.22350463867187</minfreq>
+            <maxfreq>94.34811401367188</maxfreq>
+        </window>
+        <window>
+            <windowNumber>6</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>89.54660949707031</minfreq>
+            <maxfreq>89.67121887207031</maxfreq>
+        </window>
+        <window>
+            <windowNumber>7</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>93.08661041259765</minfreq>
+            <maxfreq>93.21121978759766</maxfreq>
+        </window>
+        <window>
+            <windowNumber>8</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>92.01050720214843</minfreq>
+            <maxfreq>92.13511657714844</maxfreq>
+        </window>
+        <window>
+            <windowNumber>9</windowNumber>
+            <bandwidth>62.33724148571491</bandwidth>
+            <resolution>0.1627604216337204</resolution>
+            <numberOfChannels>383</numberOfChannels>
+            <minfreq>106.3579025268555</minfreq>
+            <maxfreq>106.4202397683412</maxfreq>
+        </window>
+        <window>
+            <windowNumber>10</windowNumber>
+            <bandwidth>62.33724148571491</bandwidth>
+            <resolution>0.1627604216337204</resolution>
+            <numberOfChannels>383</numberOfChannels>
+            <minfreq>105.4328994750977</minfreq>
+            <maxfreq>105.4952367165834</maxfreq>
+        </window>
+        <window>
+            <windowNumber>11</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>98.85887908935547</minfreq>
+            <maxfreq>98.98348846435547</maxfreq>
+        </window>
+        <window>
+            <windowNumber>12</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>99.19987487792969</minfreq>
+            <maxfreq>99.32448425292969</maxfreq>
+        </window>
+        <window>
+            <windowNumber>13</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>101.3638763427734</minfreq>
+            <maxfreq>101.4884857177734</maxfreq>
+        </window>
+        <window>
+            <windowNumber>14</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>106.0407791137695</minfreq>
+            <maxfreq>106.1653884887695</maxfreq>
+        </window>
+        <window>
+            <windowNumber>15</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>102.5007781982422</minfreq>
+            <maxfreq>102.6253875732422</maxfreq>
+        </window>
+        <window>
+            <windowNumber>16</windowNumber>
+            <bandwidth>124.609375</bandwidth>
+            <resolution>0.390625</resolution>
+            <numberOfChannels>319</numberOfChannels>
+            <minfreq>103.5768814086914</minfreq>
+            <maxfreq>103.7014907836914</maxfreq>
+        </window>
+    </correlator>
+    <correlator>
+        <setupNumber>2</setupNumber>
+        <numberOfWindows>16</numberOfWindows>
+        <window>
+            <windowNumber>1</windowNumber>
+            <bandwidth>62.50000190734863</bandwidth>
+            <resolution>0.3255208432674408</resolution>
+            <numberOfChannels>192</numberOfChannels>
+            <minfreq>89.29158782768249</minfreq>
+            <maxfreq>89.35408782958984</maxfreq>
+        </window>
+        <window>
+            <windowNumber>2</windowNumber>
+            <bandwidth>62.50000190734863</bandwidth>
+            <resolution>0.3255208432674408</resolution>
+            <numberOfChannels>192</numberOfChannels>
+            <minfreq>90.2165908794403</minfreq>
+            <maxfreq>90.27909088134766</maxfreq>
+        </window>
+        <window>
+            <windowNumber>3</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>96.72811889648438</minfreq>
+            <maxfreq>96.85311889648438</maxfreq>
+        </window>
+        <window>
+            <windowNumber>4</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>96.38711547851562</minfreq>
+            <maxfreq>96.51211547851562</maxfreq>
+        </window>
+        <window>
+            <windowNumber>5</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>94.22311401367188</minfreq>
+            <maxfreq>94.34811401367188</maxfreq>
+        </window>
+        <window>
+            <windowNumber>6</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>89.54621887207031</minfreq>
+            <maxfreq>89.67121887207031</maxfreq>
+        </window>
+        <window>
+            <windowNumber>7</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>93.08621978759766</minfreq>
+            <maxfreq>93.21121978759766</maxfreq>
+        </window>
+        <window>
+            <windowNumber>8</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>92.01011657714844</minfreq>
+            <maxfreq>92.13511657714844</maxfreq>
+        </window>
+        <window>
+            <windowNumber>9</windowNumber>
+            <bandwidth>62.50000190734863</bandwidth>
+            <resolution>0.3255208432674408</resolution>
+            <numberOfChannels>192</numberOfChannels>
+            <minfreq>106.3579025268555</minfreq>
+            <maxfreq>106.4204025287628</maxfreq>
+        </window>
+        <window>
+            <windowNumber>10</windowNumber>
+            <bandwidth>62.50000190734863</bandwidth>
+            <resolution>0.3255208432674408</resolution>
+            <numberOfChannels>192</numberOfChannels>
+            <minfreq>105.4328994750977</minfreq>
+            <maxfreq>105.495399477005</maxfreq>
+        </window>
+        <window>
+            <windowNumber>11</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>98.85887908935547</minfreq>
+            <maxfreq>98.98387908935547</maxfreq>
+        </window>
+        <window>
+            <windowNumber>12</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>99.19987487792969</minfreq>
+            <maxfreq>99.32487487792969</maxfreq>
+        </window>
+        <window>
+            <windowNumber>13</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>101.3638763427734</minfreq>
+            <maxfreq>101.4888763427734</maxfreq>
+        </window>
+        <window>
+            <windowNumber>14</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>106.0407791137695</minfreq>
+            <maxfreq>106.1657791137695</maxfreq>
+        </window>
+        <window>
+            <windowNumber>15</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>102.5007781982422</minfreq>
+            <maxfreq>102.6257781982422</maxfreq>
+        </window>
+        <window>
+            <windowNumber>16</windowNumber>
+            <bandwidth>125</bandwidth>
+            <resolution>0.78125</resolution>
+            <numberOfChannels>160</numberOfChannels>
+            <minfreq>103.5768814086914</minfreq>
+            <maxfreq>103.7018814086914</maxfreq>
+        </window>
+    </correlator>
+    <constraints>
+        <imgVsSnr value="IMG"/>
+        <gainCalibrator maxTime="100" maxRms="100"/>
+        <maxSystemTemperature temp="20000"/>
+        <minNumberOfAntennas num="3"/>
+        <maxOpacity tau="10000"/>
+        <maxRmsPathLength length="10000"/>
+        <maxDecorellationRatio ratio="1"/>
+        <requiredSourceRms rms="1e-05"/>
+    </constraints>
+    <script># -*- python -*-
+# template observing script: version 1.35 2012/11/14 18:01:59
+
+(DQUOTE)(DQUOTE)(DQUOTE)
+Contact Person for project c1185
+     Name         : Douglas Friedel
+     Email        : friedel@astro.illinois.edu
+     Office phone :
+     Home phone   :
+
+--------------------------------------------------------------------------------
+Instructions for the observers:
+--------------------------------------------------------------------------------
+
+Source : G34
+RA     : 18:53:18.60
+Dec    : +01:14:58.00
+
+---------------------------------------------------------------------
+Rise/Set LST times for source/phase-calibrator at elevation of 30 degrees
+          Source       Rise        Set
+             G34    15:24:08   22:22:30  --- Up for 7.0 hours
+        1751+096    13:53:37   21:49:29  --- Phase calibrator
+(DQUOTE)(DQUOTE)(DQUOTE)
+from subarrayControl import s
+from subarrayCommands import *
+import obsdef3 as od
+
+# ----------------------- OPTIONS SPECIFIED BY THE PI ------------------------
+projectInfo = {
+    (SQUOTE)emailAddress(SQUOTE)  : (SQUOTE)friedel@astro.illinois.edu(SQUOTE),
+    (SQUOTE)code(SQUOTE)          : (SQUOTE)c1185(SQUOTE),
+    (SQUOTE)obsblock(SQUOTE)      : (SQUOTE)1B_95G343(SQUOTE),
+    (SQUOTE)sourceCatalog(SQUOTE) : (SQUOTE)c1185.cat(SQUOTE),
+}
+
+
+# Tuning options
+tuning = {
+    #(SQUOTE)restfreq(SQUOTE) : linefreq((SQUOTE)12CO(1-0)(SQUOTE)), # Alternate way to specify rest frequency
+    (SQUOTE)restfreq(SQUOTE) : 97.856,  # [GHz] Line rest frequency
+    (SQUOTE)sideband(SQUOTE) : LSB,    # Sideband for first LO (LSB or USB)
+    (SQUOTE)IFfreq(SQUOTE)   :   0.0,   # [GHz] IF frequency
+}
+
+
+# Correlator configuration.
+# For best sensitivity, a band should be placed at an IF frequency (GREATERTHAN) 2 GHz.
+# Also, the band should not overlap IF=5 GHz.
+# NOTE: The configastroband() commands should all be indented by the same amount!
+def setCorrelator():
+    clearastroband(0)
+    fcenter = 97.856
+    configastroband(1, (SQUOTE)LL(SQUOTE), BW62, fcenter + 8.533, bits=CORR_2BIT, decimate=False)
+    configastroband(2, (SQUOTE)LL(SQUOTE), BW62, fcenter + 7.608, bits=CORR_2BIT, decimate=False)
+    configastroband(3, (SQUOTE)LL(SQUOTE), BW125, fcenter + 1.065, bits=CORR_2BIT, decimate=False)
+    configastroband(4, (SQUOTE)LL(SQUOTE), BW125, fcenter + 1.406, bits=CORR_2BIT, decimate=False)
+    configastroband(5, (SQUOTE)LL(SQUOTE), BW125, fcenter + 3.57, bits=CORR_2BIT, decimate=False)
+    configastroband(6, (SQUOTE)LL(SQUOTE), BW125, fcenter + 8.2469, bits=CORR_2BIT, decimate=False)
+    configastroband(7, (SQUOTE)LL(SQUOTE), BW125, fcenter + 4.7069, bits=CORR_2BIT, decimate=False)
+    configastroband(8, (SQUOTE)LL(SQUOTE), BW125, fcenter + 5.783, bits=CORR_2BIT, decimate=False)
+
+
+# Names for phase calibrators and science targets.
+# Enter multiple science targets as (SQUOTE)target(SQUOTE) : (SQUOTE)ABAur, GMAur(SQUOTE),
+# Enter multiple phase calibrators as
+#     (SQUOTE)phaseCal(SQUOTE) : [ (SQUOTE)3c111     1:00:00  4:00:00(SQUOTE),
+#                    (SQUOTE)0530+135  3:30:00  7:00:00(SQUOTE)],
+# tintTarget: Integration time per cycle **per pointing** on science targets,
+#             or the time spent on the OTF mosaic
+# tintPhase : Phase calibrator integration time per cycle
+# callist   : Used to search for bright phase calibrators. See online manual
+# pacs      : pacs calibrator(s).
+#             If you specify only one pacs calibrator, then that calibrator 
+#             is used for all targets in the list. If you specify multiple
+#             pacs calibrators, then there must be an equal number of pacs
+#             sources as target sources. The integration time specified by
+#             tintTarget is used for both the target and pacs calibrator.
+sources = {
+    (SQUOTE)target(SQUOTE)       : (SQUOTE)G34(SQUOTE),
+    (SQUOTE)mosaicTarget(SQUOTE) : False,
+    (SQUOTE)tintTarget(SQUOTE)   :    15, # [minutes] time per cycle for OTF mosaics, or per POINTING for pointed mosaics
+    (SQUOTE)phaseCal(SQUOTE)     : (SQUOTE)1751+096(SQUOTE),
+    (SQUOTE)tintPhaseCal(SQUOTE) :     3, # [minutes]
+    (SQUOTE)callist(SQUOTE)      : None,
+    (SQUOTE)pacs(SQUOTE)         : None,
+}
+
+
+# Mosaic options
+mosaic = {
+    # *** Parameters for pointed mosaics ***
+    (SQUOTE)startpos(SQUOTE)   :     1, # Starting mosaic position
+    (SQUOTE)nphase(SQUOTE)     :     0, # Number of positions to observe between phase cal
+                          # observations. 0 -(GREATERTHAN) Observe all positions.
+    (SQUOTE)arcminUnits(SQUOTE):  True, # If True, offsets are in arcminutes. If False,
+                          # offsets are in units of the Nyquist sampling rate
+                          # of the large antenna in the subarray
+    (SQUOTE)offsetFile(SQUOTE) :  None, # Offset data file (e.g. (SQUOTE)m51_mosaic.dat(SQUOTE))
+    (SQUOTE)offsets(SQUOTE)    :  None, # List containing the offsets.
+                          # This can be used instead of offsetFile.
+                          # e.g. [ [-0.5,0.5], [0.5,-0.5], [-0.5,-0.5]]
+
+    # *** Parameters for on-the-fly (OTF) mosaics ***
+    (SQUOTE)otf(SQUOTE)            : False,    # Make on the fly mosaic?
+    (SQUOTE)otfFieldtime(SQUOTE)   : 10,       # [seconds] integration time on each field
+    (SQUOTE)otfRows(SQUOTE)        :  5,       # Number of rows in field
+    (SQUOTE)otfFieldsInRow(SQUOTE) :  5,       # Number of fields in odd number rows
+    (SQUOTE)otfRowOffset(SQUOTE)   :  0,       # An offset in arcminutes to add to the center y position
+    (SQUOTE)otfColOffset(SQUOTE)   :  0,       # An offset in arcminutes to add to the center x position
+    (SQUOTE)otfDelta(SQUOTE)       :  0.5,     # field spacing in arcminutes
+    (SQUOTE)otfPA(SQUOTE)          :  0,       # position angle of the rectangle in degrees
+
+    # *** Parameters for both OTF and pointed mosaics ***
+    (SQUOTE)off(SQUOTE)           : None,      # [arcminutes] Offset position (delta ra, delta dec) for sky integration
+    (SQUOTE)tintOff(SQUOTE)       : 0.5,       # [minutes] Integration time on off position
+    (SQUOTE)intervalOff(SQUOTE)   : 2.0,       # [minutes] Time interval between observing off positions
+}
+
+
+# Pointing options
+pointing = {
+    (SQUOTE)doPointNight(SQUOTE) :  True, # If True, then perform pointing during nightime
+    (SQUOTE)doPointDay(SQUOTE)   :  True, # If True, then perform pointing during daytime
+    (SQUOTE)doOptPoint(SQUOTE)   :  True, # If True, then perform optical instead of radio pointing
+    (SQUOTE)intervalNight(SQUOTE):     4, # [hours]  How often to point during nighttime
+    (SQUOTE)intervalDay(SQUOTE)  :     2, # [hours]  How often to point during daytime
+    (SQUOTE)intervalOpt(SQUOTE)  :  0.75, # [hours]  How often to perform optical pointing
+    (SQUOTE)minflux(SQUOTE)      :     2, # [Jy]     Minimum pointing flux
+    (SQUOTE)maxsep(SQUOTE)       :    50, # [degree] Maximum distance from science target
+    (SQUOTE)preferred(SQUOTE)    :  None, # Preferred pointing sources
+    (SQUOTE)tune95(SQUOTE)       : False, # Tune to 95 GHz before pointing
+}
+
+
+# Passband options
+passband = {
+    (SQUOTE)doPassband(SQUOTE) :  True, # If True, observe passband calibrator
+    (SQUOTE)tint(SQUOTE)       :    10, # [minutes] Passband calibrator integration time
+    (SQUOTE)minflux(SQUOTE)    :     4, # [Jy]      Minimum flux density for passband cal
+    (SQUOTE)preferred(SQUOTE)  :  None, # Preferred passband calibrators
+}
+
+
+# Flux calibration options
+fluxcal = {
+    (SQUOTE)doPrimary(SQUOTE)    :  True, # If True, observe primary flux calibrators
+    (SQUOTE)doSecondary(SQUOTE)  :  True, # If True, observe secondary calibrator if primary
+                           # calibrator is not available
+    (SQUOTE)doBoth(SQUOTE)       : False, # Observe both primary/secondary cal in each cycle
+    (SQUOTE)tint(SQUOTE)         :     5, # [minutes] Integration time per calibrator
+    (SQUOTE)preferredPri(SQUOTE) :  None, # Preferred primary calibrators
+    (SQUOTE)preferredSec(SQUOTE) :  None, # Preferred secondary calibrators
+}
+
+
+# Indicate, True or False, which primary flux calibrators are ok to use.
+# Add sources to the list as needed.
+primaryFluxCalibrators = {
+    (SQUOTE)mercury(SQUOTE)  : False,
+    (SQUOTE)venus(SQUOTE)    : False,
+    (SQUOTE)mars(SQUOTE)     :  True,
+    (SQUOTE)jupiter(SQUOTE)  : False,
+    (SQUOTE)uranus(SQUOTE)   :  True,
+    (SQUOTE)neptune(SQUOTE)  :  True,
+    (SQUOTE)mwc349(SQUOTE)   :  True,
+}
+
+
+# Set various limits for observations
+# minElevationCal  : Minimum elevation for flux/passband/pointing sources
+# maxElevationCal  : Maximum elevation for flux/passband/pointing sources
+# trackingThreshold: Data are flagged if tracking error is larger than limit.
+# record           : Record length for integrations (except noise source)
+# tmoTrack         : Timeout when acquiring a source
+# tsys             : Time between full tsys measurements
+# antwait          : Number of antennas to arriveon source before integrating
+limits = {
+    (SQUOTE)minElevationCal(SQUOTE)   :  30.0, # [degrees]
+    (SQUOTE)maxElevationCal(SQUOTE)   :  80.0, # [degrees]
+    (SQUOTE)trackingThreshold(SQUOTE) :   0.1, # [beamwidths]
+    (SQUOTE)record(SQUOTE)            :  10.0, # [seconds]
+    (SQUOTE)tmoTrack(SQUOTE)          : 500.0, # [seconds]
+    (SQUOTE)tsys(SQUOTE)              :  10.0, # [minutes]
+    (SQUOTE)antwait(SQUOTE)           :    -2,
+}
+
+
+# Noise source parameters
+noise = {
+    (SQUOTE)tint(SQUOTE)   :    2, # [seconds] Integration time for noise source
+    (SQUOTE)record(SQUOTE) :    2, # [seconds] Record length for noise integration only
+}
+
+# ----------------------- END OF PI SPECIFIED OPTIONS --------------------------
+
+
+# -----------------------     MAIN PART OF SCRIPT     --------------------------
+
+# Initialize system
+od.initializeTrack(sources, mosaic, projectInfo, limits, pointing, passband,
+                   fluxcal, noise, restart=restartScript,
+                   scriptName=scriptName, scriptOptions=scriptOptions)
+
+
+# Check that sources are in the current catalogs
+trackMessage((SQUOTE)Verifying source names(SQUOTE))
+od.utils.checkSources(sources[(SQUOTE)target(SQUOTE)], indent=1, minsepsun=sources[(SQUOTE)minsepsun(SQUOTE)])
+od.utils.checkSources(sources[(SQUOTE)phaseCal(SQUOTE)], indent=1, minsepsun=sources[(SQUOTE)minsepsun(SQUOTE)], isPhase=True)
+od.utils.checkSources(sources[(SQUOTE)pacs(SQUOTE)], indent=1)
+od.utils.checkSources(sources[(SQUOTE)phaseCalPacs(SQUOTE)], indent=1)
+od.utils.checkSources(sources[(SQUOTE)callist(SQUOTE)], indent=1, minsepsun=sources[(SQUOTE)minsepsun(SQUOTE)])
+od.utils.checkSources(fluxcal[(SQUOTE)preferredPri(SQUOTE)], indent=1)
+od.utils.checkSources(fluxcal[(SQUOTE)preferredSec(SQUOTE)], indent=1)
+od.utils.checkSources(passband[(SQUOTE)preferred(SQUOTE)], indent=1)
+od.utils.checkSources(pointing[(SQUOTE)preferred(SQUOTE)], indent=1)
+od.utils.checkSources(primaryFluxCalibrators, indent=1)
+
+
+# Tune receivers
+dopplerSource = od.utils.getSourceName(sources[(SQUOTE)target(SQUOTE)], n=1, parse=True)
+if sources[(SQUOTE)doppler(SQUOTE)] is not None:
+    dopplerSource = sources[(SQUOTE)doppler(SQUOTE)]
+if od.utils.tuneReceivers():
+    trackMessage((DQUOTE)Tuning freq=%.3f GHz, (DQUOTE) % tuning[(SQUOTE)restfreq(SQUOTE)] +
+          str(tuning[(SQUOTE)sideband(SQUOTE)])  + (DQUOTE), IFfreq=%.3f GHz(DQUOTE) % tuning[(SQUOTE)IFfreq(SQUOTE)])
+    freq(tuning[(SQUOTE)restfreq(SQUOTE)], tuning[(SQUOTE)sideband(SQUOTE)], tuning[(SQUOTE)IFfreq(SQUOTE)], dopplerSource)
+else:
+    od.utils.checkTuning(tuning, dopplerSource=dopplerSource)
+
+
+# Miscellaneous calibration steps
+if subarrayNo == 1:
+    setCorrelator()      # Set correlator configuraton
+    tsys(ifsetup=True)   # Set IF levels in antennas/downconverters
+    optimizeThresholds()
+    flattenPhases()
+else:
+    configwideastroband()
+checkbands() # Verify correlator configuration is correct
+
+
+# Check that the correlator and antenna setup are consistent
+if subarrayNo == 1 and \
+   not (projectInfo[(SQUOTE)carma23(SQUOTE)] or od.utils.verifyCarmaSetup()):
+    if od.utils.isCarma23Mode():
+        msg = (SQUOTE)The correlator is set for CARMA23 mode, (SQUOTE) + \
+              (SQUOTE)but there are no 3.5m antennas in the subarray.(SQUOTE)
+    else:
+        msg = (SQUOTE)There are 3.5m antennas in the subarray, (SQUOTE) + \
+              (SQUOTE)but the correlator is not set for CARMA23 mode.(SQUOTE)
+    raise Exception, msg + (SQUOTE) If this is what you want, you should (SQUOTE) + \
+            (SQUOTE)restart the script with the option carma23=True(SQUOTE)
+
+
+# Reset elevation limit since 3.5m antennas cannot track below 17 deg
+if subarrayNo == 2 or od.utils.isCarma23Mode():
+    elevlimit(17)
+
+
+#  Take noise integration when starting track
+if od.utils.tuneReceivers():
+    od.utils.observeNoise(2, 2, verbose=True)
+
+
+# Send email indicating track has started.
+# fullScriptName and scriptOptions are set in run().
+if od.utils.emailScriptLog():
+    od.utils.sendEmail(projectInfo[(SQUOTE)code(SQUOTE)], projectInfo[(SQUOTE)emailAddress(SQUOTE)],
+            fullScriptName, scriptOptions, start=True, restart=restartScript)
+
+
+# Measure optical-radio pointing vector, if needed
+if pointing[(SQUOTE)doOptPoint(SQUOTE)]:
+    od.measureOptradVector(pointing)
+
+
+# Flux calibration
+od.doFluxcal(fluxcal, primaryFluxCalibrators, noise, pointing,
+             ref=sources[(SQUOTE)target(SQUOTE)], start=True)
+
+
+# Passband
+od.doPassband(passband, noise, pointing, ref=sources[(SQUOTE)target(SQUOTE)],
+              start=True, lastchance=False)
+
+
+# Radio pointing
+od.doPoint(pointing, ref=sources[(SQUOTE)target(SQUOTE)], start=True)
+
+
+# Choose phase calibrator. Only meaningful if sources[callist] is set.
+sources[(SQUOTE)phaseCal(SQUOTE)], sources[(SQUOTE)tintPhaseCal(SQUOTE)] = od.findCalibrator(sources)
+
+
+# Cycle between source and phase calibrator.
+od.doSourcesPhasecal(sources, fluxcal, pointing, passband,
+                     noise, mosaic=mosaic, primaryCal=primaryFluxCalibrators)
+
+
+# Passband observations
+od.doPassband(passband, noise, pointing, ref=sources[(SQUOTE)target(SQUOTE)], lastchance=True)
+
+
+# Flux calibration
+od.doFluxcal(fluxcal, primaryFluxCalibrators, noise, pointing,
+             ref=sources[(SQUOTE)target(SQUOTE)])
+
+
+# Print track summary
+od.utils.trackSummary()
+
+
+# Send email indicating track is finished
+if od.utils.emailScriptLog():
+    od.utils.sendEmail(projectInfo[(SQUOTE)code(SQUOTE)], projectInfo[(SQUOTE)emailAddress(SQUOTE)],
+                 fullScriptName, scriptOptions, msg=od.utils.getTrackHistory())
+
+
+# Done
+if s.getScriptBool(od.INDX_BOOL_PACS):
+    od.pacs.cleanup(s.getScriptString(od.INDX_STR_PACS_OBSBLOCK))
+resetProject()
+if endTrackAlarm():
+    alarmon()
+
+</script>
+    <catalog>
+    </catalog>
+    <systemScripts>
+    </systemScripts>
+    <scriptParametarization>
+</scriptParametarization>
+</trial>
+<trial>
+    <trialID>3</trialID>
+    <parentProject>c1185</parentProject>
+    <parentObsblock>1B_95G343</parentObsblock>
+    <parentSubObsblock/>
+    <documentName>c1185.1B_95G343.3</documentName>
+    <trialStatus>INCOMPLETE</trialStatus>
+    <trialObservationLength>0</trialObservationLength>
+    <trialObservedLST lstStart="0" lstEnd="0"/>
+    <fastSwitch>false</fastSwitch>
+    <grade>
+        <averagePhase>0</averagePhase>
+        <averageOpacity>0</averageOpacity>
+        <DQAOverallGrade>0</DQAOverallGrade>
+        <obsGrade>0</obsGrade>
+        <comments>
+    </comments>
+    </grade>
+    <numberOfPointings>0</numberOfPointings>
+    <pointingOffsets>
+    </pointingOffsets>
+    <numberOfAntennas>0</numberOfAntennas>
+    <target>
+        <molecule>Various</molecule>
+        <transition>
+    </transition>
+    </target>
+    <objects>
+        <source>
+            <sourceName>G34</sourceName>
+            <ephemeris>false</ephemeris>
+            <RA>4.944997787475586</RA>
+            <DEC>0.02180691994726658</DEC>
+            <file>
+            </file>
+            <velocity>57</velocity>
+            <veltype>VELO-LSR</veltype>
+            <selfcalibratable>false</selfcalibratable>
+            <observationLength>0</observationLength>
+            <correlatorSetup>2</correlatorSetup>
+        </source>
+    </objects>
+    <constraints>
+        <imgVsSnr value="IMG"/>
+        <gainCalibrator maxTime="100" maxRms="100"/>
+        <maxSystemTemperature temp="20000"/>
+        <minNumberOfAntennas num="3"/>
+        <maxOpacity tau="10000"/>
+        <maxRmsPathLength length="10000"/>
+        <maxDecorellationRatio ratio="1"/>
+        <requiredSourceRms rms="1e-05"/>
+    </constraints>
+    <script># -*- python -*-
+# template observing script: version 1.35 2012/11/14 18:01:59
+
+(DQUOTE)(DQUOTE)(DQUOTE)
+Contact Person for project c1185
+     Name         : Douglas Friedel
+     Email        : friedel@astro.illinois.edu
+     Office phone :
+     Home phone   :
+
+--------------------------------------------------------------------------------
+Instructions for the observers:
+--------------------------------------------------------------------------------
+
+Source : G34
+RA     : 18:53:18.60
+Dec    : +01:14:58.00
+
+---------------------------------------------------------------------
+Rise/Set LST times for source/phase-calibrator at elevation of 30 degrees
+          Source       Rise        Set
+             G34    15:24:08   22:22:30  --- Up for 7.0 hours
+        1751+096    13:53:37   21:49:29  --- Phase calibrator
+(DQUOTE)(DQUOTE)(DQUOTE)
+from subarrayControl import s
+from subarrayCommands import *
+import obsdef3 as od
+
+# ----------------------- OPTIONS SPECIFIED BY THE PI ------------------------
+projectInfo = {
+    (SQUOTE)emailAddress(SQUOTE)  : (SQUOTE)friedel@astro.illinois.edu(SQUOTE),
+    (SQUOTE)code(SQUOTE)          : (SQUOTE)c1185(SQUOTE),
+    (SQUOTE)obsblock(SQUOTE)      : (SQUOTE)1B_95G343(SQUOTE),
+    (SQUOTE)sourceCatalog(SQUOTE) : (SQUOTE)c1185.cat(SQUOTE),
+}
+
+
+# Tuning options
+tuning = {
+    #(SQUOTE)restfreq(SQUOTE) : linefreq((SQUOTE)12CO(1-0)(SQUOTE)), # Alternate way to specify rest frequency
+    (SQUOTE)restfreq(SQUOTE) : 97.856,  # [GHz] Line rest frequency
+    (SQUOTE)sideband(SQUOTE) : LSB,    # Sideband for first LO (LSB or USB)
+    (SQUOTE)IFfreq(SQUOTE)   :   0.0,   # [GHz] IF frequency
+}
+
+
+# Correlator configuration.
+# For best sensitivity, a band should be placed at an IF frequency (GREATERTHAN) 2 GHz.
+# Also, the band should not overlap IF=5 GHz.
+# NOTE: The configastroband() commands should all be indented by the same amount!
+def setCorrelator():
+    clearastroband(0)
+    fcenter = 97.856
+    configastroband(1, (SQUOTE)LL(SQUOTE), BW62, fcenter + 8.533, bits=CORR_2BIT, decimate=False)
+    configastroband(2, (SQUOTE)LL(SQUOTE), BW62, fcenter + 7.608, bits=CORR_2BIT, decimate=False)
+    configastroband(3, (SQUOTE)LL(SQUOTE), BW125, fcenter + 1.065, bits=CORR_2BIT, decimate=False)
+    configastroband(4, (SQUOTE)LL(SQUOTE), BW125, fcenter + 1.406, bits=CORR_2BIT, decimate=False)
+    configastroband(5, (SQUOTE)LL(SQUOTE), BW125, fcenter + 3.57, bits=CORR_2BIT, decimate=False)
+    configastroband(6, (SQUOTE)LL(SQUOTE), BW125, fcenter + 8.2469, bits=CORR_2BIT, decimate=False)
+    configastroband(7, (SQUOTE)LL(SQUOTE), BW125, fcenter + 4.7069, bits=CORR_2BIT, decimate=False)
+    configastroband(8, (SQUOTE)LL(SQUOTE), BW125, fcenter + 5.783, bits=CORR_2BIT, decimate=False)
+
+
+# Names for phase calibrators and science targets.
+# Enter multiple science targets as (SQUOTE)target(SQUOTE) : (SQUOTE)ABAur, GMAur(SQUOTE),
+# Enter multiple phase calibrators as
+#     (SQUOTE)phaseCal(SQUOTE) : [ (SQUOTE)3c111     1:00:00  4:00:00(SQUOTE),
+#                    (SQUOTE)0530+135  3:30:00  7:00:00(SQUOTE)],
+# tintTarget: Integration time per cycle **per pointing** on science targets,
+#             or the time spent on the OTF mosaic
+# tintPhase : Phase calibrator integration time per cycle
+# callist   : Used to search for bright phase calibrators. See online manual
+# pacs      : pacs calibrator(s).
+#             If you specify only one pacs calibrator, then that calibrator 
+#             is used for all targets in the list. If you specify multiple
+#             pacs calibrators, then there must be an equal number of pacs
+#             sources as target sources. The integration time specified by
+#             tintTarget is used for both the target and pacs calibrator.
+sources = {
+    (SQUOTE)target(SQUOTE)       : (SQUOTE)G34(SQUOTE),
+    (SQUOTE)mosaicTarget(SQUOTE) : False,
+    (SQUOTE)tintTarget(SQUOTE)   :    15, # [minutes] time per cycle for OTF mosaics, or per POINTING for pointed mosaics
+    (SQUOTE)phaseCal(SQUOTE)     : (SQUOTE)1751+096(SQUOTE),
+    (SQUOTE)tintPhaseCal(SQUOTE) :     3, # [minutes]
+    (SQUOTE)callist(SQUOTE)      : None,
+    (SQUOTE)pacs(SQUOTE)         : None,
+}
+
+
+# Mosaic options
+mosaic = {
+    # *** Parameters for pointed mosaics ***
+    (SQUOTE)startpos(SQUOTE)   :     1, # Starting mosaic position
+    (SQUOTE)nphase(SQUOTE)     :     0, # Number of positions to observe between phase cal
+                          # observations. 0 -(GREATERTHAN) Observe all positions.
+    (SQUOTE)arcminUnits(SQUOTE):  True, # If True, offsets are in arcminutes. If False,
+                          # offsets are in units of the Nyquist sampling rate
+                          # of the large antenna in the subarray
+    (SQUOTE)offsetFile(SQUOTE) :  None, # Offset data file (e.g. (SQUOTE)m51_mosaic.dat(SQUOTE))
+    (SQUOTE)offsets(SQUOTE)    :  None, # List containing the offsets.
+                          # This can be used instead of offsetFile.
+                          # e.g. [ [-0.5,0.5], [0.5,-0.5], [-0.5,-0.5]]
+
+    # *** Parameters for on-the-fly (OTF) mosaics ***
+    (SQUOTE)otf(SQUOTE)            : False,    # Make on the fly mosaic?
+    (SQUOTE)otfFieldtime(SQUOTE)   : 10,       # [seconds] integration time on each field
+    (SQUOTE)otfRows(SQUOTE)        :  5,       # Number of rows in field
+    (SQUOTE)otfFieldsInRow(SQUOTE) :  5,       # Number of fields in odd number rows
+    (SQUOTE)otfRowOffset(SQUOTE)   :  0,       # An offset in arcminutes to add to the center y position
+    (SQUOTE)otfColOffset(SQUOTE)   :  0,       # An offset in arcminutes to add to the center x position
+    (SQUOTE)otfDelta(SQUOTE)       :  0.5,     # field spacing in arcminutes
+    (SQUOTE)otfPA(SQUOTE)          :  0,       # position angle of the rectangle in degrees
+
+    # *** Parameters for both OTF and pointed mosaics ***
+    (SQUOTE)off(SQUOTE)           : None,      # [arcminutes] Offset position (delta ra, delta dec) for sky integration
+    (SQUOTE)tintOff(SQUOTE)       : 0.5,       # [minutes] Integration time on off position
+    (SQUOTE)intervalOff(SQUOTE)   : 2.0,       # [minutes] Time interval between observing off positions
+}
+
+
+# Pointing options
+pointing = {
+    (SQUOTE)doPointNight(SQUOTE) :  True, # If True, then perform pointing during nightime
+    (SQUOTE)doPointDay(SQUOTE)   :  True, # If True, then perform pointing during daytime
+    (SQUOTE)doOptPoint(SQUOTE)   :  True, # If True, then perform optical instead of radio pointing
+    (SQUOTE)intervalNight(SQUOTE):     4, # [hours]  How often to point during nighttime
+    (SQUOTE)intervalDay(SQUOTE)  :     2, # [hours]  How often to point during daytime
+    (SQUOTE)intervalOpt(SQUOTE)  :  0.75, # [hours]  How often to perform optical pointing
+    (SQUOTE)minflux(SQUOTE)      :     2, # [Jy]     Minimum pointing flux
+    (SQUOTE)maxsep(SQUOTE)       :    50, # [degree] Maximum distance from science target
+    (SQUOTE)preferred(SQUOTE)    :  None, # Preferred pointing sources
+    (SQUOTE)tune95(SQUOTE)       : False, # Tune to 95 GHz before pointing
+}
+
+
+# Passband options
+passband = {
+    (SQUOTE)doPassband(SQUOTE) :  True, # If True, observe passband calibrator
+    (SQUOTE)tint(SQUOTE)       :    10, # [minutes] Passband calibrator integration time
+    (SQUOTE)minflux(SQUOTE)    :     4, # [Jy]      Minimum flux density for passband cal
+    (SQUOTE)preferred(SQUOTE)  :  None, # Preferred passband calibrators
+}
+
+
+# Flux calibration options
+fluxcal = {
+    (SQUOTE)doPrimary(SQUOTE)    :  True, # If True, observe primary flux calibrators
+    (SQUOTE)doSecondary(SQUOTE)  :  True, # If True, observe secondary calibrator if primary
+                           # calibrator is not available
+    (SQUOTE)doBoth(SQUOTE)       : False, # Observe both primary/secondary cal in each cycle
+    (SQUOTE)tint(SQUOTE)         :     5, # [minutes] Integration time per calibrator
+    (SQUOTE)preferredPri(SQUOTE) :  None, # Preferred primary calibrators
+    (SQUOTE)preferredSec(SQUOTE) :  None, # Preferred secondary calibrators
+}
+
+
+# Indicate, True or False, which primary flux calibrators are ok to use.
+# Add sources to the list as needed.
+primaryFluxCalibrators = {
+    (SQUOTE)mercury(SQUOTE)  : False,
+    (SQUOTE)venus(SQUOTE)    : False,
+    (SQUOTE)mars(SQUOTE)     :  True,
+    (SQUOTE)jupiter(SQUOTE)  : False,
+    (SQUOTE)uranus(SQUOTE)   :  True,
+    (SQUOTE)neptune(SQUOTE)  :  True,
+    (SQUOTE)mwc349(SQUOTE)   :  True,
+}
+
+
+# Set various limits for observations
+# minElevationCal  : Minimum elevation for flux/passband/pointing sources
+# maxElevationCal  : Maximum elevation for flux/passband/pointing sources
+# trackingThreshold: Data are flagged if tracking error is larger than limit.
+# record           : Record length for integrations (except noise source)
+# tmoTrack         : Timeout when acquiring a source
+# tsys             : Time between full tsys measurements
+# antwait          : Number of antennas to arriveon source before integrating
+limits = {
+    (SQUOTE)minElevationCal(SQUOTE)   :  30.0, # [degrees]
+    (SQUOTE)maxElevationCal(SQUOTE)   :  80.0, # [degrees]
+    (SQUOTE)trackingThreshold(SQUOTE) :   0.1, # [beamwidths]
+    (SQUOTE)record(SQUOTE)            :  10.0, # [seconds]
+    (SQUOTE)tmoTrack(SQUOTE)          : 500.0, # [seconds]
+    (SQUOTE)tsys(SQUOTE)              :  10.0, # [minutes]
+    (SQUOTE)antwait(SQUOTE)           :    -2,
+}
+
+
+# Noise source parameters
+noise = {
+    (SQUOTE)tint(SQUOTE)   :    2, # [seconds] Integration time for noise source
+    (SQUOTE)record(SQUOTE) :    2, # [seconds] Record length for noise integration only
+}
+
+# ----------------------- END OF PI SPECIFIED OPTIONS --------------------------
+
+
+# -----------------------     MAIN PART OF SCRIPT     --------------------------
+
+# Initialize system
+od.initializeTrack(sources, mosaic, projectInfo, limits, pointing, passband,
+                   fluxcal, noise, restart=restartScript,
+                   scriptName=scriptName, scriptOptions=scriptOptions)
+
+
+# Check that sources are in the current catalogs
+trackMessage((SQUOTE)Verifying source names(SQUOTE))
+od.utils.checkSources(sources[(SQUOTE)target(SQUOTE)], indent=1, minsepsun=sources[(SQUOTE)minsepsun(SQUOTE)])
+od.utils.checkSources(sources[(SQUOTE)phaseCal(SQUOTE)], indent=1, minsepsun=sources[(SQUOTE)minsepsun(SQUOTE)], isPhase=True)
+od.utils.checkSources(sources[(SQUOTE)pacs(SQUOTE)], indent=1)
+od.utils.checkSources(sources[(SQUOTE)phaseCalPacs(SQUOTE)], indent=1)
+od.utils.checkSources(sources[(SQUOTE)callist(SQUOTE)], indent=1, minsepsun=sources[(SQUOTE)minsepsun(SQUOTE)])
+od.utils.checkSources(fluxcal[(SQUOTE)preferredPri(SQUOTE)], indent=1)
+od.utils.checkSources(fluxcal[(SQUOTE)preferredSec(SQUOTE)], indent=1)
+od.utils.checkSources(passband[(SQUOTE)preferred(SQUOTE)], indent=1)
+od.utils.checkSources(pointing[(SQUOTE)preferred(SQUOTE)], indent=1)
+od.utils.checkSources(primaryFluxCalibrators, indent=1)
+
+
+# Tune receivers
+dopplerSource = od.utils.getSourceName(sources[(SQUOTE)target(SQUOTE)], n=1, parse=True)
+if sources[(SQUOTE)doppler(SQUOTE)] is not None:
+    dopplerSource = sources[(SQUOTE)doppler(SQUOTE)]
+if od.utils.tuneReceivers():
+    trackMessage((DQUOTE)Tuning freq=%.3f GHz, (DQUOTE) % tuning[(SQUOTE)restfreq(SQUOTE)] +
+          str(tuning[(SQUOTE)sideband(SQUOTE)])  + (DQUOTE), IFfreq=%.3f GHz(DQUOTE) % tuning[(SQUOTE)IFfreq(SQUOTE)])
+    freq(tuning[(SQUOTE)restfreq(SQUOTE)], tuning[(SQUOTE)sideband(SQUOTE)], tuning[(SQUOTE)IFfreq(SQUOTE)], dopplerSource)
+else:
+    od.utils.checkTuning(tuning, dopplerSource=dopplerSource)
+
+
+# Miscellaneous calibration steps
+if subarrayNo == 1:
+    setCorrelator()      # Set correlator configuraton
+    tsys(ifsetup=True)   # Set IF levels in antennas/downconverters
+    optimizeThresholds()
+    flattenPhases()
+else:
+    configwideastroband()
+checkbands() # Verify correlator configuration is correct
+
+
+# Check that the correlator and antenna setup are consistent
+if subarrayNo == 1 and \
+   not (projectInfo[(SQUOTE)carma23(SQUOTE)] or od.utils.verifyCarmaSetup()):
+    if od.utils.isCarma23Mode():
+        msg = (SQUOTE)The correlator is set for CARMA23 mode, (SQUOTE) + \
+              (SQUOTE)but there are no 3.5m antennas in the subarray.(SQUOTE)
+    else:
+        msg = (SQUOTE)There are 3.5m antennas in the subarray, (SQUOTE) + \
+              (SQUOTE)but the correlator is not set for CARMA23 mode.(SQUOTE)
+    raise Exception, msg + (SQUOTE) If this is what you want, you should (SQUOTE) + \
+            (SQUOTE)restart the script with the option carma23=True(SQUOTE)
+
+
+# Reset elevation limit since 3.5m antennas cannot track below 17 deg
+if subarrayNo == 2 or od.utils.isCarma23Mode():
+    elevlimit(17)
+
+
+#  Take noise integration when starting track
+if od.utils.tuneReceivers():
+    od.utils.observeNoise(2, 2, verbose=True)
+
+
+# Send email indicating track has started.
+# fullScriptName and scriptOptions are set in run().
+if od.utils.emailScriptLog():
+    od.utils.sendEmail(projectInfo[(SQUOTE)code(SQUOTE)], projectInfo[(SQUOTE)emailAddress(SQUOTE)],
+            fullScriptName, scriptOptions, start=True, restart=restartScript)
+
+
+# Measure optical-radio pointing vector, if needed
+if pointing[(SQUOTE)doOptPoint(SQUOTE)]:
+    od.measureOptradVector(pointing)
+
+
+# Flux calibration
+od.doFluxcal(fluxcal, primaryFluxCalibrators, noise, pointing,
+             ref=sources[(SQUOTE)target(SQUOTE)], start=True)
+
+
+# Passband
+od.doPassband(passband, noise, pointing, ref=sources[(SQUOTE)target(SQUOTE)],
+              start=True, lastchance=False)
+
+
+# Radio pointing
+od.doPoint(pointing, ref=sources[(SQUOTE)target(SQUOTE)], start=True)
+
+
+# Choose phase calibrator. Only meaningful if sources[callist] is set.
+sources[(SQUOTE)phaseCal(SQUOTE)], sources[(SQUOTE)tintPhaseCal(SQUOTE)] = od.findCalibrator(sources)
+
+
+# Cycle between source and phase calibrator.
+od.doSourcesPhasecal(sources, fluxcal, pointing, passband,
+                     noise, mosaic=mosaic, primaryCal=primaryFluxCalibrators)
+
+
+# Passband observations
+od.doPassband(passband, noise, pointing, ref=sources[(SQUOTE)target(SQUOTE)], lastchance=True)
+
+
+# Flux calibration
+od.doFluxcal(fluxcal, primaryFluxCalibrators, noise, pointing,
+             ref=sources[(SQUOTE)target(SQUOTE)])
+
+
+# Print track summary
+od.utils.trackSummary()
+
+
+# Send email indicating track is finished
+if od.utils.emailScriptLog():
+    od.utils.sendEmail(projectInfo[(SQUOTE)code(SQUOTE)], projectInfo[(SQUOTE)emailAddress(SQUOTE)],
+                 fullScriptName, scriptOptions, msg=od.utils.getTrackHistory())
+
+
+# Done
+if s.getScriptBool(od.INDX_BOOL_PACS):
+    od.pacs.cleanup(s.getScriptString(od.INDX_STR_PACS_OBSBLOCK))
+resetProject()
+if endTrackAlarm():
+    alarmon()
+
+</script>
+    <catalog>
+    </catalog>
+    <systemScripts>
+    </systemScripts>
+    <scriptParametarization>
+</scriptParametarization>
+</trial>
+</subObsblock>
+</obsblock>
+</project>

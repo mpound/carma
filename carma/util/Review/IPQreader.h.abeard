@@ -1,0 +1,128 @@
+
+#ifndef CARMA_UTIL_IPQREADER_H
+#define CARMA_UTIL_IPQREADER_H
+
+/**
+ * Original author: Steve Scott
+ *                  02 Oct, 2002
+ *
+ * $Id: IPQreader.h.abeard,v 1.1 2003/07/16 18:47:05 abeard Exp $
+ */
+
+
+
+#include "carma/util/IPQbuffer.h"
+
+namespace carma {
+    namespace util {
+
+/**** REVIEW
+ * Reviewer: abeard
+ * Comments: No specific comments.  See comments in IPQfileReader.h.abeard.
+ */
+
+/**
+ * 
+ * IPQ (InterProcessQueue) provides a generic way for information to be
+ * shared between processes or threads. The queues are fixed in length
+ * (number of elements) and width (element size). These queues may be 
+ * use shared memory and are not persistent.
+ *
+ * A templatized class (or structure) is intimately associated with the
+ * queue. All writes are done from the local copy, and all reads go into it.
+ * Note that all methods of the input class become part of the methods of
+ * of the IPQ class, effectively adding the queue methods to the class.
+ * The queue storage is simple, with fixed memory allocation, so the input
+ * class should have no pointers - just memory. Hierarchies are allowed,
+ * as long as it is done with composition and not pointers. Methods
+ * have no effect on the queue storage (it may be dangerous to use pointers to
+ * the internal data because it is going to get moved around).
+ *
+ * ***** DANGER *****
+ * ** Any class that is virtual (polymorphic = has a vtable = overrides
+ * ** a virtual function) will screw up in subtle ways because
+ * ** the pointer to the writer's vtable will get copied into
+ * ** the reader's object -> not what you want!
+ * *****************
+ *
+ * The queues have independent read and write pointers. The write pointers
+ * are an intrinsic part of each queue, but the read pointers are unique
+ * to each instance of a reader. The read pointer is initialized in the 
+ * constructor to point to the oldest data in the queue.
+ *
+ * The constructors can throw exceptions - make sure that you catch them!
+ *
+ * Example of use:
+ * <PRE>
+ * Class X {
+ * public:
+ *     double getA() { return A; }
+ *     int    getB() { return B; }
+ *     char   getC() { return C; }
+ *     void   setB(int b) { B=b; }
+ * private:
+ *     char   C;
+ *     double A;
+ *     int    B;
+ * };
+ *
+ * // Open an existing queue containing X's 
+ * try {
+ *    IPQreader<X> Xreader("x.ipq");
+ * } catch (Error e) { cout<<e; exit(); }
+ * Xreader.read()      // Read the first X from queue (into internal X)
+ * cout<<Xreader.getB()<<endl;  // Will print B from X that was read
+ *
+ * </PRE>
+ *
+ */
+ 
+template <class ElementType> 
+class IPQreader : public IPQbuffer, public ElementType {
+public:
+    
+    /**
+    **  Constructor for shared memory queue reader.
+    **  The read pointer is initialized to point to the oldest data
+    **  in the queue.
+    **  @param filenameString Shared memory "filename"
+    **  @see IPQwriter
+    */
+    IPQreader(const string& filenameString, 
+              bool  isCreator = false,
+              int   nElements = 0) throw(exception) : 
+            IPQbuffer((char*)((ElementType*)this),  
+                    sizeof(ElementType), 
+                    filenameString,
+                    isCreator, 
+                    nElements)
+    { 
+        init();          
+    }
+    
+
+private:
+    /**
+     * Put an element into the queue. 
+     * This method does a lock/insert/unlock on the queue.
+     */
+    void write() throw(exception);
+
+};
+
+}}  // End namespace carma::util
+
+#endif // CARMA_UTIL_IPQREADER_H
+
+
+
+
+
+
+
+
+
+
+
+
+

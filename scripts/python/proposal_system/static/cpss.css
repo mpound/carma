@@ -1,0 +1,432 @@
+body {
+	color : black;
+	margin : 0 0 0 0;
+	background : #CCCC77;
+	font-family : arial, sans-serif;
+     }
+
+div.maintenance, div.browser_error {
+	background : red;
+	color: white;
+	width : 650px;
+	border : 1px solid black;
+	margin : 1em auto 1em auto;
+	-moz-border-radius : 10px 10px 10px 10px;
+	text-align : center;
+	font-weight : bold;
+	padding : 5px;
+}
+
+div.submitted {
+	background : green;
+	color: white;
+	width : 650px;
+	border : 1px solid black;
+	margin : 1em auto 1em auto;
+	-moz-border-radius : 10px 10px 10px 10px;
+	text-align : center;
+	font-weight : bold;
+}
+
+div.container {
+	background : white;
+	width : 850px;
+	border: 1px solid black;
+	margin : 1em auto 1em auto;
+	-moz-border-radius : 10px 10px 10px 10px;
+     }
+
+div.top table {
+	margin : 0 auto 0 auto;
+	font-size : 24pt;
+	font-weight : bold;
+     }
+
+div.top table tr td a img {
+	border : 0;
+}
+
+div.content { 
+	padding : 15px 15px 15px 15px; 
+	margin : 0;
+}
+
+div.navbar {
+	text-align : center;
+	padding : 0 0 3px 0;
+	margin : 0 0 0 0;
+	border-bottom: 1px solid #778;
+     }
+
+div.propheader {
+	text-align : center;
+	padding: 3px 0 0 0 ;
+	margin: -14px 0 15px 0;
+	border-top: 1px solid #778;
+}
+
+.propheader #navlist { border : 0 0 0 0; }
+
+#navlist {
+	padding: 0 0 0 0;
+	margin : 0 0 0 0;
+     }
+
+#navlist li {
+	list-style : none;
+	margin : 3px;
+	padding : 0;
+	display : inline;
+     }
+
+#navlist li a {
+	padding : 3px 0.5em 3px .5em;
+	margin : 3px;
+	border : 1px solid #778;
+	background : #DDE;
+	text-decoration : none;
+     }
+
+#navlist li a:link { color: #448 }
+#navlist li a:visited { color : #667;}
+
+#navlist li a:hover {
+ 	color : #000;
+	background : #AAE;
+	border-color : #227;
+     }
+
+#navlist li a#current {
+	background : white;
+	border-bottom: 1px solid white;
+     }
+
+h3 {
+	margin : 0 auto 15px auto;
+	padding : 0 0 0 0;
+	text-align : center;
+}
+
+h3 a {
+	font-weight : bold;
+	font-style : italic;
+	font-size : 12pt;
+	color : black;
+}
+
+h3 a:hover { color : blue; }
+h3 a:visited { color : black; }
+
+div#proplist {
+	width : 720px;
+	margin: 0 auto 0 auto;
+	padding: 0;
+	text-align:center;
+}
+
+#proplist p {
+	margin:0;
+	padding:0;
+	border:0;
+}
+
+#proplist table {
+	width : 100%;
+	margin: 0 auto 0 auto;
+	padding: 0;
+	border : 1px solid black;
+	border-collapse:collapse;
+	border-bottom : 0;
+	font-size : 10pt;
+}	
+
+#proplist table tr {
+	padding: 0;
+	border : 0;
+	margin : 0;
+}
+
+#proplist table tr th {
+	background : #CCCC77;
+	color : black;
+	padding : 1px;
+	margin: 0;
+	border: 0;
+}
+
+#proplist table tr td#title {
+	color:black;
+	font-style : italic;
+	font-weight : bold;
+	width : 50%;
+}
+
+#proplist table tr td#id {
+	width : 10%;
+}
+
+#proplist table tr td {
+	text-align:center;
+	padding : 0;
+	margin: 0;
+	background : white;
+	border-bottom : 1px solid black;
+	vertical-align:top;
+}
+
+#proplist table tr td a:link { color : blue; }
+#proplist table tr td a:visited { color : blue; }
+
+div#editlist {
+	width : 800px;
+	margin : 0 auto 0 auto;
+	padding : 0;
+	font-size : 14pt;
+	color : #A00000;
+}
+
+#editlist a {
+	font-size : 10pt;
+	font-weight : bold;
+	font-style : italic;
+}
+
+#editlist a:link { color : black;}
+#editlist a:visited { color : black;}
+#editlist a:hover { color : blue;}
+
+#editlist p { 
+	border-bottom : 1px solid black;
+	padding : 0 0 2px 0;
+	margin : 0;
+	font-weight : bold;
+}
+
+#editlist table {
+	color : black;
+	width : 100%;
+	margin: 0 auto 0 auto;
+	padding: 0;
+	border-collapse:collapse;
+	font-size : 10pt;
+	text-align:center;
+	border: 0;
+}	
+
+#editlist table tr th {
+	color : black;
+	background : #CCCC77;
+	padding : 0;
+	margin: 0;
+	border: 0;
+	text-align : center;
+	font-size : 10pt;
+}
+
+#editlist table tr td {
+	background : #F0F0F0;
+	text-align:center;
+	padding : 0;
+	margin: 0;
+	border : 0;
+	vertical-align : middle;
+}
+
+#editlist font#error {
+	color : red;
+	font-weight : bold;
+	font-style : italic;
+	margin: 0;
+	padding: 0px;
+}
+
+#editlist p.textview {
+	font-weight : normal;
+	text-align : left;
+	margin : 0;
+	border : 0;
+	padding : 2px;
+}
+
+div#editdata {
+	width : 800px;
+	margin : 0 auto 0 auto;
+}
+
+#editdata p { 
+	font-size : 14pt;
+	font-weight : bold;
+	color : #A00000;
+	text-align : left;
+	margin : 0;
+	margin-bottom : .1em;
+}
+
+#editdata table {
+	margin : 0 auto 0 auto;
+	width : 100%;
+	border-collapse : collapse;
+	font-size : 10pt;
+	padding : 0;
+	border-top : 1px solid black;
+}
+
+#editdata table tr td {
+	background : #F0F0F0;
+	margin : 0;
+	padding : 1px;
+	vertical-align: middle;
+}
+
+#editdata table tr td input { width : 100%; margin : 0;}
+#editdata table tr td select { width : 100%; }
+#editdata input#check { width : auto; }
+
+#editdata td.data {
+	text-align : left;
+	width : 30%;
+}
+
+#editdata td.label { 
+	text-align : right;
+	padding-right : 1em;
+	width : 40%;
+}
+
+#editdata td.label a:link { color : blue;}
+#editdata td.label a:visited { color : blue;}
+#editdata td.label a:hover { color : white; background:black;}
+
+
+#editdata td.error {
+	width : 30%;
+	padding-left : 1em;
+	color : red;
+	font-weight : bold;
+	font-style : italic;
+}
+
+#editdata td.valid {
+	width : 30%;
+	padding-left : 1em;
+	color : green;
+	font-weight : bold;
+	font-style : italic;
+}
+
+#editdata textarea { 
+	width : 97%;
+	height : 25em;
+	color : black;
+	padding : 0;
+	margin : .5em .5em .5em .5em;
+}
+
+#editdata input#submit {
+	font-weight : bold;
+}
+
+#editdata input#submit:hover {
+	cursor : pointer;
+	text-decoration : underline;
+}
+
+div#image {
+	float:left;
+	text-align:left;
+	padding:10px;
+}
+
+#image textarea {
+	height:8em;
+	width:100%;
+}
+
+#image table {
+	border-collapse : collapse;
+	padding : 0;
+	margin : 0;
+}
+
+#image table tr td {
+	padding : 3px;
+	text-align : left;
+	width : 85%;
+}
+
+#image table tr td#label {
+	vertical-align : top;	
+	text-align: right;
+	width : 15%;
+}
+
+div.helptitle {
+	font-weight:bold;
+	font-size: 14pt;
+	border-bottom: 1px solid black;
+	margin : 0em .5em 0em .5em;
+}
+
+div.helptext {
+	margin : 0em 1.5em 1em 1.5em;
+	
+}
+
+.copyright {
+    padding : 0;
+    font-size: 10pt;
+    font-weight: bold;
+    margin : 0 auto;
+    width : 700px;
+    text-align: center;
+    padding-bottom: 1em;
+}
+
+table.stats {
+    border : 1px solid black;
+    width : 100%;
+    font-size : 8pt;
+    border-collapse : collapse;
+}
+
+table.stats th {
+    font-size : 8pt;
+    background : lightgray;
+    border-bottom : 1px solid black;
+}
+
+table.stats tr:nth-child(odd) {
+    background : lightblue;
+}
+
+table.stats tr:nth-child(even) {
+    background : lightgray;
+}
+
+table.stats tr:hover {
+    background : burlywood;
+}
+
+
+.stats .carma-id {
+    width : 4%;
+    text-align : center;
+}
+
+.stats .name {
+    width : 15%;
+    text-align : center;
+}
+
+.stats .email {
+    width : 20%;
+}
+
+.stats .title {
+    width : 53%;
+}
+
+.stats .date {
+    width : 8%;
+    text-align : center;
+}

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+	<!ENTITY BIN_DIR "/carma/carma-build/bin">
+	<!ENTITY DEFAULT_DIR "/carma/carma-build">
+]>
+
+<!-- Configuration for standalone testing all of carma on a single machine.
+     
+     Note: the use of "localhost" is fine is this file for a single machine
+     but very hazardous in a multi-machine configuration.
+ -->
+
+<!-- @version -->
+<domain>
+ 
+    
+    <oad hostname="localhost">
+              
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args=""/>
+
+        <server name="FSPloberotator" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=loberotator" />
+    
+        <server name="HostLobeRotator" path="&BIN_DIR;/carmaLoberotatorHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=true" />
+    </oad>
+
+</domain>
+    

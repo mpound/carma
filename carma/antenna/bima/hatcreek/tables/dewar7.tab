@@ -1,0 +1,29 @@
+# dewar7.tab  28jan98 
+
+cyl 5093, motor 5093
+this is the long cylinder, so spider is attached from
+	the top, rather than the bottom
+
+rapid warmup heaters: crimp connections, power resistors;
+	Winchester connectors
+2nd stage heater: 200 ohm resistor on radiation shield
+	base plate
+3rd stage heater: two 600 ohm pwr resistors in parallel,
+	one (on mixer B) on copper standoff; the other,
+    on mixer D, is screwed into just one hole
+
+sensors: 47109, 97642, 7394, 07390, 07391
+
+mixer B: NRAO block 1001-5, with separate bias tee, no
+	100 ohm shunt to ground; .010 thick copper straps from
+	mixer and bias tee to spider; no magnet
+HEMT #8
+at room temp, 1 mV = 3.7 uA
+
+mixer D: 31-015-1; with built-in bias/matching network
+HEMT #22
+simple pole pieces with 0.20" diam magnet
+at room temp 1 mV = 19.22 uA
+0.010 thick copper strap from block to spider; no heat
+	sinking of coax to IF
+

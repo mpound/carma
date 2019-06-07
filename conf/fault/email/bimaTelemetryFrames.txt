@@ -1,0 +1,17 @@
+The real time system has detected that the telemetry frame rate has fallen 
+below a critical threshold. 
+
+This can indicate one of several problems. Please verify the following:
+
+a) That the bimaTelemetryHost is running.  Log on to the offending antenna 
+computer and type 'top'.  Note the CPU and memory usage of the
+bimaTelemetryHost - CPU should be < 25% and memory usage should be < 10%. 
+If not, issue a process restart for this process.
+ 
+b) Verify CAN messages are being sent and received from the telemetry module.
+Again login and now type 'cansniffer'.  There should be many messages from the
+telemetry module (API 144) addressed 'to host' with varying data packets.
+If there are only messages addressed 'to modules' and/or the data packets are
+all 0xff, there is a problem and the telemetry card and/or vme crate should be
+reset.
+

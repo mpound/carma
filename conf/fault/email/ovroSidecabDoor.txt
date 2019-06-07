@@ -1,0 +1,4 @@
+The sidecab door is open on a 10m telescope.
+
+Look here for how to proceed:
+http://cedarflat.mmarray.org/wiki/Alarms#OvroX.EnvironmentalMonitor.sidecabDoorOpen

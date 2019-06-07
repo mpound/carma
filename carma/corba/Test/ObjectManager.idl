@@ -1,0 +1,31 @@
+#include "carma/corba/Test/Hello.idl"
+#include "carma/corba/Test/Terminator.idl"
+#include "carma/corba/Test/Wait.idl"
+
+module carma {
+module corba {
+module test {
+
+    const string OBJECT_MANAGER_NAME = "carma.corba.test.ObjectManager";
+
+    /** 
+     * Interface to return various additional CORBA Objects.
+     * Though this is demonstrated here and built-in to the corba::Server class,
+     * this is NOT a recommended practice.  Defining an interface which returns 
+     * other interfaces is specifying an agreement to understand and handle 
+     * CORBA internals. Specifically the user is agreeing to manage all
+     * client references.  This is not trivial as the rules for copying
+     * and passing object references are obscure with many pitfalls.  
+     * Consider using the nameserver first.
+     */
+    interface ObjectManager {
+
+        Hello Hello();
+
+        Terminator Terminator();
+
+        Wait Wait();
+
+    };
+
+};};};

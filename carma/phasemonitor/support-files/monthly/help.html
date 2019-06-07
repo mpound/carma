@@ -1,0 +1,84 @@
+<P>
+<H2>
+phasemonitor monthly statistics notes		jrf - 12 march 2006
+(updated to reflect reality - colby 05Dec2007)
+</H2>
+</P>
+<P>
+Phase monitor statistics are kept in the directory
+~obs/phasemon/monthly.  This directory contains the routine
+cumulative.csh which is run via crontab every 59th minute of each hour.
+This allows it to capture the transition point into the following
+month without missing the last samples of the day.  The work this
+script performs on each run is very minimal.<p>
+
+This script will create a directory, archive/MonYear if one
+does not already exist under monthly/archive.  It will then create
+or append the day's samples to archive/MonYear/sample.dat i.e.
+archive/Dec2007/sample.dat
+</P>
+
+<P>
+A plot image "cumulative.gif" is generated daily from the current
+accumulation of data for the month.  The monthly directories contain the
+10min phasemonitor data for that month.  It no longer contains the
+the record number (N1) of sample.dat for the beginning of the month, as the
+first sample is the start of the month (as determined by cumulative.csh).
+The current number of records is a wc line count of samples in archive/MonYear/sample.dat
+and written to a file called "N" (this is used for helping generate
+nice titles in the plot).  The gif file is copied to the base
+directory (~obs/phasemon/monthly/cumulative.gif) for viewing on the
+web (<a href="http://cedarflat.mmarray.org/phasemon/monthly">http://cedarflat.mmarray.org/phasemon/monthly</a>). 
+</P>
+
+<P>
+The plot shows the frequency of occurrence of atmospheric delay values
+for the month so far.  A histogram in bins of width 30 microns is
+given, along with a cumulative curve showing the percentage of time the
+rms delay has been below a given value.  Vertical lines indicate the rms
+delay below which 50% coherence is expected for each of the four
+standard arrays. 
+</P>
+
+<P>
+NOTES:
+</P>
+
+<P>
+This routine no longer cares about the record number info.  You can remove
+records at will and allow the script to recalculate the cumulative.gif as
+the last_sample_time is generated based on the actual records in the sample
+file and the sample file is month specific anyway.<p>
+
+<strike>This routine relies on record numbers in the sample.dat file not being
+edited manually.  If this is necessary (to remove corrupt data from the
+file for example) the monthly statistics can be recalculated. To do this
+remove the directory for that month and set Nfirst to the start record number
+for the month. The next time cumulative.csh runs it will recalculate the
+statistics based on the data accumulated from that record number on. This
+will only work if the sample.dat file is changed during that month,
+before the 'last_sample_time' month changes.</strike>
+</P>
+
+<P>
+To recalculate statics for a month retroactively, run cumulative.csh with
+the name of a file that has data only for the month in question, e.g.<br>
+<pre>  ./cumulative.csh oct2006.dat</pre>
+The script will then create the proper archive directory and plot.<p>
+It is possible to gather information about a particular month (lets use Oct 2006) from ~obs/phasemon/data/sample.dat by using the following awk command:<br>
+<pre>  awk '{ if ( $1 &gt; 54009.0 &amp;&amp; $1 &lt; 54040.0 ) print $0; }' &gt; oct2006.dat</pre>
+The numbers are the MJD's for the start and the end of the month of October 2006.  You can easily generated these using a CARMA utility:<br>
+<pre>  timeConvert tomjd="2006 Oct 01 00:00:00"
+  timeConvert tomjd="2006 Nov 01 00:00:00"</pre>
+etc...<p>
+
+<strike>In order to recalculate statistics for a month retroactively, the
+sample.dat data within the MMMYYYY directory can be edited, and
+"retrostat.awk" run to redo the statistics and replace the
+cumulative.gif file in that directory.  This is preferred to editing the
+complete sample.dat file contained in the /home/obs/phasemon/data
+directory.  It is recommended that the original directory be saved
+intact in case of problems, since it is difficult to recover from the
+full sample.dat file.</strike>
+</P>
+

@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "./bin/">
+    <!ENTITY RUN_DIR "/home/eml/projects/carma/Carma/devel/build/">
+    <!ENTITY DEFAULT_DIR "/home/eml/projects/carma/Carma/devel/build/">
+    <!ENTITY DBMS "useDBMS=false">
+    <!ENTITY USE_DB "useDBMS=false">
+    <!ENTITY LOG "">
+]>
+
+<domain>
+
+    <oad hostname="s3.carma.pvt">
+
+       <server name="FrameCollator" 
+                path="&BIN_DIR;frameCollator"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; delay=600" 
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                system="monitor"
+                critical="true"
+                startup-priority="&monitor-core;"/>
+        
+       <server name="FaultSystem" 
+                path="&BIN_DIR;faultSystem"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; outputCMS=intermediate"
+                system="monitor"
+                startup-priority="&monitor;"/>
+
+        <server name="Subarray1" 
+                path="&BIN_DIR;/subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=1 runSAT=true &LOG; &DBMS;"
+                optargs="-ORBSvcConf &BIN_DIR;/../conf/tao/fc.conf"
+                system="control" critical="true" 
+                startup-priority="&control;"/>
+
+        <server name="Subarray2" 
+                path="&BIN_DIR;/subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=2 runSAT=true &LOG; &DBMS; " 
+                optargs="-ORBSvcConf &BIN_DIR;/../conf/tao/fc.conf"
+                system="control" critical="true"
+                startup-priority="&control;"/>
+
+        <server name="ControlState" path="&BIN_DIR;/carmaControlState"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; statedir=&RUN_DIR;"
+                system="control" critical="false" />
+
+        <server name="ControlFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=control"
+                system="monitor"
+                startup-priority="&monitor;"/>
+        
+       <server name="Sza1FSP" 
+               path="&BIN_DIR;/frameScriberPublisher"
+               directory="&RUN_DIR;" 
+               args="&LOG; &DBMS; subsystem=sza1 delay=275" 
+               startup-priority="&monitor;" />
+
+       <server name="Sza1Control" 
+               path="&BIN_DIR;/szaAntennaControl"
+               args="&LOG; antenna=0 simcanbus=t simpmac=t host=localhost connect=f" />
+
+    </oad>
+
+</domain>

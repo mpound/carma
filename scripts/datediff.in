@@ -1,0 +1,8 @@
+#!/bin/csh -f
+# Script to display the difference between local time and GMT.
+# @author Marc Pound
+set uhr=`date -u +"%H"`
+set zhr=`date +"%H"`
+set myzone=`date +"%Z"`
+@ diff = $uhr - $zhr
+echo GMT is $diff hours ahead of $myzone.

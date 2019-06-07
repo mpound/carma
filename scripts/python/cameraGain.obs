@@ -1,0 +1,177 @@
+
+# Script to measure optical camera gains
+#
+# @author Steve Scott
+# $Id: cameraGain.obs,v 1.11 2009/04/17 15:40:40 scott Exp $
+#
+# $CarmaCopyright$
+
+#-------------------------- Help --------------------------
+"""Script to measure the gain and rotation of the optical cameras.
+The displayed gains are the amount of camera offset 
+for a given encoder offset.
+The field of view is inversely proportional to the gain reported here.
+Results will be written into /array/rt/cameraGains or if it is not
+available it will be written to /tmp""" 
+#------------------------ End of Help ------------------------
+
+import device
+import runCommand as rc
+
+
+# ------------ Parameters -------------
+p = rc.Params()
+p.add("offsetMag", type=float, default=1.5,
+       description="Offset used in measurement")
+p.add("brightness", type=int, default=40, 
+       description="Camera brightness setting")
+p.add("centerUp", type=bool, default=True, 
+       description="Center up before measure")
+p.add("zoom", type=float, default=1.8, 
+       description="Camera zoom factor")
+p.add("ncoadd", type=int, default=30, 
+       description="Number of images to coadd")
+p.add("ants", type=rc.antlist, default=[0], 
+       description="Antenna numbers")
+
+p.processInputParameters()
+# ------------ End parameters -------------
+
+def datadir() :
+    firstChoice = '/array/rt/cameraGains'
+    secondChoice = '/tmp'
+    try : 
+        os.stat(firstChoice)
+    except Exception :
+        return secondChoice
+    return firstChoice
+
+# Data directory
+print "Output will be written into " + datadir()
+        
+offsetMag  = p.offsetMag
+brightness = p.brightness
+centerUp   = p.centerUp
+zoom       = p.zoom
+ncoadd     = p.ncoadd
+ants       = p.ants
+
+# Print out parameters
+print p.parameterString(keywordWidth=12)            
+
+if ants.count(0) > 0: 
+    print "Running with all antennas in the subarray"
+    ants = currentAntennaNumbers()
+
+#--------------------------------------
+# Procedural part of script
+
+# Turn on all cameras, put in optical aperture
+for a in ants:
+    camera(ON, a)
+# Wait for cameras to warm up 
+warmupSecs = 10
+sys.stdout.write("Wait %d seconds for cameras to warm up" %warmupSecs)   
+sys.stdout.flush()  
+for i in range(warmupSecs):
+    wait(tmo=1)
+    sys.stdout.write('.')
+    sys.stdout.flush()  
+print ''
+
+def measure(ant, azo, elo, zoomin, brightness, ncoadd) :
+    offset(azo, elo, ant, waiton=ALL)
+    return opticalSystem(ant=ant, zoom=zoomin, auto=True, repeat=1, apply=False, 
+                dontClose=True, showGUI=False, brightness=brightness, 
+                ncoadd=ncoadd) 
+                                                              
+for a in ants:
+    # Set tracking threshold to 2 asec
+    oldThreshold = trackThresholdOptical(2.0, a)
+    # Do an initial centering to make sure we stay in the field of view
+    if centerUp :
+        offset(0.0, 0.0, a, waiton=ALL)
+        # Do this on low gain in case we are way off...
+        r=opticalSystem(ant=a, zoom=zoom, auto=True, repeat=1, apply=True,  
+                dontClose=True, showGUI=False, brightness=brightness,
+                ncoadd=ncoadd)
+        if(r == None) :
+            emsg = "Fatal error: opticalSystem() returned None for result set" 
+            #print emsg
+            raise Exception, emsg       
+        azoff = r[0]
+        eloff = r[2]
+        offsetValid = r[4]
+        if offsetValid:
+            incmountoffset(azoff, eloff, a)
+            offset(0.0, 0.0, a, waiton=ALL)  
+            print "Offsets transferred to incremental " + \
+                  "mountOffsets(%.2f,%.2f) for ant#%d" %(azoff, eloff, a)
+    # Do the measurements
+    results = []
+    valid = True
+    for elo in [1, -1] : 
+        if not valid: break    
+        for azo in [1, -1] : 
+            if not valid: break   
+            r = measure(a, azo*offsetMag, elo*offsetMag, zoom, brightness, ncoadd)
+            results.append(r)
+            valid = valid and r[4]
+    # Done with this antenna, restore to nominal        
+    offset(0,0,a) 
+    camera(OFF, a)       
+    trackThreshold(oldThreshold, a)
+    msg0 = "-----------------Carma%d--------zoom=%3.1f-------" %(a,zoom)
+    if not valid :
+        print msg0
+        print "Invalid data; no results"
+        continue  # go on to next antenna
+    ref = [results[0][0], results[0][2]]
+    off = 2*offsetMag
+    # Gain naming convention a=az, e=el, so
+    #  gax is gain of az offset into x camera offset, etc
+    gax = (results[1][0] - ref[0])/off
+    gay = (results[1][2] - ref[1])/off
+    gex = (results[2][0] - ref[0])/off
+    gey = (results[2][2] - ref[1])/off
+        
+    msg1 = "Gains(%%) gax,gay,gey,gex:%5.1f %5.1f %5.1f %5.1f" \
+        %(100*gax, 100*gay, 100*gey, 100*gex)
+    azgain = math.hypot(gax, gay)
+    elgain = math.hypot(gex, gey)
+    azangle =  180*math.atan2(gay, gax)/math.pi
+    elangle = -180*math.atan2(gex, gey)/math.pi
+    msg2 = "Incremental gains and rotations: AZO=%5.1f%% %5.1fdeg   ELO=%5.1f%% %5.1fdeg" \
+        %(100*azgain, azangle, 100*elgain, elangle)
+    mproot = "carma."+device.CarmaAnt().getName(a)+".AntennaCommon.OpticalTel."
+    azFOV = queryDouble(mproot + "azFOV", retries=6)    
+    elFOV = queryDouble(mproot + "elFOV", retries=6)    
+    rot   = queryDouble(mproot + "imageRotation", retries=6) 
+    msg3 = "Absolute rotation and FOVs: " 
+    msg3 += "rotation=%.1f " %(rot + (azangle+elangle)/2)  
+    msg3 += "azFov=%.2f " %(azFOV/azgain)  
+    msg3 += "elFov=%.2f " %(elFOV/elgain)  
+    print msg0
+    print msg1
+    print msg2
+    print msg3
+    fname = datadir() + "/cameraGain." + time.strftime("%Y%b%d") + ".txt"
+    f=open(fname, mode="a+")
+    f.write(msg0 + "\n")
+    f.write(msg1 + "\n")
+    f.write(msg2 + "\n")
+    f.write(msg3 + "\n")
+    f.close()
+    px = results[3][0] - ref[0]
+    py = results[3][2] - ref[1]
+    ao = (gey*px-gex*py)/(gax*gey-gay*gex)
+    zo = (gay*px-gax*py)/(gay*gex-gax*gey)
+    gaerr = 100*(ao/off-1)
+    gzerr = 100*(zo/off-1)
+    print "Using measurements on offset of [%4.2f,%4.2f], gains predict [%4.2f,%4.2f]" \
+        %(off, off, ao, zo)
+    print " or errors (%%) of:%.1f, %.1f" %(gaerr, gzerr)
+    print "----------------------------------------------------"
+    print ""
+    
+

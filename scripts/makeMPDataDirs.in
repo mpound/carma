@@ -1,0 +1,79 @@
+#!/bin/sh
+
+# this script creates the monitor data areas
+# It is only useful on acc or sdp. To create these areas at a local
+# site, see makeLocalMPDatadirs.
+
+
+
+# Need to set this before including the functions.
+ISINCLUDED=1
+
+# Include the functions
+. @abs_top_builddir@/scripts/makeLocalMPDataDirs
+
+parseArgs $*
+
+# check dirs and symlinks on acc
+if [ `hostname -s` == "acc" ] ; then
+    topdir="/halfsecACC"
+elif [ `hostname -s` == "sdp" ] ; then
+    topdir="/halfsecSDP"
+else
+    echo "must be run on acc or sdp...Bye"
+    exit 1
+fi
+
+if [ ! -h /halfsec ] ; then
+   echo "Symlink /halfsec does not exist. creating..."
+   ln -s $topdir /halfsec
+   if [ $? -ne 0 ] ; then
+      echo "Error creating symlink"
+      exit 1
+   fi
+fi
+if [ ! -d $topdir/dbIngest ]; then
+        echo "directory $topdir/dbIngest does not exist. creating..."
+        mkdir $topdir/dbIngest
+        if [ $? -ne 0 ] ; then
+            echo "Error creating directory"
+            exit 1
+        fi
+        echo "changing ownership of $topdir/dbIngest to control.prgrmrs"
+        chown control.prgrmrs $topdir/dbIngest
+fi
+if [ ! -h /opt/dbIngest ] ; then
+   echo "Symlink /opt/dbIngest does not exist. creating...."
+   ln -s /halfsec/dbIngest /opt/dbIngest
+   if [ $? -ne 0 ] ; then
+      echo "Error creating symlink"
+      exit 1
+   fi
+fi
+    
+makeMPDirs $topdir/dbIngest
+ret=$?
+if [ $ret -ne 0 ]; then
+   exit $ret
+fi
+
+makeLogDirs $topdir/dbIngest
+ret=$?
+if [ $ret -ne 0 ]; then
+   exit $ret
+fi
+
+echo "changing ownership for everything under /opt/dbIngest to control.prgrmrs"
+cmd="chown -R control.prgrmrs $topdir/dbIngest"
+$cmd
+if [ $? -ne 0 ] ; then
+  "Error running $cmd"
+   exit 1
+fi
+echo "changing permissions for everything under /opt/dbIngest to 755"
+cmd="chmod -R 755 $topdir/dbIngest"
+$cmd
+if [ $? -ne 0 ] ; then
+  "Error running $cmd"
+  exit 1
+fi

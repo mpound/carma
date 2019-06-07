@@ -1,0 +1,4 @@
+An OVRO antenna drive controller has gone over the temperature limit. Please
+contact Ron Lawrence (rpl@mmarray.org) at extension 113 for assistance. 
+This will cause a FATAL drive state and it will not be possible to drive the
+antenna; remove it from the science array.

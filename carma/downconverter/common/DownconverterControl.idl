@@ -1,0 +1,119 @@
+
+/** @file
+ * Carma Downconverter control interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.11 $
+ * $Date: 2011/05/17 16:27:46 $
+ * $Id: DownconverterControl.idl,v 1.11 2011/05/17 16:27:46 iws Exp $
+ */
+#ifndef CARMA_DOWNCONVERTER_DOWNCONVERTERCONTROL_IDL
+#define CARMA_DOWNCONVERTER_DOWNCONVERTERCONTROL_IDL
+
+#include "carma/canbus/devices/DeviceControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module downconverter {
+
+/**
+ * Carma downconverter CAN module control interface.
+ * Both the Wideband and Spectral-line downconverter CAN modules will share
+ * this control interface. It is likely that the Spectral-line system will
+ * inherit from it and define additional functionality.
+ */
+interface DownconverterControl : carma::canbus::devices::DeviceControl {
+
+    /**
+     * Sideband type.
+     * Currently used on Spectral Line Downconverter only.
+     */
+    enum SidebandType {
+        UPPER_SIDEBAND,
+        LOWER_SIDEBAND
+    };
+
+    /**
+     * Valid output bandwidth filter types.
+     * Not all modules are equipped with all filters.
+     */
+    enum FilterType {
+        FILTER_490MHZ,
+        FILTER_240MHZ,
+        FILTER_119MHZ,
+        FILTER_58MHZ,
+        FILTER_280MHZ
+    };
+
+
+    /**
+     * Set the psys power level to preset level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setPsysPreset() raises (carma::util::UserException);
+
+    /**
+     * Set the psys power level to indicated level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setPsys(in float psys) raises (carma::util::UserException);
+
+    /**
+     * Set psys attenutation to indicated level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setPsysAtten(in float atten) raises (carma::util::UserException);
+
+    /**
+     * Set IF output power to preset level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setIfOutPreset() raises (carma::util::UserException);
+
+    /**
+     * Set IF output power to requested level.
+     * @param ifout requested ifout power level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setIfOut(in float ifout) raises (carma::util::UserException);
+
+    /**
+     * Set IF output attenuation to requested level.
+     * @param atten request ifout attenuation level.
+     * @exception carma::util::UserException on failure.
+     */
+    void setIfOutAtten(in float atten) raises (carma::util::UserException);
+
+    /**
+     * Turn RF input amplifier on or off.
+     * @param enable true for on false for off.
+     * @exception carma::util::UserException on failure.
+     */
+    void enableRfInputAmp(in boolean enable) raises
+        (carma::util::UserException);
+
+    /**
+     * Enable IF output Automatic Level Control (ALC).
+     * @param enable true for on false for off.
+     * @exception carma::util::UserException on failure.
+     */
+    void enableIfOutAlc(in boolean enable) raises (carma::util::UserException);
+
+    // Engineering commands only!
+    /**
+     * Check that IF Output power is within a specified range.
+     * This command is for engineering use only!
+     * @param power center IF Output power
+     * @param delta value around IF Output power
+     * @return true if within boundaries false otherwise.
+     * @throw carma::util::UserException if module is OFFLINE.
+     */
+    boolean checkIfOutputPower(in float power, in float delta) raises
+        (carma::util::UserException);
+
+
+
+}; // End DownconverterControl
+}; // End downconverer module
+}; // End carma module
+#endif

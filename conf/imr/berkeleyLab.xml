@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+	<!ENTITY BIN_DIR "/carma/rt/bin">
+	<!ENTITY DEFAULT_DIR "/carma/rt">
+	<!ENTITY DBMS "useDBMS=false">
+        <!ENTITY TRACE "traceFile=syslog traceLevel=0">
+        <!ENTITY EMULATE "true">
+]>
+
+<!-- @version -->
+<domain>
+ 
+    <oad hostname="ain.carma.pvt">
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args="&TRACE; &DBMS;" />
+
+        <server name="FaultSystem" path="&BIN_DIR;/faultSystem"
+                directory="&DEFAULT_DIR;"  
+                args="&TRACE; &DBMS;" />
+
+<!--
+        <server name="delayEngineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; subsystem=delayEngine"
+                system="interferometry" />
+
+        <server name="controlFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; subsystem=control"/>
+
+        <server name="alarmFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="&TRACE; &DBMS; subsystem=alarm"/>
+
+        <server name="Subarray1" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="subarrayNo=1 runSAT=true &TRACE; &DBMS;"
+                system="control" />
+
+        <server name="Subarray2" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true subarrayNo=2 &TRACE; &DBMS;" />
+
+        <server name="Subarray3" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true subarrayNo=3 &TRACE; &DBMS;"
+                system="control" />
+
+        <server name="Subarray4" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true subarrayNo=4 &TRACE; &DBMS;"
+                system="control" />
+
+	<server name="delayEngineFSP" path="&BIN_DIR;/frameScriberPublisher"
+	        directory="&DEFAULT_DIR;" 
+		args="&TRACE; &DBMS; subsystem=delayEngine"/>
+
+	<server name="alarmWatch" path="&BIN_DIR;/carmaAlarm"
+	        directory="&DEFAULT_DIR;" 
+		args="&TRACE; &DBMS; imrpoa=true mode=watch emulate=true"/>
+-->
+
+        <!-- Process monitor -->
+<!--
+        <server name="ProcessMonitorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"  
+                args="&TRACE; &DBMS; subsystem=Imr delay=150"
+                system="monitor" />
+
+        <server name="ProcessMonitor" path="&BIN_DIR;/processMonitor"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; file=conf/imr/berkeleyLab.xml imrpoa=true writedelay=0.100"
+                system="monitor" />
+-->
+
+    </oad>
+
+    <oad hostname="a1.carma.pvt">
+              
+         <server name="RemoteCanA1" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args="&TRACE; &DBMS; imrpoa=true"
+                system="bima" />
+
+        <!--server name="OTa1" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1 emulate=true forcetype=bima" /-->
+
+        <server name="FSPa1" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; subsystem=bima1" />
+    
+        <server name="THa1" path="&BIN_DIR;/bimaTelemetryHost"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; imrpoa=true antenna=a1" />
+
+        <!--server name="DMa1" path="&BIN_DIR;/bimaDriveMgr"
+                directory="&DEFAULT_DIR;" 
+                args="imrpoa=true &TRACE; &DBMS; antenna=a1" /-->
+
+        <server name="RMa1" path="&BIN_DIR;/bimaRxMgr"
+                directory="&DEFAULT_DIR;" 
+                args="imrpoa=true &TRACE; &DBMS; antenna=a1" />
+
+        <server name="MHa1" path="&BIN_DIR;/bimaMonitorHost"
+                directory="&DEFAULT_DIR;" 
+                args="imrpoa=true &TRACE; &DBMS; antenna=a1" />
+
+        <server name="IFa1" path="&BIN_DIR;/bimaIFHost"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1" />
+
+        <server name="DRa1" path="&BIN_DIR;/bimaDewarReg"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1 reg=true" />
+
+        <server name="CHa1" path="&BIN_DIR;/bimaControlHost"
+                directory="&DEFAULT_DIR;" 
+                args="&TRACE; &DBMS; antenna=a1" />
+    </oad>
+</domain>
+    

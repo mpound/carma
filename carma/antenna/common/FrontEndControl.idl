@@ -1,0 +1,181 @@
+#ifndef _FRONTENDIDL
+#define _FRONTENDIDL
+
+#include "carma/util/UserException.idl"
+
+#include "carma/antenna/common/IVCurve.idl"
+
+module carma {
+
+  module antenna {
+
+    module common {
+      /**
+       * %FrontEnd control.
+       * This interface controls the SIS mixer, MMIC or HEMT
+       */
+      interface FrontEndControl {
+	/**
+	 * A receiver frontend amplifier enumerator.
+	 *
+	 * Used by the FrontEndControl interface to specify an
+	 * amplifier for setting biases and currents
+	 *
+	 * @see FrontEndControl
+	 */
+	enum Amp {
+	  RF, /**< RF Amplifier */
+	  IF  /**< IF Amplifier */
+	};
+
+	/**
+	 * A receiver frontend stage enumerator.
+	 *
+	 * Used by the FrontEndControl interface to specify the HEMT
+	 * or MMIC stage for setting biases and currents
+	 *
+	 * @see FrontEndControl
+	 */
+	enum Stage {
+	  FIRST,  /**< First stage */
+	  SECOND, /**< Second stage */
+	  THIRD,  /**< Third stage */
+	  FOURTH  /**< Fourth stage */
+	};
+
+	/**
+	 * LO frequency to be sent to the first stage controller.
+	 * This will initiate any required tuning. It is assumed that
+	 * the local oscillator is already set.
+	 * This is the standard method for setting up the first stages,
+	 * but other methods are provided for debugging.
+	 * For the OVRO and SZA antennas this will also control the optics
+	 * to put the correct receiver on the sky.
+	 * For the OVRO antennas, will also move the polarizer if in
+	 * circular mode.
+	 * @param freq LO frequency in GHz
+	 * @see LocalOscillator, FirstStage, IF, Optics, Polarization
+	 * @todo Remove the sequence number return value and put it instead in
+	 * the RxControl interface.
+	 */
+	void setFrequency(in double freq)
+	  raises (carma::util::UserException);
+
+	/**
+	 * Set the junction voltage for an SIS receiver.
+	 * This is a debugging method; normal operation is with setFrequency().
+	 * Not implemented on SZA antennas (they have 3mm MMICS).
+	 *
+	 * @param voltage junction voltage in millivolts
+	 */
+	void setSISVj(in float voltage)
+	  raises (carma::util::UserException);
+
+	/**
+	 * Set the junction current for an SIS receiver.
+	 * This is a debugging method; normal operation is with setFrequency().
+	 *
+	 * @param current Junction current (microamps)
+	 * @return a sequence number for the tuning that will be reflected in
+	 * the monitor packets when the tuning is complete
+	 * Not implemented on SZA antennas (they have 3mm MMICS).
+	 *
+	 */
+	void setSISIj(in float current)
+	  raises (carma::util::UserException);
+
+	/**
+	 * Do an IV curve for the SIS Rxs.
+	 * Results are retrieved via RxControl::getIVCurve.
+     *
+	 * Not implemented on SZA antennas.
+     *
+	 * The sequence number is used to verify the remote
+	 * system has completed the requested operation.
+	 * The sequence number is stored locally on the remote system
+	 * and once complete, the corresponding monitor point for
+	 * this sequence number is set to the one passed as seqNo.
+	 * @param startVjInMv Starting junction voltage in mV.
+	 * @param stopVjInMv Ending junction voltage in mV.
+	 * @param stepVjInMv Voltage step size in mV.
+	 * @param deltaInMs Time between samples in ms (rounded to 100ms step).
+     * @param doPower If true, instruct the PAM module to send total power
+     *        values along with the IV curve information from the receivers
+     *        (currently OVRO only).
+	 * @param seqNo sequence number when command is complete put into TuneSeqNum
+     *        monitor stream.
+	 *
+	 */
+	void doIVcurve ( in float startVjInMv,
+                     in float stopVjInMv,
+                     in float stepVjInMv,
+                     in unsigned short deltaInMs,
+                     in boolean doPower,
+                     in unsigned long seqNo )
+        raises ( carma::util::UserException );
+
+    /**
+     * Retrieve last successful IV Curve.
+     * An empty IV curve will be returned if no IV curve has been requested
+     * prior.
+     * @see antenna::common::FrontEndControl::doIVcurve
+     */
+    IVCurve getIVCurve( ) raises ( carma::util::UserException );
+
+	/**
+	 * MMIC/HEMT gate voltage.
+	 *
+	 * Implemented only on SZA antennas.
+	 *
+	 * @param stage Which stage to control
+	 * @param voltage Bias voltabe in xvolts
+	 *
+	 * @todo check units with receiver folks
+	 */
+	void setVG(in FrontEndControl::Amp amplifier,
+	    in FrontEndControl::Stage feStage, in float voltage)
+	  raises (carma::util::UserException);
+
+	/**
+	 * Drain voltage.
+	 *
+	 * Implemented only on SZA antennas.
+	 *
+	 * @param voltage Bias voltabe in xvolts
+	 * @param voltage Bias in xvolts
+	 *
+	 * @todo check units with receiver folks
+	 */
+	void setVD(in FrontEndControl::Amp amplifier,
+	    in FrontEndControl::Stage feStage, in float voltage)
+	  raises (carma::util::UserException);
+
+	/**
+	 * Drain current
+	 *
+	 * Not implemented on BIMA antennas.
+	 * @param current in milliamps
+	 */
+	void setID(in FrontEndControl::Amp amplifier,
+	    in FrontEndControl::Stage feStage, in float current)
+	  raises (carma::util::UserException);
+
+	/**
+	 * Mixer bias
+	 *
+	 * Implemented on SZA antennas.
+	 * @param voltage in xvolts
+	 * @todo check units with receiver folks
+	 */
+	void setMixer(in float voltage)
+	  raises (carma::util::UserException);
+
+      }; // End FrontEnd interface
+
+    }; // End module common
+
+  }; // End module antenna
+
+}; // End module carma
+
+#endif  // _FRONTENDIDL

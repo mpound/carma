@@ -1,0 +1,517 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- MasterClock Subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="MasterClock" >
+
+   <?common MonitorStats.mpml?>
+   <CommonContainer ref="MonitorSubsystemStats" />
+
+   <!-- necessary for creating canbus device -->
+   <?common CanbusCommon.mpml?>
+
+   <MonitorPoint name="timestamp" type="absTime">
+      <shortName>Timestamp</shortName>
+      <units>UTC</units>
+      <description>
+         Time that packet data was completed/written
+      </description>
+   </MonitorPoint>
+
+    <!-- Host specific monitor container -->
+    <Container name="Host">
+        <description>
+            Contains monitor points which are specific to the CAN Host
+            process.  These include points pertaining to the health of
+            the CANbus(ses), number of online modules, etc
+        </description>
+
+        <MonitorPoint name="nActiveNodes" type="int" >
+            <shortName>nActiveNodes</shortName>
+            <longName>Active Nodes</longName>
+            <description>The number of CAN nodes communicating with
+                the host application.</description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="nOfflineNodes" type="int">
+            <shortName>nOfflineNodes</shortName>
+            <longName>Offline Nodes</longName>
+            <description>The number of CAN nodes currently in the OFFLINE
+            state.
+            </description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="nLatePackets" type="int">
+            <shortName>nLatePackets</shortName>
+            <longName>Late CAN message count</longName>
+            <description>Count of monitor packets received outside of the
+            designated timeout window beginning at frame time.
+            </description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="nDonglelessPackets" type="int">
+            <shortName>nDonglelessPackets</shortName>
+            <longName>Dongleless Packet Count</longName>
+            <description>Dongleless packets are CAN messages with an address
+            containing a node id of 511.  This indicates that a module cannot
+            properly read its dongle id and is resorting to the default value.
+            If the count is persistently increasing, it signals an error.
+            </description>
+            <units></units>
+            </MonitorPoint>
+            <MonitorPoint name="nUnknownPackets" type="int">
+            <shortName>nUnknownPackets</shortName>
+            <longName>Unknown packet count</longName>
+            <description>Unknown packets are CAN messages which are either
+            addressed with a node and/or api which the canHost does not know
+            about or represent engineering messages.  If the number is persistently
+            increasing it most likely indicates that an engineer is debugging on
+            the bus but could also indicate a programming error.
+            </description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="hostname" type="string">
+            <shortName>hostname</shortName>
+            <longName>Hostname</longName>
+            <description>The hostname of the machine this CANhost process
+            is running on.
+            </description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="busId" count="2" type="int">
+            <shortName>busId</shortName>
+            <longName>Bus Id</longName>
+            <description>Unique Id for referencing a physical CANbus</description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="halfSecRxMsgRate" count="2" type="float">
+            <shortName>halfSecRxMsgRate</shortName>
+            <longName>1/2 Sec Rx Msg Rate</longName>
+            <description>The per-frame CAN rx msg rate for this bus.
+            </description>
+            <units>msgs/s</units>
+            </MonitorPoint>
+            <MonitorPoint name="halfSecTxMsgRate" count="2" type="float">
+            <shortName>1/2 Sec Tx Msg Rate</shortName>
+            <longName>halfSecTxMsgRate</longName>
+            <description>The per-frame CAN tx msg rate for this bus.
+            </description>
+            <units>msgs/s</units>
+        </MonitorPoint>
+        <MonitorPoint name="avgRxMsgRate" count="2" type="float">
+            <shortName>avgRxMsgRate</shortName>
+            <longName>Average Rx Msg Rate</longName>
+            <description>One minute averaged CAN rx msg rate for this bus.
+            </description>
+            <units>msgs/s</units>
+        </MonitorPoint>
+        <MonitorPoint name="avgTxMsgRate" count="2" type="float">
+            <shortName>avgTxMsgRate</shortName>
+            <longName>Average Tx Msg Rate</longName>
+            <description>One minute averaged CAN tx msg rate for this bus.
+            </description>
+            <units>msgs/s</units>
+        </MonitorPoint>
+        <MonitorPoint name="nRxErrors" count="2" type="int">
+            <shortName>nRxErrors</shortName>
+            <longName>Rx Error Count</longName>
+            <description>Number of rx errors reported by the CAN controller for
+            this bus.
+            </description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="nTxErrors" count="2" type="int">
+            <shortName>nTxErrors</shortName>
+            <longName>Tx Error Count</longName>
+            <description>Nummber of tx errors reported by the CAN controller
+            for this bus.
+            </description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="nLostFastMsgs" count="2" type="int">
+            <shortName>nLostFastMsgs</shortName>
+            <longName>Lost Fast Msgs</longName>
+            <description>The number of fast (CAN) messages lost by the Janz card
+            </description>
+            <units></units>
+        </MonitorPoint>
+        <MonitorPoint name="nLostSlowMsgs" count="2" type="int">
+            <shortName>nLostSlowMsgs</shortName>
+            <longName>Lost Slow Msgs</longName>
+            <description>The number of slow (CAN card control) messages lost by
+            the janz card.
+            </description>
+            <units></units>
+        </MonitorPoint>
+
+    </Container>
+
+   <Container name="Clock" >
+      <description>
+      </description>
+
+      <CommonMonitorPoint ref="state" />
+      <CommonContainer ref="Xac" />
+
+      <MonitorPoint name="primaryGps" type="enum" >
+          <shortName>Primary GPS</shortName>
+          <longName>Primary GPS Source</longName>
+          <description>Input source of the primary GPS.</description>
+          <enum name="GPS_A"/>
+          <enum name="GPS_B"/>
+      </MonitorPoint>
+
+      <MonitorPoint name="tenMHzOutputSource" type="enum" >
+         <shortName>10 MHz Source</shortName>
+         <longName>10 MHz Source</longName>
+         <description>Source of the 10 MHz signal.</description>
+         <enum name="INTERNAL">
+            <description>Internal 10-MHz rubidium oscillator</description>
+         </enum>
+         <enum name="EXTERNAL">
+            <description>External 10-MHz CW source</description>
+         </enum>
+      </MonitorPoint>
+
+      <MonitorPoint name="onePpsSource" type="enum">
+         <shortName>PPS Source</shortName>
+         <longName>PPS Source</longName>
+         <description>One PPS source</description>
+         <enum name="RUBIDIUM"/>
+         <enum name="PRIMARY_GPS"/>
+         <enum name="COUNTED_10_MHZ"/>
+      </MonitorPoint>
+
+      <MonitorPoint name="ntpPpsOffset" type="int">
+         <shortName>NTP Offset</shortName>
+         <longName>NTP Offset</longName>
+         <description>The difference between NTP and distributed 1pps signals
+         </description>
+         <units>ms</units>
+         <warnHi>10</warnHi>
+         <warnLo>-10</warnLo>
+         <errHi>20</errHi>
+         <errLo>-20</errLo>
+      </MonitorPoint>
+
+      <MonitorPoint name="extRefPpsOffset" type="double">
+         <shortName>Ext Ref Offset</shortName>
+         <longName>External 10MHz Reference Offset</longName>
+         <description>
+            The difference between counted 10MHz oscillator 1pps and outgoing
+            distributed 1pps.
+         </description>
+         <units>us</units>
+         <precision>1</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="primaryGpsPpsOffset" type="double">
+         <shortName>GPS A Offset</shortName>
+         <longName>GPS A Offset</longName>
+         <description>
+            The difference between GPS A and outgoing distributed 1pps signals.
+         </description>
+         <units>us</units>
+         <precision>1</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="secondaryGpsPpsOffset" type="double">
+         <shortName>GPS B Offset</shortName>
+         <longName>GPS B Offset</longName>
+         <description>
+            The difference between GPS B and outgoing distributed 1pps signals.
+         </description>
+         <units>us</units>
+         <precision>1</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="heartbeatStatus" type="enum">
+         <shortName>Heartbeat Status</shortName>
+         <longName>Heartbeat Status</longName>
+         <description>
+            Health status of the Walsh heart beat generator pulses
+         </description>
+         <enum name="GOOD"/>
+         <enum name="BAD"/>
+         <errHi>BAD</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="lastWalshPeriod" type="float">
+         <shortName>Last Walsh Period</shortName>
+         <longName>Last Walsh Period</longName>
+         <description>
+            The duration of the last Walsh state before the distributed
+            1pps pulse
+         </description>
+         <units>us</units>
+         <precision>1</precision>
+         <warnLo>976.4</warnLo>
+         <warnHi>976.8</warnHi>
+         <errLo>976.3</errLo>
+         <errHi>976.9</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="countedTenMHzStatus" type="enum">
+         <shortName>Counted 10 MHz Status</shortName>
+         <longName>Counted 10 MHz Synchronization Status</longName>
+         <description>
+            Status of counted 10 MHz 1pps synchronization.
+         </description>
+         <enum name="DISABLED"/>
+         <enum name="ENABLED"/>
+      </MonitorPoint>
+
+      <MonitorPoint name="external10MhzCount" type="double">
+        <shortName>Ext 10 MHz</shortName>
+        <longName>External 10 MHz</longName>
+        <description>
+            External 10 MHz source counted against selected 10-MHz source.
+        </description>
+        <units>Hz</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="delayGpsA" type="double">
+         <shortName>Delay A</shortName>
+         <longName>Heartbeat A Delay</longName>
+         <description>Delay of 1pps A relative to 10MHz clock</description>
+         <units>ns</units>
+         <precision>3</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="delayGpsB" type="double">
+         <shortName>Delay B</shortName>
+         <longName>Heartbeat B Delay</longName>
+         <description>Delay of 1pps B relative to 10MHz clock</description>
+         <units>ns</units>
+         <precision>3</precision>
+      </MonitorPoint>
+
+      <MonitorPoint name="rbLockStatus" type="enum">
+         <shortName>Rb Lock Status</shortName>
+         <longName>Rubidium Lock Status</longName>
+         <description>Lock state of the Rubidium oscillator</description>
+         <enum name="UNLOCKED"/>
+         <enum name="LOCKED"/>
+         <errHi>UNLOCKED</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="rbOperationalMode" type="enum">
+         <shortName>Rb Mode</shortName>
+         <longName>Rb Mode</longName>
+         <description>Operational mode of the Rb oscillator</description>
+         <units/>
+         <enum name="FREE_RUNNING"/>
+         <enum name="TC_4_MIN"/>
+         <enum name="TC_17_MIN"/>
+         <enum name="TC_1_HR"/>
+         <enum name="TC_4_HR"/>
+         <enum name="TC_18_HR"/>
+         <enum name="TC_3_DAY"/>
+         <enum name="TC_12_DAY"/>
+         <enum name="TC_48_DAY"/>
+      </MonitorPoint>
+
+      <MonitorPoint name="rbOscillatorStatus" type="enum">
+         <shortName>Rb Status</shortName>
+         <longName>Rubidium Oscillator Status</longName>
+         <description>Status of the Rubidium Oscillator</description>
+         <enum name="ONLINE_NOERRORS"/>
+         <enum name="ONLINE_ERRORS"/>
+         <enum name="OFFLINE">
+            <description>Not detected or inoperable</description>
+         </enum>
+         <enum name="NOT_PRESENT"/>
+
+      </MonitorPoint>
+
+      <MonitorPoint name="prs10ErrorCode" type="enum">
+         <shortName>Rb Error Code</shortName>
+         <longName>Rubidium Oscillator Error Code</longName>
+         <description>
+            Last reported error by the PRS10 Ribidium standard
+         </description>
+         <enum name="NO_ERRORS"/>
+         <enum name="WARMING_UP"/>
+         <enum name="POWER_SUPPLY"/>
+         <enum name="PHYSICS_PKG"/>
+         <enum name="TEMP_CONTROL"/>
+         <enum name="RF_SYNTH"/>
+         <enum name="FREQ_LOOP"/>
+         <enum name="GPS_FREQ_LOCK"/>
+         <enum name="FATAL_PRS10"/>
+         <warnHi>WARMING_UP</warnHi>
+         <warnHi>POWER_SUPPLY</warnHi>
+         <warnHi>PHYSICS_PKG</warnHi>
+         <warnHi>TEMP_CONTROL</warnHi>
+         <warnHi>RF_SYNTH</warnHi>
+         <warnHi>FREQ_LOOP</warnHi>
+         <errHi>GPS_FREQ_LOCK</errHi>
+         <warnHi>FATAL_PRS10</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="rbOxcoTemp" type="float">
+         <shortName>Rb Cell Temp</shortName>
+         <longName>Rb Cell Temperature</longName>
+         <description>
+            Temperature of the PRS10 rubidium cell.
+         </description>
+         <units>C</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="rbPhysicsTemp" type="float">
+         <shortName>Rb Case Temp</shortName>
+         <longName>Rb Case Temperature</longName>
+         <description>
+            Temperature of the PRS10 case.
+         </description>
+         <units>C</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="powerFlag" type="short">
+         <shortName>Power Flags (bitfield)</shortName>
+         <longName>Power Flags as Raw Bitfield</longName>
+         <description>
+            Raw status flag for power supplies
+         </description>
+         <units/>
+         <warnHi>1</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="rfFlag" type="short">
+         <shortName>RF Flags (bitfield)</shortName>
+         <longName>RF Synthesizer Flags</longName>
+         <description>
+            Raw Status Flag for RF Synthesizer
+         </description>
+         <units/>
+         <warnHi>1</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="tempFlag" type="short">
+         <shortName>Temp Flags (bitfield)</shortName>
+         <longName>Temperature Flags</longName>
+         <description>
+            Raw Status Flag for Temperatures of components
+         </description>
+         <units/>
+         <warnHi>1</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="freqFlag" type="short">
+         <shortName>Freq Flags (bitfield)</shortName>
+         <longName>Freq Lock Flags</longName>
+         <description>
+            Raw Status Flag for frequency locks
+         </description>
+         <units/>
+         <warnHi>1</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="gpsFreqFlag" type="short">
+         <shortName>GPS Freq Flag (bitfield)</shortName>
+         <longName>Frequency to GPS Flags</longName>
+         <description>
+            Raw Status Flag for Frequency to GPS
+         </description>
+         <units/>
+         <warnLo>3</warnLo>
+         <warnHi>5</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="systemFlag" type="short">
+         <shortName>System Flags (bitfield)</shortName>
+         <longName>System Flags</longName>
+         <description>
+            Raw Status Flag for system
+         </description>
+         <units/>
+         <warnHi>1</warnHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="moduleTemp" type="float">
+         <shortName>Module Temp</shortName>
+         <longName>Module Temp</longName>
+         <precision>1</precision>
+         <description>Temperature of this CAN module
+         </description>
+         <units>C</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="ps24V" type="float">
+         <shortName>+24V</shortName>
+         <longName>24V Power Supply</longName>
+         <description>24V power supply voltage</description>
+         <units>V</units>
+        <warnLo>20.0</warnLo>
+        <warnHi>28.0</warnHi>
+        <errLo>18.0</errLo>
+        <errHi>30.0</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="ps3_3V" type="float">
+         <shortName>+3.3V</shortName>
+         <longName>3.3V Power Supply</longName>
+         <description>3.3V power supply voltage</description>
+         <units>V</units>
+         <warnLo>3.0</warnLo>
+         <warnHi>3.6</warnHi>
+         <errLo>2.7</errLo>
+         <errHi>3.9</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="psPosAnalog5V" type="float">
+         <shortName>+5V Analog</shortName>
+         <longName>Positive 5V analog power supply</longName>
+         <description>+5V analog power supply voltage</description>
+         <units>V</units>
+         <warnLo>4.85</warnLo>
+         <warnHi>5.15</warnHi>
+         <errLo>4.75</errLo>
+         <errHi>5.25</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="psADigital5V" type="float">
+         <shortName>+5V Digital A</shortName>
+         <longName>5V digital power supply A</longName>
+         <description>5V digital power supply A voltage</description>
+         <units>V</units>
+         <warnLo>4.85</warnLo>
+         <warnHi>5.15</warnHi>
+         <errLo>4.75</errLo>
+         <errHi>5.25</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="psBDigital5V" type="float">
+         <shortName>+5V Digital B</shortName>
+         <longName>5V digital power supply B</longName>
+         <description>5V digital power supply B voltage</description>
+         <units>V</units>
+         <warnLo>4.85</warnLo>
+         <warnHi>5.15</warnHi>
+         <errLo>4.75</errLo>
+         <errHi>5.25</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="psNegAnalog5V" type="float">
+         <shortName>-5V Analog</shortName>
+         <longName>negative 5V analog power supply</longName>
+         <description>-5V analog power supply voltage</description>
+         <units>V</units>
+         <warnLo>-5.25</warnLo>
+         <warnHi>-4.75</warnHi>
+         <errLo>-5.4</errLo>
+         <errHi>-4.6</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="fpgaVersion" type="string">
+          <shortName>FPGA Ver.</shortName>
+          <description>
+              FPGA code version in major.minor format.
+          </description>
+      </MonitorPoint>
+
+   </Container>
+
+</Subsystem>

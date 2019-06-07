@@ -1,0 +1,58 @@
+# get the UT time of the last sample
+new "time"
+data last_sample_time
+string time
+new "month"
+data Month
+string month
+new "nct"
+data N
+string nct
+
+panel 1 1 1
+color 1
+font 2
+expand 1.3
+mtext t 1.5 .5 .5 CARMA Phasemonitor statistics for \[month]
+mtext b 2.5 .5 .5 RMS delay (microns)
+font 1
+expand 1.0
+
+set \1 500	# max number/bin in plot
+set \2 50	# bin size
+
+data sample.dat
+xcolumn 4
+limits 0 1500 0 \1
+box bcnst bnst
+mtext t -1.5 .5 .5  Distribution on \[time] (\[nct] points)
+mtext l 2.5 .5 .5 Number in bin
+histogram 0 1500 \2
+
+set \1 110	# yaxis upper limit
+set \2 1500	# xaxis upper limit
+
+data sample.cum
+color 7
+xcol 1
+ycol 2
+limit 0 \2 0 \1
+box 0 gcmst
+mtext r 2.5 .5 .5 Percentage of time below RMS delay
+conn
+
+define rmsline
+lsty 2
+move $1 0
+draw $1 \1
+move $1 112
+lab $2
+lsty 1
+end
+
+rmsline 113 A
+rmsline 184 B
+rmsline 275 C
+rmsline 750 D
+
+end

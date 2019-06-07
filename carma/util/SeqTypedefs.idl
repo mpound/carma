@@ -1,0 +1,16 @@
+#ifndef CARMA_UTIL_SEQUENCETYPEDEFS_IDL
+#define CARMA_UTIL_SEQUENCETYPEDEFS_IDL
+
+module carma {
+module util {
+
+typedef sequence< double > SeqDouble;  ///< Sequence of CORBA::Double
+typedef sequence< float >  SeqFloat;   ///< Sequence of CORBA::Float
+typedef sequence< long >   SeqLong;    ///< Sequence of CORBA::Long
+typedef sequence< short >  SeqShort;   ///< Sequence of CORBA::Short
+typedef sequence< octet >  SeqByte;    ///< Sequence of CORBA::Octet
+typedef sequence< string > SeqString;  ///< Sequence of CORBA::String
+
+}; // module util 
+}; // module carma
+#endif

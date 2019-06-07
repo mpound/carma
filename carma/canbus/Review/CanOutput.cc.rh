@@ -1,0 +1,201 @@
+/** 
+ * $Id: CanOutput.cc.rh,v 1.1 2003/07/16 20:02:24 rick Exp $
+ *
+ * Impelementation of CANBusIO class.
+ *
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/16 20:02:24 $
+ *
+ */
+ 
+// System includes
+#include <errno.h>
+#include <unistd.h>
+
+// Janz includes
+#include "janz/bcan.h"
+#include "janz/can_lib.h"
+#include "janz/defs.h"
+#include "janz/dpm.h"
+#include "janz/mitop.h"
+#include "janz/vmod.h"
+
+// Carma includes
+#include "carma/canbus/CanOutput.h"
+#include "carma/canbus/Error.h"
+#include "carma/canbus/Types.h"
+
+using namespace carma::canbus;
+
+/*** REVIEW
+ * Reviewer: rh
+ * comments: maybe a brief description of MAX_FLUSH_RETRYS.
+ *           Not sure what is being flushed and why.
+ *
+ *           Another thought would be to create a CanOutputEmulate subclass
+ *           of CanOutput. This way, you would just override the
+ *           canFastSend method as the comment in CanOutput.h suggests.
+ *           There would not be a need for the bool emulate and hence no
+ *           if statement.
+ */
+const int MAX_FLUSH_RETRYS = 2;
+
+// -----------------------------------------------------------------------------
+CanOutput::CanOutput(bool emulate) : emulate_(emulate) 
+{
+}
+
+// -----------------------------------------------------------------------------
+CanOutput::~CanOutput()
+{
+    map<busIdType, deviceType*>::iterator di;
+    
+    // Delete the devices in the device map.
+    for (di = devices_.begin(); di != devices_.end(); di++) {
+        delete di->second;
+    }
+}
+    
+// -----------------------------------------------------------------------------
+void carma::canbus::CanOutput::postMessage(const carma::canbus::Message &msg)
+    throw (carma::canbus::Error)
+{
+    busIdType busId;
+    try {
+        busId = msg.getBusId();
+        
+        if (busId != ALL_BUSSES) {
+            canFastSend(busId, msg);
+        } else {
+
+            // Declare a device iterator.
+            map<busIdType,deviceType*>::iterator di;
+
+            // Post message to all busses.
+            for (di = devices_.begin(); di != devices_.end(); di++) {
+                canFastSend(di->first, msg);
+            } 
+        }
+    } catch (carma::canbus::Error &err) {
+        // Rethrow exception with more information (Bus Id).
+        // The rethrow is done because exceptions raised in this 
+        // method will be somewhat generic and will most likely 
+        // need more info to be useful (i.e. the Bus Id, which allows
+        // a user to figure out which Janz device is acting up).
+        ostringstream os;
+        os << "CanOutput::PostMessage() - Bus " << busId 
+            << " exception caught: " << endl 
+            << (string)err.what() << ends;
+        throw carma::canbus::Error(os); 
+    }
+}
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanOutput::addDevice(busIdType busId) 
+{
+    deviceType *dev = new deviceType;
+    
+    // Initialize the device.
+    dev->name = "";
+    dev->fd = -1;
+    dev->initialized = false;
+    dev->arg = NULL;
+
+    // Initialize bus 
+    dev->bus.terminate = false;
+    dev->bus.rxCount = 0;
+    dev->bus.txCount = 0;
+    dev->bus.id = busId;
+    dev->bus.status.state = NO_ERRORS;
+    dev->bus.status.rxMsgRate = 0.0;
+    dev->bus.status.txMsgRate = 0.0;
+    dev->bus.status.rxErrors = 0;
+    dev->bus.status.txErrors = 0;
+    dev->bus.status.slowMsgsLost = 0;
+    dev->bus.status.fastMsgsLost = 0;
+    clock_gettime(CLOCK_REALTIME, &(dev->bus.lastUpdateTime));
+
+    if (devices_.find(busId) != devices_.end()) {
+        throw carma::canbus::Error("CanOutput::addDevice() - Device already "
+                "exists for busId");
+    } else {
+        // Add the device to the device list.
+        devices_[busId] = dev;
+    }
+}
+    
+// -----------------------------------------------------------------------------
+void carma::canbus::CanOutput::canFastSend(busIdType busId, 
+        const carma::canbus::Message &msg) 
+{
+    const timespec CAN_FLUSH_INTERVAL = {
+        (time_t)((BOARD_FAST_WRITE_LENGTH * CAN_FLUSH_RATE) /
+        NANOSECS_PER_SEC),
+        (long)((BOARD_FAST_WRITE_LENGTH * CAN_FLUSH_RATE) %
+        NANOSECS_PER_SEC)
+    };
+    int result = 0;
+    int attempts = 0;
+    deviceType *dev;
+    ::FastMessage fmsg;
+    map<busIdType,deviceType*>::iterator devIter;
+    
+    // Retrieve the device controlling this bus
+    devIter = devices_.find(busId);
+    if (devIter != devices_.end()) {
+        dev = devIter->second;
+    } else {
+        throw carma::canbus::Error("CanOutput::canFastSend() - Bus not found.");
+    }
+
+    // Retrieve the raw message.
+    fmsg = msg.getRawMessage();
+    
+    // Lock the mutex in order to synchronize write access to the 
+    // device and to synchronize which thread will wait when the buffer 
+    // is full (we want any waiting threads to only wait one 
+    // CAN_FLUSH_INTERVAL - without the mutex, several calling threads 
+    // may seperately wait CAN_FLUSH_INTERVAL inefficiently).
+    pthread_mutex_lock(&(dev->mutex));
+    
+    while (attempts <= MAX_FLUSH_RETRYS) {
+        // If we aren't emulating write using can_fast_send
+        // otherwise write using write (to /dev/null).
+        if (!emulate_) {
+            result = can_fast_send(dev->fd, &fmsg);
+        } else {
+            result = write(dev->fd, &fmsg, sizeof(::FastMessage));
+        }
+        
+        switch (result) {
+            case -1 :
+                throw carma::canbus::Error("CanOutput::canFastSend - "
+                        "can_fast_send failed! " + (string)strerror(errno));
+                break;
+            case 0 :
+                // Most likely the buffer is full.
+                // Block calling process and then try resending.
+                if (attempts != MAX_FLUSH_RETRYS) {
+                    nanosleep(&CAN_FLUSH_INTERVAL, NULL);
+                    attempts++;
+                } else {
+                    // Something else is wrong.
+                    // Unlock the mutex and throw an exception.
+                    pthread_mutex_unlock(&(dev->mutex));
+                    throw carma::canbus::Error("CanOutput::canFastSend - "
+                            " Tx buffer is still full! Retried several "
+                            "times.  Check cables and make sure a node is"
+                            " connected to the bus.");
+                }
+                break;
+            default :
+                // Break the loop.
+                attempts = MAX_FLUSH_RETRYS + 1;
+                break;
+        }
+    }
+    // Increment the tx count unlock the mutex and exit.
+    devIter->second->bus.txCount++;
+    pthread_mutex_unlock(&(dev->mutex));
+}

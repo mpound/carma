@@ -1,0 +1,510 @@
+
+# Script for "blank sky" correlator test.
+###############################################
+# THIS SCRIPT IS NOT YET READY FOR PRIMETIME!!!
+###############################################
+#
+# @author Nikolaus Volgenau
+# Shamelessly adapted from Alberto Bolatto's "blank sky" scripts
+# and Woojin Kwon's "fluxcal" scripts.
+#
+# Edited 12/30/09 by A. Zauderer to include configuration of bands
+#   4 and 5 to be hardcoded at 500 MHz
+# Modified 25feb2010 by N. Volgenau to include BW250 and BW125 modes
+# Modified 10mar2010 by N. Volgenau to specify each corrbw individually.
+#   Also, added optimizeThresholds() command.
+# Modified 24sep2010 by N. Volgenau to allow different correlator
+#   bit modes.
+# Modified 21feb2011 by T. Culverhouse to allow carma23 mode
+# Modified 28Aug2011 by A. Isella to remove pl.keepEndChannels and 
+#   use the decimation command instead
+# Modified 13Apr2012 by C. Hull & A. Bauermeister to change 
+#   sac.driveblanking(True) to sac.driveErrorPreference(PREF_BLANK)
+# $CarmaCopyright$
+
+#-------------------------- Help --------------------------
+"""Script to acquire data for a 'blank sky' correlator test.
+The region, if not specificied, will be selected automatically.
+The user must specify the widths of the correlator bands.
+The default behavior is to copy the miriad files to the
+/array/rt/blanksky directory and process the data immediately.
+
+Example:
+
+        run('ct004_blanksky_SLcorr', bw='31', endtrack="12:00")
+
+Parameters:
+      source: Position of blank sky field. Options are 3C84OFF, 3C273OFF,
+              3C345OFF, and 3C454OFF. Default is to choose one that's
+              above the elevation limit.
+          bw: Bandwidth for all three correlator bands. Options are
+              500, 250, 125, 62, 31, 8, 2 (MHz). Default=500.
+        bits: Correlator bit mode. Can be either 2, 3, or 4. Default=2
+        tmax: Hours to run test. Default=2.0
+    endtrack: LST to end test.
+     elevlim: Minimum elevation for observation. Default=15. NOT TESTED YET!
+       alarm: Turn on/off alarm at end of track. Default=True.
+     mirdata: NOT YET AVAILABLE!
+              If supplied, the script will skip the observation step and
+              just do the data filling and analysis. All arguments apart
+              from 'source' are ignored. If the '.mir' extension is given,
+              the data will not be refilled, only re-analysed.
+#        c23: Switch to CARMA23 mode
+"""
+#------------------------ End of Help ------------------------
+
+import subarrayCommands as sac
+import obsdef3 as od
+import obsdefUtils as odutil
+import os
+import runCommand as rc
+import carmaHelpers as helpers
+import blankskySetup as bss
+import fileIOPython
+#import arrayHealthUtils as ah
+import printFunctions as pf
+import time
+from obsdefIndex import *
+
+# ------------ Input Parameters -------------
+p = rc.Params()
+print p
+p.add("source", type=str, noneAllowed=True, default=None,
+       description="Recognized region of blank sky, e.g. 3C84OFF")
+p.add("bw", type=str, noneAllowed=True, default='500',
+       description="Correlator bandwidth")
+p.add("bits", type=int, noneAllowed=True, default=2,
+       description="Correlator bit mode")
+p.add("tmax", type=float, noneAllowed=True, default=2.0,
+       description="Duration of test (hrs)")
+p.add("endtrack", type=str, noneAllowed=True, 
+       description="LST to end test")
+p.add("elevlim", type=float, noneAllowed=True, default=15,
+       description="Minimum elevation to start/stop test")
+p.add("alarm", type=bool, default=True,
+       description="Turn on/off alarm at end of track")
+p.add("mirdata", type=str, noneAllowed=True,
+       description="Name of miriad file to process")
+# add option to go for full CARMA 23 mode
+p.add("c23", type=str, noneAllowed=True, default='normal',
+       description="C23 mode ('c23') or normal ('normal' - default)")
+p.processInputParameters()
+
+# Clear all script variables
+sac.controlVariablesClear()
+odutil.disableCoherenceAlarm()
+
+projectCode = 'ct004'
+source      = p.source
+bw          = p.bw
+bits        = str(p.bits)
+tmax        = p.tmax
+endtrack    = p.endtrack
+elevlim     = p.elevlim
+endAlarm    = p.alarm
+mirdata     = p.mirdata
+c23         = p.c23
+
+#----- Find a source to observe -----#
+
+sac.ucat('blanktest.cat')
+catalog = '/array/rt/catalogs/blanktest.cat'
+
+if source == None: 
+    cattable = fileIOPython.fileToTable(catalog,ignoreEmpty=True)
+    alllines = list(cattable)
+    nalllines = len(cattable)
+    for i in range(nalllines):
+        alllines.append(string.upper(cattable[i][0]))
+    validlines = list(alllines)
+    for j in alllines:
+        if j[0] == '#' or j[0] == "#|" or len(j) == 1: continue
+        else:
+            validlines.append(j)
+    source = odutil.getSource(validlines, elmin=bss.minElev, elmax=bss.maxElev)
+    #print "source = ", source
+
+syscat = ['3c273', '3c84', '3c454.3', '3c345']
+if p.source <> None:
+   phasecal = None
+   for t in syscat:
+      print  t, p.source, t.upper().find(p.source.upper())
+      if p.source.upper().find(t.upper()) >= 0:
+          phasecal = t
+          break
+   if phasecal == None:
+      raise Exception,'Could not find phase calibrator for '+p.source
+else:
+   phasecal = odutil.getSource(syscat, elmin=bss.minElev, elmax=bss.maxElev)
+
+sources = {
+   'target'       : source,
+   'mosaicTarget' : False,
+   'phaseCal'     : phasecal,
+   'tintTarget'   : 20.00, # [minutes] time per cycle *** per pointing ***
+   'tintPhaseCal' :  3.00, # [minutes]
+   'intentTarget' : 'S',
+  }
+
+#----- Set endtrack time and obsblock; display variables -----#
+
+print "source = ", source
+print "bandwidth = ", bw
+print "bits = ", bits
+print "tmax = ", tmax
+print "endtrack = ", endtrack
+print "elev limit = ", elevlim
+print "alarm = ", endAlarm
+print "mirdata = ", mirdata
+
+#sac.setTmax(p.tmax)
+sac.setLstEndTrack(p.endtrack)
+
+obsblockName = source+'_'+bw+'_'+bits
+
+#----- Project Information -----#
+
+projectInfo = {
+   'emailAddress'  : 'arrayhealth@mmarray.org',
+   'code'          : projectCode,
+   'obsblock'      : obsblockName,
+   'subobsblock'   : sac.yearMonthDay(),
+  }
+trackFilename='ct004_blanksky_SLcorr.obs'
+projectCode='ct004'
+PI='Zubair Abdulla'
+email='volgenau@mmarray.org,zabdulla@oddjob.uchicago.edu'
+sendMsg(projectCode,PI,email,trackFilename,start=1)
+
+# ----- Message for the Obs -----
+
+script = "ct004_blanksky_SLcorr.obs" # code, 
+pf.printMessage("Starting %s" % script)
+
+#----- Setup data directory and logging -----#
+#def datadir() :
+#    firstChoice = '/array/rt/blanksky'
+#    secondChoice = '/tmp'
+#    try :
+#        os.stat(firstChoice)
+#    except Exception :
+#        return secondChoice
+#    return firstChoice
+#print "Output will be written to " + datadir()
+#
+#pathName = time.strftime("web/blanksky/%Y")
+#logFileName = "blanksky.log"
+#blankskyDir = '/misc/array/rt/blanksky'
+#
+#lm = ah.LogMessage("Blank Sky Correlator Test", pathName, logFileName, script)
+#logDir = lm.logDir
+#lm.message("Options:")
+#lm.message("  source = %s" % source, noRtd = True)
+#lm.message("  bw = %s" % bw, noRtd = True)
+#lm.message("  tmax = %.1f hrs" % tmax, noRtd = True)
+#lm.message("  endtrack = %.1s hrs" % endtrack, noRtd = True)
+#lm.message("  elevlim = %.1f deg" % elevlim, noRtd = True)
+#lm.message("  mirdata = %s" % mirdata, noRtd = True)
+
+#----- Below copied from initializeTrack -----#
+
+#od.initializeTrack(sources, bss.mosaic, projectInfo, bss.limits, 
+#                   bss.pointing, bss.passband, bss.fluxcal, restart=False,
+#                   scriptName=scriptName, scriptOptions=scriptOptions)
+
+sac.radioInit()
+
+# Reset tracking thresholds, drive blanking, and catalog
+sac.trackThreshold(bss.limits['trackingThreshold'])
+#sac.driveblanking(False)
+sac.driveErrorPreference(PREF_NONE)
+sac.ucat('blanktest.cat')
+
+# Messages
+sac.trackMessage("Initializing track")
+sac.trackMessage('Local time     : ' + odutil.getLocalTime(), indent=1)
+sac.trackMessage('LST            : ' + helpers.convertHmsString(sac.lst()), indent=1)
+#if scriptName <> None:
+#    sac.trackMessage('Script name    : ' + script, indent=1)
+#if len(sac.scriptKeyVals) == 0:
+#    sac.trackMessage('Script options : None', indent=1)
+#else:
+#    sac.trackMessage('Script options : ', indent=1)
+#    keys = sac.scriptKeyVals.keys()
+#    keys.sort()
+#    for k in keys:
+#        s = ''
+#        for i in range(len(k),12): s += '.'
+#        sac.trackMessage(k +  s +  ' ' + str(sac.scriptKeyVals[k]), indent=2)
+#sac.trackMessage('Project code   : ' + projectInfo['code'], indent=1)
+#sac.addScriptString(INDX_STR_SCRIPTNAME, script, append=False)
+#sac.trackMessage('Elevation limit = ' + str('%.1f' % odutil.getElevationLimit()), indent=1)
+odutil.checkAntennas(indent=1)
+
+# Check project code is a string and a scalar
+#if projectInfo['code'] == None or str not in [type(projectInfo['code'])]:
+#    raise Exception, 'Error specifying project code'
+
+# Set most hidden parameters.
+od.setHiddenParameters(bss.limits, bss.fluxcal, bss.mosaic, bss.passband,
+                    bss.pointing, projectInfo, sources, bss.noise)
+
+# Summarize main options
+if odutil.getLstStartCycle() <> None: sac.trackMessage('LST start cycle = ' +
+    helpers.convertHmsString(odutil.getLstStartCycle()), indent=1)
+if odutil.getLstStopCycle() <> None: sac.trackMessage('LST stop cycle = ' +
+    helpers.convertHmsString(odutil.getLstStopCycle()), indent=1)
+if odutil.getTmax() <> None:
+    sac.trackMessage('Maximum track length = ' + odutil.dtString(odutil.getTmax()), indent=1)
+
+# Set obsblock
+tmpObsblock = projectInfo['obsblock']
+
+# Set subObsblock. Remove any spaces and '.'
+tmpSubobsblock = projectInfo['subobsblock']
+#if tmpSubobsblock == None: tmpSubobsblock = ''
+#tmpSubobsblock = tmpSubobsblock.split('.')[0]
+#tmpSubobsblock = ''.join(tmpSubobsblock.split()) # Removes spaces
+
+# Get official obsblock
+#tmpObsblock = odutil.getOfficialObsblock(projectInfo['code'], tmpObsblock)
+
+# Validate obsblock and conditionally initialize project
+sac.newProject(projectInfo['code'], tmpObsblock, tmpSubobsblock )
+
+# Constraints
+sac.constraints()
+
+#----- End initializeTrack -----#
+
+applyTsys(False)
+applyFlux(False)
+#trackThreshold(5.0,0)
+
+decimation(bandNo=0, bits=bits, keepEndChans=True)
+#pl=device.getSlPipeline()
+#pl.keepEndChannels(True,1)
+#pl.keepEndChannels(True,2)
+#pl.keepEndChannels(True,3)
+#pl.keepEndChannels(True,4)
+#pl.keepEndChannels(True,5)
+#pl.keepEndChannels(True,6)
+#pl.keepEndChannels(True,7)
+#pl.keepEndChannels(True,8)
+
+
+#----- Tune and set correlator -----#
+#print "bw = ", bw
+# Comment: UNTIL WE GET ALL CARMA (correlator) BANDS,
+# I'LL SPECIFY EACH BW INDIVIDUALLY. --- NHV 10mar2010
+# Bands are now all in place --- TLC 11/11/2010
+#
+
+if bw == "BW250":
+    corrbw = sac.BW250 
+elif bw == "BW125":
+    corrbw = sac.BW125 
+elif bw == "BW62":
+    corrbw = sac.BW62 
+elif bw == "BW31":
+    corrbw = sac.BW31
+elif bw == "BW8":
+    corrbw = sac.BW8
+elif bw == "BW2":
+    corrbw = sac.BW2 
+else:
+    corrbw = sac.BW500 
+    print "Setting correlator bandwidths to 500 MHz"
+
+# Set number of bits
+bits = sac.CORR_2BIT
+if p.bits == 3:
+  bits = sac.CORR_3BIT
+elif p.bits == 4:
+  bits = sac.CORR_4BIT
+
+if p.c23 == "c23":
+  restfreq = 85.8286
+  iffreq   = 0
+  sideband = sac.USB
+
+  sac.configastroband(1,"CARMA23",corrbw,restfreq,bits=bits)
+  sac.configastroband(3,"CARMA23",corrbw,restfreq,bits=bits)
+  sac.configastroband(5,"CARMA23",corrbw,restfreq,bits=bits)
+  sac.configastroband(7,"CARMA23",corrbw,restfreq,bits=bits)
+
+else:
+  restfreq = 95.0
+  iffreq   = 2.5
+  sideband = sac.USB
+
+  sac.configastroband(1,"LL",corrbw,restfreq,bits=bits)
+  sac.configastroband(2,"LL",corrbw,restfreq,bits=bits)
+  sac.configastroband(3,"LL",corrbw,restfreq,bits=bits)
+  sac.configastroband(4,"LL",corrbw,restfreq,bits=bits)
+  sac.configastroband(5,"LL",corrbw,restfreq,bits=bits)
+  sac.configastroband(6,"LL",corrbw,restfreq,bits=bits)
+  sac.configastroband(7,"LL",corrbw,restfreq,bits=bits)
+  sac.configastroband(8,"LL",corrbw,restfreq,bits=bits)
+
+#sac.configband(1,corrbw1,restfreq,bits=bits)
+#sac.configband(2,corrbw2,restfreq,bits=bits)
+#sac.configband(3,corrbw3,restfreq,bits=bits)
+#sac.configband(4,corrbw4,restfreq,bits=bits)
+#sac.configband(5,corrbw5,restfreq,bits=bits)
+#sac.configband(6,corrbw6,restfreq,bits=bits)
+#sac.configband(7,corrbw7,restfreq,bits=bits)
+#sac.configband(8,corrbw8,restfreq,bits=bits)
+
+sac.optimizeThresholds()
+sac.flattenPhases()
+
+sac.trackMessage("Tuning freq=" + str("%.3f" % restfreq) + " GHz, " +
+    str(sideband)  + ", IFfreq=" + str("%.3f" % iffreq) + " GHz")
+sac.freq(restfreq, sideband, iffreq, 'None')
+
+sac.checkbands()
+bss.correlator['configCal'] = None
+
+startLst = sac.lst()
+
+# we want email to go out, so set the correct variable to true.
+odutil.emailScriptLog(True)
+
+#----- Send email -----#
+if odutil.emailScriptLog():
+    odutil.sendEmail(projectInfo['code'], projectInfo['emailAddress'],
+        fullScriptName, None, start=True, msg=odutil.getTrackHistory(), 
+        restart=False)
+
+#----- Start Observations -----#
+odutil.observeNoise(bss.noise['tint'], bss.noise['record'], indent=1)
+
+# Cycle between source and phase calibrator.
+od.doSourcesPhasecal(sources, bss.fluxcal, bss.pointing, bss.passband,
+                     bss.noise, mosaic=bss.mosaic,
+                     primaryCal=bss.primaryFluxCalibrators)
+
+decimation(bandNo=0, bits=bits, keepEndChans=False)
+
+#pl.keepEndChannels(False,1)
+#pl.keepEndChannels(False,2)
+#pl.keepEndChannels(False,3)
+#pl.keepEndChannels(False,4)
+#pl.keepEndChannels(False,5)
+#pl.keepEndChannels(False,6)
+#pl.keepEndChannels(False,7)
+#pl.keepEndChannels(False,8)
+
+#----- Print summary when finished -----#
+
+sac.trackMessage("Source = %s" % str(source), indent=1)
+totaltime =  sac.lst() - startLst
+if totaltime < 0. : totaltime += 24.
+sac.trackMessage("Track total time : %4.1f" % totaltime, indent=1)
+
+#----- Send email indicating track is finished -----#
+if odutil.emailScriptLog():
+    odutil.sendEmail(projectInfo['code'], projectInfo['emailAddress'], 
+    fullScriptName, None, start=False, msg=odutil.getTrackHistory())
+
+# Done
+#--------------------------------------------------
+trackThreshold(0.1,0)
+#sac.driveblanking(True)
+sac.driveErrorPreference(PREF_BLANK)
+sac.resetProject()
+if endAlarm: sac.alarmon()
+
+# if mirData != None :
+#    lm.message("Analyzing existing data set: %s" % mirData, \
+#               noRtd = True)
+#else :
+
+#if mirData == None :
+#    lm.message("Waiting to fill the Miriad file")
+#    fill = True
+#elif mirData.endswith('.mir') :
+#    mirFile = apEffDir + '/' + mirData
+#    fill = False
+#else :
+#    lm.message("Waiting to fill the Miriad file", noRtd = True)
+#    blockName = mirData
+#    fill = True
+#
+#if fill :
+#    baseName = '/opt/sdp/astroheader/SLCorrelIntegrated/astrohdr_' + blockName
+#    # Make sure that there is a file
+#    if not glob.glob(baseName + '.xml*') :
+#        if mirData == None :
+#            lm.message("No xml file corresponding to the project can be found.")
+#        else :
+#            lm.message("No xml file corresponding to the project can be found.", \
+#                       noRtd = True)
+#        lm.close()
+#        raise sc.ScriptReturn("No xml file")
+#    # Check if the file has not filled so still '.xml.write' status.
+#    lm.message("Waiting for data to fill")
+#    iwait=0
+#    interval = 3
+#    while (iwait < 180):
+#        sc.sleep(interval)
+#        iwait += interval
+#        if(not os.path.exists(baseName + '.xml.write')) :
+#            break
+#    # Try filling anyway. Can't assume the file extension so get it
+#    # Fill the data directly into the aperture efficiency area
+#    xmlFile = glob.glob(baseName + '.xml*')[0]
+#    mirFile = apEffDir + '/' + blockName + '.mir'
+#    fillCmd = '/opt/rt/bin/sdpFiller infile=%s outfile=%s' % (xmlFile, mirFile)
+#    if mirData == None :
+#        lm.message('Executing command ' + fillCmd)
+#    else :
+#        lm.message('Executing command ' + fillCmd, noRtd = True)
+#    os.system(fillCmd)
+
+#----Reduction----
+
+#if mirData == None :
+#    if source in planets :
+#        lm.message("Miriad planet model used for %s" % source.capitalize())
+#    else :
+#        lm.message("Assumed flux for %s = %.4f" % (source, flux))
+#    lm.message("Running data analysis")
+#    lm.message("Miriad data: %s" % mirFile)
+#    lm.message("Directory: %s" % logDir)
+#else :
+#    if source in planets :
+#        lm.message("Miriad planet model used for %s" % source.capitalize(), noRtd = True)
+#    else :
+#        lm.message("Assumed flux for %s = %.4f" % (source, flux), noRtd = True)
+#    lm.message("Running data analysis", noRtd = True)
+#    lm.message("Miriad data: %s" % mirFile, noRtd = True)
+#    lm.message("Directory: %s" % logDir, noRtd = True)
+#analysis.analyzeInterfApEff(mirFile, logDir, refAnt, flux)
+
+#----Cleanup----
+#if mirData == None :
+#    sc.resetProject()
+#    sc.alarmon()
+#    sc.sendMsg(projectCode, pi, email, trackFilename)
+#lm.close()
+
+#print
+#print 80 * "*"
+#try :
+#    blockName
+#except NameError :
+#    pass
+#else :
+#    print "To refill and analyze:\n"
+#    print "    run('ct007_intapeff source=%s, loFreq=%.3f, mirData=%s')\n" % \
+#           (source, loFreq, os.path.basename(blockName))
+#print "To re-run analysis only:\n"
+#print "    run('ct007_intapeff source=%s, loFreq=%.3f, mirData=%s')" % \
+#           (source, loFreq, os.path.basename(mirFile))
+#print "\nAdditional keyword arguments 'refAnt' and/or 'flux' may be used"
+#print 80 * "*"
+#print
+
+# end ct004_blanksky.obs

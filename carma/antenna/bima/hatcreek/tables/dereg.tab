@@ -1,0 +1,68 @@
+# dereg.tab
+# dewar temperature regulation parameters; program dereg
+#	reads this file each time it is invoked
+#
+# NOTE: temperature setpoints for antenna j are given by
+#	common variables TREGMXR-j and TREGAMP-j; these
+#	can be changed using the "alter" command; if
+#	setpoints are 0, all heaters will be turned off
+#
+# inputs on each line:
+#	ant = antenna number (1-9)
+#	stage = 2 for HEMT amp, 3 for SIS mxr
+#	sensmpx	= sensor mpx value for atod, to read temperature
+#		  (1107,1108 for v/f2, v/f3; 1083,1085 for a/d2, a/d3)
+#	htraddr	= heater address
+#		  (0x62 for stage 2, 0x54 for stage 3)
+#	navg	= number of samples in running avg of temp
+#		  (navg * 0.32 should be an integral number of
+#		  refrigerator cycles; keep navg < 25)
+#	gainp	= proportional gain
+#	gaini	= integral gain
+#	itargmin = min recommended heater counts for comfortable regulation
+#	itargmax = max recommended heater counts for comfortable regulation
+# 
+# note: to monitor temp behavior only, one can set itargmin=itargmax=0
+#
+# ant  stage  sensmpx  htraddr  navg  gainp  gaini  itargmin itargmax
+
+# ant 1: 
+#  1     2     1083     0x62     6     20.    2.0     100	800
+   1     3     1085     0x54     6      5.    0.2      80	200
+
+# ant 2: SIS, heaters on both stages
+#  2     2     1083     0x62     6     20.    2.0     100 	800
+   2     3     1085     0x54     6      5.    0.2      80	200
+
+# ant 4: SIS, heaters on both stages
+#  4     2     1083     0x62     6     20.    2.0     100 	800
+   4     3     1085     0x54     6      5.    0.2      80	200
+
+# ant 5:
+#  5     2     1083     0x62     6     20.    2.0     100 	800
+   5     3     1085     0x54     6      5.    0.2      80	200
+
+# ant 6: SIS, heaters on both stages
+#  6     2     1083     0x62     6     20.    2.      100	800
+   6     3     1085     0x54     6      5.    0.2      80	200
+
+# ant 7:
+# turn off 17 jul 99 - looks like htr is open
+# turn off stage 3, 07 nov 02 - heater is intermittent
+   7     3     1085     0x54     6     5.    0.2       0        0
+
+# ant 8: SIS
+#  8     2     1083     0x62     6     20.    2.      100	800
+   8     3     1085     0x54     6      5.    0.2      80       200
+
+# ant 9: SIS, heaters on both stages
+#  9     2     1083     0x62     6     20.    2.0     100	800	
+   9     3     1085     0x54     6      5.    0.2     80	200
+
+# ant A: SIS; heater is on strap from spider to mixer block
+# changed itargmax from 200 to 600 because cold head temp is
+#  zooming up and down erratically - rp 22mar01
+# 14-apr-04 turned off stage 3 heater because of erratic temp
+#  performance - not sure if sensor is working properly
+#  A     2     1083     0x62     6     20.    2.0     100	800	
+   A     3     1085     0x54     6      5.    0.2     80	200

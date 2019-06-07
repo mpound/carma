@@ -1,0 +1,127 @@
+/** @file
+ * $Id: DirectCan.cc.eml,v 1.1 2003/07/11 16:55:04 eleitch Exp $
+ *
+ * Implementation of DirectCan class.
+ *
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/11 16:55:04 $
+ */
+
+// Carma includes
+#include "carma/canbus/DirectCan.h"
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: Error.h already included in DirectCan.h
+ */
+#include "carma/canbus/Error.h"
+#include "carma/canbus/Types.h"
+
+using namespace carma::canbus;
+
+// -----------------------------------------------------------------------------
+DirectCan::DirectCan() 
+{
+    // Open IPQs.
+    // Only open IPQs that are already open.  If it isn't already open
+    // then it means the CanMaster that will read and write DirectCan
+    // messages is either not running or has experienced a fatal error.  
+    try {
+        writeIpq_ = new IPQwriter<carma::canbus::Message>(CAN_INPUT_IPQ,
+                false, IPQ_BUFFER_SIZE);
+        readIpq_ = new IPQreader<carma::canbus::Message>(CAN_OUTPUT_IPQ,
+                false, IPQ_BUFFER_SIZE);
+        
+        // Set the number of elements available in ipqs to zero.  This
+        // causes this DirectCan object to only look at messages received
+        // in the IPQs after this call was made instead of the perhaps
+        // thousands of old or stagnant messages.
+        readIpq_->setNoneAvailable();
+            
+    } catch (carma::util::ErrorException &err) {
+        ostringstream os;
+        os << "DirectCan::DirectCan() - Exception caught while trying to "
+            "open IPQs.  Check that a CanMaster process is running on the "
+            "bus you wish to communicate with using DirectCan.  If a "
+            "CanMaster process is running, then congratulations - you have "
+            "detected a bug. Exiting." << endl << (string)err.what() << ends;
+        carma::canbus::Error newErr(os);
+        newErr.report();
+        newErr.log(Priority::CRIT);
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: I'm categorically opposed to the use of exit() anywhere
+ * but in a main().  Isn't this what exceptions are for?  Seems to me
+ * that library classes should just throw exceptions & it should be up
+ * to the user of those classes to decide what to do with them.  This
+ * is also a problem in CorbaUtils.cc (and elsewhere, for instance the
+ * orbacus libaries).  Maybe the programming style guide needs some
+ * meta-rules restricting this sort of thing?
+ */
+        exit(EXIT_FAILURE);
+    } catch (...) {
+        carma::canbus::Error err("DirectCan::DirectCan() - Unknown exception "
+                "caught. Exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// -----------------------------------------------------------------------------
+carma::canbus::DirectCan::~DirectCan()
+{
+    delete readIpq_;
+    delete writeIpq_;
+}
+
+// -----------------------------------------------------------------------------
+carma::canbus::Message DirectCan::getMessage() throw (Error)
+{
+    // Check to make sure that the buffer isn't being overflowed 
+  /**** REVIEW
+   * Reviewer: eml
+   * Comments: readIpq_->read() can also throw
+   * carma::util::ErrorException
+   */
+    int msgsLost = readIpq_->read();
+    if (msgsLost > 0) {
+        ostringstream err;
+        err << "DirectCan::getMessage() - CAN Message IPQ is "
+            << "being written to much faster than you are reading from "
+            << "it! " << msgsLost << " messages lost since last read." 
+            << ends;
+       throw carma::canbus::Error(err.str());
+    } 
+    return *(Message *)readIpq_;
+}
+
+// -----------------------------------------------------------------------------
+carma::canbus::Message DirectCan::getMessage(idType id) throw (Error)
+{
+    bool got = false;
+    carma::canbus::Message msg;
+    while (!got) {
+        msg = getMessage();
+        got = (msg.getId() == id);
+    }
+    return msg;
+}
+/**** REVIEW
+ * Reviewer: eml
+ * Comments: writeIpq_->write() can throw an exception (in
+ * IPQbufferBase::lockWrite()), but postMessage, which uses this
+ * class, gives no indication that an exception may be thrown.  What
+ * protocol should be followed for situations like this?  Does one
+ * only declare a method as throwing exceptions if that method throws
+ * them explicitly?  The alternative is a headache, but not
+ * documenting nested exceptions kind of defeats the purpose of the
+ * throw() declaration...
+ */
+
+// -----------------------------------------------------------------------------
+void DirectCan::postMessage(carma::canbus::Message msg)
+{
+    *(Message *)writeIpq_ = msg;
+    writeIpq_->write();
+}

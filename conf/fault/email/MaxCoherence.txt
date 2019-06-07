@@ -1,0 +1,16 @@
+The fault system has detected that one or more antennas has lost coherence for 
+longer than 30 minutes.  There are several possible reasons for this error,
+including:
+
+* The receiver(s) are no longer tuned or locked.
+* A component in the IF/RF chain has malfunctioned.
+* The antenna has developed a large pointing offset.
+* The script has stopped running.
+* The script contains no calibrators (or weak ones).
+* The calibrator(s) in the script are not being observed often enough.
+
+If only one or two antennas have a small max coherence value, then please look
+at antenna specific causes.  If a large subset of antennas contain small
+values, the problem is more likely to be related to the script and calibrator
+configuration.
+

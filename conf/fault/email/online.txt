@@ -1,0 +1,8 @@
+A subsystem has gone offline. This most often applies to antennas, though
+it can correspond to other subsystems (such as correlator bands) as well.
+You may need to restart the computer controlling this subsystem.
+
+Look here for fixes for Sza, Ovro and Bima telescopes respectively:
+http://cedarflat.mmarray.org/wiki/Alarms#SzaX.online
+http://cedarflat.mmarray.org/wiki/Alarms#OvroX.online
+http://cedarflat.mmarray.org/wiki/Alarms#BimaX.online

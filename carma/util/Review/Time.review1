@@ -1,0 +1,130 @@
+
+Reviewer:	Peter Teuben	//-REV-PJT
+Id:		$Id: Time.review1,v 1.1 2003/04/03 18:35:47 scott Exp $
+Summary:
+
+	r1. nightly	n/a
+	r2. design	suggestion to consider a frame_t type
+	r3. doxygen	some changes annotated
+	r4. style	OK
+	i2. test	FAIL
+		compile:	FAIL  (gcc2 OK, gcc3 FAIL)
+		coverage:	FAIL:	30% 
+		valgrind:	OK
+		efence:		OK
+	i3: correctness	?
+
+==================================================================================================
+Details:
+
+compile: (pending directory structure the construct
+	#include "carma/util/Time.h"
+	for now, in the current status I did it manually:
+
+	g++ -I$CARMA -g Time.cc main.cc -o main -lrt -ldl 
+
+	Note: does not compile under gcc3, gcc 2.95.3 and 2.96 both ok.
+
+	==> FAIL (does not pass 3.x compilers)
+
+coverage:
+	g++ -I$CARMA -fprofile-arcs -ftest-coverage -g Time.cc main.cc -o main -lrt -ldl 
+	main
+
+	19:48:18.04
+	Now:19:48:18.039754 UT
+	Now:19:48:18.0420 UT
+	Now:19:48:18.0 UT
+	MJD:52697.8252
+
+	gcov main.cc
+	Abort (core dumped)		-- on laptop (rh73) on stock gcc 2.96 !! :-(
+
+	(redo on our mandrake82 system; gcc 2.95.3 - also worked fine on my own handcompiled 2.95.3)
+	gcov main.cc
+	100.00% of 10 source lines executed in file main.cc
+	gcov Time.cc
+	30.47% of 128 source lines executed in file Time.cc
+
+	==> FAIL (30% seems a little low)
+	suggests that a test program must execute multiple paths through
+	the code, if that is what it takes to bring up the coverage level :-)
+
+
+leak detection:
+	valgrind main
+==29411== 
+==29411== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+==29411== malloc/free: in use at exit: 1480 bytes in 2 blocks.
+==29411== malloc/free: 7 allocs, 5 frees, 1600 bytes allocated.
+==29411== For a detailed leak analysis,  rerun with: --leak-check=yes
+==29411== For counts of detected errors, rerun with: -v
+
+	==> minor FAIL (2 missing allocs?)
+
+	valgrind --leak-check=yes main
+==29617== 
+==29617== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+==29617== malloc/free: in use at exit: 1480 bytes in 2 blocks.
+==29617== malloc/free: 7 allocs, 5 frees, 1600 bytes allocated.
+==29617== For counts of detected errors, rerun with: -v
+==29617== searching for pointers to 2 not-freed blocks.
+==29617== checked 4262628 bytes.
+==29617== 
+==29617== definitely lost: 0 bytes in 0 blocks.
+==29617== possibly lost:   0 bytes in 0 blocks.
+==29617== still reachable: 1480 bytes in 2 blocks.
+==29617== 
+==29617== LEAK SUMMARY:
+==29617==    definitely lost: 0 bytes in 0 blocks.
+==29617==    possibly lost:   0 bytes in 0 blocks.
+==29617==    still reachable: 1480 bytes in 2 blocks.
+==29617== Reachable blocks (those to which a pointer was found) are not shown.
+==29617== To see them, rerun with: --show-reachable=yes
+==29617== 
+
+	valgrind --leak-check=yes --show-reachable=yes main
+
+
+==29670== 
+==29670== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+==29670== malloc/free: in use at exit: 1480 bytes in 2 blocks.
+==29670== malloc/free: 7 allocs, 5 frees, 1600 bytes allocated.
+==29670== For counts of detected errors, rerun with: -v
+==29670== searching for pointers to 2 not-freed blocks.
+==29670== checked 4262628 bytes.
+==29670== 
+==29670== definitely lost: 0 bytes in 0 blocks.
+==29670== possibly lost:   0 bytes in 0 blocks.
+==29670== still reachable: 1480 bytes in 2 blocks.
+==29670== 
+==29670== 200 bytes in 1 blocks are still reachable in loss record 1 of 2
+==29670==    at 0x40240BB7: my_malloc (vg_libpthread.c:249)
+==29670==    by 0x40242681: get_or_allocate_specifics_ptr (vg_libpthread.c:1340)
+==29670==    by 0x402427A1: __pthread_key_create (vg_libpthread.c:1377)
+==29670==    by 0x40242D46: init_libc_tsd_keys (vg_libpthread.c:1637)
+==29670== 
+==29670== 1280 bytes in 1 blocks are still reachable in loss record 2 of 2
+==29670==    at 0x40044364: malloc (vg_clientfuncs.c:100)
+==29670==    by 0x804CB03: ??? (/usr/include/g++-3/stl_alloc.h:490)
+==29670==    by 0x804C914: ??? (/usr/include/g++-3/stl_alloc.h:531)
+==29670==    by 0x804C83E: ??? (/usr/include/g++-3/stl_alloc.h:419)
+==29670== 
+==29670== LEAK SUMMARY:
+==29670==    definitely lost: 0 bytes in 0 blocks.
+==29670==    possibly lost:   0 bytes in 0 blocks.
+==29670==    still reachable: 1480 bytes in 2 blocks.
+==29670== 
+
+	==> PASS
+
+
+electric fence:
+
+  	setenv LD_PRELOAD /usr/lib/libefence.so.0.0 
+	main
+	...
+	echo $status
+	0	
+
+	==> PASS

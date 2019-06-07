@@ -1,0 +1,46 @@
+Author: Andy Beard
+Remove pending server requests when an activator is unregistered.  
+--- ACE_wrappers/TAO/orbsvcs/ImplRepo_Service/ImR_Locator_i.cpp	2010-03-04 04:02:04.000000000 -0800
++++ ACE+TAO-5.8.1-carma-1.5/TAO/orbsvcs/ImplRepo_Service/ImR_Locator_i.cpp	2011-12-22 16:09:25.000000000 -0800
+@@ -424,6 +424,28 @@ ImR_Locator_i::unregister_activator_i (c
+ {
+   ACE_ASSERT (aname != 0);
+   int err = this->repository_.remove_activator (aname);
++  
++  // Loop through servers and remove any pending requests on servers with
++  // this activator. This handles potential deadlock from a new or restarted
++  // ImR_Activator (think power outage while we are waiting on server startup) 
++  // Without this subsequent attempts to restart will just be added to the 
++  // waiting queue and we can block forever rather than send another startup 
++  // request to the new ImR_Activator.
++  Locator_Repository::SIMap::ENTRY* server_entry;
++  Locator_Repository::SIMap::ITERATOR server_iter (this->repository_.servers ());
++  for (;server_iter.next (server_entry) != 0; server_iter.advance ())
++    {
++      Server_Info_Ptr info = server_entry->int_id_;
++      ACE_ASSERT (! info.null ());
++
++      if (info->activator == aname ) 
++      {
++        waiter_svt_.unblock_all ( info->name.c_str ());
++        if (this->debug_ > 1)
++          ACE_DEBUG ((LM_DEBUG, "ImR: Unblocking waiters on <%C>.\n", info->name.c_str()));
++      }
++    }
++
+   ACE_UNUSED_ARG (err);
+ }
+ 
+@@ -880,6 +902,12 @@ ImR_Locator_i::remove_server (const char
+               bool wait = false;
+               poa->destroy (etherealize, wait);
+             }
++          
++          // Unblock any waiters since they otherwise might wait forever on a 
++          // callback that will either never come or we won't know what to do 
++          // with when it does arrive.
++          waiter_svt_.unblock_all (name);
++
+           if (this->debug_ > 0)
+             ACE_DEBUG ((LM_DEBUG, "ImR: Removed Server <%C>.\n", name));
+         }

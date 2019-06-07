@@ -1,0 +1,33 @@
+# rcvr2.tab
+# dewar 8
+# updated 27-nov-00
+
+** all polyimide wiring **
+
+cyl 5747
+
+sensor1 = 47107
+sensor2 = 97641
+sensor 3 = 07702
+sensor4 = 96949
+sensor5 = 22576
+
+mxrname_B = 31-011-3
+external bias tee
+safesisbias_B = 2.4
+0.2" diam x 0.4" long magnet
+HEMT 12
+room temp bias at 1mV = 16.2 uA
+copper strap from spider to mixer block
+
+mxrname_D = 31-015-2K1 
+mixer from box #2
+matching network is straightthrough50 ohms
+safesisbias_D = 2.3
+0.2" diam x 0.4" long magnet
+HEMT 18
+room temp bias at 1mV = 20.7 uA
+copper strap from spider to mixer block
+
+2nd stage heater: 300 ohm pwr resistor
+3rd stage heaters: two 600 ohm pwr resistors in parallel

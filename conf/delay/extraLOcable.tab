@@ -1,0 +1,42 @@
+# $Id: extraLOcable.tab,v 1.2 2013/09/24 15:47:08 scott Exp $
+#
+# Config file for antenna specific LO cable lengths after the linelength 
+# system (after the LO termination). Thie loberotator code compensates for 
+# this extra length at the LO frequency. The cable length can be different
+# for the two different receiver types (millimeter and centimeter). The 
+# cable length is given as a delay in nanoseconds.
+#
+# NOTE: The antenna numbers are not used. The rows **must** be in antenna
+# order and include all antennas.
+#
+# This file is read in during initialization of a subarray
+# and the current values will displayed on the Loberotator page.
+# Data values from James Lamb 09/30/2013.
+#
+#
+#| antNo | mmRx | cmRx
+#| i     |   r  |   r 
+#|       | nsec | nsec
+    1       0.0    0.0
+    2       0.0    0.0
+    3       0.0    0.0
+    4       0.0    0.0
+    5       0.0    0.0
+    6       0.0    0.0
+    7       0.0    0.0
+    8       0.0    0.0   
+    9       0.0    0.0  
+    10      0.0    0.0  
+    11      0.0    0.0
+    12      0.0    0.0  
+    13      0.0    0.0   
+    14      0.0    0.0   
+    15      0.0    0.0   
+    16      0.0    0.0   
+    17      0.0    0.0   
+    18      0.0    0.0  
+    19      0.0    0.0   
+    20      0.0    0.0   
+    21      0.0    0.0   
+    22      0.0    0.0   
+    23      0.0    0.0   

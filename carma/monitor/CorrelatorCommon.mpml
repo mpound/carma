@@ -1,0 +1,497 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Common monitor points for Correlator and Digitizer cards -->
+
+<Common scope="global" author="Rick Hobbs">
+
+    <!-- =================================================================== -->
+    <!-- Header Variables (common for each band + all board types)           -->
+    <!-- =================================================================== -->
+
+    <!-- Monitor data receive status -->
+    <MonitorPoint name="received" type="enum" >
+        <shortName>Received</shortName>
+        <longName>Received status</longName>
+        <description>Received status</description>
+        <enum name="ONTIME">
+            <description>Received</description>
+        </enum>
+        <enum name="LATE">
+            <description>Receieved late</description>
+        </enum>
+        <enum name="MISSING">
+            <description>Not received</description>
+        </enum>
+        <errHi>MISSING</errHi>
+        <warnHi>LATE</warnHi>
+    </MonitorPoint>
+
+    <!-- Monitor data timestamp -->
+    <MonitorPoint name="timestamp" type="absTime">
+        <shortName>Timestamp</shortName>
+        <units>UT</units>
+        <description>
+            Monitor data timestamp
+        </description>
+    </MonitorPoint>
+
+    <!-- cobra::CorrelatorParameters -->
+    <MonitorPoint name="bandNumber" type="int">
+        <shortName>AstroBand#</shortName>
+        <longName>The AstroBand Number</longName>
+        <units></units>
+        <description>The AstroBand Number</description>
+    </MonitorPoint>
+    <MonitorPoint name="mode" type="enum" >
+        <shortName>Mode</shortName>
+        <longName>Mode</longName>
+        <description>Correlator mode</description>
+        <enum name="IDLE">
+            <description>Idle - correlations disabled</description>
+        </enum>
+        <enum name="CORRELATE">
+            <description>Correlations enabled</description>
+        </enum>
+        <enum name="HOST_SIM">
+            <description>Host Simulate</description>
+        </enum>
+        <enum name="DSP_SIM">
+            <description>DSP Simulate</description>
+        </enum>
+        <enum name="PPC_SIM">
+            <description>PPC Simulate</description>
+        </enum>
+        <enum name="CONFIGURE">
+            <description>Set bandwidth underway</description>
+        </enum>
+        <enum name="OPTIMIZE">
+            <description>Optimize Thresholds underway</description>
+        </enum>
+        <enum name="FLATTEN">
+            <description>Flatten phases underway</description>
+        </enum>
+    </MonitorPoint>
+
+    <MonitorPoint name="sourceName" type="string">
+        <shortName>Source</shortName>
+        <longName>Source Name</longName>
+        <units></units>
+        <description>Source name</description>
+    </MonitorPoint>
+    <MonitorPoint name="numberOfPhaseSwitchesIntegrated" type="int">
+        <shortName>pSwitchIntegCount</shortName>
+        <longName>Number of phase switches integrated</longName>
+        <units></units>
+        <description>Number of phase switches integrated</description>
+    </MonitorPoint>
+    <MonitorPoint name="phaseSwitchPeriod" type="float">
+        <shortName>pSwitchPeriod</shortName>
+        <longName>Phase switch period</longName>
+        <units>ms</units>
+        <description>Phase switch period</description>
+    </MonitorPoint>
+    <MonitorPoint name="phaseSwitchIntegrationTime" type="float">
+        <shortName>pSwitchIntegTime</shortName>
+        <longName>Phase switch integration time</longName>
+        <units>ms</units>
+        <description>Phase switch integration time</description>
+    </MonitorPoint>
+    <MonitorPoint name="totalTimeSpan" type="float">
+        <shortName>IntegSpan</shortName>
+        <longName>Total time span of an integration</longName>
+        <units>ms</units>
+        <description>Total time span of an integration</description>
+    </MonitorPoint>
+    <MonitorPoint name="totalIntegrationTime" type="float">
+        <shortName>TotIntegTime</shortName>
+        <longName>Total integration time</longName>
+        <units>ms</units>
+        <description>Total integration time</description>
+    </MonitorPoint>
+    <MonitorPoint name="bandwidth" type="float" priority="useful">
+        <shortName>Bandwidth</shortName>
+        <units>MHz</units>
+        <description>Bandwidth</description>
+        <precision>1</precision>
+    </MonitorPoint>
+
+    <MonitorPoint name="centerFrequency" type="float">
+        <shortName>centerFrequency</shortName>
+        <units>MHz</units>
+        <description>Center Frequency</description>
+        <precision>1</precision>
+    </MonitorPoint>
+    <MonitorPoint name="dconFrequency" type="float">
+        <shortName>dconFrequency</shortName>
+        <units>MHz</units>
+        <description>Downconverter Frequency</description>
+        <precision>1</precision>
+    </MonitorPoint>
+    <MonitorPoint name="dconSideband" type="enum" >
+        <shortName>dconSideband</shortName>
+        <longName>Downconverter sideband</longName>
+        <description>Downconverter sideband</description>
+        <enum name="LSB">
+            <description>Lower-sideband</description>
+        </enum>
+        <enum name="USB">
+            <description>Upper-sideband</description>
+        </enum>
+    </MonitorPoint>
+    <MonitorPoint name="lobeResidualFrequency" type="float">
+        <shortName>lobeResidFreq</shortName>
+        <units>MHz</units>
+        <description>Secondary Lobe rotation residual frequency.</description>
+        <precision>1</precision>
+    </MonitorPoint>
+    <MonitorPoint name="lobeTrackSideband" type="enum" >
+        <shortName>lobeTrackSb</shortName>
+        <description>Secondary Lobe rotation tracking sideband</description>
+        <enum name="LSB">
+            <description>Lower-sideband, default if lobeResidualFrequency
+             is less than zero.  Can be changed in cobra ini file or
+             with control method call TBD.
+            </description>
+        </enum>
+        <enum name="USB">
+            <description>Upper-sideband, default if lobeResidualFrequency
+             is greater than zero.
+            </description>
+        </enum>
+        <enum name="DSB">
+            <description>Double-sideband. If lobeResidualFrequency
+            is  zero, then tracking is DSB.
+            </description>
+        </enum>
+    </MonitorPoint>
+
+    <MonitorPoint name="bdcEnabled" type="bool" >
+        <shortName>blockDcEnabled</shortName>
+        <longName>Block downconverter enabled</longName>
+        <description>
+           State of block downconverter, true means the BDC is enabled.
+        </description>
+    </MonitorPoint>
+    <MonitorPoint name="scaling" type="int">
+        <shortName>Scaling</shortName>
+        <units></units>
+        <description>Scaling</description>
+    </MonitorPoint>
+
+     <MonitorPoint name="BitMode" type="enum" priority="vital">
+         <longName>Quantization bit level</longName>
+         <description>Quantization bit level for correlation: 2-bit,
+          3-bit, or 4-bit. COBRA hardware can only use 2-bit mode.
+         </description>
+         <enum name="CORR_2BIT"/>
+         <enum name="CORR_3BIT"/>
+         <enum name="CORR_4BIT"/>
+     </MonitorPoint>
+
+     <MonitorPoint name="astroBandMode" type="enum" persistent="true">
+        <shortName>AstroBand Mode</shortName>
+        <longName>AstroBand configuration mode</longName>
+        <description>Configuration mode for a given
+            Astroband. The FPGAs have a distinct set configurations to load for
+            single polarization, full Stokes, or 23-station mode.  This
+            monitor point enumerates those.
+       </description>
+       <enum name="SINGLEPOL"/>
+         <description>Single polarization mode, e.g. LL or RR</description>
+       <enum name="DUALPOL"/>
+         <description>Dual polarization mode, LL+RR</description>
+       <enum name="FULLPOL"/>
+         <description>Full-stokes mode, LL+RR+RL+LR</description>
+       <enum name="CARMA23"/>
+         <description>23-station mode </description>
+    </MonitorPoint>
+
+     <MonitorPoint name="CorrStatus" type="enum" priority="vital">
+         <longName>Correlator Status</longName>
+         <description>The CARMA boards must go through several setup
+              routines in order to be ready to produce valid data. These are
+              configure the boards, optimize thresholds, flatten phases,
+              calibrate amplitudes.  This enumeration indicates the
+              next routine that needs to be run or READY if the boards
+              are ready to produce valid data.
+         </description>
+         <enum name="CONFIGURE"/>
+         <enum name="OPTIMIZE"/>
+         <enum name="FLATTEN"/>
+         <enum name="CALIBRATE"/>
+         <enum name="READY"/>
+     </MonitorPoint>
+
+    <!-- Command sequence number -->
+
+    <MonitorPoint name="corrSeqNo" type="int" priority="vital">
+        <shortName>correlatorSeqNo</shortName>
+        <longName>Correlator command per-band sequence number</longName>
+        <units></units>
+        <description>
+            Generic correlator per-band change sequence number.
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="commandStatusBitPattern" type="int"
+                  priority="vital">
+        <shortName>cmdStatusBits</shortName>
+        <description>Integer bit pattern indicating the status of
+         the last correlator command issued.  The bit pattern
+         definition is:
+            COMMAND_OK             = 2
+            COMMAND_IN_PROGRESS    = 4
+            COMMAND_CONFIGURE_FAIL = 8
+            COMMAND_OPTIMIZE_FAIL  = 16
+            COMMAND_FLATTEN_FAIL   = 32
+            COMMAND_CALIBRATE_FAIL = 64
+            COMMAND_MULTIPLE_FAIL  = 2^30
+            COMMAND_UNKNOWN        = 2^31
+        </description>
+        <warnHi>4</warnHi>
+        <errHi>8</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="commandStatus" type="enum" priority="vital">
+        <shortName>cmdStatus</shortName>
+        <description>Enumeration giving detail message about status
+         of the last correlator command issued.  If there were multiple
+         failures (e.g. both optimizeThresholds and flattenPhases failed),
+         then MULTIPLE_FAIL is set and the integer value of
+         commandStatusBitPattern should be inspected.  UNKNOWN is set on
+         a board if that board is missing (failed to report).
+        </description>
+        <enum name="OK">
+          <description>Correlator command completed OK</description>
+        </enum>
+        <enum name="IN_PROGRESS">
+          <description>Correlator command is in progress </description>
+        </enum>
+        <enum name="CONFIGURE_FAIL">
+          <description>Band width configuration failed</description>
+        </enum>
+        <enum name="OPTIMIZE_FAIL">
+          <description>Threshold optimization failed (CARMA bands only)</description>
+        </enum>
+        <enum name="FLATTEN_FAIL">
+          <description>Phase flattening failed (CARMA bands only)</description>
+        </enum>
+        <enum name="CALIBRATE_FAIL">
+          <description>Calibration failed (CARMA bands only)</description>
+        </enum>
+        <enum name="MULTIPLE_FAIL">
+          <description>Multiple steps in configuration failed (CARMA bands only)</description>
+        </enum>
+        <enum name="UNKNOWN">
+          <description>A board is not reporting, so the status is unknown</description>
+        </enum>
+        <warnHi>IN_PROGRESS</warnHi>
+        <errHi>CONFIGURE_FAIL</errHi>
+        <errHi>OPTIMIZE_FAIL</errHi>
+        <errHi>FLATTEN_FAIL</errHi>
+        <errHi>MULTIPLE_FAIL</errHi>
+        <errHi>CALIBRATE_FAIL</errHi>
+        <errHi>UNKNOWN</errHi>
+    </MonitorPoint>
+
+    <!-- =================================================================== -->
+    <!-- Common board monitor points                                         -->
+    <!-- =================================================================== -->
+
+    <!-- Board location information -->
+    <MonitorPoint name="boardNumber" type="int">
+        <shortName>Board#</shortName>
+        <longName>Board Number</longName>
+        <units></units>
+        <description>
+        Board number in the band
+        </description>
+    </MonitorPoint>
+    <MonitorPoint name="slotNumber" type="int">
+        <shortName>Slot#</shortName>
+        <longName>Slot Number</longName>
+        <units></units>
+        <description>
+        Slot number in the crate
+        </description>
+    </MonitorPoint>
+
+    <!-- Board revision/serial numbers -->
+    <MonitorPoint name="boardType" type="string" persistent="true">
+        <shortName>BoardType</shortName>
+        <longName>Board Type</longName>
+        <units></units>
+        <description>Board type - D for digitizer or C for correlator.
+        </description>
+    </MonitorPoint>
+    <MonitorPoint name="boardRevision" type="string" persistent="true">
+        <shortName>BoardRev</shortName>
+        <longName>Board Revision</longName>
+        <units></units>
+        <description>Board revision</description>
+    </MonitorPoint>
+    <MonitorPoint name="boardSerialNumber" type="int" persistent="true">
+        <shortName>BoardSN</shortName>
+        <longName>Board Serial Number</longName>
+        <units></units>
+        <description>Board serial number</description>
+    </MonitorPoint>
+    <MonitorPoint name="moduleRevision" type="string" persistent="true">
+        <shortName>ModuleRev</shortName>
+        <longName>Module Revision</longName>
+        <units></units>
+        <description>Module revision, COBRA Boards (not used for CARMA Boards)</description>
+    </MonitorPoint>
+    <MonitorPoint name="moduleSerialNumber" type="int">
+        <shortName>ModuleSN</shortName>
+        <longName>Module Serial Number</longName>
+        <units></units>
+        <description>Module serial number, COBRA Boards (not used for CARMA Boards)</description>
+    </MonitorPoint>
+
+    <!-- Version info -->
+    <MonitorPoint name="versionDspSoftware" type="string">
+        <shortName>SwVers</shortName>
+        <longName>DSP/PPC software version</longName>
+        <description>Version of DSP or PPC board software.
+           For the PPC boards, this should match the cobra library
+           version that the x86 is using (i.e., in carmaotools).
+     This is useful to ensure that the x86, PPC, and carmaTools are all
+     using the same library version.
+        </description>
+    </MonitorPoint>
+    <MonitorPoint name="versionSysHdl" type="double">
+        <shortName>SysVer</shortName>
+        <longName>Version of system controller HDL</longName>
+        <units></units>
+        <precision>2</precision>
+        <description>Version of system controller HDL</description>
+    </MonitorPoint>
+    <MonitorPoint name="versionFpgaHdl" type="double">
+        <shortName>DataVer</shortName>
+        <longName>Version of correlator data FPGA HDL</longName>
+        <units></units>
+        <precision>2</precision>
+        <description>Version of correlator data FPGA HDL</description>
+    </MonitorPoint>
+    <MonitorPoint name="versionModuleHdl" type="double">
+        <shortName>HdlDgtzrVers</shortName>
+        <longName>Version of digitizer module system controller HDL</longName>
+        <units></units>
+        <precision>2</precision>
+        <description>Version of digitizer module system controller HDL</description>
+    </MonitorPoint>
+
+    <!-- RTOS stats -->
+    <MonitorPoint name="osTaskCounter" type="int">
+        <shortName>OsTaskCount</shortName>
+        <longName>OS Task counter</longName>
+        <units></units>
+        <description>Operating system task counter</description>
+    </MonitorPoint>
+    <MonitorPoint name="osCpuUsage" type="int">
+        <shortName>OsCpuUsage</shortName>
+        <longName>OS CPU usage</longName>
+        <units>percent</units>
+        <description>Operating system CPU usage.</description>
+    </MonitorPoint>
+    <MonitorPoint name="osLoadAverage" type="float">
+        <shortName>OsLoadAverage</shortName>
+        <longName>OS LoadAverage</longName>
+        <units></units>
+        <description>Operating system 1-minute load average.
+                     CARMA boards only.
+        </description>
+    </MonitorPoint>
+    <MonitorPoint name="osContextSwitchCounter" type="int">
+        <shortName>OsCntxtSwtchCount</shortName>
+        <longName>OS context switch counter</longName>
+        <units></units>
+        <description>Operating system context switch counter</description>
+    </MonitorPoint>
+    <MonitorPoint name="osFreeRam" type="int">
+        <shortName>Free RAM</shortName>
+        <longName>OS Free RAM</longName>
+        <units>bytes</units>
+        <description>Available memory size, as in sysinfo.
+                     CARMA boards only.
+        </description>
+    </MonitorPoint>
+    <MonitorPoint name="osEccErrors" type="int">
+        <shortName>ECC Errors</shortName>
+        <longName>OS ECC Errors</longName>
+        <units></units>
+        <description>
+            Number of ECC errors in the system memory; the sum of
+            Corrected error count,
+            Corrected errors w/ no info,
+            Uncorrected error count,
+            Uncorrected errors w/ no info.
+            Any value greater than zero is a potential problem.
+            CARMA boards only.
+        </description>
+         <warnHi>1</warnHi>
+        <!-- errHi is arbitrary, as 1 error should cause investigation -->
+         <errHi>5</errHi>
+    </MonitorPoint>
+
+    <!-- Reference status -->
+    <MonitorPoint name="timeReferenceStatus" type="int">
+        <shortName>TimeRefStat</shortName>
+        <longName>Time reference status</longName>
+        <units></units>
+        <description>Time reference status</description>
+    </MonitorPoint>
+    <MonitorPoint name="phaseReferenceStatus" type="int">
+        <shortName>pSwitchRefStat</shortName>
+        <longName>Phase switch reference status</longName>
+        <units></units>
+        <description>Phase switch reference status</description>
+    </MonitorPoint>
+
+    <!-- DSP status -->
+    <MonitorPoint name="dspStatus" type="int" priority="verbose">
+        <shortName>DspStat</shortName>
+        <longName>DSP Status</longName>
+        <units></units>
+        <description>DSP status, COBRA Boards only.</description>
+    </MonitorPoint>
+    <MonitorPoint name="timeOfLastUpdate" type="absTime">
+        <shortName>LastDspUpdate</shortName>
+        <longName>Time of last DSP time update</longName>
+        <units>UT</units>
+        <description>Time of last DSP time update,
+                     COBRA boards only.
+        </description>
+    </MonitorPoint>
+    <MonitorPoint name="uptime" type="double">
+        <shortName>Uptime</shortName>
+        <longName>DSP/Board Uptime</longName>
+        <units>s</units>
+        <precision>1</precision>
+        <description>For COBRA boards, this is the DSP uptime.
+                     For CARMA boards, this is the board (Linux) uptime.
+        </description>
+    </MonitorPoint>
+
+    <Container name="CorMonitorInterpSamps">
+        <MonitorPoint name="inputNumber" type="int">
+            <shortName>Input</shortName>
+            <units></units>
+            <description>Interpolator input number</description>
+        </MonitorPoint>
+        <Container name="InputDelays" count="3">
+            <MonitorPoint name="timestamp" type="absTime">
+                <shortName>Timestamp</shortName>
+                <units>UT</units>
+                <description>Interpolator timestamp</description>
+            </MonitorPoint>
+            <MonitorPoint name="delay" type="double">
+                <shortName>Delay</shortName>
+                <units>ns</units>
+                <description>Interpolator delay</description>
+            </MonitorPoint>
+        </Container>
+    </Container>
+</Common>

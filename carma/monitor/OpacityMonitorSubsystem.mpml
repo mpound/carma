@@ -1,0 +1,230 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- OpacityMonitor (a.k.a. Tipper) Subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="OpacityMonitor" author="Colby Gutierrez-Kraybill">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+
+ <MonitorPoint name="status" type="enum" priority="vital" persistent="true">
+   <shortName>status</shortName>
+   <longName>status</longName>
+   <enum name="STEP">
+     <description>
+        Tipper stepper motor is being pulsed to move to new sky angle
+     </description>
+   </enum>
+   <enum name="TIP_STARTED">
+     <description>New tip reading initiated</description>
+   </enum>
+   <enum name="PORT_ERROR">
+     <description>
+        Unable to acquire tip reading see environment log for error
+     </description>
+   </enum>
+   <enum name="DIRECT">
+     <description>Setting direction of mirror movements</description>
+   </enum>
+   <enum name="GO_ZENITH">
+     <description>Sending mirror to zenith</description>
+   </enum>
+   <enum name="IDLE">
+     <description>
+        Tipper is idle while waiting for next command to acquire reading
+     </description>
+   </enum>
+   <enum name="OPEN_PORT">
+     <description>Software is opening RS232 port</description>
+   </enum>
+   <enum name="INTEGRATING">
+     <description>Tipper is taking data</description>
+   </enum>
+   <errHi>PORT_ERROR</errHi>
+ </MonitorPoint>
+
+ <MonitorPoint name="lastTip" type="absTime" persistent="true">
+   <shortName>LastTip</shortName>
+   <units>UTC</units>
+   <description>
+     Time that last tip reading was acquired
+   </description>
+ </MonitorPoint>
+
+ <MonitorPoint name="tau225" type="float" persistent="true" priority="vital">
+   <shortName>Tau225</shortName>
+   <longName>Tau225GHz</longName>
+   <description>Measured opacity at 225GHz by tipper</description>
+   <width>4</width>
+   <units></units>
+ </MonitorPoint>
+
+ <MonitorPoint name="gain" type="float" persistent="true" priority="normal">
+   <shortName>Gain</shortName>
+   <longName>Gain</longName>
+   <description>Gain</description>
+   <width>4</width>
+   <units></units>
+ </MonitorPoint>
+
+ <MonitorPoint name="tipNumber" type="int" priority="normal" persistent="true">
+   <shortName>Tip No.</shortName>
+   <longName>Tip Number</longName>
+   <width>4</width>
+   <description>Number of tip readings taken since last system restart</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="sequence" type="int" priority="normal" persistent="true">
+   <shortName>Sequence</shortName>
+   <longName>Sequence</longName>
+   <width>4</width>
+   <description>Sequence number of reading being taken by tipper (11 readings for one data set)</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="lastReading" type="absTime" persistent="true">
+   <shortName>Last Reading</shortName>
+   <units>UTC</units>
+   <description>
+     Time that last individual reading was acquired
+   </description>
+ </MonitorPoint>
+
+ <MonitorPoint name="commandedAngle" type="float" priority="normal" persistent="true">
+   <shortName>Commanded Angle</shortName>
+   <longName>Commanded angle of measurement</longName>
+   <description>Angle tipper was commanded to move to</description>
+   <width>4</width>
+ </MonitorPoint>
+
+ <MonitorPoint name="avgSigRef" type="float" priority="normal" persistent="true">
+   <shortName>Avg ref signal</shortName>
+   <longName>Averaged reference signal</longName>
+   <description>Averaged value of reference signal (channel 1)</description>
+   <width>4</width>
+ </MonitorPoint>
+
+ <MonitorPoint name="rmsSigRef" type="float" priority="normal" persistent="true">
+   <shortName>Ref Sig RMS</shortName>
+   <longName>Reference signal RMS</longName>
+   <description>RMS of reference signal (channel 1)</description>
+   <width>4</width>
+ </MonitorPoint>
+
+ <MonitorPoint name="sigRef" type="float" priority="normal" persistent="true">
+   <shortName>Ref Signal</shortName>
+   <longName>Reference Signal</longName>
+   <description>Instantaneous value of sampled reference signal (channel 1)</description>
+   <width>4</width>
+ </MonitorPoint>
+
+ <MonitorPoint name="hotRef" type="float" priority="normal" persistent="true">
+   <shortName>Hot Ref</shortName>
+   <longName>Hot Load Reference</longName>
+   <description>Instantaneous value of sampled hot load reference signal</description>
+   <width>4</width>
+ </MonitorPoint>
+
+ <MonitorPoint name="powRef" type="float" priority="normal" persistent="true">
+   <shortName>Ref Power</shortName>
+   <longName>Total Reference Power</longName>
+   <width>4</width>
+   <units>mW</units>
+   <description>Total power value of sampled reference signal</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="refTemp" type="float" priority="normal" persistent="true">
+   <shortName>Ref Temp</shortName>
+   <longName>Reference Temperature</longName>
+   <units>C</units>
+   <width>4</width>
+   <description>Temp of reference load</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="hotTemp" type="float" priority="normal" persistent="true">
+   <shortName>Hot Temp</shortName>
+   <longName>Hot Load Temperature</longName>
+   <units>C</units>
+   <width>4</width>
+   <description>Temperature of Hot Load</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="ambTemp" type="float" priority="normal" persistent="true">
+   <shortName>Amb Temp</shortName>
+   <longName>Ambient Temperature</longName>
+   <units>C</units>
+   <width>4</width>
+   <description>Ambient Temperature</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="chassisTemp" type="float" priority="normal" persistent="true">
+   <shortName>Chassis Temp</shortName>
+   <longName>Chassis Temperature</longName>
+   <units>C</units>
+   <width>4</width>
+   <description>Chassis Temperature</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="mixerCurr" type="float" priority="normal" persistent="true">
+   <shortName>Mixer Curr</shortName>
+   <longName>Mixer Current</longName>
+   <width>4</width>
+   <units>mA</units>
+   <description>Mixer Current</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="tipperCurr" type="float" priority="normal" persistent="true">
+   <shortName>Tipper Curr</shortName>
+   <longName>Tipper Current</longName>
+   <width>4</width>
+   <units>mA</units>
+   <description>Tipper Current</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="triplerCurr" type="float" priority="normal" persistent="true">
+   <shortName>Tripler Curr</shortName>
+   <longName>Tripler Current</longName>
+   <width>4</width>
+   <units>mA</units>
+   <description>Tripler Current</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="gunnCurr" type="float" priority="normal" persistent="true">
+   <shortName>Gunn Curr</shortName>
+   <longName>Gunn Current</longName>
+   <width>4</width>
+   <units>A</units>
+   <description>Gunn Current</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="battery" type="float" priority="normal" persistent="true">
+   <shortName>Battery</shortName>
+   <longName>Battery Voltage</longName>
+   <width>4</width>
+   <units>V</units>
+   <description>Battery Supply Voltage</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="supplyV" type="float" priority="normal" persistent="true">
+   <shortName>Supply Volt</shortName>
+   <longName>Supply Voltage</longName>
+   <width>4</width>
+   <units>V</units>
+   <description>Power Supply Voltage</description>
+ </MonitorPoint>
+
+ <MonitorPoint name="supplyA" type="float" priority="normal" persistent="true">
+   <shortName>Supply Curr</shortName>
+   <longName>Supply Current</longName>
+   <width>4</width>
+   <units>mA</units>
+   <description>Power Supply Current</description>
+   <warnLo>0.325</warnLo>
+   <warnHi>0.375</warnHi>
+   <errLo>0.305</errLo>
+   <errHi>0.395</errHi>
+ </MonitorPoint>
+
+</Subsystem>

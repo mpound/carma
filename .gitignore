@@ -1,0 +1,14 @@
+CVS
+.*
+!/.gitignore
+*.swp
+*.pyc
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
+*.~
+__pycache__

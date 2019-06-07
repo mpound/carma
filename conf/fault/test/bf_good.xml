@@ -1,0 +1,23 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE dag SYSTEM "blankflag.dtd" [
+	<!ENTITY SCI1 "1">
+	<!ENTITY SCI2 "2">
+	<!ENTITY SLCBANDS "8">
+	<!ENTITY WBCBANDS "16">
+	<!ENTITY SLCINPUTS "15">
+	<!ENTITY WBCINPUTS "8">
+]>
+
+<dag type="blankflag">
+
+	<range var="bandNoVar" first="1" last="24">
+		<range var="inputNoVar" first="1" last="32">
+			<!-- blank-flag output for each correlation -->
+			<bf_output astroband="(bandNoVar)" astroinput="(inputNoVar)">
+				<!-- nothing here: this is always good -->
+			</bf_output>
+		</range>
+	</range>
+
+</dag>
+<!-- vim: set ts=4 sts=4 sw=4 noet: -->

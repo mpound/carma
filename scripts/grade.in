@@ -1,0 +1,276 @@
+#! /bin/tcsh -f
+
+#
+# Calculate grade for BIMA projects. (25oct98 tw)
+# 18dec98 - fixed bug that causes it to bail when tau230<0
+#	    changed $2 to $3 for plots
+# 31dec98 - turn off grading until further notice
+# 14apr99 - switch to different version of varplt
+# 02jun99 - turn grading back on.
+# 04jun99 - new grading system based on rmspath and tau230 only
+# 06jan06 - changes $3 to $5 for plots $3 and $4 are for passing
+#           working directories
+# 16aug06 - Modified to work with CARMA data structure, added
+#           precipmm grading in liu of tau230 until it is
+#           available - dnf
+# 19jan07 - Modified the grading for CARMA C-Array (cutoff of 180 klam)
+# 11feb07 - Modified algorithm for pwv grade
+###############################################################################
+if ($#argv < 2) then
+	echo "Usage: grade visfile project_name logfile [/device]"
+        echo "Run on the main phase calibrator."
+	goto end
+endif
+
+set scriptloc = `/usr/bin/dirname "$0"`
+set CONF = "${scriptloc}/../conf/sdp"
+set TOP=`gawk '{if ($1 =="top") print $3}' $CONF/sdp.conf`
+set SDP=`gawk '{if ($1 =="sdp") {split($3,a,"/") ; print a[2]}}' $CONF/sdp.conf`
+set QDIR=`gawk '{if ($1 =="qualityDir") {split($3,a,"/") ; print a[2]}}' $CONF/sdp.conf`
+set MIRSRC=`gawk '{if ($1 =="miriadDir") print $3}' $CONF/sdp.conf`
+
+
+#
+#Modification
+#Miriad PATH has to changed to the local machine
+#
+if (! ${?MIRHELLO}) then
+   if ( -e $MIRSRC/MIRRC.linux ) then
+      source $MIRSRC/MIRRC.linux
+   else
+      echo "Cannot source MIRIAD"
+      goto cleanup
+   endif
+endif
+
+#
+#End Modification
+#
+
+### Edit these lines if you're using this off-site.###
+#set meanmed=~bima/twong/quality/meanmed
+#set savefile=~bima/twong/quality/save.grades
+#set prog=/obs/obs/users/twong/varplt
+set meanmed="meanmed"
+set savefile="$TOP/$SDP/$QDIR/save.grades"
+set prog="varplt"
+
+if (! -e $TOP/quality) then
+   mkdir $TOP/$SDP/$QDIR
+endif
+touch $savefile
+
+#
+#End Modification
+#
+######################################################
+set visfile=$1
+set projname=$2
+@ plot = ( $#argv >= 3 )
+if ($plot == 1) then
+  echo " "
+  echo "This script assesses the quality of observing conditions."
+endif
+echo " "
+
+# Determine the median baseline length in meters
+\rm -f listobs
+listobs vis=$visfile log=listobs >! /dev/null
+#
+#Modification
+#changing nawk for gawk (easier to do an alias)
+#
+#grep Bsln listobs | cut -c 13-80 | nawk '{print sqrt($1^2 + $2^2 + $3^2)}' \
+#    >! bsln.out
+grep Bsln listobs | cut -c 13-80 | gawk '{print sqrt($1^2 + $2^2 + $3^2)}' >! bsln.out
+#
+#End Modification
+#
+#set iffreq=`grep 'IF Freq' listobs | cut -c 60-69`
+#set lofreq=`grep 'First LO' listobs | cut -c 60-69`
+#set obsfreq=`calc -f f8.3 "$iffreq/1000+$lofreq"`
+set obsfreq=`grep 'Rest Freq' listobs | cut -c 33-42`
+set lambda=`calc -f f8.6 "0.3/$obsfreq"`
+#
+#Modification
+#changing nawk for gawk
+#
+#set medbsln=`$meanmed bsln.out | tail -1 | nawk '{print $2}'`
+set medbsln=`$meanmed infile=bsln.out | tail -1 | gawk '{print $2}'`
+#echo "******************************** $medbsln"
+#
+#End Modification
+#
+
+set baselen=`calc -f f8.2 "$lambda*$medbsln"`
+
+# Load values from varplt
+@ N = 1
+set value=(0 0 0)
+#foreach var (rmspath tau230 precipmm)
+foreach var (rmspath precipmm)
+   set exec="$prog vis=$visfile yaxis=$var log=varplt.log"
+   echo "Loading values for $var..."
+   if ($plot == 1) then
+      if ($5 == "/ps") then
+        $exec device=/ps > varplt.jnq
+        lp pgplot.ps
+      else
+        $exec device=$5 > varplt.jnq 
+      endif
+   else if ($plot != 1) then
+      $exec > varplt.jnq
+   endif
+   cut -c 13-50 varplt.log | tail +5 > varplt.list
+   $meanmed infile=varplt.list | tee meanmed.out
+   set median = `tail -1 meanmed.out | cut -c 9-19`
+   set mean = `tail -1 meanmed.out | cut -c 22-32`
+   if ($plot == 1) then
+ask:
+      echo -n "Enter 1 to use the median value, 2 to use the mean: "
+      set ans=$<
+      if ($ans == 1) then
+         set value[$N] = $median
+      else if ($ans == 2) then
+         set value[$N] = $mean
+      else
+         goto ask
+      endif
+   else
+      set value[$N] = $mean
+   endif
+   @ N++
+   echo " "
+end
+
+# Extract header information from varplt.log
+set date = `head -2 varplt.log | tail -1 | cut -c 16-23`
+set time = `head -5 varplt.log | tail -1 | cut -c 4-11`
+set fname = `head -1 varplt.log | cut -c 24-32`
+if ($plot != 1) then
+  echo "Using mean values for source $fname"
+endif
+
+# Score for rmspath
+#set rmsscore = `calc -f f6.1 "100-($value[1])/25"`
+set rmsscore = `calc -f f6.1 "100-($value[1])/20"`
+set irmsscore = `calc -i "$rmsscore"`
+if ($irmsscore < 0) then
+    set rmsscore=0
+    set irmsscore=0
+endif
+#echo "PHASE SCORE: 100-(rmspath/25)=$rmsscore"
+echo "PHASE SCORE: 100-(rmspath/20)=$rmsscore"
+
+goto skiptau
+# Score for tau230
+set tauscore = `calc -f f6.1 "100-13*(exp($value[2])-1)"`
+set itauscore = `calc -i "$tauscore"`
+if ($itauscore < 0) then
+    set tauscore=0
+    set itauscore=0
+endif
+echo "OPACITY SCORE: 100-13*(e^tau230-1)=$tauscore"
+echo ""
+skiptau:
+
+#
+# Modification
+#  Remove once tau230 flows from control
+#
+# Score for precipmm
+set mmscore = `calc -f f6.1 "106-4*($value[2])"`
+set immscore = `calc -i "$mmscore"`
+echo "PRECIPMM SCORE: 106-(4*mmh2o)=$mmscore"
+#
+# End modification
+#
+
+# Calculate the appropriate weighting
+echo "The median baseline length for this track is $baselen m..."
+set ibase = `calc -i "$baselen"`
+if ($ibase < 30) then
+    echo "Using D-array (25/75) weighting for phase/precipmm"
+    set finalscore = `calc -f f6.1 "(0.25*$rmsscore+0.75*$mmscore)"`
+else if ($ibase < 70) then
+    echo "Using D-array (33/67) weighting for phase/precipmm"
+    set finalscore = `calc -f f6.1 "(0.33*$rmsscore+0.67*$mmscore)"`
+else if ($ibase < 180) then
+    echo "Using C-array (60/40) weighting for phase/precipmm"
+    set finalscore = `calc -f f6.1 "(0.6*$rmsscore+0.4*$mmscore)"`
+else if ($ibase < 1500) then
+    echo "Using B-array (75/25) weighting for phase/precipmm"
+    set finalscore = `calc -f f6.1 "(0.75*$rmsscore+0.25*$mmscore)"`
+else
+    echo "Weighing phase and precipmm scores equally..."
+    set finalscore = `calc -f f6.1 "(0.5*$rmsscore+0.5*$mmscore)"`
+endif
+
+# Composite score
+echo "COMPOSITE SCORE = $finalscore"
+set ifinscore = `calc -i "$finalscore"`
+
+# Calculate the letter grades
+set grade = (0 0 0)
+@ N = 1
+#foreach score ($irmsscore $itauscore $ifinscore)
+foreach score ($irmsscore $immscore $ifinscore)
+    if ($score >= 90) then
+	set grade[$N]='A'
+    else if ($score >= 80) then
+	set grade[$N]='B'
+    else if ($score >= 70) then
+	set grade[$N]='C'
+    else if ($score >= 60) then
+	set grade[$N]='D'
+    else 
+	set grade[$N]='F'
+    endif
+
+    if ($grade[$N] != 'D' && $grade[$N] != 'F' && $score < 100) then
+	@ remainder = $score % 10
+	if ($remainder >= 7) then
+	    set sign='+'
+	else if ($remainder < 3) then
+	    set sign='-'
+	else
+	    set sign=' '
+	endif
+    else if ($score >= 100) then
+	set sign='+'
+    else
+	set sign=' '
+    endif
+    set grade[$N]="$grade[$N]$sign"
+    @ N++
+end
+
+echo " "
+echo "PHASE GRADE:   $grade[1]"
+#echo "OPACITY GRADE: $grade[2]"
+echo "PRECIPMM GRADE: $grade[2]"
+echo "COMBINED GRADE: $grade[3]"
+echo ""
+echo -n "Additional deductions should be made for instrumental problems"
+echo " or missing antennas."
+
+# Write to log
+writelog:
+if ($plot == 1) then
+  echo "### Saving results to $savefile"
+  echo " "
+  echo "Grading scale:  97-100 A+   93-97 A   90-93 A-"
+  echo "                 87-90 B+   83-87 B   80-83 B-"
+  echo "                 77-80 C+   73-77 C   70-73 C-"
+  echo "                      60-70 D    <60 F"
+  echo " "
+endif
+echo "$date$time $value[1] $rmsscore $value[2] $mmscore $value[3] $ifinscore $fname $projname" \
+| awk '{printf("%16s %8.2f %5.1f %6.2f %5.1f %7.2f | %4s  %-8.8s %s\n",$1,$2,$3,$4,$5,$6,$7,$8,$9)}' \
+>> $savefile
+
+# Clean up
+cleanup:
+\rm -f varplt.log varplt.list varplt.jnq listobs bsln.out meanmed.out
+
+end:

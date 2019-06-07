@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+
+<!-- $Id: loref.xml,v 1.2 2013/04/09 22:48:04 abeard Exp $  -->
+
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+    <!ENTITY BIN_DIR "/opt/rt/bin">
+    <!ENTITY DEFAULT_DIR "/opt/rt">
+    <!ENTITY SYSLOG7 "traceFile=syslog traceLevel=7">
+    <!ENTITY SYSLOG8 "traceFile=syslog traceLevel=8">
+]>
+
+<domain>
+
+    <oad hostname="localhost">
+
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+            directory="&DEFAULT_DIR;"  
+            args="&SYSLOG8;" />
+        <server name="LoRefFSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&SYSLOG8; subsystem=loref"/>
+        
+        <server name="LoRef" path="&BIN_DIR;/carmaLORefHost"
+            directory="&DEFAULT_DIR;"  
+            args="&SYSLOG7; emulate=true" />
+
+    </oad>
+    
+</domain>
+
+<!-- vim: set expandtab sw=4 ts=4 : -->

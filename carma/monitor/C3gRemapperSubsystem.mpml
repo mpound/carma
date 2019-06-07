@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+<!-- C3g CorrDataRemapper Subsystem monitor point definitions
+   - $Id: C3gRemapperSubsystem.mpml,v 1.2 2014/06/30 19:28:14 mpound Exp $
+  -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="C3gRemapper" author="Marc Pound" priority="normal" count="&NUM_C3G_ASTROBANDS;">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+    <?common OnlineCommon.mpml?>
+    <CommonMonitorPoint ref="online" />
+    <?common CorrDataflowCommon.mpml?>
+
+    <CommonMonitorPoint ref="astrobandNo"/>
+    <CommonMonitorPoint ref="numValidBaselines"/>
+    <CommonMonitorPoint ref="numConjugated"/>
+    <CommonMonitorPoint ref="publishedObject"/>
+    <CommonMonitorPoint ref="receivedTime"/>
+    <CommonMonitorPoint ref="publishedTime"/>
+
+</Subsystem>

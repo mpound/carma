@@ -1,0 +1,9 @@
+# $Id: CedarFlat.tab,v 1.17 2009/05/19 04:22:39 colby Exp $
+#
+# Phase monitor antenna parameters 
+#
+#|chan|offV   |cos  |sin  |scale|
+  0     0.01   -1.66 -1.66 1.07
+  1     0.01   -1.66 -1.66 0.93
+  2     0.00   -1.83 -1.83 1.11
+  3     0.01   -1.83 -1.83 0.90

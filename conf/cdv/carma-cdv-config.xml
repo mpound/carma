@@ -1,0 +1,52 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<!--DOCTYPE Carma:xml-config SYSTEM "DTD/cdv-xml.dtd"-->
+<!-- vim: set ts=4 sts=4 sw=4 noet: -->
+
+<!--
+     Reference to the DTD is on the Carma web site.
+     <!DOCTYPE Carma:xml-config SYSTEM "http://www.mmarray.org/software/dtd/cdv-xml.dtd">
+-->
+<Carma:xml-config xmlns:Carma = "http://www.mmarray.org">
+	<!-- Specific Configuration Information for CDV -->
+
+	<Carma:cdv>
+		<!-- List of CORBA nameservers -->
+		<Carma:NameServers>
+			<Carma:NameServer>imr.carma.pvt:20000</Carma:NameServer>
+			<Carma:NameServer>labacc.ovro.caltech.edu:20000</Carma:NameServer>
+			<Carma:NameServer>labacc.correlator.pvt:20000</Carma:NameServer>
+			<Carma:NameServer>build.ovro.pvt:20000</Carma:NameServer>
+			<Carma:NameServer>reimu.ovro.pvt:20000</Carma:NameServer>
+			<Carma:NameServer>algol.astro.umd.edu:20000</Carma:NameServer>
+			<Carma:NameServer>localhost:20000</Carma:NameServer>
+		</Carma:NameServers>
+
+		<!-- Initial Look And Feel for the Application -->
+		<Carma:LookAndFeel>com.sun.java.swing.plaf.motif.MotifLookAndFeel</Carma:LookAndFeel>
+
+		<!-- Cache size for averaged data -->
+		<Carma:CacheSize>64</Carma:CacheSize>
+
+		<!-- Initial Plot to show -->
+		<Carma:InitialPlot start = "1">
+			<Carma:IMR>imr.carma.pvt:20000</Carma:IMR>
+			<Carma:DataType>spec</Carma:DataType>
+			<Carma:DataView>ant</Carma:DataView>
+			<Carma:BandNumber>1</Carma:BandNumber>
+			<Carma:Polarization>LL</Carma:Polarization>
+			<Carma:Integrated>true</Carma:Integrated>
+		</Carma:InitialPlot>
+
+		<!-- Additional Properties for CORBA ORB -->
+		<Carma:properties>
+			<Carma:prop key = "org.omg.CORBA.ORBClass" value = "org.jacorb.orb.ORB" />
+			<Carma:prop key = "org.omg.CORBA.ORBSingletonClass" value = "org.jacorb.orb.ORBSingleton" />
+			<Carma:prop key = "jacorb.log.default.verbosity" value = "2" />
+			<Carma:prop key = "jacorb.implname" value = "CDV" />
+			<Carma:prop key = "jacorb.use_imr" value = "on" />
+			<Carma:prop key = "jacorb.use_imr_endpoint" value = "on" />
+			<Carma:prop key = "jacorb.interop.lax_boolean_encoding" value = "on" />
+			<Carma:prop key = "jacorb.orb_initializer.fail_on_error" value = "on" />
+		</Carma:properties>
+	</Carma:cdv>
+</Carma:xml-config>

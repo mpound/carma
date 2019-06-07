@@ -1,0 +1,22 @@
+# 371-14.tab
+# this is kludged from 371-12.tab; 
+# NOTE: this is a 1mm mixer, but from standpoint
+#  of the software it is at 3mm - hence all
+#  LO freqs are divided by 3 in this table!!!
+#
+# $Id: 371-14.tab,v 1.1 2006/08/28 21:05:32 colby Exp $
+#
+#|loGHz |t    |v     |i    |dvm  |dvp  |
+#|r     |r    |r     |r    |r    |r    |
+#
+70.	3.62	14.75	75.     -1.5   1.5
+70.	4.00	14.6	77.     -1.5   1.5
+70.	4.50	14.5	80.     -1.5   1.5
+#
+77.	3.62	14.75	95.     -1.5   1.5
+77.	4.00	14.6	97.     -1.5   1.5
+77.	4.50	14.5	100.     -1.5   1.5
+#
+90.	3.62	14.65	90.     -1.5   1.5
+90.	4.00	14.5	92.     -1.5   1.5
+90.	4.50	14.4	95.     -1.5   1.5

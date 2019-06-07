@@ -1,0 +1,198 @@
+#!/bin/tcsh
+
+# $Id: runCatchDataTest.in,v 1.23 2005/12/16 02:48:06 rick Exp $
+
+# run a simple integration test on catchData
+
+# author Rick Hobbs
+# version $Revision: 1.23 $, $Date: 2005/12/16 02:48:06 $
+
+set host = `hostname`
+set testDir = catchDataTestDir
+# note: this file isn't read when --noapps is specified
+set imrXMLfile = conf/imr/acc.xml
+#set imrScript = "./scripts/rc.carma --noapps --imr $host --nosu --dir $testDir/imrDir --file $imrXMLfile "
+set imrScript = "./scripts/rc.carma --noapps --imr $host --nosu --dir $testDir/imrDir --file $imrXMLfile "
+set numBands = 8
+# set the minimum number of times, numBands must be caught to pass
+set minCaught = 3
+set configFile = "correlator/catchDataTest.conf"
+set testBands = "./bin/CorrelatorSimServer  imr=$host sl=true f=$configFile"
+set catchData = "./bin/catchData sl=true f=$configFile imr=$host"
+
+# check hostname. don't run on acc
+if ($host == "") then
+   echo "can't run on host $host. run this script locally"
+   echo "`date`: can't run on host $host. run this script locally" > $testDir/errors
+   exit(1)
+endif
+
+# create a test dir
+if (! -e $testDir) then
+    mkdir -p $testDir/imrDir
+endif
+
+# fire up imr,nameserv and notserv
+echo "Stopping and Starting IMR..."
+$imrScript stop >>& $testDir/errors
+sleep 5
+$imrScript start >>& $testDir/errors
+sleep 5
+# see if processes are running
+echo "checking imr: `date`" >> $testDir/errors
+ps axu | grep imr >>& $testDir/errors
+echo "checking nameserv: `date`" >> $testDir/errors
+ps axu | grep nameserv >>& $testDir/errors
+echo "checking notserv: `date`" >> $testDir/errors
+ps axu | grep notserv >>& $testDir/errors
+echo " " >> $testDir/errors
+
+
+# make sure there are no errant Servers running
+killall -s KILL bin/CorrelatorSimServer
+
+# fire up numBands test bands
+echo "Starting $numBands CorrelatorSimServers..."
+set cnt = 0
+set bn = 1
+while ($cnt < $numBands)
+   $testBands b=$bn >& /dev/null &
+   echo "Started Band$bn"
+   @ cnt += 1
+   @ bn += 1
+end
+# sleep 10
+
+# fire up catchData
+echo "Starting catchData... will be killed in 60 seconds"
+$catchData >& $testDir/catchDataOutput1 &
+set cdPID = $!
+sleep 60
+echo "Killing catchData..."
+kill -9 $cdPID
+
+# restart catchData (this checks bug#37)
+echo "Restarting catchData to check Bug #37... will be killed in 60 seconds"
+$catchData >& $testDir/catchDataOutput2 &
+echo $! > $testDir/pids
+sleep 60
+
+echo "Killing processes for next test..."
+# kill all processes
+foreach pid (`cat $testDir/pids`)
+   echo "killing PID= $pid"
+   kill -9 $pid
+end
+
+echo "removed pids file"
+rm -rf $testDir/pids
+
+# kill SimServers
+echo "killing all CorrelatorSimServers..."
+killall -s KILL bin/CorrelatorSimServer
+# sleep 2
+
+echo "killing imr..."
+$imrScript stop >>& $testDir/errors
+sleep 5
+ps axu | grep imr >>& $testDir/errors
+ps axu | grep nameserv >>& $testDir/errors
+ps axu | grep notserv >>& $testDir/errors
+
+#####################
+# TEST DIFFERENT ORDER -- first start catchData, then the SimServers
+#####################
+$imrScript start >>& $testDir/errors
+sleep 5
+# see if processes are running
+echo "checking imr: `date`" >> $testDir/errors
+ps axu | grep imr >>& $testDir/errors
+echo "checking nameserv: `date`" >> $testDir/errors
+ps axu | grep nameserv >>& $testDir/errors
+echo "checking notserv: `date`" >> $testDir/errors
+ps axu | grep notserv >>& $testDir/errors
+echo " " >> $testDir/errors
+
+
+# fire up catchData
+echo "Starting catchData... will be killed in 75 seconds"
+$catchData >& $testDir/catchDataOutput3 &
+set cdPID = $!
+sleep 15
+
+# fire up numBands test bands
+echo "Starting $numBands CorrelatorSimServers..."
+set cnt = 0
+set bn = 1
+while ($cnt < $numBands)
+   $testBands b=$bn >& /dev/null &
+   echo "Started Band$bn"
+   @ cnt += 1
+   @ bn += 1
+end
+sleep 60
+
+echo "Killing catchData..."
+kill -9 $cdPID
+
+# kill SimServers
+echo "killing all CorrelatorSimServers..."
+killall -s KILL bin/CorrelatorSimServer
+
+# kill imr
+echo "killing imr..."
+$imrScript stop >>& $testDir/errors
+
+
+echo "Integration Test finished. Checking results..."
+# check output file for number of bands caught
+set nc1 = `grep "caught=" $testDir/catchDataOutput1 |& grep $numBands | wc -l`
+echo "Test1: $numBands bands caught $nc1 times"
+set passed1 = 0
+if ($nc1 > $minCaught) then
+    set passed1 = 1
+endif
+
+set nc2 = `grep "caught=" $testDir/catchDataOutput2 |& grep $numBands | wc -l`
+echo "Test2: $numBands bands caught $nc2 times"
+set passed2 = 0
+if ($nc2 > $minCaught) then
+    set passed2 = 1
+endif
+
+set nc3 = `grep "caught=" $testDir/catchDataOutput3 |& grep $numBands | wc -l`
+echo "Test3: $numBands bands caught $nc3 times"
+set passed3 = 0
+if ($nc3 > $minCaught) then
+    set passed3 = 1
+endif
+
+
+if ("$passed1" == "1") then
+   echo "CARMA-TEST: PASS runCatchDataTest integration test1"
+else
+   echo "CARMA-TEST: FAIL runCatchDataTest integration test1"
+endif
+if ("$passed2" == "1") then
+   echo "CARMA-TEST: PASS runCatchDataTest bug37 test"
+else
+   echo "CARMA-TEST: FAIL runCatchDataTest bug37 test"
+endif
+if ("$passed3" == "1") then
+   echo "CARMA-TEST: PASS runCatchDataTest reverse order test"
+else
+   echo "CARMA-TEST: FAIL runCatchDataTest reverse order test"
+endif
+
+if ("$passed1" == "1" && "$passed2" == "1" && "$passed3" == "1") then
+   # rm testDirectory on PASSED only
+   rm -rf $testDir
+   set exit_status = 0
+else
+   set exit_status = 1
+   set destDir = /tmp/$testDir-`date +%F-%T`
+   echo "moving results directory to $destDir"
+   mv  $testDir $destDir
+endif
+
+exit($exit_status)

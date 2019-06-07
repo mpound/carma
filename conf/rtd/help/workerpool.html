@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>SubarrayControl WorkerPool Statistics Help</title>
+</head>
+<body>
+<center>
+	<h1>SubarrayControl WorkerPool Statistics Help</h1>
+</center>
+
+<h2>Overview</h2>
+<p>
+This window provides insight into the carma::control::WorkerPool class. The
+information provided includes:
+</p>
+
+<ul>
+	<li>Instantaneous Thread Usage</li>
+	<li>Time each task spent queued (per-frame and since process start)</li>
+	<li>Time each task spent executing (per-frame and since process start)</li>
+</ul>
+
+<h2>Sampling Methodology</h2>
+<p>
+These statistics are sampled in a few different ways. Each method is explained
+in detail below.
+</p>
+<ol>
+	<li>Instantaneous (at each 500ms sampling interval)</li>
+	<li>End-of-queue (when a task is removed from the queue)</li>
+	<li>End-of-execution (when a task finishes executing)</li>
+</ol>
+
+<h3>Instantaneous Sampling</h3>
+<p>
+An monitor points with <tt>inst</tt> in their name are sampled instantaneously.
+This means that they are sampled once per 500ms, exactly at the boundary when
+all statistics are being written to the monitor system. These values are only
+meaningful for a single frame.
+</p>
+<p>
+Instantaneous values are useful to represent the current number of tasks which
+are queued (waiting to be run) as well as the current number of threads which
+are executing a task (busy threads). They are useful to detect long-running
+tasks as they are running and using up WorkerPool resources.
+</p>
+
+<h3>End-of-queue Sampling</h3>
+<p>
+Any monitor point with <tt>Queue</tt> in their name is sampled when it is
+removed from the queue. These numbers are summed up in two ways:
+</p>
+<ol>
+	<li>Current frame: these monitor points begin with <tt>frame</tt></li>
+	<li>Since process start: these monitor points begin with <tt>total</tt></li>
+</ol>
+
+<h3>End-of-execution Sampling</h3>
+<p>
+Any monitor point with <tt>Execute</tt> in their name is sampled when it is has
+finished execution. Execution may finish sucessfully or not. If execution fails,
+an exception is raised, and counted in monitor points with <tt>Exceptions</tt>
+in the name.
+</p>
+<p>
+These monitor points are summed up in two ways:
+</p>
+<ol>
+	<li>Current frame: these monitor points begin with <tt>frame</tt></li>
+	<li>Since process start: these monitor points begin with <tt>total</tt></li>
+</ol>
+
+<h2>Totals</h2>
+<p>
+The monitor points provided also keep a historical record of the min/max/avg
+since the SubarrayControl process was started. This can be useful in tracking
+down tasks which take a very long time to execute.
+</p>
+<p>
+The totals are updated in the same way as the per-frame statistics, except that
+they are not cleared at the beginning of each frame: they are maintained for as
+long as the SubarrayControl process remains running.
+</p>
+
+<h2>Practical Example 1: Long running tasks</h2>
+<p>
+To make the sampling methodology clear, we will provide an example case. In this
+example, there are no other tasks in the queue or executing. The entire
+WorkerPool machinery is completely idle.
+</p>
+<p>
+At this point, a single task enters the queue. It remains there for 2 seconds
+(4x 500ms frames) before beginning execution. Execution takes 3 seconds (6x
+500ms frames) before completing successfully. The following effects are
+observed:
+</p>
+<ul>
+	<li>Initial state: all monitor points are zeroed or blank</li>
+	<li>Frame 1: <tt>instQueueCount</tt> value is 1</li>
+	<li>Frame 2: <tt>instQueueCount</tt> value is 1</li>
+	<li>Frame 3: <tt>instQueueCount</tt> value is 1</li>
+	<li>Frame 4: <tt>instQueueCount</tt> value is 1</li>
+	<li>Frame 5: <tt>instQueueCount</tt> value is 0</li>
+	<li>Frame 5: <tt>frameQueueTimeMaxId</tt> contains the id string for this task</li>
+	<li>Frame 5: <tt>frameQueueTimeMax</tt> value is 4000000 microseconds</li>
+	<li>Frame 5: <tt>frameQueueTimeAvg</tt> value is 4000000 microseconds</li>
+	<li>Frame 5: <tt>instExecuteCount</tt> value is 1</li>
+	<li>Frame 6: <tt>instExecuteCount</tt> value is 1</li>
+	<li>Frame 6: <tt>frameQueueTimeMaxId</tt> is blank</li>
+	<li>Frame 6: <tt>frameQueueTimeMaxMax</tt> is 0</li>
+	<li>Frame 6: <tt>frameQueueTimeMaxAvg</tt> is 0</li>
+	<li>Frame 7: <tt>instExecuteCount</tt> value is 1</li>
+	<li>Frame 8: <tt>instExecuteCount</tt> value is 1</li>
+	<li>Frame 9: <tt>instExecuteCount</tt> value is 1</li>
+	<li>Frame 10: <tt>instExecuteCount</tt> value is 1</li>
+	<li>Frame 11: <tt>instExecuteCount</tt> value is 0</li>
+	<li>Frame 11: <tt>instExecuteCount</tt> value is 0</li>
+	<li>Frame 11: <tt>instExecuteCount</tt> value is 0</li>
+	<li>Frame 11: <tt>instExecuteCount</tt> value is 0</li>
+	<li>Frame 11: <tt>frameExecuteTimeMaxId</tt> contains the id string for this task</li>
+	<li>Frame 11: <tt>frameExecuteTimeMax</tt> value is 6000000 microseconds</li>
+	<li>Frame 11: <tt>frameExecuteTimeAvg</tt> value is 6000000 microseconds</li>
+	<li>Frame 12: all monitor points are zeroed or blank</li>
+</ul>
+
+<h2>Practical Example 2: Short running tasks</h2>
+<p>
+To make the sampling methodology clear, we will provide an example case. In this
+example, there are no other tasks in the queue or executing. The entire
+WorkerPool machinery is completely idle.
+</p>
+<p>
+At this point, a single task enters the queue. It remains there for 5
+microseconds (much, much less than 1 500ms frame) before beginning execution.
+Execution takes 222 microseconds (much, much less than 1 500ms frame) before
+completing successfully. The following effects are observed:
+</p>
+<ul>
+	<li>Initial state: all monitor points are zeroed or blank</li>
+	<li>Frame 1: <tt>instQueueCount</tt> value is 0</li>
+	<li>Frame 1: <tt>instExecuteCount</tt> value is 0</li>
+	<li>Frame 1: <tt>frameQueueCount</tt> value is 1</li>
+	<li>Frame 1: <tt>frameQueueTimeMaxId</tt> contains the id string for this task</li>
+	<li>Frame 1: <tt>frameQueueTimeMax</tt> value is 5 microseconds</li>
+	<li>Frame 1: <tt>frameQueueTimeAvg</tt> value is 5 microseconds</li>
+	<li>Frame 1: <tt>frameExecuteCount</tt> value is 1</li>
+	<li>Frame 1: <tt>frameExecuteTimeMaxId</tt> contains the id string for this task</li>
+	<li>Frame 1: <tt>frameExecuteTimeMax</tt> value is 222 microseconds</li>
+	<li>Frame 1: <tt>frameExecuteTimeAvg</tt> value is 222 microseconds</li>
+	<li>Frame 2: all monitor points are zeroed or blank</li>
+</ul>
+
+</body>
+</html>

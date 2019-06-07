@@ -1,0 +1,195 @@
+/** @file
+ * $Id: CanOutput.h.rh,v 1.1 2003/07/16 20:02:24 rick Exp $
+ *
+ * Provides Output access only to Janz CAN cards.
+ *
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/16 20:02:24 $
+ *
+ */
+
+/*** REVIEW
+ * Reviewer: rh
+ * comments: clean
+ */
+
+#ifndef CARMA_CANBUS_CANOUTPUT_H
+#define CARMA_CANBUS_CANOUTPUT_H
+
+// System includes
+#include <map>
+
+// Janz includes
+#include "janz/dpm.h"
+
+// Carma includes
+#include "carma/canbus/Message.h"
+#include "carma/canbus/Error.h"
+#include "carma/canbus/Types.h"
+
+namespace carma {
+namespace canbus {
+
+    /**
+     * CanOutput class.
+     *
+     * The CanOutput class provides output access only to Janz CAN cards.
+     *
+     * This is necessary because within the context of the DO model, 
+     * individual carma::canbus::Device class implementations require
+     * output access to the CAN bus in order to send control commands.
+     * However, it is essential that the Master class be the only 
+     * entity that reads from the CAN bus since it will handle all
+     * message processing.  This class enforces this decoupling.
+     *
+     * CanOutput can only exists within the context of another instance
+     * of CanIo, hence the constructor is hidden.  In other words you 
+     * can't create a standalone CanOutput object, you can only upcast
+     * to this base class. 
+     */
+    class CanOutput {
+        public:
+
+            /**
+             * Post a CAN message.
+             * This routine sends a carma::canbus::Message to a single 
+             * or multiple CANbusses.  The bus which the message will 
+             * be posted to must be specified in the Message object using
+             * the Message::setBusId method.  If a user wishes to send 
+             * the message to all busses controlled by CanIo, use the
+             * carma::canbus::ALL_BUSSES constant. If no modules are on 
+             * a bus to receive a message, messages will remain in onboard 
+             * buffers until a module is connected to accept them.  If this
+             * onboard buffer fills up, postMessage will throw
+             * an exception. 
+             * @param msg carma::canbus::Message object.
+             * @throw carma::canbus::Error if unable to send a message 
+             * or invalid busId.
+             */
+            void postMessage(const carma::canbus::Message &msg) 
+                throw (carma::canbus::Error);
+
+            /**
+             * Destructor for CanOutput.
+             */
+            virtual ~CanOutput();
+
+        protected:
+
+            /**
+             *  Constants defining onboard queue lengths and
+             *  other important numbers.
+             *  The Janz VMOD-ICAN contains onboard communication buffers 
+             *  with 256 windows of length 256 bytes each.  Windows 0-8
+             *  are reserved for use by the firmware.  Windows 9-255 are 
+             *  available for communication using the 'new style host interface'
+             *  (referred to a slow) and the 'fast style host interface'.  
+             *  The 'new' interface is used for general purpose communication 
+             *  with the VMOD-ICAN modules, the 'fast' interface is for CAN 
+             *  messages.  New interface buffers take a single window per buffer
+             *  while the fast interface can fit 16 buffers per window.  
+             *  The total number of windows split among the interfaces
+             *  must not exceed 247 (256 total - 9 reserved).
+             */
+            enum {
+                /** Janz driver 'slow interface' read queue size. */
+                BOARD_SLOW_READ_LENGTH   = 20, /**< Slow interface queue size*/ 
+                /** Janz driver 'slow interface' write queue size. */
+                BOARD_SLOW_WRITE_LENGTH  = 20, 
+                /** 
+                 * Janz driver 'fast interface' read queue length 
+                 * for CAN messages. 
+                 */
+                BOARD_FAST_READ_LENGTH   = 1632, // 102 windows 
+                /**
+                 * Janz driver 'fast interface' write queue length
+                 * for CAN messages.
+                 */
+                BOARD_FAST_WRITE_LENGTH  = 1632, // 102 windows (3 free windows)
+                /**
+                 * Minimum amount of time in microsecs it takes for
+                 * the CAN card to flush it's write buffer.
+                 */ 
+                CAN_FLUSH_RATE           = 154000// Max CAN Msg tx time in ns.
+            };
+
+            // Local structure typedefs for busses, devices and queue 
+            // information...
+            // A bus is a single physical CAN bus and contains information
+            // pertinent to the bus and CAN messages.  The device is mutex
+            // protected to synchronize access to it.
+            
+            /**
+             * Bus type.
+             * Contains information specific to a bus.  
+             */
+            typedef struct {
+                bool terminate;   /**< True if software termination set.*/
+                int rxCount;      /**< Running rx count for msg rates. */
+                int txCount;      /**< Running tx count for msg rates. */
+                busIdType id;     /**< The bus Id.*/
+                timespec lastUpdateTime; /**< Time of last msg rate update.*/
+                carma::canbus::busStatusType status; /**< Bus status. */ 
+            } busType;
+
+            /** 
+             * Device type.
+             * This structure contains all information needed to access
+             * a device. In general two threads (Direct CAN and DO classes) 
+             * will write CAN packets to a device, hence the mutex.
+             */
+            typedef struct {
+                string name;	         /**< Device name (e.g. /dev/dpm_00). */
+                int fd;	                 /**< File Descriptor to access it.  */
+                bool initialized;        /**< New and fast interfaces inited.*/
+                pthread_mutex_t mutex;   /**< Synchronize access to a device.*/
+                pthread_t threadId;      /**< Maintain for proper destruction.*/
+                void * arg;              /**< An argument for thread entry.  */
+                busType bus;             /**< Information pertinent to bus.  */
+            } deviceType;
+
+            /**
+             * Default constructor.
+             * By making this constructor protected we make sure
+             * that nobody except a derivative of CanOutput can
+             * create this object.
+             * @param emulate Set true if no Janz hardware on target.
+             */
+            CanOutput(bool emulate);
+
+            /**
+             * Add a device with a specified bus Id.
+             * This routine creates a device, initializes the 
+             * device structure and adds it to the device map
+             * using the busId as a key.  It does not open or start
+             * the device. 
+             * @param busId of device
+             */
+            void addDevice(busIdType busId);
+            
+            /**
+             * canFastSend wrapper method.
+             * This method is provided as a wrapper to the janz c-lib
+             * can_fast_send function.  It is used to switch between
+             * using can_fast_send and write in emulation mode. It 
+             * is also declared virtual so that an inheriting class
+             * may define how to send a message differently most notably
+             * if this class is modified for use with CAN-PCI2 cards which
+             * use the same drivers to control a single device dual port
+             * CAN card.
+             * @param busId Id of bus to send message too.
+             * @param msg carma::canbus::Message object to send.
+             */
+            virtual void canFastSend(busIdType busId, const Message &msg);
+
+            // Map of devices keyed by busId.  
+            map<busIdType, deviceType*> devices_;
+            const bool emulate_;               // Emulate Janz hardware?
+
+        private:
+
+    }; // End class CanOutput
+}; // End namespace canbus
+}; // End namespace carma
+#endif

@@ -1,0 +1,18 @@
+
+C++ Realtime window data servers     Steve Scott 9/22/2004
+
+This directory and subdirectory contain code for the realtime window data servers.
+These servers are written in C++ and run on the ACC and feed data to java
+clients for display.
+
+There is a master window server (rtdmaster) that is invoked by an xinetd 
+connection request for the service 'rtdmaster'. This in turn execs a
+specific window serving program. 
+
+There are two steps required to set up the xinetd service:
+1) Enter the rtdmaster service (port 3100) into /etc/services
+2) Place an rtdmaster config file in /etc/xinetd.d/
+
+The code underneath this directory is organized into subdirectories
+to make it easier to find for maintenance, but all code will be in
+the same namespace.

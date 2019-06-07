@@ -1,0 +1,37 @@
+/**
+ * @file
+ * 
+ * IDL for the carma::antenna::common::OffsetAxes interface.
+ *
+ * @author Erik Leitch
+ */
+#ifndef _OFFSETAXESIDL
+#define _OFFSETAXESIDL
+
+module carma {
+
+  module antenna {
+
+    module common {
+
+	interface OffsetAxes {
+
+	  const long NONE = 0x0;
+	  const long AZ   = 0x2;
+	  const long EL   = 0x4;
+	  const long RA   = 0x8;
+	  const long DEC  = 0x16;
+	  const long X    = 0x32;
+	  const long Y    = 0x64;
+
+	}; // End OffsetAxes interface
+  
+    }; // End module common 
+
+  }; // End module antenna 
+
+}; // End module carma 
+
+#endif  // _OFFSETAXESIDL
+
+

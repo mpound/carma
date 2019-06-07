@@ -1,0 +1,49 @@
+$Id: README,v 1.4 2004/07/28 16:16:06 mpound Exp $
+Testing the DelayEngine using the test harness:
+
+A full blown exercise can be run with the script 
+$CARMA/carma/interferometry/Test/delayIntegratonTest, 
+which starts the client DOs, the DelayEngine, then runs the
+DelayEngineTestHarness with a 23-station array (positions taken from BIMA
+A,B,C arrays).  If emulate=true then the client DOs are not contacted,
+but the calculation still takes place and the monitor points are published.
+The EMULATE monitor point is set appropriately.  
+
+A simple test of the geometric delays can be done using an array
+that has antennas stationed in a simple cross pattern (X,Y,Z) in meters:
+
+
+           A2(0, 1, 0)
+A1(1,0,0)  A0(0, 0, 0)  A3(-1,0,0)
+           A4(0,-1, 0) 
+
+I also added Z-only offsets to test pattern: A5(0,0,-1) and A6(0,0,+1).
+This array pattern is stored in the file
+
+carma/interferometry/Test/cross_test.antparam
+
+Note in the above file, the antenna locations are given in nanoseconds.
+I made an equivalent cross_test_meters.antparam for Erik to use.
+ 
+
+For any declination, the geometric delay values in nanoseconds 
+at hour angle=0 should be:
+
+Antenna    Delay
+  0         0.0
+  1       -cos(Dec)/C   (C in meters/nanosec)
+  2         0.0
+  3        cos(Dec)/C   (C in meters/nanosec)
+  4         0.0
+  5       -sin(Dec)/C   (C in meters/nanosec)
+  6       +sin(Dec)/C   (C in meters/nanosec)
+
+
+To run the cross test:
+
+carma/interferometry/Test/DelayEngineTestHarness imr=`hostname` \
+  antparam="carma/interferometry/Test/cross_test.antparam" \
+  decstart=40.18 decend=40.18 decstep=10.0 timestep=30.0 \
+  harange=6.0 traceFile=delayEngine.trace traceLevel=7
+
+The above example tests DEC = Site Latitude, but you can choose any dec.

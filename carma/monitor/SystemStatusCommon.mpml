@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global" author="Erik Leitch">
+
+  <MonitorPoint name="ok" type="bool" persistent="true">
+    <shortName>status</shortName>
+    <description>
+      Monitor point intended to represent the overall status of a container
+    </description>
+    <errHi>false</errHi>
+  </MonitorPoint>
+
+  <MonitorPoint name="reachable" type="bool" persistent="true">
+    <shortName>reachable</shortName>
+    <description>
+      Is this device reachable?
+    </description>
+    <errHi>false</errHi>
+  </MonitorPoint>
+
+  <MonitorPoint name="sampleTime" type="absTime">
+    <shortName>Timestamp</shortName>
+    <units>mjd</units>
+    <description>
+     Time corresponding to the last sample
+    </description>
+  </MonitorPoint>
+
+  <MonitorPoint name="pingTime" type="double" persistent="true">
+    <shortName>pingTime</shortName>
+    <description>
+     Round trip ping time
+    </description>
+    <units>s</units>
+  </MonitorPoint>
+
+  <MonitorPoint name="currentTemperature" type="double" persistent="true">
+    <shortName>currentTemp</shortName>
+    <description>
+      Current temperature
+    </description>
+    <units>C</units>
+    <precision>1</precision>
+  </MonitorPoint>
+
+  <MonitorPoint name="setTemperature" type="double">
+    <shortName>setTemp</shortName>
+    <description>
+      Current temperature
+    </description>
+    <units>C</units>
+    <precision>1</precision>
+  </MonitorPoint>
+
+  <MonitorPoint name="lowTemperature" type="double">
+    <shortName>lowTemp</shortName>
+    <description>
+      Current temperature
+    </description>
+    <units>C</units>
+    <precision>1</precision>
+  </MonitorPoint>
+
+  <MonitorPoint name="highTemperature" type="double">
+    <shortName>highTemp</shortName>
+    <description>
+      Current temperature
+    </description>
+    <units>C</units>
+    <precision>1</precision>
+  </MonitorPoint>
+
+  <MonitorPoint name="status" type="enum" persistent="true">
+    <shortName>status</shortName>
+    <description>
+      Monitor point intended to represent the specific state of a systemStatus device or place
+    </description>
+
+    <enum name="UNKNOWN">
+      <description>
+	Status is ok.
+      </description>
+    </enum>
+
+    <enum name="OK">
+      <description>
+	Status is ok.
+      </description>
+    </enum>
+
+    <enum name="TEMP_TOO_HIGH">
+      <description>
+	Temperature is too high
+      </description>
+    </enum>
+
+    <enum name="TEMP_TOO_LOW">
+      <description>
+	Temperature is too low
+      </description>
+    </enum>
+
+    <enum name="TIME_TOO_LONG">
+      <description>
+	A time is too long
+      </description>
+    </enum>
+
+    <enum name="STATIC_VALUE">
+      <description>
+	A value is not changing, which probably indicates that it is not real
+      </description>
+    </enum>
+
+  </MonitorPoint>
+
+</Common>
+

@@ -1,0 +1,3 @@
+An OVRO (10m) receiver has come unlocked. Issue the refreq(N) command for
+telescope N to retune the receiver. See also:
+http://cedarflat.mmarray.org/wiki/Alarms#OvroX.AntennaCommon.Receivers.rxState

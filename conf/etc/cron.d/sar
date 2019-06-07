@@ -1,0 +1,23 @@
+# $Id: sar,v 1.8 2010/01/08 17:20:47 abeard Exp $
+
+HOME=/array/utilities/apache2.0.54/htdocs/RTS
+SHELL=/bin/bash
+MAILTO=abeard@ovro.caltech.edu
+
+# Note that system activity information is now collected by /etc/init.d/sadc
+
+# Generate yesterday's sarplots at the beginning of the next day.
+10 0 * * * root /bin/sleep $(($RANDOM/100)) && /bin/nice -n +19 /opt/rt/scripts/sarplot.sh -d yesterday > /dev/null 2>&1
+
+# Generate a daily report of information collected by sadc.
+# Note that sa2 deletes sa files older than a week.
+45 * * * * root /bin/sleep $(($RANDOM/100)) && if [[ `uname -i` == "x86_64" ]]; then /usr/lib64/sa/sa2 -A; else /usr/lib/sa/sa2 -A; fi
+
+# Generate today's sarplots - do so every hour so we have a running daily tally 
+50 * * * * root /bin/sleep $(($RANDOM/100)) && /bin/nice -n +19 /opt/rt/scripts/sarplot.sh -d today > /dev/null 2>&1
+
+# Create the summary web pages (e.g. linked thumbnails and html)
+53 * * * * mpound /bin/sleep $(($RANDOM/100)) && /bin/nice -n +19 /opt/rt/scripts/sarsnap `hostname -s` > /dev/null 2>&1
+
+# Delete sarplots which are older than 90 days.
+12 0 * * * root /bin/sleep $(($RANDOM/100)) && /bin/nice -n +19 /usr/bin/find $HOME/sar/`hostname -s` -maxdepth 1 -mtime +90 -type d -exec rm -fr \{\} \;

@@ -1,0 +1,81 @@
+/*
+ *
+ * $Id: BimaDewarRegulation.idl,v 1.4 2011/05/17 16:27:29 iws Exp $
+ *
+ */
+#ifndef CARMA_ANTENNA_BIMA_CONTROL_BIMADEWARREGULATION_IDL
+#define CARMA_ANTENNA_BIMA_CONTROL_BIMADEWARREGULATION_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma
+{
+  module antenna
+  {
+    module bima
+    {
+      module control
+      {
+
+	/**
+	 * BimaDewarRegulation DO Name
+	 * This is the name that this DO will be published with on the nameserver.
+	 * Keep in mind that it will be prefixed by carma.antennaTypeX where
+	 * antennaType is ovro, bima or sza.
+	 */
+	const string DEWARREG_NAME = "DewarRegulation";
+
+	/**
+	 * BIMA antenna-specific dewar temperature regulation interface.
+	 */
+	interface BimaDewarRegulation {
+
+	  /**
+	   * Turns dewar temperature regulation on.
+	   */
+	  void on() raises ( carma::util::UserException );
+
+	  /**
+	   * Turns dewar temperature regulation off.
+	   */
+	  void off() raises ( carma::util::UserException );
+
+	  /**
+	   * Tells temperature regulation algorithm to strive for
+	   * the temperature given as "point" in terms of degrees K.
+	   *
+	   * @param point The temperature to meet for regulation.
+	   */
+	  void setPoint( in float point )
+	    raises ( carma::util::UserException );
+
+	  /**
+	   * Defrost temporarily commands a high current to be
+	   * sent to the heating elements near the mixers in
+	   * the dewar.  This burns off volitiles that may be
+	   * causing difficulty for the regulation algorithm
+	   * to meet the set point requirement.  This will cause
+	   * the mixer blocks to go up to ~10-15K for about
+	   * five minutes, after which current is set to zero
+	   * to the heater, allowing the stages to cool back down
+	   * and the regulation algorithm resumes attempting
+	   * to keep the temperature at the set point.
+	   *
+	   * @see setPoint
+	   */
+	  void defrost() raises ( carma::util::UserException );
+
+
+	  /**
+	   * Cancel defrost.  If defrost is not active, this
+	   * command is a no-op.
+	   */
+	  void cancelDefrost() raises ( carma::util::UserException );
+
+	}; // End BimaDewarRegulation interface
+      };
+    };
+  };
+}; // End carma::antenna::bima::control module
+
+#endif

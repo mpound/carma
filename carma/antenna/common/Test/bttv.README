@@ -1,0 +1,29 @@
+
+$Id: bttv.README,v 1.3 2005/03/08 19:56:35 colby Exp $
+
+The framegrabber software uses the v4l (video4linux) API.
+This API ships with the current 2.4.25 kernel.  You
+must configure the kernel with v4l enabled as a module
+plus, the BTTV modules.
+
+In short:
+
+% cd /usr/src/linux
+% make menuconfig
+ navigate to multimedia devices, select module for v4l
+ then select the v4l devices, and enable bttv as a module
+ then navigate to character devices from the top level
+ select I2C and also select module loading
+ Then exit and save kernel config.
+% make dep ; make modules ; make modules_install ; make bzImage
+ (install the bzImage kernel per normal)
+% vi /etc/modules.conf
+  Add the following:
+    alias char-major-81 bttv
+    options bttv card=73 tuner=-1 autoload=0
+    options i2c-algo-bit bit_test=1
+
+  card 73 is for the older Sensoray 311 card, but works fine with 711
+
+That's it...
+

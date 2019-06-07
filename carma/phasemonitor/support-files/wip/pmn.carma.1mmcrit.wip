@@ -1,0 +1,147 @@
+# Displays rms fluctuation as a bar chart
+
+# reads file sample.1mmcrit.dat, which is made every ten minutes
+# from the last 144 samples of sample.dat by phasecron.1mmcrit.csh).
+#
+# nv 31oct07
+
+set xbox BCNSTH1
+set ybox BCNSTD1
+set maxarray 90000
+
+lwidth 2
+define rms
+color 1
+limits
+ticksize 1 12 100 0
+new ndata
+set ndata npts(x)
+#set x2 x[ndata] + 0.1
+set x2 x[ndata] + 0.042 # ~1 hr
+set x1 x2 + $1
+set x2 x2 + $2
+#limits x1 x2 0 1000
+limits x1 x2 0 800
+color 2
+bar 2
+color 1
+lstyle 1
+box
+lstyle 4
+box 0 g
+lstyle 1
+ylabel RMS path / \gmm
+free ndata
+end rms
+
+# Adds plot to show conversion between rms path and coherence
+define coherence
+#limits 0 1 0 0.333   # 1000 microns is 0.333 x 3 mm
+limits 0 1 0 0.267   # 800 microns is 0.267 x 3 mm
+color 3
+connect
+#limits 0 1 0 0.769   # 1000 microns is 0.769 x 1.3 mm
+limits 0 1 0 0.615   # 1000 microns is 0.615 x 1.3 mm
+ticksize 0 0 100 0
+color 5
+connect 
+color 1
+box bcmst 0
+#limits 0 1 0 1000
+limits 0 1 0 800
+box 0 bcmst
+mtext R 2.5 0.5 0.5 RMS path / \gmm
+move 0.5 650
+color 3
+label 100 GHz
+move 0.3 150
+color 5
+label 230 GHz
+color 1
+lstyle 4
+box 0 g
+lstyle 1
+end coherence
+
+# Add running average curve
+define running_av
+ycol 9
+color 7
+connect
+ycol 4
+end running_av 
+
+# Start:
+erase
+panel 1 1 1
+vstand
+#viewport vx1 0.75 vy1 vy2
+viewport vx1 0.65 vy1 vy2
+#data ../data/sample.dat.temp
+data ../data/sample.1mmcrit.dat
+xcol 1
+ycol 4
+
+# Days -3 to 0
+#panel 1 3 3
+#rms -3 0
+# show just 1 day, not 3
+rms -1 0
+running_av
+# Days -6 to -3
+#panel 1 3 2
+#rms -6 -3
+#running_av
+# Days -9 to -6
+#panel 1 3 1
+#rms -9 -6
+#running_av
+color 1
+xlabel Modified Julian Date (MJD)
+
+# add the UT time of the last sample
+new "time_string"
+data ../data/last_sample_time
+string time_string
+panel 1 3 3
+color 1
+expand 1.0
+mtext T 1.0 0.5 0.5 \[time_string]
+free "time_string"
+
+# add coherence plots
+panel 1 1 1
+vstand
+#viewport 0.75 vx2 vy1 vy2
+viewport 0.65 vx2 vy1 vy2
+data coherence.dat
+xcol 2
+ycol 1
+#panel 1 3 3
+coherence
+expand 1.0
+mtext T 2.0 0.5 0.5 coherence (100 m)
+#panel 1 3 2
+#coherence
+#panel 1 3 1
+#coherence
+
+# Add an arrow to indicate current time
+panel 1 1 1
+viewport 0 1 0 1
+limits 0 1 0 1
+move 0.510 0.957
+#draw 0.728 0.957
+#arrow 0.728 0.921
+draw 0.628 0.957
+arrow 0.628 0.921
+
+# And a title
+viewport 0 1 0 1 
+move 0.04 0.98
+expand 0.8
+putlabel 0.0 CARMA Atmospheric Phase Monitor
+expand 1
+
+end
+

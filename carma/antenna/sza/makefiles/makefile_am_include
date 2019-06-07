@@ -1,0 +1,6 @@
+TOP = @abs_top_srcdir@/carma/antenna/sza
+
+include carma/antenna/sza/makefiles/makefile_am_include_manual
+include carma/antenna/sza/makefiles/makefile_am_include_auto
+
+include carma/antenna/sza/executables/makefile_am_include

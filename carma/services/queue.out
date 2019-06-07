@@ -1,0 +1,46 @@
+# Day 1 / Mon Aug 11 2014
+sci2                  XXXX  endtrack='21:15' 
+
+# Day 2 / Tue Aug 12 2014
+sci2    c1237_3SL_30r02502  endtrack='04:15' 
+# WARNING: No science to be run on sci2 in this block.
+# Please schedule array health or other until LST 10:15
+sci2    c1237_2SL_30r13032  endtrack='15:15' 
+sci2      c1269_1SH_31SZ15  endtrack='17:45' 
+sci2    c1237_5SL_30r20342  endtrack='23:00' 
+
+# Day 3 / Wed Aug 13 2014
+sci2    c1173_5SL_30r02502  endtrack='05:15' 
+# WARNING: No science to be run on sci2 in this block.
+# Please schedule array health or other until LST 10:15
+sci2    c1237_2SL_30r13032  endtrack='15:15' 
+sci2      c1269_1SH_31SZ15  endtrack='17:45' 
+sci2    c1237_5SL_30r20342  endtrack='22:00' 
+
+# Day 4 / Thu Aug 14 2014
+sci2    c1173_5SL_30r02502  endtrack='05:15' 
+# WARNING: No science to be run on sci2 in this block.
+# Please schedule array health or other until LST 10:15
+sci2    c1237_2SL_30r13032  endtrack='15:00' 
+sci2      c1269_1SH_31SZ15  endtrack='18:45' 
+
+# Day 5 / Fri Aug 15 2014
+sci2    c1173_5SL_30r02502  endtrack='04:15' 
+# WARNING: No science to be run on sci2 in this block.
+# Please schedule array health or other until LST 08:15
+sci2    c1237_6SL_30r11301  endtrack='14:15' 
+sci2      c1269_1SH_31SZ15  endtrack='18:45' 
+
+# Day 6 / Sat Aug 16 2014
+# WARNING: No science to be run on sci2 in this block.
+# Please schedule array health or other until LST 01:00
+sci2   cf0160_1SL_35CLJ044  endtrack='08:00' 
+sci2    c1237_6SL_30r11301  endtrack='14:15' 
+sci2      c1269_1SH_31SZ15  endtrack='18:45' 
+
+# Day 7 / Sun Aug 17 2014
+# WARNING: No science to be run on sci2 in this block.
+# Please schedule array health or other until LST 09:45
+sci2      c1269_1SH_31SZ15  endtrack='12:15' 
+sci2    c1237_7SL_30r15141  endtrack='17:45' 
+

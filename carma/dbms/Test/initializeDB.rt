@@ -1,0 +1,108 @@
+#!/bin/sh
+
+# this script creates and does some initialization of a test carma 
+# database. It only loads two mpml files' worth of data, use the
+# carma/dbms/initializeDB script to load all config data
+
+# this script should be run from the top of the build tree
+
+usage() {
+    echo "$0 [-n] [-h] [-v] [traceLevel=[0]]"
+    echo "   -n do not cleanup at end (won't delete test database)"
+    echo "   -h print this message and exit"
+    echo "   traceLevel traceLevel parameter to pass to monitorConfigurationLoader"
+}
+
+echo "**** INITIALIZEDB TEST ****"
+
+echo "environment..."
+printenv
+
+traceLevel=0
+clean=1
+
+for x in $* ; do
+    case "$x" in
+        -h)
+        usage
+        exit 0
+        ;;
+        -n)
+        clean=0
+        ;;
+        traceLevel=*) traceLevel=`echo $x | grep traceLevel | awk -F = '{print $2}'`
+        ;;
+        *)
+        echo "$0: Unknown command line argument $x"
+        usage
+        exit 1
+    esac
+done
+
+. `dirname $0`/lib/functions.sh
+
+createConfFiles
+shutdownMySQL 1
+makeTestDirs
+
+echo "Database and supporting files are in $testarea"
+socket=`grep socket $mysqlconf | tail -1 | awk -F= '{print $2}'`
+echo "Local mysql connections are via unix socket $socket"
+initializeMySQL
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+startMySQL
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+#setDBPrivileges
+#if [ $? -ne 0 ] ; then
+#    fail
+#fi
+
+createDB
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+#createDBTables
+#if [ $? -ne 0 ] ; then
+#    fail
+#fi
+
+$mysql --defaults-file=$mysqlconf -u $user -e "SHOW TABLES" $db
+
+srcdir=`grep "^srcdir =" Makefile | awk '{print $3}'`
+
+echo Load some monitor configuration data...
+
+mpmls="$srcdir/carma/monitor/OvroSubsystem.mpml $srcdir/carma/monitor/BimaSubsystem.mpml"
+
+for x in $mpmls ; do
+    scripts/monitorConfigurationLoader srcdir=$srcdir conffile=$dbmsconf \
+        mpml=$x traceLevel=$traceLevel
+    if [ $? -ne 0 ] ; then
+        echo Error loading monitor configuration data from file $x
+        fail 
+    fi
+done
+
+echo "Contents of Subsystems table"
+$mysql --defaults-file=$mysqlconf -u $user -e "SELECT * FROM Subsystems" $db
+echo
+
+echo "Contents of AggregateSubsystems table"
+$mysql --defaults-file=$mysqlconf -u $user -e "SELECT * FROM AggregateSubsystems" $db
+
+shutdownMySQL
+sleep 4
+if [ $clean -eq 1 ] ; then
+    cleanup
+fi
+pass
+
+exit 0
+

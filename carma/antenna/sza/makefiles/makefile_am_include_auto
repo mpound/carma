@@ -1,0 +1,6 @@
+include carma/antenna/sza/arrayutils/makefile_am_include
+include carma/antenna/sza/util/makefile_am_include
+include carma/antenna/sza/slalib/makefile_am_include
+include carma/antenna/sza/antenna/canbus/makefile_am_include
+include carma/antenna/sza/antenna/control/makefile_am_include
+include carma/antenna/sza/antenna/corba/makefile_am_include

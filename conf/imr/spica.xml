@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain dtd definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "/export/scr2/friedel/carma/carma_build/install/bin">
+        <!ENTITY DEFAULT_DIR "/export/scr2/friedel/carma">
+        <!ENTITY CONF_DIR "/export/scr2/friedel/carma/carma_build/install/conf/imr">
+        <!ENTITY EMULATE "true">
+        <!ENTITY LOG "traceFile=/export/scr2/friedel/carma/logs/trace.log traceLevel=4 logfile=/export/scr2/friedel/carma/logs/sys.log">
+        <!ENTITY USE_DB "useDBMS=false">
+]>
+
+
+<!-- 
+        Configuration for Doug's laptop computer, but it is generic to any
+        single computer (run it with imr=localhost). (Based on marcLocal.xml)  
+ -->
+
+<!-- @version -->
+<domain>
+ 
+    
+    <oad hostname="localhost">
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; " />
+        <server name="controlFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=control" />
+
+        <server name="dataflowFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=dataflow delay=130"/>
+        <server name="projectDatabaseManagerFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=projectdatabasemanager"/>
+
+        <server name="Subarray1" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="subarrayNo=1 runSAT=true &LOG; &USE_DB;"/>
+        <server name="ProjectDatabaseManagerHost" path="&BIN_DIR;/carmaProjectDatabaseManagerHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; hostname=localhost database=test rt=false" />
+       </oad>  
+       
+</domain>
+    

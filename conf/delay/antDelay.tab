@@ -1,0 +1,45 @@
+# $Id: antDelay.tab,v 1.10 2013/10/01 23:23:16 scott Exp $
+#
+# Config file for antenna specific delay values.
+# This component of the delay is at the IF frequency, probably originating
+# in the cabling or optical fibers of the individual antennas.
+# This file is read in during initialization of a subarray
+# and the current values will be displayed on the Delay and PadInfo
+# RTD pages.
+# Original data from David Woody 10/06/2008.
+#
+# NOTE: The antenna numbers are not used. The rows **must** be in antenna
+# order and include all antennas.
+#
+# Antennas 16-23 from Woody 08/27/2009
+#
+#| antNo | delay
+#| i     |  r 
+#|       |  ns
+# New data from David Woody 01 Sep 2009, updated here by EML
+# 22 nsec added to ant >= 16 on 28 Jan 2011, SLS
+# Subtracted off the new optics delays from opticsDelay.tab (converted to nsec)
+    1       301.16
+    2       304.98
+    3       309.98
+    4       304.38
+    5       309.30
+    6       302.58
+    7       285.96
+    8       283.41
+    9       284.26
+   10       299.36
+   11       297.44
+   12       288.36
+   13       283.66
+   14       284.62
+   15       290.42
+   16       243.53
+   17       244.23
+   18       244.23
+   19       244.93
+   20       243.53
+   21       245.23
+   22       244.03
+   23       245.03
+

@@ -1,0 +1,17 @@
+The weather has either gotten good enough for 1mm observing, or become bad
+enough to switch back to 3mm observing.
+
+Look here to turn the alarm off:
+
+http://cedarflat.mmarray.org/wiki/Alarms#Control.Subarray1.alarm1mm
+
+Look here to check the weather:
+
+http://cedarflat.mmarray.org/1mm_criteria/
+
+Look here to see what script to run next:
+
+http://cedarflat.mmarray.org/schedule/
+
+THINK before you stop a track - non-flex projects must be run for at least
+4 hours, while flex projects must be run for at least 2 hours.

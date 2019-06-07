@@ -1,0 +1,4 @@
+The sidecab temperature on a 10m telescope is not as it should be.
+
+Look here for how to proceed:
+http://cedarflat.mmarray.org/wiki/Alarms#OvroX.EnvironmentalMonitor.sidecabTemp

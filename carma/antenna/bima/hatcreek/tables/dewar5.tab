@@ -1,0 +1,41 @@
+# dewar5.tab
+
+cyl 5746, refrig 5746 
+
+rapid warmup heaters: power resistors, soldered
+heaters are not in "normal" location; wires are bundled
+	separately from bias and sensor wires
+2nd stage heater: yes; 300 ohm pwr resistor; wires are
+	bundled with heater wires
+3rd stage heater: 2 600-ohm pwr resistors in parallel;
+	note: this is wire "24" because that wire was short
+	in the wiring harness; "27" used for sensor 4
+
+sensor 1: 47101
+sensor 2: 97638
+sensor 3: 96947
+sensor 4: 96948
+sensor 5: 22575
+
+mxrname_B = 31-011-9
+at room temp 1 mV, 17.8 uA
+simple pole pieces, 0.20" diam magnet
+separate bias tee with 100 ohm shunt resistor
+0.010 copper straps, 0.25 wide, from mixer to spider and
+	from bias tee to spider
+HEMT 1
+
+mxrname_D = 31-012-6
+(this is a 3mm style block with full height WR3.7 waveguide
+  at input flange; uses separate bias tee; bias tee has
+  100 ohms to gnd)
+at room temp 1 mV, 18.2 uA
+simple pole pieces, 0.24" diam magnet
+heat strap from mixer to spider and from bias tee to spider
+HEMT 16
+
+other notes: this dewar has angle brackets on both stage 1 and 2
+	to hold cryogenic cables; slots not enlarged
+
+
+

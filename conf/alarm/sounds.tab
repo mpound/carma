@@ -1,0 +1,24 @@
+#
+# $Id: sounds.tab,v 1.11 2014/08/14 17:41:42 iws Exp $
+#
+# The first named alarm is defaulted to if no
+# sound matching the name is searched for.
+#
+#|name       |file             |level|
+#|s          |s                |s    |
+  alarm       call_me_maybe.ogg  CRIT
+  test        test.wav         TEST
+  meiji       meiji17.wav      CRIT
+  funk        funk.wav         CRIT
+  gladiators  alarm1.wav       CRIT
+  brightside  brightside.ogg   CRIT
+  twodragons  Two_Dragons.ogg  CRIT
+  blackcoffee Black_Coffee.ogg CRIT
+  folsom      Folsom_Prison.ogg CRIT
+  happyface   happy_face.ogg   CRIT
+  heikens     heikens_serenade.ogg   CRIT
+  kintyre     mull_of_kintyre.ogg   CRIT
+  newbaby     newbaby.ogg   CRIT
+  scotch      scotch_on_rocks.ogg   CRIT
+  queen       savethequeen.wav CRIT
+

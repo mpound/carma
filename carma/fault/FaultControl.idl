@@ -1,0 +1,98 @@
+#ifndef CARMA_FAULT_FAULTCONTROL_IDL
+#define CARMA_FAULT_FAULTCONTROL_IDL
+
+//! @file
+//!
+//! Interface for the fault system
+//!
+//! @author: Tom Costa
+//!
+//! $CarmaCopyright$
+//!
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module fault {
+
+//! @brief Enumeration of error effect preferences
+enum EffectPreference {
+    // No action taken
+    //
+    // Data is written to the dataset without any indication of error.
+    PREF_NONE,
+
+    // This frame of data is not included in the dataset. The integration
+    // time time is reduced appropriately. The appropriate MIRIAD error
+    // indication bit is set.
+    PREF_BLANK,
+
+    // This frame of data is included in the dataset. The integration
+    // time is not reduced. The appropriate MIRIAD error indication bit
+    // is set.
+    PREF_FLAG
+};
+
+//! @brief Name server name for the FaultControl DO
+const string FAULT_CONTROL_NAME = "carma.faultControl";
+
+
+typedef sequence< string > SeqString;  ///< Sequence of CORBA::String
+
+
+//! @brief The DO interface to control the fault system
+interface FaultControl {
+
+    //! @brief Set the subarray noise source state
+    //!
+    //! @param inSubarrayNumber is the subarray number
+    //! @param inStateIsOn is correlator noise source state "on"
+    void setNoiseState( in unsigned short inSubarrayNumber, in boolean inStateIsOn )
+        raises ( carma::util::UserException );
+
+    //! @brief Set the subarray drive tracking error preference
+    void setDriveErrorPreference( in unsigned short inSubarrayNumber, in EffectPreference inEffect )
+        raises ( carma::util::UserException );
+
+    // @brief Set the subarray monitor data error preference
+    void setMonitorErrorPreference( in unsigned short inSubarrayNumber, in EffectPreference inEffect )
+        raises ( carma::util::UserException );
+
+    // @brief Set the subarray antenna offline error preference
+    void setOfflineErrorPreference( in unsigned short inSubarrayNumber, in EffectPreference inEffect )
+        raises ( carma::util::UserException );
+
+    // @brief Set the subarray receiver phaselock error preference
+    void setPhaselockErrorPreference( in unsigned short inSubarrayNumber, in EffectPreference inEffect )
+        raises ( carma::util::UserException );
+
+    //! @brief Disable alarms for the given monitor points.
+    //!
+    //! @param inMonitorPointNames sequence of monitor point names
+    void disableAlarms( in SeqString inMonitorPointNames )
+        raises ( carma::util::UserException );
+
+    //! @brief Restore alarms to their default enable states
+    //!        for the given monitor points.
+    //!
+    //! @param inMonitorPointNames sequence of monitor point names
+    void restoreAlarms( in SeqString inMonitorPointNames )
+        raises ( carma::util::UserException );
+
+    //! @brief Set the alarm enable state for a specific subarray
+    //!
+    //! @param inSubarrayNumber is the subarray number
+    //! @param inStateIsOn is alarm enable "on"
+    void setAlarmEnable( in unsigned short inSubarrayNumber, in boolean inStateIsOn )
+        raises ( carma::util::UserException );
+
+    //! @brief Set the global alarm deadman seconds preference
+    void setAlarmDeadmanSecs( in short inAlarmDeadmanSecs )
+        raises ( carma::util::UserException );
+};
+
+
+};  // end carma::control
+};  // end carma
+
+#endif

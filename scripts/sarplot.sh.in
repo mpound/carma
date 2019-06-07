@@ -1,0 +1,119 @@
+#!/bin/bash
+
+cpu=0
+io=1
+paging=2
+proc=3
+load=4
+memutil=5
+memstat=6
+swapstat=7
+eth0stat=8
+eth1stat=9
+lostat=10
+irqs=11
+
+opt[cpu]="-u"
+opt[io]="-b"
+opt[paging]="-B"
+opt[proc]="-c"
+opt[load]="-q"
+opt[memutil]="-r"
+opt[memstat]="-R"
+opt[swapstat]="-W"
+opt[eth0stat]="-n DEV"
+opt[eth1stat]="-n DEV"
+opt[lostat]="-n DEV"
+opt[irqs]="-w -I SUM"
+
+filter[cpu]="\'\'"
+filter[io]="\'\'"
+filter[paging]="\'\'"
+filter[proc]="\'\'"
+filter[load]="\'\'"
+filter[memutil]="\'\'"
+filter[memstat]="\'\'"
+filter[swapstat]="\'\'"
+filter[eth0stat]="eth0"
+filter[eth1stat]="eth1"
+filter[lostat]="lo"
+filter[irqs]="\'\'"
+
+fields[cpu]="user% nice% system% iowait% steal% idle%"
+fields[io]="tpw rtps wtps bread/s bwrtn/s"
+fields[paging]="pgpgin/s pgpgout/s fault/s majflt/s"
+fields[proc]="proc/s"
+fields[load]="runq-sz plist-sz ldavg-1 ldavg-5 ldavg-15"
+fields[memutil]="kbmemfree kbmemused memused% kbbuffers kbcached kbswpfree kbswpused swpused% kbswpcad"
+fields[memstat]="frmpg/s bufpg/s campg/s" 
+fields[swapstat]="pswpin/s pswpout/s"
+fields[eth0stat]="rxpck/s txpck/s rxbyt/s txbyt/s rxcmp/s txcmp/s rxmcst/s"
+fields[eth1stat]="rxpck/s txpck/s rxbyt/s txbyt/s rxcmp/s txcmp/s rxmcst/s"
+fields[lostat]="rxpck/s txpck/s rxbyt/s txbyt/s rxcmp/s txcmp/s rxmcst/s"
+fields[irqs]="cswch/s intr/s"
+
+title[cpu]="CPU Utilization"
+title[io]="I/O Statistics"
+title[paging]="Paging Statistics"
+title[proc]="Process Creation Activity"
+title[load]="System Load"
+title[memutil]="Memory Utilization"
+title[memstat]="Memory Statistics"
+title[swapstat]="Swap Statistics"
+title[eth0stat]="Eth0 Statistics"
+title[eth1stat]="Eth1 Statistics"
+title[lostat]="Loopback Device Statistics"
+title[irqs]="Interrupts & Context Switching"
+
+categories=(cpu io paging proc load memutil memstat swapstat eth0stat eth1stat lostat irqs)
+categories=cpu
+
+hostname=$(hostname -s)
+
+day=$(date "$*" +%d) || exit 1
+date=$(date "$*" +%Y%m%d) || exit 1
+monthdate=$(date "$*" +"%b %d") || exit 1
+
+sarfile="/var/log/sa/sa${day}"
+if ! [ -e "${sarfile}" ]
+then
+ echo "System activity file '${sarfile}' does not exist." >&2
+ exit 1
+fi
+
+tz=$(date +%Z)
+tzdiff=$(($(date +%z | sed 's/\([+-]\)0/\1/')*36))
+
+function makeplot() {
+ category="${1:-cpu}"
+ gpterm="${2:-png}"
+ ext="${3:-png}"
+ subdir="${3:-.}"
+  
+ plotdir="$HOME/sar/${hostname}/${date}"
+ mkdir -p $plotdir
+ plotfile="${plotdir}/${category}.${ext}"
+
+gnuplot <<EOF &>/dev/null
+#set terminal table
+set terminal ${gpterm}
+set output "$plotfile"
+set grid back
+set xdata time
+set timefmt "%s"
+set format x "%H:%M"
+set xlabel "Time $tz"
+set timestamp "%a %b %d %H:%M:%S %Y $tz" top
+set title "${title[$category]} for $hostname on $monthdate"
+plot \
+$(for f in ${fields[$category]}; do echo "'-' using (\$3+$tzdiff):6 title '$f' with lines, \\"; done)
+1/0 notitle
+$(sadf ${sarfile} -- ${opt[$category]} | grep -e ${filter[$category]} | grep -v LINUX.RESTART | sort -k5,5 -s | awk '{if(p!=$5){print "e";p=$5}}{printf "*%s\n",$0}END{print "e"}' | tail -n +2)
+EOF
+}
+
+for c in "${categories[@]}"
+do
+ makeplot $c
+ #makeplot $c "postscript color" "ps" "ps"
+done

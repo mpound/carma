@@ -1,0 +1,28 @@
+# This file gives info on the most recent rtd C++ server and Java client
+# version numbers.    The C++ server version is located only in this file.
+# The Java client version also coded is in ui/jrtd/rtd/Version.java, so
+# it must match what is in this file.
+# Add your change as the *LAST* row; this is the row which will hold
+# the latest versions.  
+# (Alternatively, hash-comment out all but the latest version row).
+# Note version numbers are in the form Major.Minor.Patch.  
+# If Major or Minor values of the C++ version are greater than the
+# Java version, then the server and client are deemed incompatible and 
+# the end-user is prompted to download a new client.   
+# A newer client is expected to be compatible with an older server.
+#
+# $Id: version.tab,v 1.8 2013/11/19 04:02:29 iws Exp $
+#
+#| C++ Server Version | Java Client Version |    Comment  |
+#|      s             |        s            |       s     |
+#|                    |                     |             |
+     1.7.0                   0.1.2           defaults
+     1.7.0                   1.8.0           SLS change 4/14/2007
+     1.9.0                   1.9.0           fontsize and tooltips added to server stream
+     1.9.0                   1.9.1           fontsize change on cmd line
+     1.9.1                   1.9.2           added archive priority to tooltip
+     1.10.0                  1.10.0          added archive priority to tooltip
+     1.10.0                  1.10.1          jfreechart plotting
+     1.11.0                  1.11.0          automatic morphing on ant/corr config change
+     1.11.0                  1.11.1          Client location changes
+     2.0.0                   2.0.0           Network Protocol Change (Protocol Buffers) and lots more

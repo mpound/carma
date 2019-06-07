@@ -1,0 +1,12 @@
+<!-- $Id: telemetry.dtd,v 1.4 2006/03/14 22:42:52 colby Exp $ -->
+<!ELEMENT telemetry (packet+)>
+<!ATTLIST telemetry version CDATA #REQUIRED>
+<!ELEMENT packet (variable+)>
+<!ATTLIST packet name CDATA #REQUIRED>
+<!ATTLIST packet type CDATA #REQUIRED>
+<!ELEMENT variable EMPTY>
+<!ATTLIST variable name CDATA #REQUIRED>
+<!ATTLIST variable size (1|2|4) #REQUIRED>
+<!ATTLIST variable comment CDATA "">
+<!ATTLIST variable addr CDATA "">
+<!ATTLIST variable seq (0|1|2|3|4|5|6|7|8) #REQUIRED>

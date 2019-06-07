@@ -1,0 +1,180 @@
+# sudoers file.
+#
+# This file MUST be edited with the 'visudo' command as root.
+#
+# See the sudoers man page for the details on how to write a sudoers file.
+#
+
+# Host alias specification **********************************
+Host_Alias	PXE = ovro*, bima*, sza*, wb*, sl*, linelength, loberotator, environment, c*
+Host_Alias	SERVER = boot*, acc, acc2, corba, database, sdp, *pipeline, storage
+Host_Alias      WS = cedarflat*
+
+# End Host alias specification ******************************
+
+
+# User alias specification***********************************
+User_Alias	CONTROL = control, szadaq
+User_Alias	TEST = scott, rick, abeard, iws, dwh
+User_Alias	TRUST = scott, rick, abeard, iws, dwh
+User_Alias	PRGRMRS = %prgrmrs
+User_Alias	MM = %mm
+User_Alias      OBS = obs
+
+# End User alias specification ******************************
+
+
+# Runas alias specification *********************************
+Runas_Alias	ROOT = root
+Runas_Alias	ABEARD = abeard
+Runas_Alias     DBA = carmadba
+Runas_Alias     CONTROL = control
+#Runas_Alias     BUILD = build
+
+
+# End Runas alias specification *****************************
+
+
+# Cmnd alias specification **********************************
+Cmnd_Alias	LSOF = /usr/sbin/lsof
+Cmnd_Alias	UMOUNT = /bin/umount
+Cmnd_Alias	RESTART = /sbin/reboot
+Cmnd_Alias	TOP = /usr/bin/top
+Cmnd_Alias	MINICOM = /usr/bin/minicom
+Cmnd_Alias	MYSQLD = /opt/rt/scripts/mysqld
+Cmnd_Alias	POWERCNTL = /etc/init.d/powerControl
+Cmnd_Alias      PXESYNC = /etc/rsync/linuxRs*
+Cmnd_Alias      PXEDEL = /etc/rsync/linuxRm*
+Cmnd_Alias      PXEKSRC = /etc/rsync/linuxRk*
+Cmnd_Alias      PXECMD = /etc/rsync/linuxRc*
+Cmnd_Alias      PXEMODPROBE = /sbin/modprobe, /sbin/insmod, /sbin/rmmod
+Cmnd_Alias      PXEI2C = /usr/sbin/i2cdetect, /usr/sbin/i2cdump, /usr/sbin/i2cget, /usr/sbin/i2cset
+Cmnd_Alias      SUBUILD = /bin/su - build
+Cmnd_Alias      SUCONTROL = /bin/su - control
+Cmnd_Alias      SUDBA = /bin/su - carmadba
+Cmnd_Alias      SUOBS = /bin/su - obs
+Cmnd_Alias      TAOCNTLSYS = /opt/rt/scripts/taoControlSystem
+#Cmnd_Alias      TBOX = /etc/init.d/tinderbox
+#Cmnd_Alias      OBSWEB = /etc/init.d/httpd
+Cmnd_Alias      OBSWEB = /sbin/service httpd restart
+#Cmnd_Alias      OBSDB = /etc/init.d/postgres
+Cmnd_Alias      OBSDB = /sbin/service postgres restart
+#Cmnd_Alias      LMGRD = /etc/init.d/sys_idl_lmgrd
+Cmnd_Alias      BUILDINSTALL = /opt/rt/scripts/buildInstall
+Cmnd_Alias      CNTLSYS = /opt/rt/scripts/controlSystem
+Cmnd_Alias      CNTLLABSYS = /opt/rt/scripts/labSystem
+Cmnd_Alias      CNTLDBASE = /opt/rt/scripts/mysqld
+#Cmnd_Alias      FIXHALFSEC = /opt/rt/scripts/fixHalfsec
+#Cmnd_Alias      MOUNTHALFSEC = /opt/rt/scripts/mountHalfsecAcc
+#Cmnd_Alias      UMOUNTHALFSEC = /opt/rt/scripts/umountHalfsecAcc
+#Cmnd_Alias      MAKEMPDATADIRS = /opt/rt/scripts/makeMPDataDirs
+#Cmnd_Alias      MAKEREISERFS   = /usr/local/sbin/mkreiserfs
+#Cmnd_Alias      SWAPACCSERVER   = /opt/rt/scripts/swapAccServer
+Cmnd_Alias      SHUTDOWNCORECOMPUTERS   = /opt/sysAdmin/ComputerSetup/powerOffComputers
+Cmnd_Alias      SHUTDOWN   = /sbin/shutdown -h now
+Cmnd_Alias      CORRELATIONS   = /opt/rt/scripts/correlations
+#Cmnd_Alias      RUNCMD   = /opt/sysAdmin/ComputerSetup/runCmd
+Cmnd_Alias      POWEROFF = /sbin/halt
+Cmnd_Alias      CVS = /usr/bin/cvs
+Cmnd_Alias      CARMASTATUS = /sbin/service carma status
+Cmnd_Alias      CARMARESTART = /sbin/service carma restart
+Cmnd_Alias      CARMASTOP = /sbin/service carma stop 
+Cmnd_Alias      CARMASTART = /sbin/service carma start
+Cmnd_Alias      SOUNDCONFIG = /usr/share/system-config-soundcard/system-config-soundcard
+
+
+# End Cmnd alias specification ******************************
+
+Defaults    env_reset
+Defaults    env_keep = "COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR \
+                        LS_COLORS MAIL PS1 PS2 QTDIR USERNAME \
+                        LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION \
+                        LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC \
+                        LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS \
+                        _XKB_CHARSET XAUTHORITY SSH_AUTH_SOCK EDITOR"
+
+
+# Defaults override specification ***************************
+Defaults:TRUST		!authenticate
+Defaults:CONTROL	!authenticate
+Defaults:TEST		!authenticate
+Defaults:PRGRMRS	!authenticate
+Defaults:MM		!authenticate
+
+# End Defaults override specification ***********************
+
+
+# User privilege specification ******************************
+root	ALL=(ALL) ALL
+TRUST    ALL=(ALL) ALL
+CONTROL		SERVER =  (ROOT) 	RESTART
+PRGRMRS         SERVER =  (ROOT)        RESTART
+TEST            SERVER =  (ROOT)        RESTART
+CONTROL         PXE    =  (ROOT)        RESTART
+PRGRMRS         PXE    =  (ROOT)        RESTART
+TEST            PXE    =  (ROOT)        RESTART
+CONTROL         PXE =     (ROOT)        SHUTDOWN
+CONTROL		PXE    =  (ROOT) 	RESTART
+#CONTROL	SERVER =  (ROOT) 	POWEROFF
+CONTROL		WS     =  (ROOT) 	SHUTDOWNCORECOMPUTERS
+CONTROL         PXE    =  NOPASSWD:	PXEMODPROBE
+CONTROL         PXE    =  NOPASSWD:	PXEI2C
+TRUST		SERVER =  (ROOT) 	SHUTDOWNCORECOMPUTERS
+#CONTROL		WS     =  (ROOT) 	RUNCMD
+CONTROL		WS     =  (ROOT) 	POWEROFF
+TRUST            SERVER =  (ROOT)        POWEROFF
+CONTROL		WS     =  (ROOT) 	CORRELATIONS
+PRGRMRS		PXE    =  (ROOT) 	RESTART
+TEST		PXE    =  (ABEARD) 	TOP
+PRGRMRS		ALL    =  (ROOT) 	MINICOM
+PRGRMRS		SERVER =  (ROOT) 	MYSQLD
+PRGRMRS		SERVER =  (ROOT) 	POWERCNTL
+PRGRMRS		SERVER =  (ROOT) 	PXESYNC
+PRGRMRS		SERVER =  (ROOT) 	PXEDEL
+PRGRMRS		SERVER =  (ROOT) 	PXEKSRC
+PRGRMRS		SERVER =  (ROOT) 	PXECMD
+PRGRMRS		SERVER =  (ROOT) 	UMOUNT
+PRGRMRS		PXE =     (ROOT) 	PXEMODPROBE
+PRGRMRS 	ALL =     (ROOT) 	SUBUILD
+PRGRMRS 	ALL =     (ROOT) 	SUCONTROL
+PRGRMRS 	ALL =     (ROOT) 	SUDBA
+PRGRMRS 	ALL =     (ROOT) 	SUOBS
+MM              ALL =     (ROOT)        CARMARESTART
+MM              ALL =     (ROOT)        CARMASTATUS
+MM              ALL =     (ROOT)        CARMASTART
+MM		ALL =     (ROOT)        CARMASTOP
+OBS             ALL =     (ROOT)        CARMARESTART
+OBS             ALL =     (ROOT)        CARMASTATUS
+OBS             ALL =     (ROOT)        CARMASTART
+OBS             ALL =     (ROOT)        CARMASTOP
+OBS             ALL =     (ROOT)        LSOF
+OBS             ALL =     (ROOT)        SOUNDCONFIG
+MM              ALL =     (CONTROL)     BUILDINSTALL
+MM        	ALL =     (CONTROL)  	CNTLSYS
+MM        	ALL =     (CONTROL)  	TAOCNTLSYS
+MM        	ALL =     (CONTROL)  	CNTLLABSYS
+MM		WS  =     (ROOT) 	SHUTDOWNCORECOMPUTERS
+MM		WS  =     (ROOT) 	CORRELATIONS
+#MM		SERVER =  (ROOT) 	POWEROFF
+MM        	SERVER =  (DBA)  	CNTLDBASE
+MM      	ALL =     (ROOT) 	SUCONTROL
+OBS             ALL =     (CONTROL)     CVS
+PRGRMRS	 	WS = 	  (ROOT) 	OBSWEB
+PRGRMRS  	WS =      (ROOT)    	OBSDB
+
+
+# End privilege specification *******************************
+
+# Uncomment to allow people in group wheel to run all commands
+# %wheel	ALL=(ALL)	ALL
+
+# Same thing without a password
+%wheel	ALL=(ALL)	NOPASSWD: ALL
+
+# Allow control to insert modules
+control PXE = NOPASSWD: PXEMODPROBE
+
+# Samples
+# %users  ALL=/sbin/mount /cdrom,/sbin/umount /cdrom
+# %users  localhost=/sbin/shutdown -h now
+

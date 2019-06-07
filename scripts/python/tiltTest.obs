@@ -1,0 +1,63 @@
+
+# Script to test tilts
+#
+# @author Steve Scott
+# $Id: 
+#
+# $CarmaCopyright$
+
+#-------------------------- Help --------------------------
+"""Script to test tilts""" 
+#------------------------ End of Help ------------------------
+
+import device
+import runCommand as rc
+
+
+# ------------ Parameters -------------
+p = rc.Params()
+p.add("ignoreWind", type=bool, default=False,
+       description="Ignore wind speed check")
+p.add("delay", type=int, default=30, 
+       description="Delay for long delay test")
+p.add("ants", type=rc.antlist, default=[0], 
+       description="Antenna numbers")
+
+p.processInputParameters()
+# ------------ End parameters -------------
+
+
+ignoreWind = p.ignoreWind
+delay      = p.delay
+ants       = p.ants
+
+# Print out parameters
+print p.parameterString(keywordWidth=12)            
+
+if ants.count(0) > 0: 
+    print "Running with all antennas in the subarray"
+    ants = currentAntennaNumbers()
+
+#--------------------------------------
+# Procedural part of script
+
+print "Tilt rep 1"
+tilt(ants=ants, doplot=False, ignoreWind=ignoreWind)
+print "Tilt rep 2"
+tilt(ants=ants, doplot=False, ignoreWind=ignoreWind)
+print "Tilt rep 3"
+tilt(ants=ants, doplot=False, ignoreWind=ignoreWind)
+print "Tilt rep 4"
+tilt(ants=ants, direction=-1, doplot=False, ignoreWind=ignoreWind)
+print "Tilt rep 5"
+tilt(ants=ants, doplot=False, ignoreWind=ignoreWind)
+print "Tilt rep 6"
+tilt(ants=ants, doplot=False, ignoreWind=ignoreWind)
+print "Tilt rep 7"
+tilt(ants=ants, doplot=False, ignoreWind=ignoreWind)
+print "Tilt rep 8"
+tilt(ants=ants, direction=-1, doplot=False, ignoreWind=ignoreWind)
+
+
+    
+

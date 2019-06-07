@@ -1,0 +1,932 @@
+/**
+ * $Id: CanIo.cc.rh,v 1.1 2003/07/16 20:02:23 rick Exp $
+ * 
+ * Implementation of CANBusIO class. 
+ * 
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/16 20:02:23 $
+ *
+ */
+
+// System includes
+#include <errno.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <sys/select.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+// Janz includes
+#include "janz/bcan.h"
+#include "janz/can_lib.h"
+#include "janz/defs.h"
+#include "janz/dpm.h"
+#include "janz/mitop.h"
+#include "janz/vmod.h"
+
+// log4cpp includes
+#include "log4cpp/Priority.hh"
+
+// Carma includes
+#include "carma/canbus/CanIo.h"
+#include "carma/canbus/Error.h"
+#include "carma/canbus/Types.h"
+#include "carma/canbus/Utilities.h"
+
+using namespace carma::canbus;
+using namespace log4cpp;    
+
+// -----------------------------------------------------------------------------
+carma::canbus::CanIo::CanIo() : CanOutput(true) 
+{
+    try {
+        int status;
+
+        // Add a device with bus Id 0 to devices_
+        addDevice(0);
+      
+        // Set up the device and bus.
+        devices_[0]->name = "/dev/null";
+        devices_[0]->arg = (void *)this;
+        
+        // Initialize queue access mutex.
+        if ((status = pthread_mutex_init(&rxQueueAccessor_.mutex, NULL)) != 0) {
+            throw carma::canbus::Error("CanIo::CanIo() - Couldn't initialize "
+                    "queue mutex. " + (string)strerror(status));
+        }
+
+        // Initialize queue access condition variable.
+        if ((status = pthread_cond_init(&rxQueueAccessor_.cond, NULL)) != 0) {
+            throw carma::canbus::Error("CanIo::CanIo() - Couldn't initialize "
+                    "condition. " + (string)strerror(status));
+        }
+
+        // Initialize the write mutex.
+        if ((status = pthread_mutex_init(&(devices_[0]->mutex), 
+                        NULL)) != 0) {
+            throw carma::canbus::Error("CanIo::CanIo() - Couldn't initialize "
+                    "device write mutex. " + (string)strerror(status));
+        }
+
+        // Open null device.
+        devices_[0]->fd = open(devices_[0]->name.c_str(), O_WRONLY);
+        
+        // Initialize IPQs for Direct CAN.
+        initializeIpqs();
+    
+        // Start the ipq reader/ CAN writer thread...
+        status = pthread_create(&writeThreadId_, NULL, 
+                writeThreadEntry, (void*) this);
+        if (status != 0) {
+            throw carma::canbus::Error("CanIo::canIo() - Failed to "
+                    "start runWriteThread(). " + (string)strerror(status));
+        }
+
+    } catch (carma::canbus::Error &err) {
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    } catch (...) {
+        carma::canbus::Error err("CanIo::CanIo - Unknown exception caught "
+                "- exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// -----------------------------------------------------------------------------
+carma::canbus::CanIo::CanIo(char* deviceName, bool terminate) : 
+    CanOutput(false) 
+{ 	
+    try {
+        int status;
+        busIdType busId;
+
+        busId = extractBusId((string)deviceName);
+        // Determine busIds from device name.
+        addDevice(busId); 
+
+        // Set up the device and bus.
+        devices_[busId]->name = deviceName;
+        devices_[busId]->arg = (void *)this;
+
+        // Initialize bus
+        devices_[busId]->bus.terminate = terminate;	
+
+        // Initialize the devices for communication.
+        initialize();
+
+        // Initialize IPQs for Direct CAN.
+        initializeIpqs();
+        
+        // Start threads to perform communication.
+        createThreads();
+
+    } catch (carma::canbus::Error &err) {
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    } catch (...) {
+        carma::canbus::Error err("CanIo::CanIo() - Unknown exception caught"
+               " - exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// -----------------------------------------------------------------------------
+carma::canbus::CanIo::CanIo(char* dev0, bool term0, char* dev1, bool term1) :
+    CanOutput(false)
+{
+    try {
+        int status; 
+        busIdType busId0, busId1;
+        
+        busId0 = extractBusId((string)dev0);
+        busId1 = extractBusId((string)dev1);
+
+        addDevice(busId0);
+        addDevice(busId1);
+            
+        // Set up the devices and busses.
+        // Initialize first device structure
+        devices_[busId0]->name = dev0;
+        devices_[busId0]->arg = (void *)this;
+
+        // Initialize first bus structure
+        devices_[busId0]->bus.terminate = term0;
+
+        // Initialize second device structure
+        devices_[busId1]->name = dev1;
+        devices_[busId1]->arg = (void *)this;
+
+        // Initialize second bus structure
+        devices_[busId1]->bus.terminate = term1;
+
+        // Initialize devices for communication.
+        initialize();
+        
+        // Initialize IPQs for Direct CAN.
+        initializeIpqs();
+
+        // Create and start threads to communicate.
+        createThreads();
+
+    } catch (carma::canbus::Error &err) {
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    } catch (...) {
+        carma::canbus::Error err("CanIo::CanIo() - Unknown exception caught"
+               " - exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+}
+	
+// -----------------------------------------------------------------------------
+carma::canbus::CanIo::~CanIo() 
+{   	
+    // Method to destruction.  In order for CanIo to be useable as a 
+    // standalone object, we must assure that all threads and devices
+    // are properly canceled and closed when the object is destroyed.  
+    // The proper way to destroy a thread is to cancel the thread and 
+    // then join with it and wait for the thread to return.  
+    // The canceled thread will cancel at the next 'cancelation point' 
+    // which is basically any blocking io calls, sleeps or pthread_cond_waits.
+    // As a direct result of this, two considerations were taken
+    // into account when writing the thread code a) Never place 
+    // cancellation points within mutex locks as this could prevent
+    // another thread from cancelling (i.e. this destructor would block 
+    // forever) and b) Never detach created threads since we must eventually 
+    // join on them when the destructor is called. 
+    try {
+        int status = 0;
+        void *result;
+        map<busIdType,deviceType*>::iterator di;
+
+        // Kill write thread
+        status = pthread_cancel(writeThreadId_);
+        if (status != 0) {
+            throw carma::canbus::Error("CanIo::~CanIo() - Error destroying "
+                    "write thread." + (string)strerror(status));
+        }
+        // Wait on write thread to quit.
+        status = pthread_join(writeThreadId_, &result);
+        if (status != 0) {
+            throw carma::canbus::Error("CanIo::~CanIo() - Error joining "
+                    "on write thread." + (string)strerror(status));
+        }
+        if (result != PTHREAD_CANCELED) {
+            throw carma::canbus::Error("CanIo::~CanIo() - Write thread "
+                    "returned with invalid value.");
+        }
+
+        if (!emulate_) { 
+        
+            // Kill update thread
+            status = pthread_cancel(updateThreadId_);
+            if (status != 0) {
+                throw carma::canbus::Error("CanIo::~CanIo() - Error destroying "
+                        "update thread." + (string)strerror(status));
+            }
+            // Wait on update thread to quit.
+            status = pthread_join(updateThreadId_, &result);
+            if (status != 0) {
+                throw carma::canbus::Error("CanIo::~CanIo() - Error joining "
+                        "on update thread. " + (string)strerror(status));
+            }
+            if (result != PTHREAD_CANCELED) {
+                throw carma::canbus::Error("CanIo::~CanIo() - Update thread "
+                        "returned with invalid value.");
+            }
+            
+            // Kill device threads. and mutexes...
+            for (di = devices_.begin();  di != devices_.end(); di++) {
+                // Destroy devices read thread
+                status = pthread_cancel(di->second->threadId);
+                if (status != 0) {
+                    throw carma::canbus::Error("CanIo::~CanIo() - Error "
+                            "destroying device thread." 
+                            + (string)strerror(errno));
+                }
+                // Wait on device read threads to quit.
+                status = pthread_join(di->second->threadId, &result);
+                if (status != 0) {
+                    throw carma::canbus::Error("CanIo::~CanIo() - Error "
+                            "joining on read thread." 
+                            + (string)strerror(errno));
+                }
+                if (result != PTHREAD_CANCELED) {
+                    throw carma::canbus::Error("CanIo::~CanIo() - Write thread "
+                            "returned with invalid value.");
+                }
+            }
+                
+            // We are assured now that no thread is accessing the device
+            // or it's mutex, close and destroy respectively.
+            for (di = devices_.begin(); di != devices_.end(); di++) {   
+                // Close the device
+                can_close(di->second->fd);
+                di->second->fd = -1;
+
+                // Destroy write mutex.  
+                status = pthread_mutex_destroy(&(di->second->mutex));
+                if (status != 0) {
+                    throw carma::canbus::Error("CanIo::~CanIo() - Error "
+                            "destroying write mutex. " 
+                            + (string)strerror(errno)); 
+                }
+                
+            }
+            
+            // It is now safe to destroy mutexes and conditions since
+            // we are assured that no thread can block on them.
+            if (pthread_mutex_destroy(&rxQueueAccessor_.mutex) != 0) {
+                throw carma::canbus::Error("CanIo::~CanIo() - Error destroying "
+                        "mutex.");
+            }
+
+            if (pthread_cond_destroy(&rxQueueAccessor_.cond) != 0) {
+                throw carma::canbus::Error("CanIo::~CanIo() - Error destroying "
+                        "cond variable.");
+            }	
+        } else { // If emulate
+            
+            // Close null devices using close
+            for (di = devices_.begin();  di != devices_.end(); di++) {
+                close(di->second->fd);
+                di->second->fd = -1;
+            }
+        } // End if !emulate
+        
+    } catch (carma::canbus::Error &err) {
+        // Catch exception here and print out the error message...
+        // If an exception is thrown during normal execution of a program,
+        // it is possible that the CanIo object will go out of scope and 
+        // the destructor called BEFORE the exception is caught, if another 
+        // exception is then thrown in this destructor above and not caught 
+        // here, neither exception will be caught at all and terminate() 
+        // called. This is a general problem common to all exception 
+        // handling and destruction.  
+        carma::canbus::Error newErr("CanIo::~CanIo - Exception caught.  "
+                "Destructor needs to be smarter.\n" + (string)err.what());
+        newErr.report();
+        newErr.log(Priority::DEBUG);
+    } catch (...) {
+        carma::canbus::Error err("CanIo::~CanIo() - Unknown exception caught "
+                "in destructor.");
+        err.report();
+        err.log(Priority::DEBUG);
+    }
+}
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::initialize() 
+{
+	::Message msg;			// Message for vmod-ican
+	::Message rxMsg;        // Message received from vmod-ican
+	int bytesRead = 0;
+	unsigned char readBuf;	
+    pthread_t threadId;
+	int status;
+    map<busIdType,deviceType*>::iterator di;
+	
+	// Initialize all synchronization variables...
+
+	// Initialize queue access mutex.
+	if ((status = pthread_mutex_init(&rxQueueAccessor_.mutex, NULL)) != 0) {
+		throw carma::canbus::Error("CanIo::initialize() - Couldn't initialize "
+                "queue mutex. " + (string)strerror(status));
+	}
+	
+	// Initialize queue access condition variable.
+	if ((status = pthread_cond_init(&rxQueueAccessor_.cond, NULL)) != 0) {
+		throw carma::canbus::Error("CanIo::initialize() - Couldn't initialize "
+                "condition. " + (string)strerror(status));
+	}
+	
+	// Initialize all device specific information and devices themselves.
+	for (di = devices_.begin(); di != devices_.end(); di++) {
+
+        // Initialize the write mutex.
+        if ((status = pthread_mutex_init(&(di->second->mutex), NULL)) != 0) {
+            throw carma::canbus::Error("CanIo::initialize() - Couldn't "
+                    "initialize device write mutex. " + 
+                    (string)strerror(status));
+        }
+	
+		// Open the device (No "const" in JANZ driver - cast away).
+		di->second->fd = can_open((char*)(di->second->name.c_str()));
+
+		if (di->second->fd < 0) {
+            throw carma::canbus::Error("CanIo::initialize() - "
+                    "Couldn't open " + di->second->name);
+		}
+
+		// Initialize the CAN controller and interfaces to the
+		// VMOD-ICAN device.
+		
+    	// Set termination if required
+        SwitchCanTermination(&msg, (int)di->second->bus.terminate);
+        while (canSend(di->second->fd, &msg) <= 0);
+
+    	// Set to baud rate to 1Mbit/s
+		IcWriteBtrBCAN(&msg, 0x2300);
+		while (canSend(di->second->fd, &msg) <= 0);
+
+		// Set Software acceptance mask such that standard (11 bit id) and
+		// extended (29 bit id) can messages are received.
+    	IcRangeSetAfil(&msg, 0x00, 0x7ff, 2);
+		while (canSend(di->second->fd, &msg) <= 0);
+		
+		// Switch device to the 'new style host interface'.
+		// The 'new style host interface' is the Janz way of saying that
+		// all board communication will use interrupt notification via read().
+    	ican2_select_hostif(di->second->fd, BOARD_SLOW_READ_LENGTH, 
+			BOARD_SLOW_WRITE_LENGTH);
+	
+		// All CAN activity will be through the fast interface. 
+		if(ican2_init_fast_can(di->second->fd, BOARD_FAST_READ_LENGTH, 
+		   BOARD_FAST_WRITE_LENGTH) < 0) {
+			throw carma::canbus::Error("CanIo::initialize() - "
+                    "ican2_init_fast_can_failed.");
+		}
+		
+		// Make sure we're on the bus
+		IcBusOnBCAN(&msg);
+    	while (canSend(di->second->fd, &msg) <= 0);
+			
+		// Probe the card to verify that all interfaces are set up.
+		while (!(di->second->initialized)) {
+		
+			InquiryHostInterface(&msg);
+			while (canSend(di->second->fd, &msg) <= 0);
+		
+			// Read 1 byte from CAN device (new interface).	
+			bytesRead = read(di->second->fd, &readBuf, 1);
+			
+			// And only 1 byte...
+			if (bytesRead != 1) {
+				throw carma::canbus::Error("CanIo::initialize() - Invalid "
+                        "number of bytes read from " + di->second->name);
+			}
+			
+			switch (readBuf) {
+				case PLAIN_QUEUE:
+					processPlainMessage(*(di->second));
+					break;
+				default:
+					// Ignore other queues since they may not be setup.
+					break;
+			}
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::initializeIpqs()
+{
+    // Setup IPQs for DirectCan
+    try {
+        // Try to open an existing write IPQ, if this fails, open a new one.
+        try {
+            writeIpq_ = new IPQwriter<carma::canbus::Message>(CAN_OUTPUT_IPQ,
+                    false, IPQ_BUFFER_SIZE);
+        } catch (carma::util::ErrorException &err) {
+            writeIpq_ = new IPQwriter<carma::canbus::Message>(CAN_OUTPUT_IPQ,
+                    true, IPQ_BUFFER_SIZE);
+        }
+        // Same with the read ipq.
+        try {
+            readIpq_ = new IPQreader<carma::canbus::Message>(CAN_INPUT_IPQ,
+                    false, IPQ_BUFFER_SIZE);
+        } catch (carma::util::ErrorException &err) {
+            readIpq_ = new IPQreader<carma::canbus::Message>(CAN_INPUT_IPQ,
+                    true, IPQ_BUFFER_SIZE);
+        }
+        // We want to start reading the readIpq at the top so that we 
+        // don't read and post a bunch of old messages to the CANbus.
+        readIpq_->setNoneAvailable();
+    } catch (carma::util::ErrorException &err) {
+        // Rethrow it.
+        throw carma::canbus::Error((string)err.what());
+    }
+}
+    
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::createThreads() 
+{    
+	int status;
+    map<busIdType, deviceType*>::iterator di; // Device map iterator.
+	
+	// Start read thread for each device. 
+	for (di = devices_.begin(); di != devices_.end(); di++) {
+        
+        status = pthread_create(&(di->second->threadId), NULL,
+                readThreadEntry, (void*) (di->second));
+        
+		if (status != 0) {
+			throw carma::canbus::Error("CanIo::createThreads() - Failed "
+                    "to start runReadThread(). " + (string)strerror(status));
+		}
+	}
+		
+	// Start the update thread...
+    status = pthread_create(&updateThreadId_, NULL, 
+            updateThreadEntry, (void*) this);
+	if (status != 0) {
+		throw carma::canbus::Error("CanIo::createThreads() - Failed to "
+                "start runUpdateThread(). " + (string)strerror(status));
+	}
+
+    // Start the ipq reader/ CAN writer thread...
+    status = pthread_create(&writeThreadId_, NULL,
+            writeThreadEntry, (void*) this);
+    if (status != 0) {
+        throw carma::canbus::Error("CanIo::createThreads() - Failed to "
+                "start runWriteThread(). " + (string)strerror(status));
+    }
+}
+	
+// -----------------------------------------------------------------------------
+bool carma::canbus::CanIo::waitForMessage(double waitForMaxSeconds) 
+{
+	struct timespec delay;  // Timeout.
+	int status;             // Return status of timedwait.
+	bool result;            // Could be due to a timeout or signal.
+	
+	delay.tv_sec = (int)waitForMaxSeconds;
+	delay.tv_nsec = (int)((waitForMaxSeconds - delay.tv_sec) * 1000000000); 
+
+	// Lock mutex, test predicate, wait (unlocks mutex, 
+	// then returns with mutex locked), test predicate, unlock mutex.
+	pthread_mutex_lock(&rxQueueAccessor_.mutex);
+	while (! (rxQueueAccessor_.messageQueue.size() > 0)) {
+		if (waitForMaxSeconds >= 0) {	
+			status = pthread_cond_timedwait(&rxQueueAccessor_.cond, 
+					&rxQueueAccessor_.mutex, &delay);
+		} else {
+			status = pthread_cond_wait(&rxQueueAccessor_.cond,
+					&rxQueueAccessor_.mutex);
+		}
+
+		// Semaphore is locked here!!!
+		if (status == ETIMEDOUT) {
+			break;
+		} else if (status == 0) {
+			// Successful.
+			break;
+		} else if (status != 0) {
+			throw carma::canbus::Error("CanIo::waitForMessage() - Conditional "
+                    "timeout error.");
+		}
+	}
+	
+	result = (rxQueueAccessor_.messageQueue.size() > 0);
+
+	pthread_mutex_unlock(&rxQueueAccessor_.mutex);
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+carma::canbus::Message carma::canbus::CanIo::getMessage() 
+{
+	while (!waitForMessage());
+    pthread_mutex_lock(&rxQueueAccessor_.mutex);
+	Message tmp = rxQueueAccessor_.messageQueue.front();
+    rxQueueAccessor_.messageQueue.pop(); 
+    pthread_mutex_unlock(&rxQueueAccessor_.mutex);
+
+	return tmp;
+}
+
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::postMessage(const carma::canbus::Message &msg) 
+    throw (carma::canbus::Error)
+{
+    CanOutput::postMessage(msg);
+}
+
+// -----------------------------------------------------------------------------
+map<busIdType, busStatusType> carma::canbus::CanIo::getBusStatus() 
+{
+	map<busIdType, busStatusType> tmp;
+    map<busIdType, deviceType*>::iterator di; // Device iterator.
+    
+    for (di = devices_.begin(); di != devices_.end(); di++) {
+        pthread_mutex_lock(&(di->second->mutex));
+        tmp[di->first] = di->second->bus.status;
+        pthread_mutex_unlock(&(di->second->mutex));
+    }
+	return tmp;
+}
+
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::updateBusStatus() 
+{
+	::Message msg;
+	int status;
+    int rxCount, txCount;     // Message counts since last update.
+    timespec now, last, diff; // Times for now, last update, and the difference.
+    map<busIdType, deviceType*>::iterator di; // Device iterator.
+    
+    for (di = devices_.begin(); di != devices_.end(); di++) {
+        pthread_mutex_lock(&(di->second->mutex));
+
+        InquiryStatus(&msg);
+        status = canSend(di->second->fd, &msg);
+
+        if (status == -1) {
+            throw carma::canbus::Error("CanIo::updateBusStatus() - Failed "
+                    "on read " + (string)strerror(errno));
+        } else if (status == 0) {
+            throw carma::canbus::Error("CanIo::updateBusStatus() - "
+                    "Couldn't send (no space?)");
+        }
+
+        // Update the rx and tx msg rates.    
+        last = di->second->bus.lastUpdateTime;
+        rxCount = di->second->bus.rxCount;
+        txCount = di->second->bus.txCount;
+
+        clock_gettime(CLOCK_REALTIME, &now);
+
+        // Calculate the difference between the last update and now.
+        if (now.tv_nsec >= last.tv_nsec) {
+            diff.tv_sec = (now.tv_sec - last.tv_sec);
+            diff.tv_nsec = (now.tv_nsec - last.tv_nsec);
+        } else {
+            diff.tv_sec = (now.tv_sec - last.tv_sec) - 1;
+            diff.tv_nsec = NANOSECS_PER_SEC - 
+                abs(now.tv_nsec - last.tv_nsec);
+        }
+
+/*** REVIEW
+ * Reviewer: rh
+ * Comments: looks like the cast is done after the addition. shouldn't
+ *           the addition be in double precision?
+ */
+        // Calculate the actual message rates.
+        di->second->bus.status.rxMsgRate = rxCount /
+            ((double)(diff.tv_sec + (1.0e-9) * diff.tv_nsec));
+        di->second->bus.status.txMsgRate = txCount /
+            ((double)(diff.tv_sec + (1.0e-9) * diff.tv_nsec));
+
+        // Reset running values.
+        di->second->bus.rxCount = 0;
+        di->second->bus.txCount = 0;
+
+        di->second->bus.lastUpdateTime = now;
+            
+        pthread_mutex_unlock(&(di->second->mutex));
+	}
+}	
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::clearReadQueue() 
+{
+    // Clear the message queue. 
+    pthread_mutex_lock(&(rxQueueAccessor_.mutex));
+    while (!rxQueueAccessor_.messageQueue.empty()) {
+        rxQueueAccessor_.messageQueue.pop();
+    }
+    pthread_mutex_unlock(&(rxQueueAccessor_.mutex));
+}
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::queueMessage(const Message &msg)
+{
+    // Copy it into the queue - critical section
+	pthread_mutex_lock(&(rxQueueAccessor_.mutex));
+	// Set predicate, signal to blocked tasks, unlock.
+	rxQueueAccessor_.messageQueue.push(msg);
+    // Signal to waiting threads.
+	pthread_cond_signal(&rxQueueAccessor_.cond);
+    // Unlock the mutex.
+	pthread_mutex_unlock(&(rxQueueAccessor_.mutex));
+}
+
+// -----------------------------------------------------------------------------
+int carma::canbus::CanIo::canSend(int fd, ::Message* msg)
+{
+    return can_send(fd, msg);
+
+}
+
+// ----------------------------------------------------------------------------
+void carma::canbus::CanIo::processFastMessage(deviceType& dev) 
+{	
+	::FastMessage fmsg;
+    
+    pthread_mutex_lock(&(dev.mutex));
+	
+	if(can_recv_fast(dev.fd, &fmsg) < 0) {
+        throw carma::canbus::Error("CanIo::processFastMessage() - Error "
+                "reading fast queue. " + dev.name + " " + 
+                (string)strerror(errno));
+	}
+    
+	// Convert message to Message object and
+	// transfer to queue.
+	Message msg(fmsg, dev.bus.id);
+    // Set rx mjd.
+    msg.setRxMjd(time_.MJD());
+    // Increment rxCount
+    dev.bus.rxCount++;
+    // Write to the direct CAN write ipq as well
+    *((Message *)writeIpq_) = msg;
+    writeIpq_->write();
+	
+    pthread_mutex_unlock(&(dev.mutex));
+
+    // Place the message into the queue
+    queueMessage(msg);
+	
+}
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::processPlainMessage(deviceType &dev) 
+{
+	char writeBuffer[600];  // Buffer to print messages to.	
+	::Message msg;          // Janz plain message
+	pthread_mutex_lock(&(dev.mutex));
+	busStatusType& status = dev.bus.status;
+
+	if (can_recv(dev.fd, &msg) < 0) {
+        throw carma::canbus::Error("CanIo::processPlainMessage() - Error "
+                "reading plain queue. " + dev.name + " " + 
+                (string)strerror(errno));
+	}	
+	
+	// Low level stuff...
+	
+	// Check and see if this is a 'Module Management message.'
+	if ((msg.cmd >= M_CONNECT) && (msg.cmd <= M_FMSG_LOST)) {
+		
+		unsigned short subspec = word_from_bytes(msg.data[0], msg.data[1]);
+		
+		// Update the bus status.
+		switch (msg.cmd) {
+			case M_INQUIRY :
+				if (subspec == MS_INQUIRY_EXTD_STATUS &&
+					msg.data[2] == INQUIRY_CTRL_SJA1000) {
+					status.rxErrors = (short) msg.data[5];
+					status.txErrors = (short) msg.data[6];
+				} else if (subspec == MS_INQUIRY_HOST_IF) {
+					bool newInterface = (bool)(msg.data[2]);
+					bool fastInterface = (bool)(msg.data[3]);
+					dev.initialized = newInterface && fastInterface;
+				}
+				break;
+			case M_MSG_LOST :
+				cout << "Slow message lost." << endl;
+				status.slowMsgsLost += (unsigned short)msg.data[0];
+				break;
+			case M_FMSG_LOST :
+				status.fastMsgsLost += (unsigned short)msg.data[0];	
+				break;
+			default :
+				// There are tons of these kinds of messages
+				// most don't concern us but we want to know
+				// about it anyway for debugging.
+				format_modulmgr(writeBuffer, 0, &msg);
+				cout << writeBuffer << endl;
+				break;
+		}
+	
+	// Check if this is a bus state message.
+	} else if ((msg.cmd >= M_TIMER_START_req) && 
+			 (msg.cmd <= M_SNIFFFIL_MASK_req)) { 
+		
+		// The M_BCAN_EVENT_ind message contains information about the 
+		// state of the bus and thus is used to set the BusErrorState
+		// variable according to the following rules (see Lawrenz pg. 89).
+		// NO_ERRORS - No interrupt received from module (note that actual
+		// 			   error count may be between 1-96 although unlikely).
+		// ERROR_ACTIVE - A Bus Error interrupt has been received with 
+		// 				a Rx or Tx Error count of <= 127.
+		// ERROR_PASSIVE - A Bus Error interrupt has been received with 
+		// 				a Tx Error count of >= 128.
+		// BUS_OFF - A Bus Error interrupt has been received with a 
+		// 			Tx Error count >= 255.
+		if ((msg.cmd == M_BCAN_EVENT_ind) && (msg.data[0] == 1) 
+				&& (msg.data[1] == 2)){
+	
+			// We've received an error interrupt from an SJA1000. 
+			if (msg.data[4] < 96 && msg.data[5] < 96) {
+				status.state = NO_ERRORS;
+			} else if ((msg.data[4] <= 127) && msg.data[5] <= 127) {
+				status.state = ERROR_ACTIVE;
+			} else if (msg.data[5] <= 255) {
+				status.state = ERROR_PASSIVE;
+			} else {
+				status.state = BUS_OFF;
+			}
+		} else {
+			format_icanos(writeBuffer, 0, &msg);
+			cout << writeBuffer << endl;
+		}
+		
+	} else {
+		cout << "Unknown slow message." << endl;
+	}
+	pthread_mutex_unlock(&(dev.mutex));
+}
+
+// -----------------------------------------------------------------------------
+void * carma::canbus::CanIo::readThreadEntry(void *arg) 
+{
+	int status;
+    deviceType *dev = (deviceType *)arg;
+
+    // Retrieve the dev
+    CanIo *This = (CanIo *) (dev->arg);	
+	This->runReadThread(*(dev));
+	
+}
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::runReadThread(deviceType &dev) {	
+	try {	
+		
+		int bytesRead;
+		unsigned char charBuf;
+			
+		while (true) {
+			bytesRead = read(dev.fd, &charBuf, 1);
+		
+			// 1 and only 1!
+			if (bytesRead == 1) {
+				switch(charBuf) {
+					case FAST_QUEUE: // Fast interface queue
+						processFastMessage(dev);
+						break;
+					case PLAIN_QUEUE: // Plain interface queue
+						processPlainMessage(dev);
+						break;
+				}
+			} else { 
+                throw carma::canbus::Error("CanIo::runReadThread() - Error "
+                        "reading from new interface. " + dev.name + " " + 
+                        (string)strerror(errno));
+			}
+		} // End loop forever 
+	} catch (carma::canbus::Error &error) {
+        const char * errMsg = error.getErrorMsg().c_str();
+        ostringstream os;
+		os << "CanIo::runReadThread() - Error exception caught:" << endl
+            << "    " << (string)error.what() << endl
+            << "Bus " << dev.bus.id << " " << dev.name << " fd " 
+            << dev.fd << " - exiting." << endl << ends;
+        carma::canbus::Error newErr(os);
+        newErr.report();
+        newErr.log(Priority::CRIT);
+		exit(EXIT_FAILURE);
+	} catch (...) {
+        carma::canbus::Error err("CanIo::runReadThread() - Unknown exception "
+                "caught - exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+		exit(EXIT_FAILURE);
+	}
+}
+
+// -----------------------------------------------------------------------------
+void * carma::canbus::CanIo::writeThreadEntry(void *arg)
+{
+    int status;
+    CanIo *This = ((CanIo *)arg);
+    This->runWriteThread();
+}
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::runWriteThread() 
+{
+    busIdType busId;
+    try {
+        // Run forever.
+        while (true) {
+
+            // Block on the read ipq until a message is received.
+            // Use no lock variant to avoid priority inversion of any
+            // other higher priority writer/reader (possible if another
+            // CanIo process exists and is running at a higher or realtime
+            // priority level).  Cancelation point.
+            readIpq_->read();
+            
+            // Only post CAN messages for busses that this object controls
+            busId = readIpq_->getBusId();
+            
+            if ((devices_.find(busId) != devices_.end()) || 
+                 (busId == ALL_BUSSES)) {
+                // Message is addressed to one of this objects busses or
+                // ALL_BUSSES.  Post it. Cancelation point.
+                postMessage(*readIpq_);
+            }
+            
+        }
+    } catch (carma::util::ErrorException &err) {
+        carma::canbus::Error newErr("CanIo::runWriteThread() - Exception "
+                "caught - exiting. " + (string)err.what());
+        newErr.report();
+        newErr.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    } catch (...) {
+        carma::canbus::Error err("CanIo::runWriteThread() - Unknown exception "
+                "caught - exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+} 
+        
+// -----------------------------------------------------------------------------
+void * carma::canbus::CanIo::updateThreadEntry(void *arg) 
+{
+	int status;
+	CanIo *This = ((CanIo *)arg);
+	This->runUpdateThread();
+}
+
+// -----------------------------------------------------------------------------
+void carma::canbus::CanIo::runUpdateThread() 
+{
+	try {
+		int result = 0;
+		timespec ts, rem;
+		ts.tv_sec = 0;
+		ts.tv_nsec = 500000000; // 1/2 second
+	
+		while (true) {
+		
+			// Update the bus status.
+			updateBusStatus();
+		
+			// Sleep for 1/2 second.  Cancellation point.
+			result = nanosleep(&ts, &rem);
+			while (result == -1) {
+				cout << "Nanosleep return." << endl;
+				result = nanosleep(&rem, &rem);
+			}
+		}
+	} catch (carma::canbus::Error error) {
+        carma::canbus::Error err("CanIo::runUpdateThread() - Error exception "
+                "caught - exiting. " + (string) error.getErrorMsg());
+        err.report();
+        err.log(Priority::CRIT);
+		exit(EXIT_FAILURE);
+	} catch (...) {
+        carma::canbus::Error err("CanIo::runUpdateThread() - Unknown exception "
+                "caught - exiting. ");
+		exit(EXIT_FAILURE);
+	}
+}

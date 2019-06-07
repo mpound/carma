@@ -1,0 +1,25 @@
+$Id: README,v 1.5 2013/01/30 18:44:52 iws Exp $
+
+
+
+Please describe your scripts below. 
+
+imrMaster    - script to start/stop/restart all array.(labacc, antennas,
+               downconverters). Use conf/imr/lab.xml to change program
+               parameters or to comment out ones you wish not to run.
+               Don't add new ones, as this script is hardwired in a lot
+               of ways. Be sure to su control before running script.
+
+makeMPDataDirs - makes monitor data directories including directory
+                 tree in which monitor data is written, directory tree
+                 in which links are created indicating data are ready
+                 to be loaded into the database, and directory tree in
+                 which links are created indicating that data are
+                 ready to be transferred to NCSA
+
+monitorConfigurationLoader - loads monitor config info from mpml
+                             file(s) into the database
+
+mpmlgen      - generate C++ classes from mpml files
+
+mysqld       - start/stop/restart the mysql server

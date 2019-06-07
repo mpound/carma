@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- CentralIf Subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="CentralIf">
+  <description>
+    The CentralIf subsystem is used to monitor the raw IF power
+    where it is received from the antennas. This is where it is converted
+    from fiber to coaxial cable.
+  </description>
+
+  <?common MonitorStats.mpml?>
+  <CommonContainer ref="MonitorSubsystemStats" />
+
+  <?common TimestampCommon.mpml?>
+  <CommonMonitorPoint ref="timestamp" />
+
+  <?common OnlineCommon.mpml?>
+  <CommonMonitorPoint ref="online" />
+
+  <!-- per-antenna optical power monitor -->
+  <Container name="Antenna" count="24">
+    <Container name="Pol" count="2">
+      <MonitorPoint name="opticalPower" type="float">
+        <units>mW</units>
+        <errHi>3.0</errHi>
+        <warnHi>2.5</warnHi>
+        <warnLo>0.25</warnLo>
+        <errLo>0.05</errLo>
+      </MonitorPoint>
+    </Container>
+  </Container>
+
+</Subsystem>

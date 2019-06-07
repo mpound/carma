@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- Project Database Manager Subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="ProjectDatabaseManager" priority="useful" author="Douglas N. Friedel">  
+
+  <!-- Create reusable monitor points in the ProjectDatabaseManagerSubsystem hierarchy -->
+  <Common scope="local">
+    <Container name="Server">
+      <description>
+        Common monitor points describing a single MongoDB server.
+      </description>
+
+      <MonitorPoint name="timestamp" type="absTime">
+        <units>UTC</units>
+        <description>Timestamp where Server information was updated</description>
+      </MonitorPoint>
+
+      <!-- NOTE: allocate enough samples for 32 chars of data -->
+      <MonitorPoint name="name" type="string" sampling="4">
+        <description>Server hostname and port number</description>
+        <width>32</width>
+      </MonitorPoint>
+
+      <MonitorPoint name="health" type="short">
+        <description>Server Health</description>
+      </MonitorPoint>
+
+      <!-- NOTE: allocate enough samples for 32 chars of data -->
+      <MonitorPoint name="state" type="string" sampling="4">
+        <description>Server State</description>
+      </MonitorPoint>
+
+      <MonitorPoint name="uptime" type="int">
+        <description>Server Uptime</description>
+        <units>seconds</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="ping" type="int">
+        <description>Server Ping</description>
+        <units>milliseconds</units>
+      </MonitorPoint>
+
+    </Container>
+  </Common>
+
+  <MonitorPoint name="timeStamp" type="absTime" persistent="true">
+    <shortName>Timestamp</shortName>
+    <units>UTC</units>
+    <description>
+      Time that packet data was completed/written
+    </description>
+  </MonitorPoint>
+
+  <?common OnlineCommon.mpml?>
+  <CommonMonitorPoint ref="online" />
+
+  <!-- NOTE: allocate enough samples for 80 chars of data -->
+  <MonitorPoint name="currentMethod" type="string" sampling="10">
+    <description>
+      The current CORBA method that is running.
+      This is only set for methods which access the database itself.
+    </description>
+    <width>80</width>
+  </MonitorPoint>
+
+  <MonitorPoint name="currentMethodStart" type="absTime">
+    <units>UTC</units>
+    <description>
+      The timestamp where the current CORBA method was started.
+      This is only set for methods which access the database itself.
+    </description>
+  </MonitorPoint>
+
+  <!-- up to 5 replica servers are supported at this time -->
+  <CommonContainer ref="Server" count="5"/>
+
+</Subsystem>

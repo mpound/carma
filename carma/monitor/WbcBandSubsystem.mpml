@@ -1,0 +1,451 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- Spectral correlator band subsystem monitor point definitions -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="WbcBand" count="&NUM_WBC_BANDS;" indexName="band"
+           priority="normal">
+
+  <Common scope="local" author="Ira Snyder">
+
+    <!-- COBRA Digitizer Statistics (single digitizer) -->
+    <Container name="DigitizerStatistics">
+      <MonitorPoint name="states00" type="float">
+        <shortName>State(00b)Count</shortName>
+        <longName>quantization state 00b count</longName>
+        <units></units>
+        <description>quantization state 00b count</description>
+        <errLo> 0.288</errLo>
+        <warnLo>0.304</warnLo>
+        <warnHi>0.336</warnHi>
+        <errHi> 0.352</errHi>
+      </MonitorPoint>
+      <MonitorPoint name="states01" type="float">
+        <shortName>State(01b)Count</shortName>
+        <longName>quantization state 01b count</longName>
+        <units></units>
+        <description>quantization state 01b count</description>
+        <errLo> 0.162</errLo>
+        <warnLo>0.171</warnLo>
+        <warnHi>0.189</warnHi>
+        <errHi> 0.198</errHi>
+      </MonitorPoint>
+      <MonitorPoint name="states10" type="float">
+        <shortName>State(10b)Count</shortName>
+        <longName>quantization state 10b count</longName>
+        <units></units>
+        <description>quantization state 10b count</description>
+        <errLo> 0.162</errLo>
+        <warnLo>0.171</warnLo>
+        <warnHi>0.189</warnHi>
+        <errHi> 0.198</errHi>
+      </MonitorPoint>
+      <MonitorPoint name="states11" type="float">
+        <shortName>State(11b)Count</shortName>
+        <longName>quantization state 11b count</longName>
+        <units></units>
+        <description>quantization state 11b count</description>
+        <errLo> 0.288</errLo>
+        <warnLo>0.304</warnLo>
+        <warnHi>0.336</warnHi>
+        <errHi> 0.352</errHi>
+      </MonitorPoint>
+
+      <MonitorPoint name="vplus" type="float" priority="useful">
+        <shortName>+ThresholdV</shortName>
+        <longName>plus threshold voltage</longName>
+        <units>V</units>
+        <description>plus threshold voltage</description>
+        <errHi>-0.050</errHi>
+        <errLo>-0.425</errLo>
+      </MonitorPoint>
+      <MonitorPoint name="vzero" type="float" priority="useful">
+        <shortName>0ThresholdV</shortName>
+        <longName>zero threshold voltage</longName>
+        <units>V</units>
+        <description>zero threshold voltage</description>
+        <errHi>-0.350</errHi>
+        <errLo>-0.650</errLo>
+      </MonitorPoint>
+      <MonitorPoint name="vminus" type="float" priority="useful">
+        <shortName>-ThresholdV</shortName>
+        <longName>minus threshold voltage</longName>
+        <units>V</units>
+        <description>minus threshold voltage</description>
+        <errHi>-0.575</errHi>
+        <errLo>-0.950</errLo>
+      </MonitorPoint>
+      <MonitorPoint name="voffset" type="float">
+        <shortName>offsetV</shortName>
+        <longName>offset voltage</longName>
+        <units>V</units>
+        <description>offset voltage</description>
+      </MonitorPoint>
+
+      <MonitorPoint name="digitalDelay" type="int">
+        <shortName>delayLine</shortName>
+        <longName>digital delay line setting</longName>
+        <errLo>-1</errLo>
+        <errHi>20400</errHi>
+        <warnLo>-1</warnLo>
+        <warnHi>20300</warnHi>
+        <units>ns</units>
+        <description>digital delay line setting</description>
+      </MonitorPoint>
+
+      <!-- FPGA clock control/status -->
+      <MonitorPoint name="coarseClockDelay" type="int">
+        <shortName>coarseClockDelay</shortName>
+        <longName>coarse clock delay setting</longName>
+        <units></units>
+        <description>coarse clock delay setting</description>
+      </MonitorPoint>
+      <MonitorPoint name="fineClockDelay" type="int">
+        <shortName>fineClockDelay</shortName>
+        <longName>fine clock delay setting</longName>
+        <units></units>
+        <description>fine clock delay setting</description>
+      </MonitorPoint>
+    </Container> <!-- Container DigitizerStatistics -->
+  </Common>
+
+
+  <?common MonitorStats.mpml?>
+  <CommonContainer ref="MonitorSubsystemStats" />
+
+  <?common CorrelatorCommon.mpml?>
+
+  <?common OnlineCommon.mpml?>
+  <CommonMonitorPoint ref="online" />
+
+  <!-- =================================================================== -->
+  <!-- Band monitor points                                                 -->
+  <!-- =================================================================== -->
+
+  <!-- header -->
+  <CommonMonitorPoint ref="received" />
+  <CommonMonitorPoint ref="timestamp" />
+  <CommonMonitorPoint ref="bandNumber" />
+  <CommonMonitorPoint ref="mode" />
+  <CommonMonitorPoint ref="sourceName" />
+  <CommonMonitorPoint ref="numberOfPhaseSwitchesIntegrated" />
+  <CommonMonitorPoint ref="phaseSwitchPeriod" />
+  <CommonMonitorPoint ref="phaseSwitchIntegrationTime" />
+  <CommonMonitorPoint ref="totalTimeSpan" />
+  <CommonMonitorPoint ref="totalIntegrationTime" />
+  <CommonMonitorPoint ref="bandwidth" />
+  <CommonMonitorPoint ref="centerFrequency" />
+  <CommonMonitorPoint ref="dconFrequency" />
+  <CommonMonitorPoint ref="dconSideband" />
+  <CommonMonitorPoint ref="lobeResidualFrequency" />
+  <CommonMonitorPoint ref="lobeTrackSideband" />
+  <CommonMonitorPoint ref="bdcEnabled" />
+  <CommonMonitorPoint ref="scaling" />
+  <CommonMonitorPoint ref="BitMode" />
+  <CommonMonitorPoint ref="astroBandMode" />
+  <CommonMonitorPoint ref="CorrStatus" />
+  <CommonMonitorPoint ref="corrSeqNo" />
+  <CommonMonitorPoint ref="commandStatusBitPattern" />
+  <CommonMonitorPoint ref="commandStatus" />
+
+  <!-- Interpolator table (#inputs x 3) -->
+  <CommonContainer ref="CorMonitorInterpSamps" name="InterpolatorSamples" count="&NUM_WBDC_INPUTS;" />
+
+  <!-- An array of digitizer board monitor points -->
+  <Container name="Digitizer" count="&NUM_WBC_DIGS;">
+
+    <!-- header -->
+    <CommonMonitorPoint ref="received" />
+    <CommonMonitorPoint ref="timestamp" />
+    <CommonMonitorPoint ref="bandNumber" />
+    <CommonMonitorPoint ref="mode" />
+    <CommonMonitorPoint ref="sourceName" />
+    <CommonMonitorPoint ref="numberOfPhaseSwitchesIntegrated" />
+    <CommonMonitorPoint ref="phaseSwitchPeriod" />
+    <CommonMonitorPoint ref="phaseSwitchIntegrationTime" />
+    <CommonMonitorPoint ref="totalTimeSpan" />
+    <CommonMonitorPoint ref="totalIntegrationTime" />
+    <CommonMonitorPoint ref="bandwidth" />
+    <CommonMonitorPoint ref="centerFrequency" />
+    <CommonMonitorPoint ref="dconFrequency" />
+    <CommonMonitorPoint ref="dconSideband" />
+    <CommonMonitorPoint ref="lobeResidualFrequency" />
+    <CommonMonitorPoint ref="lobeTrackSideband" />
+    <CommonMonitorPoint ref="bdcEnabled" />
+    <CommonMonitorPoint ref="scaling" />
+    <CommonMonitorPoint ref="BitMode" />
+    <CommonMonitorPoint ref="astroBandMode" />
+    <CommonMonitorPoint ref="CorrStatus" />
+    <CommonMonitorPoint ref="corrSeqNo" />
+    <CommonMonitorPoint ref="commandStatusBitPattern" />
+    <CommonMonitorPoint ref="commandStatus" />
+
+    <!-- correlator monitor common -->
+    <CommonMonitorPoint ref="boardNumber" />
+    <CommonMonitorPoint ref="slotNumber" />
+    <CommonMonitorPoint ref="boardType" />
+    <CommonMonitorPoint ref="boardRevision" />
+    <CommonMonitorPoint ref="boardSerialNumber" />
+    <CommonMonitorPoint ref="moduleRevision" />
+    <CommonMonitorPoint ref="moduleSerialNumber" />
+    <CommonMonitorPoint ref="versionDspSoftware" />
+    <CommonMonitorPoint ref="versionSysHdl" />
+    <CommonMonitorPoint ref="versionFpgaHdl" />
+    <CommonMonitorPoint ref="versionModuleHdl" />
+    <CommonMonitorPoint ref="osTaskCounter" />
+    <CommonMonitorPoint ref="osCpuUsage" />
+    <CommonMonitorPoint ref="osContextSwitchCounter" />
+    <CommonMonitorPoint ref="timeReferenceStatus" />
+    <CommonMonitorPoint ref="phaseReferenceStatus" />
+    <CommonMonitorPoint ref="dspStatus" />
+    <CommonMonitorPoint ref="timeOfLastUpdate" />
+    <CommonMonitorPoint ref="uptime" />
+
+    <!-- COBRA digitizer specific monitor points -->
+    <MonitorPoint name="digATemperature" type="float" priority="useful">
+      <shortName>DigitizerAtemp</shortName>
+      <longName>Digitizer A temperature</longName>
+      <units>C</units>
+      <description>Digitizer A temperature</description>
+      <warnHi>55.0</warnHi>
+       <errHi>60.0</errHi>
+    </MonitorPoint>
+    <MonitorPoint name="digBTemperature" type="float" priority="useful">
+      <shortName>DigitizerBtemp</shortName>
+      <longName>Digitizer B temperature</longName>
+      <units>C</units>
+      <description>Digitizer B temperature</description>
+      <warnHi>55.0</warnHi>
+       <errHi>60.0</errHi>
+    </MonitorPoint>
+    <MonitorPoint name="fpga1Temperature" type="float" priority="useful">
+      <shortName>Fpga1Temp</shortName>
+      <longName>FPGA 1 temperature</longName>
+      <units>C</units>
+      <description>FPGA 1 temperature</description>
+      <warnHi>70.0</warnHi>
+       <errHi>75.0</errHi>
+    </MonitorPoint>
+    <MonitorPoint name="fpga3Temperature" type="float" priority="useful">
+      <shortName>Fpga3Temp</shortName>
+      <longName>FPGA 3 temperature</longName>
+      <units>C</units>
+      <description>FPGA 3 temperature</description>
+      <warnHi>70.0</warnHi>
+       <errHi>75.0</errHi>
+    </MonitorPoint>
+    <MonitorPoint name="phase" type="float">
+      <shortName>PhaseDetectorV</shortName>
+      <longName>Digitizer phase detector voltage</longName>
+      <units>V</units>
+      <description>Digitizer phase detector voltage</description>
+    </MonitorPoint>
+    <MonitorPoint name="vcc" type="float">
+      <shortName>5V(Vcc)Supply</shortName>
+      <longName>5 Volt (Vcc) Supply Voltage</longName>
+      <units>V</units>
+      <description>5V (Vcc) supply</description>
+    </MonitorPoint>
+    <MonitorPoint name="vcc3" type="float">
+      <shortName>3.3V(Vcc)Supply</shortName>
+      <longName>3.3 Volt (Vcc) Supply Voltage</longName>
+      <units>V</units>
+      <description>3.3V (Vcc3) supply</description>
+    </MonitorPoint>
+    <MonitorPoint name="vint_sys" type="float">
+      <shortName>2.5V(Vint_sys)Supply</shortName>
+      <longName>2.5V (Vint_sys) system controller supply</longName>
+      <units>V</units>
+      <description>2.5V (Vint_sys) system controller supply</description>
+    </MonitorPoint>
+    <MonitorPoint name="vint_fpga" type="float">
+      <shortName>2.5V(Vint_fpga)Supply</shortName>
+      <longName>2.5V (Vint_fpga) FPGA supply</longName>
+      <units>V</units>
+      <description>2.5V (Vint_fgpa) FPGA supply</description>
+    </MonitorPoint>
+    <MonitorPoint name="vecl" type="float">
+      <shortName>-5V(Vecl)Supply</shortName>
+      <longName>-5V (Vecl) ECL supply</longName>
+      <units>V</units>
+      <description>-5V (Vecl) ECL supply</description>
+    </MonitorPoint>
+    <MonitorPoint name="vtt" type="float">
+      <shortName>-2V(Vtt)Supply</shortName>
+      <longName>-2V (Vtt) termination supply</longName>
+      <units>V</units>
+      <description>-2V (Vtt) termination supply</description>
+    </MonitorPoint>
+
+    <!-- digitizer monitor points -->
+    <MonitorPoint name="quantizationStatesValid" type="bool">
+      <shortName>qStatesValid</shortName>
+      <longName>Quantization states are valid flag</longName>
+      <units></units>
+      <description>Quantization states are valid flag</description>
+    </MonitorPoint>
+
+    <CommonContainer ref="DigitizerStatistics" name="DigA" />
+    <CommonContainer ref="DigitizerStatistics" name="DigB" />
+
+    <!-- Correlation info -->
+    <MonitorPoint name="correlations" count="3" type="string">
+      <shortName>CorrelationsBoard</shortName>
+      <longName>Correlations on a Board</longName>
+      <units></units>
+      <description>Correlations on a board</description>
+    </MonitorPoint>
+
+    <!-- Spectral line mode phasor deltas -->
+    <MonitorPoint name="spectralDelta" count="3" type="int">
+      <shortName>spectralDelta</shortName>
+      <longName>Spectral line mode phasor deltas</longName>
+      <units></units>
+      <description>Spectral line mode phasor deltas</description>
+      <errLo>-1</errLo>
+      <errHi>1</errHi>
+    </MonitorPoint>
+
+  </Container> <!-- Container COBRA Digitizer -->
+
+  <!-- An array of correlator board monitor points -->
+  <Container name="Correlator" count="&NUM_WBC_CORS;">
+    <!-- header -->
+    <CommonMonitorPoint ref="received" />
+    <CommonMonitorPoint ref="timestamp" />
+    <CommonMonitorPoint ref="bandNumber" />
+    <CommonMonitorPoint ref="mode" />
+    <CommonMonitorPoint ref="sourceName" />
+    <CommonMonitorPoint ref="numberOfPhaseSwitchesIntegrated" />
+    <CommonMonitorPoint ref="phaseSwitchPeriod" />
+    <CommonMonitorPoint ref="phaseSwitchIntegrationTime" />
+    <CommonMonitorPoint ref="totalTimeSpan" />
+    <CommonMonitorPoint ref="totalIntegrationTime" />
+    <CommonMonitorPoint ref="bandwidth" />
+    <CommonMonitorPoint ref="centerFrequency" />
+    <CommonMonitorPoint ref="dconFrequency" />
+    <CommonMonitorPoint ref="dconSideband" />
+    <CommonMonitorPoint ref="lobeResidualFrequency" />
+    <CommonMonitorPoint ref="lobeTrackSideband" />
+    <CommonMonitorPoint ref="bdcEnabled" />
+    <CommonMonitorPoint ref="scaling" />
+    <CommonMonitorPoint ref="BitMode" />
+    <CommonMonitorPoint ref="astroBandMode" />
+    <CommonMonitorPoint ref="CorrStatus" />
+    <CommonMonitorPoint ref="corrSeqNo" />
+    <CommonMonitorPoint ref="commandStatusBitPattern" />
+    <CommonMonitorPoint ref="commandStatus" />
+
+    <!-- correlator monitor common -->
+    <CommonMonitorPoint ref="boardNumber" />
+    <CommonMonitorPoint ref="slotNumber" />
+    <CommonMonitorPoint ref="boardType" />
+    <CommonMonitorPoint ref="boardRevision" />
+    <CommonMonitorPoint ref="boardSerialNumber" />
+    <CommonMonitorPoint ref="versionDspSoftware" />
+    <CommonMonitorPoint ref="versionSysHdl" />
+    <CommonMonitorPoint ref="versionFpgaHdl" />
+    <CommonMonitorPoint ref="osTaskCounter" />
+    <CommonMonitorPoint ref="osCpuUsage" />
+    <CommonMonitorPoint ref="osContextSwitchCounter" />
+    <CommonMonitorPoint ref="timeReferenceStatus" />
+    <CommonMonitorPoint ref="phaseReferenceStatus" />
+    <CommonMonitorPoint ref="dspStatus" />
+    <CommonMonitorPoint ref="timeOfLastUpdate" />
+    <CommonMonitorPoint ref="uptime" />
+
+    <!-- COBRA Correlator Board Specific Monitor Points -->
+    <MonitorPoint name="fpga1Temperature" type="float" priority="useful">
+      <shortName>Fpga1Temp</shortName>
+      <longName>FPGA 1 temperature</longName>
+      <units>C</units>
+      <description>FPGA 1 temperature</description>
+      <warnHi>70.0</warnHi>
+       <errHi>75.0</errHi>
+    </MonitorPoint>
+    <MonitorPoint name="fpga7Temperature" type="float" priority="useful">
+      <shortName>Fpga7Temp</shortName>
+      <longName>FPGA 7 temperature</longName>
+      <units>C</units>
+      <description>FPGA 7 temperature</description>
+      <warnHi>70.0</warnHi>
+       <errHi>75.0</errHi>
+    </MonitorPoint>
+    <MonitorPoint name="phase0" type="float">
+      <shortName>PhaseDetector0V</shortName>
+      <longName>Correlator phase detector 0 voltage</longName>
+      <units>V</units>
+      <description>Correlator phase detector 0 voltage</description>
+    </MonitorPoint>
+    <MonitorPoint name="phase1" type="float">
+      <shortName>PhaseDetector1V</shortName>
+      <longName>Correlator phase detector 1 voltage</longName>
+      <units>V</units>
+      <description>Correlator phase detector 1 voltage</description>
+    </MonitorPoint>
+    <MonitorPoint name="phase2" type="float">
+      <shortName>PhaseDetector2V</shortName>
+      <longName>Correlator phase detector 2 voltage</longName>
+      <units>V</units>
+      <description>Correlator phase detector 2 voltage</description>
+    </MonitorPoint>
+    <MonitorPoint name="phase3" type="float">
+      <shortName>PhaseDetector3V</shortName>
+      <longName>Correlator phase detector 3 voltage</longName>
+      <units>V</units>
+      <description>Correlator phase detector 3 voltage</description>
+    </MonitorPoint>
+    <MonitorPoint name="vcc" type="float">
+      <shortName>5V(Vcc)Supply</shortName>
+      <longName>5V (Vcc) supply</longName>
+      <units>V</units>
+      <description>5V (Vcc) supply</description>
+    </MonitorPoint>
+    <MonitorPoint name="vcc3" type="float">
+      <shortName>3.3V(Vcc3)Supply</shortName>
+      <longName>3.3V (Vcc3) supply</longName>
+      <units>V</units>
+      <description>3.3V (Vcc3) supply</description>
+    </MonitorPoint>
+    <MonitorPoint name="vint_sys" type="float">
+      <shortName>2.5V(Vint_sys)Supply</shortName>
+      <longName>2.5V (Vint_sys) system controller supply</longName>
+      <units>V</units>
+      <description>2.5V (Vint_sys) system controller supply</description>
+    </MonitorPoint>
+    <MonitorPoint name="vint_fpga" type="float">
+      <shortName>2.5V(Vint_fpga)Supply</shortName>
+      <longName>2.5V (Vint_fpga) FPGA supply</longName>
+      <units>V</units>
+      <description>2.5V (Vint_fgpa) FPGA supply</description>
+    </MonitorPoint>
+
+    <!-- FPGA clock control/status -->
+    <MonitorPoint name="clockDelay" type="int">
+      <shortName>ClockDelay</shortName>
+      <longName>Correlator clock delay setting</longName>
+      <units></units>
+      <description>Correlator clock delay setting</description>
+    </MonitorPoint>
+
+    <!-- Correlation info -->
+    <MonitorPoint name="correlations" count="10" type="string">
+      <shortName>CorrelationsBoard</shortName>
+      <longName>Correlations on a board</longName>
+      <units></units>
+      <description>Correlations on a board</description>
+    </MonitorPoint>
+
+    <!-- Spectral line mode phasor deltas -->
+    <MonitorPoint name="spectralDelta" count="10" type="int">
+      <shortName>spectralDelta</shortName>
+      <longName>Spectral line mode phasor deltas</longName>
+      <units></units>
+      <description>Spectral line mode phasor deltas</description>
+      <errLo>-1</errLo>
+      <errHi>1</errHi>
+    </MonitorPoint>
+  </Container> <!-- Container COBRA Correlator -->
+
+</Subsystem>

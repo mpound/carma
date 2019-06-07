@@ -1,0 +1,48 @@
+# Plot the voltage patterns as circles (sin vs cos) NE & SW systems
+
+set \1 .20
+winadj -\1 \1 -\1 \1
+expand .5
+ticksize .025 .025 .025 .025
+box abcnst abcnst 
+lstyle 04
+box g g
+
+font 2
+expand 1.3
+new "time_string"
+data currentday
+string time_string
+mtext T 1.3 0.5 0.5 CARMA Phasemonitor calibration \[time_string]
+free "time_string"
+
+font 1
+expand 1.0
+mtext T .5 0.5 0.5 Complex voltage for SW dish (white .) NE dish (green +)
+symbol 1
+
+define plot
+data $1
+# SW dish
+color 1
+sym 1
+xcol 4 
+ycol 5
+points
+# NE dish
+xcol 6
+ycol 7
+color 3
+sym 2
+points
+# reset default color & symbol
+color 1
+sym 1
+end
+
+plot 1sec.new
+
+xlabel Sin component (volts)
+ylabel Cosine component (volts)
+
+end

@@ -1,0 +1,259 @@
+/**@file
+ * Control interface for the Carma Wideband Downconverter system.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.14 $
+ * $Date: 2011/05/17 16:27:46 $
+ * $Id: downconverterSystem.idl,v 1.14 2011/05/17 16:27:46 iws Exp $
+ */
+
+#ifndef CARMA_DOWNCONVERTER_SYSTEM_IDL
+#define CARMA_DOWNCONVERTER_SYSTEM_IDL
+
+/**
+ *
+ * @page WbdcControl Downconverter Control Interface
+ *
+ * This documentation describes the idl defined control interface to the
+ * Carma Wideband and Spectral-line Downconverter Subsystems.
+ * The interface consists of the following:<br>
+ * carma::downconverter::System - the global downconverter system access DO.<br>
+ * carma::downconverter::DownconverterControl - Downconverter control DO.<br>
+ * carma::downconverter::QuadModControl - Quadrature Modulator control DO.<br>
+ * carma::downconverter::LoMonitorControl - Lo Monitor control DO.<br>
+ * carma::downconverter::NoiseSourceControl - Noise Source control DO.<br>
+ * carma::downconverter::BlockDownconverterControl - Spectral system only.<br>
+ */
+
+#include "carma/downconverter/common/DownconverterControl.idl"
+#include "carma/downconverter/common/NoiseSourceControl.idl"
+#include "carma/downconverter/common/QuadModControl.idl"
+#include "carma/downconverter/common/LoMonitorControl.idl"
+#include "carma/downconverter/common/SldcLoControl.idl"
+#include "carma/downconverter/spectral/BlockDownconverterControl.idl"
+#include "carma/downconverter/spectral/SpectralDownconverterControl.idl"
+
+module carma {
+module downconverter {
+
+/**
+ * Spectral Downconverter System DO Name.
+ */
+const string SLDCCONTROL_NAME = "carma.downconverter.SldcControl";
+
+/**
+ * Wideband Downconverter System DO Name.
+ */
+const string WBDCCONTROL_NAME = "carma.downconverter.WbdcControl";
+
+/**
+ * Carma Downconverter system access interface.
+ * This interface declares the access and control interface for the
+ * downconverter Wideband and Spectral-line subsystems.  It serves as a single
+ * entry point from which to access CAN device control object references.  In
+ * addition it provides methods which act on the CANbuss as a whole such as
+ * the reset method.  It is intended that this interface will be shared between
+ * both systems (Wideband and Spectral-line) as is.  However, the Spectral-line
+ * downconverter CAN modules will probably have a different control interface
+ * than their wideband counterpart which may warrant slight changes to this
+ * interface or perhaps a seperation into a base System interface and
+ * inherited Wideband and Spectral-line versions.
+ */
+interface System {
+
+    /**
+     * Retrieve control object for all downconverters.
+     * The Downconverter control object returned from this routine is
+     * responsible for simultaneously controlling all downconverter CAN
+     * modules on the system being controlled via the Node 0 device.
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::DownconverterControl GlobalDownconverter()
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve control object for individual downconverter CAN devices.
+     * The downconverter control object returned from this routine is
+     * responsible for controlling the single downconverter specified at
+     * the given input and band.
+     * @param input IF antenna input (1-8 for Wideband, 1-15 for
+     * Spectral-line).
+     * @param band IF band (1-16 for Wideband, 1-8 for Spectral-line).
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::DownconverterControl Downconverter(
+        in short input, in short band) raises (carma::util::UserException);
+
+    /**
+     * Retrieve control object for individual spectral downconverter devices.
+     * The downconverter control object returned from this routine is
+     * responsible for controlling the single downconverter specified at
+     * the given input and band.
+     * @param input IF antenna input (1-15 for Spectral-line).
+     * @param band IF band (1-8 for Spectral-line).
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::SpectralDownconverterControl SpectralDownconverter(
+        in short input, in short band) raises (carma::util::UserException);
+
+    /**
+     * Retrieve single control object for all quadrature modulators.
+     * Returned control object simultaneously controls all quadrature
+     * modulators in the wideband system via Node 0 device.
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::QuadModControl GlobalQuadMod()
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve control object for individual quadrature modulator CAN
+     * devices.
+     * The returned quadrature modulator control object is responsible
+     * for controlling the quadrature modulator specified at the
+     * given input.
+     * @param input IF antenna input (1-8 for Wideband, 1-15 for
+     * Spectral-line).
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::QuadModControl QuadMod(in short input)
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve control object for global control of NoiseSource device.
+     * There is only one Noise Source device in each subsystem, so it
+     * can be argued that this isn't necessary.  However, it is included
+     * for completeness.  In practice, it doesn't matter which one is
+     * used (the global or single version).
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::NoiseSourceControl GlobalNoiseSource()
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve control object for noise source module.
+     * There is only one noise source module for both the Wideband
+     * and Spectral-line systems hence only a single routine to retrieve
+     * the control object.
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::NoiseSourceControl NoiseSource()
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve control object for lo monitor module.
+     * There is only one lo monitor module per subsystem hence no global
+     * device retrieval method.
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::LoMonitorControl LoMonitor()
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve control object for global control of LoMonitor device.
+     * There is only one LoMonitor device in each subsystem, so it
+     * can be argued that this isn't necessary.  However, it is included
+     * for completeness.  In practice, it doesn't matter which one is
+     * used (the global or single version).
+     * @exception carma::util::UserException on failure.
+     */
+    carma::downconverter::LoMonitorControl GlobalLoMonitor()
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve SldcLoControl object.
+     * Returns nill on wideband systems.
+     */
+    carma::downconverter::SldcLoControl LoControl()
+        raises ( carma::util::UserException );
+
+    /**
+     * Retrieve control DO for specified block downconverter.
+     * This is only implemented on the spectral line system, calling it
+     * from the wideband system will throw an exception.
+     * @param input IF antenna input (1-8 for Wideband, 1-15 for Spectral).
+     * @return Block downconverter DO.
+     */
+    carma::downconverter::BlockDownconverterControl BlockDownconverter(
+        in short inputNo )
+        raises ( carma::util::UserException );
+
+    /**
+     * Retrieve control DO for global block downconverter.
+     * The global block downconverter DO controls all block downconverters.
+     * This is only implemented on the spectral line system, calling it
+     * from the wideband system will throw an exception.
+     * @param input IF antenna input (1-8 for Wideband, 1-15 for Spectral).
+     * @return Block downconverter DO.
+     */
+    carma::downconverter::BlockDownconverterControl GlobalBlockDownconverter()
+        raises ( carma::util::UserException );
+
+    /**
+     * Select sideband and frequency on a band of spectral-line downconverters.
+     * This command is implemented on the spectral line system only!
+     * @param sideband Requested sideband.
+     * @param lofreq Requested frequency in GHz.
+     * @param bandNo Band to invoke upon (1..8).
+     */
+    void selectSidebandFrequency(
+        in DownconverterControl::SidebandType sideband,
+        in double lofreq,
+        in unsigned short bandNo) raises (carma::util::UserException);
+
+    /**
+     * Select spectral line filter an a per-band basis.
+     * @param filter Requested filter.
+     * @param bandNo Band to invoke upon (1..8).
+     */
+    void selectFilter(
+        in DownconverterControl::FilterType filter,
+        in unsigned short bandNo ) raises (carma::util::UserException);
+
+    /**
+     * Set psysPreset on a per input (antenna) basis.
+     * @param inputNo Correlator input number - 0 for all inputs.
+     * @param bandNo Correlator band number - 0 for all bands.
+     */
+    void
+    setPsysPreset( in unsigned short inputNo,
+                   in unsigned short bandNo )
+        raises ( carma::util::UserException );
+
+    /**
+     * Set psys on a per input (antenna) basis.
+     * @param psys Desired psys in dBm.
+     * @param inputNo Correlator input number - 0 for all inputs.
+     * @param bandNo Correlator band number - 0 for all bands.
+     */
+    void
+    setPsys( in float psys,
+             in unsigned short inputNo,
+             in unsigned short bandNo )
+        raises ( carma::util::UserException );
+
+    /**
+     * Reset all modules.
+     * Resets all modules on all controlled busses via Dio reset lines.
+     * @exception carma::util::UserException on failure.
+     */
+    void reset() raises (carma::util::UserException);
+
+    /**
+     * Reset all modules.
+     * Resets all modules on all controlled busses via CAN reset message.
+     * @exception carma::util::UserException on failure.
+     */
+    void softReset() raises (carma::util::UserException);
+
+    /**
+     * Quit.
+     * Exits host application.  FOR DEBUGGING ONLY - It is very likely this
+     * will be removed on the producation system (we don't want people
+     * accidently terminating our applications).
+     */
+    void quit() raises (carma::util::UserException);
+
+}; // End SystemControl interface
+}; // End downconverter module
+}; // End carma module
+#endif

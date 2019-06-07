@@ -1,0 +1,31 @@
+/**
+ * @file 
+ * carma::antenna::ovro::AntennaControl interface defintion.
+ *
+ * <l><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.1 $
+ * $Date: 2006/12/01 21:28:21 $
+ * $Id: ovroAntennaControl.idl,v 1.1 2006/12/01 21:28:21 abeard Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_ANTENNACONTROL_IDL
+#define CARMA_ANTENNA_OVRO_ANTENNACONTROL_IDL
+
+#include "carma/antenna/common/AntennaControl.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+interface AntennaControl : carma::antenna::common::AntennaControl {
+
+    /**
+     * Debug only - don't use this unless you know what you are doing.
+     */
+    void quit( );
+
+};
+
+};};}; // module carma::antenna::ovro
+#endif

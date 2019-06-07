@@ -1,0 +1,769 @@
+#!/usr/bin/env python
+# vim: set ts=4 sts=4 sw=4 et:
+
+import sys, re, os
+import optparse
+import logging
+import time
+import subprocess
+import pickle
+import platform
+
+REVISION = '$Revision: 1.51 $'
+
+# default environment variables
+CC = 'gcc'
+CXX = 'g++'
+CFLAGS = '-O2 -ggdb -pipe'
+CXXFLAGS = '-O2 -ggdb -pipe'
+
+# default directories
+DEFAULT_SOURCE = os.path.expanduser('~/carma_pkg')
+DEFAULT_SYNC_SOURCE = 'ssh.ovro.caltech.edu:/sw/carma_pkg'
+
+# default place to save configuration
+CONFIG_CHECK_FILE = 'config.pickle'
+
+# NOTE: the order is very important here. Some packages will not
+# NOTE: build without earlier packages already installed.
+DEFAULT_PACKAGES = (
+    'ACE+TAO',
+
+    # java and related packages
+    'apache-ant',
+    'ant-contrib',
+    'jdom',
+    'javacc',
+    'idldepend',
+    'jacorb',
+    'launch4j',
+    'gt',
+    'jfreechart',
+    'bgftp',
+    'xz-java',
+    'guava',
+    'miglayout',
+
+    # python and related packages
+    'python',
+    'numarray',
+    'numpy',
+    'matplotlib',
+    'pyfits',
+    'ipython',
+    'Imaging',
+    'scipy',
+    'scons',
+
+    # pylint
+    'setuptools',
+    'logilab-common',
+    'logilab-astng',
+    'pylint',
+
+    # misc packages
+    'boost',
+    'cppunit',
+    'fftw',
+    'gsl',
+    'log4cpp',
+    'units',
+    'pgplot',
+    'unixODBC',
+    'mysql',
+    'mysql-connector-odbc',
+    'ephcom',
+    'novas',
+    'janz',
+    'omniORB',
+    'omniORBpy',
+    'linux-gpib',
+    'mirlib',
+    'cobra',
+    'cobra-bitfiles',
+    'comedilib',
+    'CImg',
+    'libcanberra',
+    'libsocketcan',
+    'xz',
+    'protobuf',
+    'mongodb-linux-i686',
+    'mongodb-linux-x86_64',
+    'mongo-cxx-driver',
+    'xml2json',
+    'rapidjson',
+    'xerces-c',
+)
+
+# All of the files required by the buildCarmaTools script. This constitutes
+# the entire miniportage 'package manager'.
+REQUIRED_MANAGER_FILES = (
+    'misc-functions.bash',
+    'run-all.bash',
+    'run-step.bash',
+    'helpers/autotools-package.bash',
+    'helpers/python-package.bash',
+)
+
+################################################################################
+# Configuration Object and Configuration Checking
+################################################################################
+
+class ToolsConfig(object):
+    def __init__(self, opts, args):
+        self.prefix = opts.prefix
+        self.native = opts.native
+
+    def __eq__(self, rhs):
+        return self.prefix == rhs.prefix and self.native == rhs.native
+
+    def __ne__(self, rhs):
+        return not self == rhs
+
+    def __repr__(self):
+        return 'prefix=%s native=%s' % (self.prefix, self.native)
+
+def save_configuration(opts, args):
+    logging.info('saving current configuration')
+    myconfig = ToolsConfig(opts, args)
+    name = os.path.join(opts.prefix, CONFIG_CHECK_FILE)
+
+    # write the current configuration
+    try:
+        pickle.dump(myconfig, open(name, 'wb'))
+    except:
+        logging.warn('unable to save current configuration info')
+
+def check_configuration(opts, args):
+    logging.info('checking configuration compatibility')
+    myconfig = ToolsConfig(opts, args)
+    name = os.path.join(opts.prefix, CONFIG_CHECK_FILE)
+
+    # check the configurations
+    try:
+        oldconfig = pickle.load(open(name, 'rb'))
+        if myconfig != oldconfig:
+            logging.error('previous and current configurations are not compatible')
+            logging.error('current: %s', myconfig)
+            logging.error('previous: %s', oldconfig)
+            sys.exit(1)
+    except IOError:
+        logging.info('no previous configuration found')
+
+    logging.info('configurations are compatible')
+
+################################################################################
+# Misc Utility Functions
+################################################################################
+
+# This works just like mkdir -p
+# It doesn't fail if the directory already exists
+def mkdir_p(d):
+    if not os.path.isdir(d):
+        os.makedirs(d)
+
+def setup_logging(level=logging.INFO, stream=sys.stdout):
+    # get the default logger instance
+    logger = logging.getLogger()
+
+    # set the default output level
+    logger.setLevel(level)
+
+    # connect the logger to the requested stream
+    ch = logging.StreamHandler(stream)
+
+    # set the output format
+    fmt = '%(asctime)s %(levelname)s: %(message)s'
+    formatter = logging.Formatter(fmt)
+
+    # and hook it all together
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+def get_java_home():
+    try:
+        return os.environ['JAVA_HOME']
+    except:
+        return '/opt/jdk'
+
+def get_nr_procs():
+    return os.sysconf('SC_NPROCESSORS_ONLN')
+
+def get_architecture():
+    return platform.machine()
+
+def get_release():
+    return platform.dist()[1]
+
+def get_build_arch(opts):
+    # native build, if requested
+    if opts.native:
+        return get_architecture()
+
+    # default build arch
+    return 'i686'
+
+def get_ctools_dir(opts):
+    arch = get_build_arch(opts)
+    rel = get_release()
+    datestr = time.strftime('%F')
+    devel = ''
+    if opts.devel:
+        devel = '-devel'
+
+    return '/misc/carmaToolsDir/carmaTools%s-%s-%s-%s' % (devel, arch, rel, datestr)
+
+def get_default_srcdir(opts):
+    # If this is a configured or installed build, we can use the source
+    # tree that it was built from (if it still exists)
+    #
+    # Unfortunately, people may want to bootstrap CARMA on a completely
+    # bare system (before they are able to run configure), and so we will
+    # also need to provide some defaults.
+    MAYBE_SRCDIR = '@abs_top_srcdir@'
+    if os.path.isdir(MAYBE_SRCDIR):
+        MAYBE_SRCDIR = os.path.realpath(MAYBE_SRCDIR)
+        logging.debug('building from build/install directory!')
+        logging.debug('using source tree: %s', MAYBE_SRCDIR)
+        return MAYBE_SRCDIR
+
+    # This was not a configured/installed build, therefore we need to
+    # choose a default. We will try the directory this script is being
+    # run from first. Then we will check the default location.
+    logging.debug('not a configured build: check current directory')
+    srcdir = os.path.abspath(sys.argv[0])
+    srcdir = os.path.dirname(srcdir)
+    srcdir = os.path.dirname(srcdir)
+    makefilesdir = os.path.join(srcdir, 'conf', 'opt')
+    if not os.path.isdir(srcdir) or not os.path.isdir(makefilesdir):
+        logging.debug('current directory (%s) is not a CARMA source tree', srcdir)
+        logging.debug('use default directory')
+        arch = get_build_arch(opts)
+        rel = get_release()
+        srcdir = os.path.expanduser('~/Carma-%s-%s/carma' % (arch, rel))
+
+    # check that the default CARMA source directory actually
+    # exists, which may or may not be true.
+    if not os.path.isdir(srcdir):
+        logging.error('could not determine CARMA source directory')
+        logging.error('you must specify --makefiles and --build yourself')
+        sys.exit(1)
+
+    # it exists, so we assume everything is ok
+    return srcdir
+
+def get_default_makefilesdir(opts):
+    srcdir = get_default_srcdir(opts)
+    return os.path.join(srcdir, 'conf', 'opt')
+
+def get_default_builddir(opts):
+    arch = get_build_arch(opts)
+    srcdir = get_default_srcdir(opts)
+    return os.path.join(srcdir, '..', 'build-tools-%s' % arch)
+
+# A nice timer that prints a countdown display
+def fancy_wait(seconds, doPrint=True):
+    try:
+        for i in xrange(seconds, 0, -1):
+            if doPrint:
+                sys.stdout.write('%d ' % (i, ))
+                sys.stdout.flush()
+
+            # do the actual sleep
+            time.sleep(1)
+
+        # print the last newline in print mode
+        if doPrint:
+            sys.stdout.write('\n')
+    except KeyboardInterrupt:
+        print '\nABORTED\n'
+        sys.exit(0)
+
+def get_available_packages(opts, args):
+    # check that the package directory exists
+    if not os.path.isdir(opts.makefilesdir):
+        logging.error('makefiles directory does not exist: %s', opts.makefilesdir)
+        sys.exit(1)
+
+    # search in each directory
+    packages = []
+    for d in sorted(os.listdir(opts.makefilesdir)):
+        # skip non-directories (for example, README file)
+        name = os.path.join(opts.makefilesdir, d)
+        if not os.path.isdir(name):
+            logging.debug('skip non-directory %s', name)
+            continue
+
+        # skip CVS directory
+        if d == 'CVS':
+            logging.debug('skip CVS metadata directory')
+            continue
+
+        # check for the package build script
+        name = os.path.join(opts.makefilesdir, d, d + '.bash')
+        if not os.path.isfile(name):
+            tmp = os.path.join(opts.makefilesdir, d)
+            logging.warn('makefiles directory %s missing build script %s', tmp, d + '.bash')
+            continue
+
+        # save this package name
+        packages.append(d)
+
+    return packages
+
+def check_manager_installation(opts, args):
+    managerpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+    filepath = os.path.join(managerpath, 'carma-tools')
+    for f in REQUIRED_MANAGER_FILES:
+        name = os.path.join(filepath, f)
+        logging.debug('check for file: %s', name)
+        if not os.path.isfile(name):
+            logging.error('your installation is missing file: %s', name)
+            sys.exit(1)
+
+################################################################################
+# The main program and associated functions
+################################################################################
+
+def do_list(opts, args, width=80):
+    # get the list of available packages
+    packages = opts.available_packages
+
+    # print the packages in rows which are roughly
+    # @width characters wide
+    s = ''
+    i = 0
+    while True:
+        # no packages exit
+        if i >= len(packages):
+            print s
+            break
+
+        # append to the in-progress string
+        if len(s) == 0:
+            s += packages[i]
+        else:
+            s += ' ' + packages[i]
+
+        # the line is long enough, print it
+        if len(s) >= width:
+            print s
+            s = ''
+
+        # move on to the next package
+        i += 1
+
+def do_sync(opts, args):
+    # MUST guarantee a trailing slash for rsync to work as expected
+    src = opts.sync_source + '/'
+    dst = os.path.realpath(opts.packagedir) + '/'
+    cmd = ['rsync', '-a', '-e', 'ssh', '--progress', src, dst]
+
+    # print what we will run and then wait
+    logging.info('performing package sync')
+    logging.info('will run: %s', ' '.join(cmd))
+    fancy_wait(10)
+
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        logging.error('sync failed: %s', os.strerror(ret))
+        sys.exit(1)
+
+# Check that the running buildCarmaTools script has the same revision number
+# as the latest version in CVS. This forces developers to update their CVS tree
+# before running buildCarmaTools.
+def do_check_script_revision(opts, args):
+    logging.info('checking that this script and the CVS version are identical')
+
+    # grab the revision of the current script, ignoring non-CVS checkouts (such
+    # as cvs2git conversions)
+    myrev = None
+    try:
+        myrev = REVISION.split()[1]
+    except IndexError:
+        logging.warn('unable to determine revision of the local buildCarmaTools script')
+        logging.warn('please make sure that this is the latest version')
+        return
+
+    # grab the revision of the latest CVS version without using a working copy
+    cmd = ['cvs', '-nq', '-d', 'cvs.mmarray.org:/sw/cvscarma', 'rlog', '-Nhb', 'carma/scripts/buildCarmaTools.in']
+    child = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    mystdout, mystderr = child.communicate()
+    if child.returncode != 0:
+        logging.warn('unable to determine revision of the CVS buildCarmaTools script')
+        logging.warn('please make sure that this is the latest version')
+        return
+
+    # search through the "cvs rlog" output for the revision number and extract it
+    cvsrev = None
+    for line in mystdout.splitlines():
+        if line.startswith('head: '):
+            cvsrev = line.split()[1]
+
+    if cvsrev is None:
+        logging.warn('unable to determine revision of the CVS buildCarmaTools script')
+        logging.warn('cvs rlog output did not contain "head: <rev>"')
+        logging.warn('please make sure that this is the latest version')
+        return
+
+    # check that the revisions are equal
+    if myrev != cvsrev:
+        logging.error('a newer version of this script is present in CVS, please update')
+        logging.error('our version: %s -- cvs version: %s', myrev, cvsrev)
+        sys.exit(1)
+
+    logging.info('this script and the CVS version are both identical')
+
+def do_cvs_update(opts, args):
+    # check that the package directory is a CVS checkout
+    name = os.path.join(opts.makefilesdir, 'CVS')
+    if not os.path.isdir(name):
+        logging.warn('makefiles directory is not a CVS checkout')
+        logging.warn('skipping cvs update')
+        return
+
+    cmd = ['cvs', '-q', 'update', '-dPA']
+    ret = subprocess.call(cmd, cwd=opts.makefilesdir)
+    if ret != 0:
+        logging.error('CVS update of makefiles directory failed')
+        sys.exit(1)
+
+# check if a package has already been built
+def is_already_built(opts, package):
+    try:
+        name = os.path.join(opts.prefix, 'INSTALLED')
+        f = open(name)
+        lines = [l.strip() for l in f.readlines()]
+        f.close()
+        for l in lines:
+            logging.debug('LINE: %s', l)
+            pat = r'^%s .*$' % re.escape(package)
+            if re.match(pat, l):
+                logging.debug('ALREADY BUILT: %s', package)
+                logging.debug('INSTALL LINE: %s', l)
+
+                # at least one version of the package is installed,
+                # now check for the latest version as well
+                if do_check_one(opts, package) == 0:
+                    logging.debug('bash reports latest version is installed')
+                    return True
+                else:
+                    logging.debug('bash reports old/no version installed')
+                    return False
+    except:
+        pass
+
+    return False
+
+# setup environment for running bash scripts
+def do_setup_environment(opts):
+    # setup the environment for the bash code
+    os.environ['BUILDDIR'] = os.path.realpath(opts.builddir)
+    os.environ['CARMA_PKG'] = os.path.realpath(opts.packagedir)
+    os.environ['PREFIX'] = os.path.realpath(opts.prefix)
+    os.environ['JAVA_HOME'] = opts.java_home
+    os.environ['JOBS'] = str(opts.jobs)
+    os.environ['CC'] = CC
+    os.environ['CXX'] = CXX
+    os.environ['CFLAGS'] = CFLAGS
+    os.environ['CXXFLAGS'] = CXXFLAGS
+
+    # make sure CDPATH is not set
+    try:
+        del os.environ['CDPATH']
+    except:
+        pass
+
+    # if this is a 32-on-64 build, we need to add '-m32' to flags
+    if not opts.native and get_architecture() == 'x86_64':
+        os.environ['CFLAGS'] = CFLAGS + ' -m32'
+        os.environ['CXXFLAGS'] = CXXFLAGS + ' -m32'
+        os.environ['FFLAGS'] = '-m32'
+
+    # print the environment
+    for (k, v) in os.environ.items():
+        logging.debug('ENVIRONMENT: %s=%s', k, v)
+
+# build a single package
+def do_build_one(opts, package):
+    logging.info('building package: %s', package)
+
+    managerpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+    runall = os.path.join(managerpath, 'carma-tools', 'run-all.bash')
+    buildfile = os.path.join(opts.makefilesdir, package, package + '.bash')
+
+    logging.debug('build command: bash %s %s', runall, buildfile)
+    cmd = ['bash', runall, buildfile]
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        logging.error('ERROR BUILDING PACKAGE: %s', package)
+        sys.exit(1)
+
+# check the version of a single package
+# return 0 for success, non-zero otherwise
+def do_check_one(opts, package):
+    logging.debug('checking package: %s', package)
+
+    # setup the environment for the bash code
+    do_setup_environment(opts)
+
+    managerpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+    runstep = os.path.join(managerpath, 'carma-tools', 'run-step.bash')
+    stepname = 'check_version'
+    buildfile = os.path.join(opts.makefilesdir, package, package + '.bash')
+
+    logging.debug('build command: bash %s %s %s', runstep, stepname, buildfile)
+    cmd = ['bash', runstep, stepname, buildfile]
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        # Only exit when command line option --check-versions was specified.
+        # This way we can reuse this code as a silent check.
+        if opts.check_package_versions:
+            logging.error('PACKAGE OUT OF DATE OR MISSING: %s', package)
+            sys.exit(1)
+
+    return ret
+
+def do_check_versions(opts, args):
+    # check package versions
+    for package in DEFAULT_PACKAGES:
+        do_check_one(opts, package)
+
+def do_build(opts, args):
+    # setup the environment for the bash code
+    do_setup_environment(opts)
+
+    # prune the list of packages to be built if necessary
+    if opts.skip_installed:
+        skip = [p for p in args if is_already_built(opts, p)]
+        args = [p for p in args if p not in skip]
+        if len(skip):
+            logging.info('SKIPPED PACKAGES: %s', ' '.join(skip))
+
+    # exit with a nice message if there are no packages
+    if len(args) == 0:
+        logging.info('no packages to install')
+        sys.exit(0)
+
+    # wait for the user to abort
+    logging.info('PACKAGES: %s', ' '.join(args))
+    logging.info('PREFIX: %s', opts.prefix)
+    logging.info('CFLAGS: %s', os.environ['CFLAGS'])
+    logging.info('CXXFLAGS: %s', os.environ['CXXFLAGS'])
+    logging.info('JOBS: %s', os.environ['JOBS'])
+    fancy_wait(10)
+
+    # make sure that the prefix and build directories exist
+    mkdir_p(opts.prefix)
+    mkdir_p(opts.builddir)
+
+    # save the current configuration
+    save_configuration(opts, args)
+
+    # build each package sequentially
+    for p in args:
+        do_build_one(opts, p)
+
+def main():
+    # setup logging infrastructure
+    setup_logging()
+
+    # renice this process down as far as possible
+    os.nice(19)
+
+    # this is a bit of a hack to make this --help output wider
+    os.environ['COLUMNS'] = '112'
+
+    # check for supported architectures
+    arch = get_architecture()
+    if arch not in ('i686', 'x86_64'):
+        logging.error('unsupported architecture: %s', arch)
+        sys.exit(1)
+
+    # option parser usage text
+    usage = """%prog [options] [package-list]
+
+A program to build the CARMA tools packages
+
+You should be especially aware that the following options have a default
+value based on the architecture and RHEL/CentOS release: --prefix, --build,
+and --package.
+
+By default, this program performs an i686 (32-bit) build. When you force a
+native build with --native, this may change the architecture used in the
+automatically generated paths.
+
+It should also be noted that special caution was taken to make all actions
+respect paths specified with the various 'Directory Options'. This means
+that --sync will respect --sync-source, and so on.
+
+If no package-list is specified, all packages are built.
+"""
+
+    # setup the option parser
+    parser = optparse.OptionParser(version=REVISION, usage=usage)
+
+    parser.set_defaults(prefix=None)
+    parser.set_defaults(packagedir=DEFAULT_SOURCE)
+    parser.set_defaults(builddir=None)
+    parser.set_defaults(makefilesdir=None)
+
+    parser.set_defaults(list=False)
+    parser.set_defaults(check_package_versions=False)
+    parser.set_defaults(sync_only=False)
+
+    parser.set_defaults(devel=False)
+    parser.set_defaults(java_home=get_java_home())
+    parser.set_defaults(jobs=get_nr_procs())
+    parser.set_defaults(native=False)
+    parser.set_defaults(sync=True)
+    parser.set_defaults(cvs_update=True)
+    parser.set_defaults(skip_installed=False)
+    parser.set_defaults(sync_source=DEFAULT_SYNC_SOURCE)
+    parser.set_defaults(verbose=False)
+
+    # setup the option group for directory-specific options
+    group = optparse.OptionGroup(parser, 'Directory Options')
+
+    group.add_option('--prefix', dest='prefix',
+                      help='install directory: default /misc/carmaToolsDir/...')
+
+    group.add_option('--package', dest='packagedir', metavar='DIR',
+                      help='location of the CARMA package source directory: default %default')
+
+    group.add_option('--build', dest='builddir', metavar='DIR',
+                      help='location to unpack and build the requested packages: default ~/Carma-ARCH-REL/build-tools-ARCH')
+
+    group.add_option('--makefiles', dest='makefilesdir', metavar='DIR',
+                      help='location to find the makefiles subdirectory: default ~/Carma-ARCH-REL/carma/conf/opt')
+
+    parser.add_option_group(group)
+
+    # setup the option group for actions
+    group = optparse.OptionGroup(parser, 'Actions')
+
+    group.add_option('--list', dest='list', action='store_true',
+                      help='list packages available for installation')
+
+    group.add_option('--check-versions', dest='check_package_versions', action='store_true',
+                      help='check that all packages are installed and at their latest version')
+
+    group.add_option('--sync-only', dest='sync_only', action='store_true',
+                      help='sync packages available for installation, then exit')
+
+    parser.add_option_group(group)
+
+    # setup the option group for miscellaneous options
+    group = optparse.OptionGroup(parser, 'Miscellaneous Options')
+
+    group.add_option('--devel', dest='devel', action='store_true',
+                      help='development build: this will change the automatically-generated installation prefix')
+
+    group.add_option('--java-home', dest='java_home', metavar='DIR',
+                      help='set the JAVA_HOME env var: default %default')
+
+    group.add_option('-j', '--jobs', dest='jobs', type='int', metavar='N',
+                      help='compile with this many jobs (make -jN): default %default')
+
+    group.add_option('--native', dest='native', action='store_true',
+                      help='perform a native build (32-on-32 or 64-on-64)')
+
+    group.add_option('--no-sync', dest='sync', action='store_false',
+                      help='do not attempt to rsync the package source tarballs')
+
+    group.add_option('--no-cvs-update', dest='cvs_update', action='store_false',
+                      help='do not attempt to update the package directory')
+
+    group.add_option('--skip-installed', dest='skip_installed', action='store_true',
+                      help='skip packages which are already installed: default %default')
+
+    group.add_option('--sync-source', dest='sync_source', metavar='SRC',
+                      help='rsync source during sync: default %default')
+
+    group.add_option('--verbose', dest='verbose', action='store_true',
+                      help='enable verbose (debugging) output for this script')
+
+    parser.add_option_group(group)
+
+    # parse the arguments
+    (opts, args) = parser.parse_args()
+
+    # turn on verbose messages if requested
+    if opts.verbose:
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+
+    # log all of the arguments and options when in debug mode
+    logging.debug('OPTS: %s', opts)
+    logging.debug('ARGS: %s', args)
+
+    # check that we are running the latest version of this script
+    do_check_script_revision(opts, args)
+
+    # set the proper prefix if it was not set before
+    if opts.prefix is None:
+        opts.prefix = get_ctools_dir(opts)
+
+    # set the proper makefilesdir if it was not set before
+    if opts.makefilesdir is None:
+        opts.makefilesdir = get_default_makefilesdir(opts)
+
+    # set the proper builddir if it was not set before
+    if opts.builddir is None:
+        opts.builddir = get_default_builddir(opts)
+
+    # always fixup all paths
+    opts.prefix = os.path.realpath(opts.prefix)
+    opts.packagedir = os.path.realpath(opts.packagedir)
+    opts.builddir = os.path.realpath(opts.builddir)
+    opts.makefilesdir = os.path.realpath(opts.makefilesdir)
+
+    # perform a cvs update if requested
+    if opts.cvs_update:
+        do_cvs_update(opts, args)
+
+    # get the list of available packages
+    # must happen after CVS update, which could change the available packages
+    opts.available_packages = get_available_packages(opts, args)
+
+    # if we are in list mode, print the list and exit
+    if opts.list:
+        do_list(opts, args)
+        sys.exit(0)
+
+    # if we are checking package versions, check and exit
+    if opts.check_package_versions:
+        do_check_versions(opts, args)
+        sys.exit(0)
+
+    # synchronize package sources
+    if opts.sync:
+        do_sync(opts, args)
+
+        # if this is sync-only mode, exit now
+        if opts.sync_only:
+            sys.exit(0)
+
+    # no arguments: build all packages
+    if len(args) == 0:
+        args = DEFAULT_PACKAGES
+
+    # check that each package listed is known / available
+    for i in args:
+        if i not in opts.available_packages:
+            logging.error('package %s is not available in makefiles directory %s',
+                          i, opts.makefilesdir)
+            sys.exit(1)
+
+    # check the current and previous configurations
+    # for compatibility
+    check_configuration(opts, args)
+
+    # check that the package manager support files are installed
+    check_manager_installation(opts, args)
+
+    # run the build
+    do_build(opts, args)
+
+if __name__ == '__main__':
+    main()

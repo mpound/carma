@@ -1,0 +1,2215 @@
+###################################################################
+# Correlator System Configuration
+###################################################################
+# $Id: carma3g-2pol.ini.in,v 1.1 2012/11/28 15:57:49 mpound Exp $
+###################################################################
+# CARMA3G board 15-antenna 4GHz correlator
+###################################################################
+
+[CARMA3G]
+"hardware"="CARMA3G"
+"vanVleckMode"="1"
+
+[CARMA3G\Time]
+"timeReferenceRate"="1"
+"fastDataRate"="64"
+"phaseSwitchRate"="1024"
+"phaseSwitchIntegrationTime"="950e-6"
+"phaseSwitchSettlingTime"="21e-6"
+"referenceFrequency"="31.25e6"
+"numberOfPhaseSwitchesIntegrated"="512"
+
+[CARMA3G\Band]
+"numberOfBands"="8"
+
+[CARMA3G\Band\Number]
+"0"="1"
+"1"="2"
+"2"="3"
+"3"="4"
+"4"="5"
+"5"="6"
+"6"="7"
+"7"="8"
+
+[CARMA3G\Band\Server]
+# Band servers
+"0"="localhost 19031"
+"1"="localhost 19032"
+"2"="localhost 19033"
+"3"="localhost 19034"
+"4"="localhost 19035"
+"5"="localhost 19036"
+"6"="localhost 19037"
+"7"="localhost 19038"
+
+# Downconverter setup (for lobe rotation correction)
+[CARMA3G\Band\DownconverterFrequency]
+"0"="2.0e9"
+"1"="2.5e9"
+"2"="3.0e9"
+"3"="3.5e9"
+"4"="4.0e9"
+"5"="4.5e9"
+"6"="5.0e9"
+"7"="5.5e9"
+
+[CARMA3G\Band\BlockDownconverterEnabled]
+"default"="false"
+
+[CARMA3G\Band\DownconverterSideband]
+"default"="lsb"
+
+[CARMA3G\Board]
+"numberOfBoards"="15"
+
+# Physical slot numbers of the boards in each band.
+[CARMA3G\Board\Slot]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+"7"="9"
+"8"="10"
+"9"="11"
+"10"="12"
+"11"="14"
+"12"="15"
+"13"="16"
+"14"="17"
+
+[CARMA3G\Board\Type]
+"default"="digitizer"
+"8"="correlator"
+"9"="correlator"
+"10"="correlator"
+"11"="correlator"
+"12"="correlator"
+"13"="correlator"
+"14"="correlator"
+
+# Bandwidth-independent FPGA settings.
+# Bandwidth-specific sections/values can be given.
+[CARMA3G\Board\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="385"
+"numberOfCrossLags"="768"
+"path"="/home/control/correlator/bitfiles-2pol"
+
+# FPGA configuration number used on each board.
+# This is specified for odd-numbered bands in SINGLEPOL mode.
+#
+# See CorrelatorConfiguration::setSingleBoard() documentation for important
+# information on how to order FPGA configurations for CARMA3G23/FULLPOL modes!
+# For example, keep Dig CF1,CF2,CF3,CF4 sequential below!
+[CARMA3G\Board\FPGA\Configuration]
+"default"="0"
+"8"="5"
+"9"="4"
+"10"="4"
+"11"="5"
+"12"="4"
+"13"="5"
+"14"="6"
+
+# FPGA operating mode (REG_CORL_MODE) used on each board.
+[CARMA3G\Board\FPGA\CorlMode]
+"default"="0"
+"8"="4"
+"11"="4"
+"13"="4"
+
+# FPGA front panel delay offset for each board,
+# encoded one byte per FPGA: 0x{#0}{#1}{#2}{#3}.
+[CARMA3G\Board\FPGA\PanelDelay]
+"default"="0x00000000"
+"13"="0x12001200"
+
+# ---------------------
+# FPGA Configuration #0.
+# (digitizer CF 1 [1POL])
+# ---------------------
+[CARMA3G\Board\FPGA\0]
+"board"="digitizer"
+"numberOfCorrelations"="3"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\0\CorrelationMap\Type]
+"default"="auto"
+"1"="cross"
+[CARMA3G\Board\FPGA\0\CorrelationMap\Inputs]
+"0"="0"
+"1"="0 1"
+"2"="1"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\0\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #1.
+# (digitizer CF 2 [1POL])
+# ---------------------
+[CARMA3G\Board\FPGA\1]
+"board"="digitizer"
+"numberOfCorrelations"="3"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\1\CorrelationMap\Type]
+"default"="auto"
+"1"="cross"
+[CARMA3G\Board\FPGA\1\CorrelationMap\Inputs]
+"0"="0"
+"1"="0 1"
+"2"="1"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\1\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #2.
+# (digitizer CF 3 [2POL])
+# ---------------------
+[CARMA3G\Board\FPGA\2]
+"board"="digitizer"
+"numberOfCorrelations"="5"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\2\CorrelationMap\Type]
+"default"="auto"
+"2"="cross"
+"3"="cross"
+"4"="cross"
+[CARMA3G\Board\FPGA\2\CorrelationMap\Inputs]
+"0"="0"
+"1"="1"
+"2"="0 16"
+"3"="0 17"
+"4"="0 1"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\2\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #3.
+# (digitizer CF 4 [2POL])
+# ---------------------
+[CARMA3G\Board\FPGA\3]
+"board"="digitizer"
+"numberOfCorrelations"="5"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\3\CorrelationMap\Type]
+"default"="auto"
+"2"="cross"
+"3"="cross"
+"4"="cross"
+[CARMA3G\Board\FPGA\3\CorrelationMap\Inputs]
+"0"="0"
+"1"="1"
+"2"="17 0"
+"3"="17 1"
+"4"="0 1"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\3\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #4
+# (correlator CF 1 [1POL], corl_mode 0)
+# ---------------------
+[CARMA3G\Board\FPGA\4]
+"board"="correlator"
+"numberOfCorrelations"="16"
+
+[CARMA3G\Board\FPGA\4\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\4\CorrelationMap\Inputs]
+"0"="0 4"
+"1"="2 4"
+"2"="0 6"
+"3"="2 6"
+"4"="8 4"
+"5"="10 4"
+"6"="8 6"
+"7"="10 6"
+"8"="0 12"
+"9"="2 12"
+"10"="0 14"
+"11"="2 14"
+"12"="8 12"
+"13"="10 12"
+"14"="8 14"
+"15"="10 14"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\4\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #5
+# (correlator CF 1 [1POL], corl_mode 4)
+# ---------------------
+[CARMA3G\Board\FPGA\5]
+"board"="correlator"
+"numberOfCorrelations"="16"
+
+[CARMA3G\Board\FPGA\5\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\5\CorrelationMap\Inputs]
+"0"="0 8"
+"1"="2 8"
+"2"="0 10"
+"3"="2 10"
+"4"="0 4"
+"5"="2 4"
+"6"="8 4"
+"7"="10 4"
+"8"="0 12"
+"9"="2 12"
+"10"="0 14"
+"11"="2 14"
+"12"="8 12"
+"13"="10 12"
+"14"="8 14"
+"15"="10 14"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\5\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #6
+# (correlator CF 2 [1POL])
+# ---------------------
+[CARMA3G\Board\FPGA\6]
+"board"="correlator"
+"numberOfCorrelations"="2"
+
+[CARMA3G\Board\FPGA\6\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\6\CorrelationMap\Inputs]
+"0"="0 4"
+"1"="2 4"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\6\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #7
+# (correlator CF 3 [2POL], corl_mode 0)
+# ---------------------
+[CARMA3G\Board\FPGA\7]
+"board"="correlator"
+"numberOfCorrelations"="32"
+
+[CARMA3G\Board\FPGA\7\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\7\CorrelationMap\Inputs]
+"0"="0 4"
+"1"="0 5"
+"2"="2 4"
+"3"="2 5"
+"4"="0 6"
+"5"="0 7"
+"6"="2 6"
+"7"="2 7"
+"8"="8 4"
+"9"="8 5"
+"10"="10 4"
+"11"="10 5"
+"12"="8 6"
+"13"="8 7"
+"14"="10 6"
+"15"="10 7"
+"16"="0 12"
+"17"="0 13"
+"18"="2 12"
+"19"="2 13"
+"20"="0 14"
+"21"="0 15"
+"22"="2 14"
+"23"="2 15"
+"24"="8 12"
+"25"="8 13"
+"26"="10 12"
+"27"="10 13"
+"28"="8 14"
+"29"="8 15"
+"30"="10 14"
+"31"="10 15"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\7\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #8
+# (correlator CF 3 [2POL], corl_mode 4)
+# ---------------------
+[CARMA3G\Board\FPGA\8]
+"board"="correlator"
+"numberOfCorrelations"="32"
+
+[CARMA3G\Board\FPGA\8\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\8\CorrelationMap\Inputs]
+"0"="0 8"
+"1"="0 9"
+"2"="2 8"
+"3"="2 9"
+"4"="0 10"
+"5"="0 11"
+"6"="2 10"
+"7"="2 11"
+"8"="0 4"
+"9"="0 5"
+"10"="2 4"
+"11"="2 5"
+"12"="8 4"
+"13"="8 5"
+"14"="10 4"
+"15"="10 5"
+"16"="0 12"
+"17"="0 13"
+"18"="2 12"
+"19"="2 13"
+"20"="0 14"
+"21"="0 15"
+"22"="2 14"
+"23"="2 15"
+"24"="8 12"
+"25"="8 13"
+"26"="10 12"
+"27"="10 13"
+"28"="8 14"
+"29"="8 15"
+"30"="10 14"
+"31"="10 15"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\8\LagsParameters]
+
+
+# ---------------------
+# FPGA Configuration #9
+# (correlator CF 4 [2POL])
+# ---------------------
+[CARMA3G\Board\FPGA\9]
+"board"="correlator"
+"numberOfCorrelations"="4"
+
+[CARMA3G\Board\FPGA\9\CorrelationMap\Type]
+"default"="cross"
+
+# Correlations (in terms of LVDS inputs)
+# NOTE: these MUST be listed in order of ascending FPGA start address!
+[CARMA3G\Board\FPGA\9\CorrelationMap\Inputs]
+"0"="0 4"
+"1"="0 5"
+"2"="2 4"
+"3"="2 5"
+
+# Not needed for CARMA3G boards.
+[CARMA3G\Board\FPGA\9\LagsParameters]
+
+
+[CARMA3G\Antenna]
+# The number of inputs is twice the number of digitizer boards
+# The number of antennas can be equal or less than this.
+"numberOfAntennas"="32"
+"lobeResidualFrequency"="0.0"
+"lobeTrackUSB"="false"
+"path"="/opt/rt/etc/cobra"
+"walshFilename"="carma_phase_states_32.txt"
+"walshPeriod90"="32"
+"walshPeriod180"="32"
+#
+# Walsh hardware demodulation (180-degree states) and 
+# Walsh nesting can be used in three different combinations:
+#
+# - No nesting, no hardware demodulation (eg. 160pps system)
+# - No nesting, hardware demodulation (eg. 160pps system)
+# - Nesting, and hardware demodulation (eg. 1024pps system)
+#
+# Postprocessing instructs importer to modify Walsh assignments
+# automatically based on mode and band number. Walsh columns below
+# are specified for odd-numbered bands in CARMA3G23 mode.
+"walshNestingEnabled"="1"
+"walshHardwareDemodulationEnabled"="1"
+"walshPostprocess"="1"
+
+[CARMA3G\Antenna\Number]
+"0"="1"
+"1"="2"
+"2"="3"
+"3"="4"
+"4"="5"
+"5"="6"
+"6"="7"
+"7"="8"
+"8"="9"
+"9"="10"
+"10"="11"
+"11"="12"
+"12"="13"
+"13"="14"
+"14"="15"
+"15"="98"
+"16"="16"
+"17"="17"
+"18"="18"
+"19"="19"
+"20"="20"
+"21"="21"
+"22"="22"
+"23"="23"
+"24"="24"
+"25"="25"
+"26"="26"
+"27"="27"
+"28"="28"
+"29"="29"
+"30"="30"
+"31"="99"
+[CARMA3G\Antenna\Walsh]
+"0"="0"
+"1"="1"
+"2"="2"
+"3"="3"
+"4"="4"
+"5"="5"
+"6"="6"
+"7"="7"
+"8"="8"
+"9"="9"
+"10"="10"
+"11"="11"
+"12"="12"
+"13"="13"
+"14"="14"
+"15"="31"
+"16"="15"
+"17"="16"
+"18"="17"
+"19"="18"
+"20"="19"
+"21"="20"
+"22"="21"
+"23"="22"
+"24"="23"
+"25"="24"
+"26"="25"
+"27"="26"
+"28"="27"
+"29"="28"
+"30"="29"
+"31"="31"
+
+# There are 26 LVDS cables, each with (up to) 4 buses per cable.
+# There are four LVDS connectors per board, so there are up
+# to 16 buses per board. For single-polarization modes, half are unused.
+#
+[CARMA3G\Bus]
+"numberOfBuses"="104"
+"numberOfBusesPerBoard"="16"
+
+[CARMA3G\Bus\Source]
+# Dig 1.0 - 1.2
+"0"="0"
+"1"="1"
+"2"="2"
+"3"="3"
+"4"="4"
+"5"="5"
+"6"="6"
+"7"="7"
+"8"="8"
+"9"="9"
+"10"="10"
+"11"="11"
+# Dig 2.0 - 2.2
+"12"="16"
+"13"="17"
+"14"="18"
+"15"="19"
+"16"="20"
+"17"="21"
+"18"="22"
+"19"="23"
+"20"="24"
+"21"="25"
+"22"="26"
+"23"="27"
+# Dig 3.0 - 3.2
+"24"="32"
+"25"="33"
+"26"="34"
+"27"="34"
+"28"="36"
+"29"="37"
+"30"="38"
+"31"="39"
+"32"="40"
+"33"="41"
+"34"="42"
+"35"="43"
+# Dig 4.0 - 4.2
+"36"="48"
+"37"="49"
+"38"="50"
+"39"="51"
+"40"="52"
+"41"="53"
+"42"="54"
+"43"="55"
+"44"="56"
+"45"="57"
+"46"="58"
+"47"="59"
+# Dig 5.0 - 5.2
+"48"="64"
+"49"="65"
+"50"="66"
+"51"="67"
+"52"="68"
+"53"="69"
+"54"="70"
+"55"="71"
+"56"="72"
+"57"="73"
+"58"="74"
+"59"="75"
+# Dig 6.0 - 6.2
+"60"="80"
+"61"="81"
+"62"="82"
+"63"="83"
+"64"="84"
+"65"="85"
+"66"="86"
+"67"="87"
+"68"="88"
+"69"="89"
+"70"="90"
+"71"="91"
+# Dig 7.0 - 7.3
+"72"="96"
+"73"="97"
+"74"="98"
+"75"="99"
+"76"="100"
+"77"="101"
+"78"="102"
+"79"="103"
+"80"="104"
+"81"="105"
+"82"="106"
+"83"="107"
+"84"="108"
+"85"="109"
+"86"="110"
+"87"="111"
+# Dig 8.0 - 8.3
+"88"="112"
+"89"="113"
+"90"="114"
+"91"="115"
+"92"="116"
+"93"="117"
+"94"="118"
+"95"="119"
+"96"="120"
+"97"="121"
+"98"="122"
+"99"="123"
+"100"="124"
+"101"="125"
+"102"="126"
+"103"="127"
+
+[CARMA3G\Bus\Destination]
+# Cor 1.0  <--  Dig 1.0
+"0"="128"
+"1"="129"
+"2"="130"
+"3"="131"
+# Cor 2.0  <-- Dig 1.1
+"4"="144"
+"5"="145"
+"6"="146"
+"7"="147"
+# Cor 3.0  <--  Dig 1.2
+"8"="160"
+"9"="161"
+"10"="162"
+"11"="163"
+# Cor 1.2  <--  Dig 2.0
+"12"="136"
+"13"="137"
+"14"="138"
+"15"="139"
+# Cor 2.2  <--  Dig 2.1
+"16"="152"
+"17"="153"
+"18"="154"
+"19"="155"
+# Cor 3.2  <--  Dig 2.2
+"20"="168"
+"21"="169"
+"22"="170"
+"23"="171"
+# Cor 1.3  <--  Dig 3.0
+"24"="140"
+"25"="141"
+"26"="142"
+"27"="143"
+# Cor 4.0  <--  Dig 3.1
+"28"="176"
+"29"="177"
+"30"="178"
+"31"="179"
+# Cor 5.0  <--  Dig 3.2
+"32"="192"
+"33"="193"
+"34"="194"
+"35"="195"
+# Cor 2.1  <--  Dig 4.0
+"36"="148"
+"37"="149"
+"38"="150"
+"39"="151"
+# Cor 4.2  <--  Dig 4.1
+"40"="184"
+"41"="185"
+"42"="186"
+"43"="187"
+# Cor 5.3  <--  Dig 4.2
+"44"="200"
+"45"="201"
+"46"="202"
+"47"="203"
+# Cor 2.3  <--  Dig 5.0
+"48"="156"
+"49"="157"
+"50"="158"
+"51"="159"
+# Cor 4.3  <--  Dig 5.1
+"52"="188"
+"53"="189"
+"54"="190"
+"55"="191"
+# Cor 6.0  <--  Dig 5.2
+"56"="208"
+"57"="209"
+"58"="210"
+"59"="211"
+# Cor 3.1  <--  Dig 6.0
+"60"="164"
+"61"="165"
+"62"="166"
+"63"="167"
+# Cor 5.1  <--  Dig 6.1
+"64"="196"
+"65"="197"
+"66"="198"
+"67"="199"
+# Cor 6.2  <--  Dig 6.2
+"68"="216"
+"69"="217"
+"70"="218"
+"71"="219"
+# Cor 3.3  <--  Dig 7.0
+"72"="172"
+"73"="173"
+"74"="174"
+"75"="175"
+# Cor 5.3  <--  Dig 7.1
+"76"="204"
+"77"="205"
+"78"="206"
+"79"="207"
+# Cor 6.3  <--  Dig 7.2
+"80"="220"
+"81"="221"
+"82"="222"
+"83"="223"
+# Cor 7.0  <-- [Dig 7.3]
+"84"="224"
+"85"="225"
+"86"="226"
+"87"="227"
+# Cor 1.1  <--  Dig 8.0
+"88"="132"
+"89"="133"
+"90"="134"
+"91"="135"
+# Cor 4.1  <--  Dig 8.1
+"92"="180"
+"93"="181"
+"94"="182"
+"95"="183"
+# Cor 6.1  <--  Dig 8.2
+"96"="212"
+"97"="213"
+"98"="214"
+"99"="215"
+# Cor 7.1  <-- [Dig 8.3]
+"100"="228"
+"101"="229"
+"102"="230"
+"103"="231"
+
+[CARMA3G\Bus\Antenna]
+# Dig 1.0 - 1.2
+"0"="0"
+"1"="16"
+"2"="1"
+"3"="17"
+"4"="0"
+"5"="16"
+"6"="1"
+"7"="17"
+"8"="0"
+"9"="16"
+"10"="1"
+"11"="17"
+# Dig 2.0 - 2.2
+"12"="2"
+"13"="18"
+"14"="3"
+"15"="19"
+"16"="2"
+"17"="18"
+"18"="3"
+"19"="19"
+"20"="2"
+"21"="18"
+"22"="3"
+"23"="19"
+# Dig 3.0 - 3.2
+"24"="4"
+"25"="20"
+"26"="5"
+"27"="21"
+"28"="4"
+"29"="20"
+"30"="5"
+"31"="21"
+"32"="4"
+"33"="20"
+"34"="5"
+"35"="21"
+# Dig 4.0 - 4.2
+"36"="6"
+"37"="22"
+"38"="7"
+"39"="23"
+"40"="6"
+"41"="22"
+"42"="7"
+"43"="23"
+"44"="6"
+"45"="22"
+"46"="7"
+"47"="23"
+# Dig 5.0 - 5.2
+"48"="8"
+"49"="24"
+"50"="9"
+"51"="25"
+"52"="8"
+"53"="24"
+"54"="9"
+"55"="25"
+"56"="8"
+"57"="24"
+"58"="9"
+"59"="25"
+# Dig 6.0 - 6.2
+"60"="10"
+"61"="26"
+"62"="11"
+"63"="27"
+"64"="10"
+"65"="26"
+"66"="11"
+"67"="27"
+"68"="10"
+"69"="26"
+"70"="11"
+"71"="27"
+# Dig 7.0 - 7.3
+"72"="12"
+"73"="28"
+"74"="13"
+"75"="29"
+"76"="12"
+"77"="28"
+"78"="13"
+"79"="29"
+"80"="12"
+"81"="28"
+"82"="13"
+"83"="29"
+"84"="12"
+"85"="28"
+"86"="13"
+"87"="29"
+# Dig 8.0 - 8.3
+"88"="14"
+"89"="30"
+"90"="15"
+"91"="31"
+"92"="14"
+"93"="30"
+"94"="15"
+"95"="31"
+"96"="14"
+"97"="30"
+"98"="15"
+"99"="31"
+"100"="14"
+"101"="30"
+"102"="15"
+"103"="31"
+
+#------------------------------------------------------------------
+# CARMA3G 500MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\500MHz]
+"bandwidth"="500e6"
+
+[CARMA3G\500MHz\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="97"
+"numberOfCrossLags"="192"
+
+# FPGA Configuration #0
+[CARMA3G\500MHz\FPGA\0]
+"version"="0x01D21103"
+"filename"="carma_v1D21103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\500MHz\FPGA\1]
+"version"="0x01D21203"
+"filename"="carma_v1D21203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\500MHz\FPGA\2]
+"version"="0x01D21303"
+"filename"="carma_v1D21303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\500MHz\FPGA\3]
+"version"="0x01D21403"
+"filename"="carma_v1D21403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\500MHz\FPGA\4]
+"version"="0x01C21103"
+"filename"="carma_v1C21103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\500MHz\FPGA\5]
+"version"="0x01C21103"
+"filename"="carma_v1C21103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\500MHz\FPGA\6]
+"version"="0x01C21203"
+"filename"="carma_v1C21203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\500MHz\FPGA\7]
+"version"="0x01C21303"
+"filename"="carma_v1C21303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\500MHz\FPGA\8]
+"version"="0x01C21303"
+"filename"="carma_v1C21303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\500MHz\FPGA\9]
+"version"="0x01C21403"
+"filename"="carma_v1C21403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 250MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\250MHz]
+"bandwidth"="250e6"
+
+[CARMA3G\250MHz\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="193"
+"numberOfCrossLags"="384"
+
+# FPGA Configuration #0
+[CARMA3G\250MHz\FPGA\0]
+"version"="0x01D22103"
+"filename"="carma_v1D22103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\250MHz\FPGA\1]
+"version"="0x01D22203"
+"filename"="carma_v1D22203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\250MHz\FPGA\2]
+"version"="0x01D22303"
+"filename"="carma_v1D22303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\250MHz\FPGA\3]
+"version"="0x01D22403"
+"filename"="carma_v1D22403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\250MHz\FPGA\4]
+"version"="0x01C22103"
+"filename"="carma_v1C22103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\250MHz\FPGA\5]
+"version"="0x01C22103"
+"filename"="carma_v1C22103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\250MHz\FPGA\6]
+"version"="0x01C22203"
+"filename"="carma_v1C22203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\250MHz\FPGA\7]
+"version"="0x01C22303"
+"filename"="carma_v1C22303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\250MHz\FPGA\8]
+"version"="0x01C22303"
+"filename"="carma_v1C22303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\250MHz\FPGA\9]
+"version"="0x01C22403"
+"filename"="carma_v1C22403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 125MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\125MHz]
+"bandwidth"="125e6"
+
+[CARMA3G\125MHz\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="321"
+"numberOfCrossLags"="640"
+
+# FPGA Configuration #0
+[CARMA3G\125MHz\FPGA\0]
+"version"="0x01D23103"
+"filename"="carma_v1D23103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\125MHz\FPGA\1]
+"version"="0x01D23203"
+"filename"="carma_v1D23203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\125MHz\FPGA\2]
+"version"="0x01D23303"
+"filename"="carma_v1D23303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\125MHz\FPGA\3]
+"version"="0x01D23403"
+"filename"="carma_v1D23403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\125MHz\FPGA\4]
+"version"="0x01C23103"
+"filename"="carma_v1C23103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\125MHz\FPGA\5]
+"version"="0x01C23103"
+"filename"="carma_v1C23103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\125MHz\FPGA\6]
+"version"="0x01C23203"
+"filename"="carma_v1C23203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\125MHz\FPGA\7]
+"version"="0x01C23303"
+"filename"="carma_v1C23303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\125MHz\FPGA\8]
+"version"="0x01C23303"
+"filename"="carma_v1C23303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\125MHz\FPGA\9]
+"version"="0x01C23403"
+"filename"="carma_v1C23403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 62MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\62MHz]
+"bandwidth"="62.5e6"
+
+[CARMA3G\62MHz\FPGA]
+"numberOfFpgaConfigurations"="10"
+
+# FPGA Configuration #0
+[CARMA3G\62MHz\FPGA\0]
+"version"="0x01D24103"
+"filename"="carma_v1D24103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\62MHz\FPGA\1]
+"version"="0x01D24203"
+"filename"="carma_v1D24203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\62MHz\FPGA\2]
+"version"="0x01D24303"
+"filename"="carma_v1D24303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\62MHz\FPGA\3]
+"version"="0x01D24403"
+"filename"="carma_v1D24403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\62MHz\FPGA\4]
+"version"="0x01C24103"
+"filename"="carma_v1C24103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\62MHz\FPGA\5]
+"version"="0x01C24103"
+"filename"="carma_v1C24103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\62MHz\FPGA\6]
+"version"="0x01C24203"
+"filename"="carma_v1C24203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\62MHz\FPGA\7]
+"version"="0x01C24303"
+"filename"="carma_v1C24303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\62MHz\FPGA\8]
+"version"="0x01C24303"
+"filename"="carma_v1C24303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\62MHz\FPGA\9]
+"version"="0x01C24403"
+"filename"="carma_v1C24403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 31MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\31MHz]
+"bandwidth"="31.25e6"
+
+[CARMA3G\31MHz\FPGA]
+"numberOfFpgaConfigurations"="10"
+
+# FPGA Configuration #0
+[CARMA3G\31MHz\FPGA\0]
+"version"="0x01D25103"
+"filename"="carma_v1D25103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\31MHz\FPGA\1]
+"version"="0x01D25203"
+"filename"="carma_v1D25203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\31MHz\FPGA\2]
+"version"="0x01D25303"
+"filename"="carma_v1D25303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\31MHz\FPGA\3]
+"version"="0x01D25403"
+"filename"="carma_v1D25403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\31MHz\FPGA\4]
+"version"="0x01C25103"
+"filename"="carma_v1C25103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\31MHz\FPGA\5]
+"version"="0x01C25103"
+"filename"="carma_v1C25103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\31MHz\FPGA\6]
+"version"="0x01C25203"
+"filename"="carma_v1C25203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\31MHz\FPGA\7]
+"version"="0x01C25303"
+"filename"="carma_v1C25303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\31MHz\FPGA\8]
+"version"="0x01C25303"
+"filename"="carma_v1C25303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\31MHz\FPGA\9]
+"version"="0x01C25403"
+"filename"="carma_v1C25403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 8MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\8MHz]
+"bandwidth"="7.8125e6"
+
+[CARMA3G\8MHz\FPGA]
+"numberOfFpgaConfigurations"="10"
+
+# FPGA Configuration #0
+[CARMA3G\8MHz\FPGA\0]
+"version"="0x01D27103"
+"filename"="carma_v1D27103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\8MHz\FPGA\1]
+"version"="0x01D27203"
+"filename"="carma_v1D27203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\8MHz\FPGA\2]
+"version"="0x01D27303"
+"filename"="carma_v1D27303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\8MHz\FPGA\3]
+"version"="0x01D27403"
+"filename"="carma_v1D27403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\8MHz\FPGA\4]
+"version"="0x01C27103"
+"filename"="carma_v1C27103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\8MHz\FPGA\5]
+"version"="0x01C27103"
+"filename"="carma_v1C27103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\8MHz\FPGA\6]
+"version"="0x01C27203"
+"filename"="carma_v1C27203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\8MHz\FPGA\7]
+"version"="0x01C27303"
+"filename"="carma_v1C27303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\8MHz\FPGA\8]
+"version"="0x01C27303"
+"filename"="carma_v1C27303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\8MHz\FPGA\9]
+"version"="0x01C27403"
+"filename"="carma_v1C27403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 2MHz configuration (2-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\2MHz]
+"bandwidth"="1.953125e6"
+
+[CARMA3G\2MHz\FPGA]
+"numberOfFpgaConfigurations"="10"
+
+# FPGA Configuration #0
+[CARMA3G\2MHz\FPGA\0]
+"version"="0x01D29103"
+"filename"="carma_v1D29103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\2MHz\FPGA\1]
+"version"="0x01D29203"
+"filename"="carma_v1D29203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\2MHz\FPGA\2]
+"version"="0x01D29303"
+"filename"="carma_v1D29303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\2MHz\FPGA\3]
+"version"="0x01D29403"
+"filename"="carma_v1D29403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\2MHz\FPGA\4]
+"version"="0x01C29103"
+"filename"="carma_v1C29103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\2MHz\FPGA\5]
+"version"="0x01C29103"
+"filename"="carma_v1C29103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\2MHz\FPGA\6]
+"version"="0x01C29203"
+"filename"="carma_v1C29203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\2MHz\FPGA\7]
+"version"="0x01C29303"
+"filename"="carma_v1C29303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\2MHz\FPGA\8]
+"version"="0x01C29303"
+"filename"="carma_v1C29303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\2MHz\FPGA\9]
+"version"="0x01C29403"
+"filename"="carma_v1C29403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 500MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\500MHz_3BIT]
+"bandwidth"="500e6"
+
+[CARMA3G\500MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="41"
+"numberOfCrossLags"="80"
+
+# FPGA Configuration #0
+[CARMA3G\500MHz_3BIT\FPGA\0]
+"version"="0x01D31103"
+"filename"="carma_v1D31103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\500MHz_3BIT\FPGA\1]
+"version"="0x01D31203"
+"filename"="carma_v1D31203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\500MHz_3BIT\FPGA\2]
+"version"="0x01D31303"
+"filename"="carma_v1D31303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\500MHz_3BIT\FPGA\3]
+"version"="0x01D31403"
+"filename"="carma_v1D31403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\500MHz_3BIT\FPGA\4]
+"version"="0x01C31103"
+"filename"="carma_v1C31103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\500MHz_3BIT\FPGA\5]
+"version"="0x01C31103"
+"filename"="carma_v1C31103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\500MHz_3BIT\FPGA\6]
+"version"="0x01C31203"
+"filename"="carma_v1C31203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\500MHz_3BIT\FPGA\7]
+"version"="0x01C31303"
+"filename"="carma_v1C31303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\500MHz_3BIT\FPGA\8]
+"version"="0x01C31303"
+"filename"="carma_v1C31303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\500MHz_3BIT\FPGA\9]
+"version"="0x01C31403"
+"filename"="carma_v1C31403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 250MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\250MHz_3BIT]
+"bandwidth"="250e6"
+
+[CARMA3G\250MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="81"
+"numberOfCrossLags"="160"
+
+# FPGA Configuration #0
+[CARMA3G\250MHz_3BIT\FPGA\0]
+"version"="0x01D32103"
+"filename"="carma_v1D32103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\250MHz_3BIT\FPGA\1]
+"version"="0x01D32203"
+"filename"="carma_v1D32203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\250MHz_3BIT\FPGA\2]
+"version"="0x01D32303"
+"filename"="carma_v1D32303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\250MHz_3BIT\FPGA\3]
+"version"="0x01D32403"
+"filename"="carma_v1D32403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\250MHz_3BIT\FPGA\4]
+"version"="0x01C32103"
+"filename"="carma_v1C32103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\250MHz_3BIT\FPGA\5]
+"version"="0x01C32103"
+"filename"="carma_v1C32103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\250MHz_3BIT\FPGA\6]
+"version"="0x01C32203"
+"filename"="carma_v1C32203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\250MHz_3BIT\FPGA\7]
+"version"="0x01C32303"
+"filename"="carma_v1C32303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\250MHz_3BIT\FPGA\8]
+"version"="0x01C32303"
+"filename"="carma_v1C32303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\250MHz_3BIT\FPGA\9]
+"version"="0x01C32403"
+"filename"="carma_v1C32403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 125MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\125MHz_3BIT]
+"bandwidth"="125e6"
+
+[CARMA3G\125MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="161"
+"numberOfCrossLags"="320"
+
+# FPGA Configuration #0
+[CARMA3G\125MHz_3BIT\FPGA\0]
+"version"="0x01D33103"
+"filename"="carma_v1D33103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\125MHz_3BIT\FPGA\1]
+"version"="0x01D33203"
+"filename"="carma_v1D33203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\125MHz_3BIT\FPGA\2]
+"version"="0x01D33303"
+"filename"="carma_v1D33303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\125MHz_3BIT\FPGA\3]
+"version"="0x01D33403"
+"filename"="carma_v1D33403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\125MHz_3BIT\FPGA\4]
+"version"="0x01C33103"
+"filename"="carma_v1C33103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\125MHz_3BIT\FPGA\5]
+"version"="0x01C33103"
+"filename"="carma_v1C33103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\125MHz_3BIT\FPGA\6]
+"version"="0x01C33203"
+"filename"="carma_v1C33203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\125MHz_3BIT\FPGA\7]
+"version"="0x01C33303"
+"filename"="carma_v1C33303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\125MHz_3BIT\FPGA\8]
+"version"="0x01C33303"
+"filename"="carma_v1C33303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\125MHz_3BIT\FPGA\9]
+"version"="0x01C33403"
+"filename"="carma_v1C33403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 62MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\62MHz_3BIT]
+"bandwidth"="62.5e6"
+
+[CARMA3G\62MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="257"
+"numberOfCrossLags"="512"
+
+# FPGA Configuration #0
+[CARMA3G\62MHz_3BIT\FPGA\0]
+"version"="0x01D34103"
+"filename"="carma_v1D34103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\62MHz_3BIT\FPGA\1]
+"version"="0x01D34203"
+"filename"="carma_v1D34203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\62MHz_3BIT\FPGA\2]
+"version"="0x01D34303"
+"filename"="carma_v1D34303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\62MHz_3BIT\FPGA\3]
+"version"="0x01D34403"
+"filename"="carma_v1D34403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\62MHz_3BIT\FPGA\4]
+"version"="0x01C34103"
+"filename"="carma_v1C34103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\62MHz_3BIT\FPGA\5]
+"version"="0x01C34103"
+"filename"="carma_v1C34103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\62MHz_3BIT\FPGA\6]
+"version"="0x01C34203"
+"filename"="carma_v1C34203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\62MHz_3BIT\FPGA\7]
+"version"="0x01C34303"
+"filename"="carma_v1C34303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\62MHz_3BIT\FPGA\8]
+"version"="0x01C34303"
+"filename"="carma_v1C34303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\62MHz_3BIT\FPGA\9]
+"version"="0x01C34403"
+"filename"="carma_v1C34403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 31MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\31MHz_3BIT]
+"bandwidth"="31.25e6"
+
+[CARMA3G\31MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="321"
+"numberOfCrossLags"="640"
+
+# FPGA Configuration #0
+[CARMA3G\31MHz_3BIT\FPGA\0]
+"version"="0x01D35103"
+"filename"="carma_v1D35103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\31MHz_3BIT\FPGA\1]
+"version"="0x01D35203"
+"filename"="carma_v1D35203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\31MHz_3BIT\FPGA\2]
+"version"="0x01D35303"
+"filename"="carma_v1D35303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\31MHz_3BIT\FPGA\3]
+"version"="0x01D35403"
+"filename"="carma_v1D35403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\31MHz_3BIT\FPGA\4]
+"version"="0x01C35103"
+"filename"="carma_v1C35103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\31MHz_3BIT\FPGA\5]
+"version"="0x01C35103"
+"filename"="carma_v1C35103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\31MHz_3BIT\FPGA\6]
+"version"="0x01C35203"
+"filename"="carma_v1C35203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\31MHz_3BIT\FPGA\7]
+"version"="0x01C35303"
+"filename"="carma_v1C35303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\31MHz_3BIT\FPGA\8]
+"version"="0x01C35303"
+"filename"="carma_v1C35303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\31MHz_3BIT\FPGA\9]
+"version"="0x01C35403"
+"filename"="carma_v1C35403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 8MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\8MHz_3BIT]
+"bandwidth"="7.8125e6"
+
+[CARMA3G\8MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="321"
+"numberOfCrossLags"="640"
+
+# FPGA Configuration #0
+[CARMA3G\8MHz_3BIT\FPGA\0]
+"version"="0x01D37103"
+"filename"="carma_v1D37103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\8MHz_3BIT\FPGA\1]
+"version"="0x01D37203"
+"filename"="carma_v1D37203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\8MHz_3BIT\FPGA\2]
+"version"="0x01D37303"
+"filename"="carma_v1D37303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\8MHz_3BIT\FPGA\3]
+"version"="0x01D37403"
+"filename"="carma_v1D37403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\8MHz_3BIT\FPGA\4]
+"version"="0x01C37103"
+"filename"="carma_v1C37103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\8MHz_3BIT\FPGA\5]
+"version"="0x01C37103"
+"filename"="carma_v1C37103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\8MHz_3BIT\FPGA\6]
+"version"="0x01C37203"
+"filename"="carma_v1C37203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\8MHz_3BIT\FPGA\7]
+"version"="0x01C37303"
+"filename"="carma_v1C37303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\8MHz_3BIT\FPGA\8]
+"version"="0x01C37303"
+"filename"="carma_v1C37303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\8MHz_3BIT\FPGA\9]
+"version"="0x01C37403"
+"filename"="carma_v1C37403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 2MHz configuration (3-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\2MHz_3BIT]
+"bandwidth"="1.953125e6"
+
+[CARMA3G\2MHz_3BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="321"
+"numberOfCrossLags"="640"
+
+# FPGA Configuration #0
+[CARMA3G\2MHz_3BIT\FPGA\0]
+"version"="0x01D39103"
+"filename"="carma_v1D39103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\2MHz_3BIT\FPGA\1]
+"version"="0x01D39203"
+"filename"="carma_v1D39203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\2MHz_3BIT\FPGA\2]
+"version"="0x01D39303"
+"filename"="carma_v1D39303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\2MHz_3BIT\FPGA\3]
+"version"="0x01D39403"
+"filename"="carma_v1D39403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\2MHz_3BIT\FPGA\4]
+"version"="0x01C39103"
+"filename"="carma_v1C39103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\2MHz_3BIT\FPGA\5]
+"version"="0x01C39103"
+"filename"="carma_v1C39103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\2MHz_3BIT\FPGA\6]
+"version"="0x01C39203"
+"filename"="carma_v1C39203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\2MHz_3BIT\FPGA\7]
+"version"="0x01C39303"
+"filename"="carma_v1C39303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\2MHz_3BIT\FPGA\8]
+"version"="0x01C39303"
+"filename"="carma_v1C39303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\2MHz_3BIT\FPGA\9]
+"version"="0x01C39403"
+"filename"="carma_v1C39403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 500MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\500MHz_4BIT]
+"bandwidth"="500e6"
+
+[CARMA3G\500MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="17"
+"numberOfCrossLags"="32"
+
+# FPGA Configuration #0
+[CARMA3G\500MHz_4BIT\FPGA\0]
+"version"="0x01D41103"
+"filename"="carma_v1D41103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\500MHz_4BIT\FPGA\1]
+"version"="0x01D41203"
+"filename"="carma_v1D41203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\500MHz_4BIT\FPGA\2]
+"version"="0x01D41303"
+"filename"="carma_v1D41303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\500MHz_4BIT\FPGA\3]
+"version"="0x01D41403"
+"filename"="carma_v1D41403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\500MHz_4BIT\FPGA\4]
+"version"="0x01C41103"
+"filename"="carma_v1C41103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\500MHz_4BIT\FPGA\5]
+"version"="0x01C41103"
+"filename"="carma_v1C41103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\500MHz_4BIT\FPGA\6]
+"version"="0x01C41203"
+"filename"="carma_v1C41203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\500MHz_4BIT\FPGA\7]
+"version"="0x01C41303"
+"filename"="carma_v1C41303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\500MHz_4BIT\FPGA\8]
+"version"="0x01C41303"
+"filename"="carma_v1C41303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\500MHz_4BIT\FPGA\9]
+"version"="0x01C41403"
+"filename"="carma_v1C41403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 250MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\250MHz_4BIT]
+"bandwidth"="250e6"
+
+[CARMA3G\250MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="33"
+"numberOfCrossLags"="64"
+
+# FPGA Configuration #0
+[CARMA3G\250MHz_4BIT\FPGA\0]
+"version"="0x01D42103"
+"filename"="carma_v1D42103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\250MHz_4BIT\FPGA\1]
+"version"="0x01D42203"
+"filename"="carma_v1D42203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\250MHz_4BIT\FPGA\2]
+"version"="0x01D42303"
+"filename"="carma_v1D42303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\250MHz_4BIT\FPGA\3]
+"version"="0x01D42403"
+"filename"="carma_v1D42403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\250MHz_4BIT\FPGA\4]
+"version"="0x01C42103"
+"filename"="carma_v1C42103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\250MHz_4BIT\FPGA\5]
+"version"="0x01C42103"
+"filename"="carma_v1C42103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\250MHz_4BIT\FPGA\6]
+"version"="0x01C42203"
+"filename"="carma_v1C42203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\250MHz_4BIT\FPGA\7]
+"version"="0x01C42303"
+"filename"="carma_v1C42303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\250MHz_4BIT\FPGA\8]
+"version"="0x01C42303"
+"filename"="carma_v1C42303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\250MHz_4BIT\FPGA\9]
+"version"="0x01C42403"
+"filename"="carma_v1C42403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 125MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\125MHz_4BIT]
+"bandwidth"="125e6"
+
+[CARMA3G\125MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="65"
+"numberOfCrossLags"="128"
+
+# FPGA Configuration #0
+[CARMA3G\125MHz_4BIT\FPGA\0]
+"version"="0x01D43103"
+"filename"="carma_v1D43103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\125MHz_4BIT\FPGA\1]
+"version"="0x01D43203"
+"filename"="carma_v1D43203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\125MHz_4BIT\FPGA\2]
+"version"="0x01D43303"
+"filename"="carma_v1D43303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\125MHz_4BIT\FPGA\3]
+"version"="0x01D43403"
+"filename"="carma_v1D43403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\125MHz_4BIT\FPGA\4]
+"version"="0x01C43103"
+"filename"="carma_v1C43103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\125MHz_4BIT\FPGA\5]
+"version"="0x01C43103"
+"filename"="carma_v1C43103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\125MHz_4BIT\FPGA\6]
+"version"="0x01C43203"
+"filename"="carma_v1C43203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\125MHz_4BIT\FPGA\7]
+"version"="0x01C43303"
+"filename"="carma_v1C43303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\125MHz_4BIT\FPGA\8]
+"version"="0x01C43303"
+"filename"="carma_v1C43303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\125MHz_4BIT\FPGA\9]
+"version"="0x01C43403"
+"filename"="carma_v1C43403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 62MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\62MHz_4BIT]
+"bandwidth"="62.5e6"
+
+[CARMA3G\62MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="129"
+"numberOfCrossLags"="256"
+
+# FPGA Configuration #0
+[CARMA3G\62MHz_4BIT\FPGA\0]
+"version"="0x01D44103"
+"filename"="carma_v1D44103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\62MHz_4BIT\FPGA\1]
+"version"="0x01D44203"
+"filename"="carma_v1D44203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\62MHz_4BIT\FPGA\2]
+"version"="0x01D44303"
+"filename"="carma_v1D44303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\62MHz_4BIT\FPGA\3]
+"version"="0x01D44403"
+"filename"="carma_v1D44403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\62MHz_4BIT\FPGA\4]
+"version"="0x01C44103"
+"filename"="carma_v1C44103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\62MHz_4BIT\FPGA\5]
+"version"="0x01C44103"
+"filename"="carma_v1C44103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\62MHz_4BIT\FPGA\6]
+"version"="0x01C44203"
+"filename"="carma_v1C44203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\62MHz_4BIT\FPGA\7]
+"version"="0x01C44303"
+"filename"="carma_v1C44303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\62MHz_4BIT\FPGA\8]
+"version"="0x01C44303"
+"filename"="carma_v1C44303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\62MHz_4BIT\FPGA\9]
+"version"="0x01C44403"
+"filename"="carma_v1C44403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 31MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\31MHz_4BIT]
+"bandwidth"="31.25e6"
+
+[CARMA3G\31MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="161"
+"numberOfCrossLags"="320"
+
+# FPGA Configuration #0
+[CARMA3G\31MHz_4BIT\FPGA\0]
+"version"="0x01D45103"
+"filename"="carma_v1D45103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\31MHz_4BIT\FPGA\1]
+"version"="0x01D45203"
+"filename"="carma_v1D45203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\31MHz_4BIT\FPGA\2]
+"version"="0x01D45303"
+"filename"="carma_v1D45303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\31MHz_4BIT\FPGA\3]
+"version"="0x01D45403"
+"filename"="carma_v1D45403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\31MHz_4BIT\FPGA\4]
+"version"="0x01C45103"
+"filename"="carma_v1C45103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\31MHz_4BIT\FPGA\5]
+"version"="0x01C45103"
+"filename"="carma_v1C45103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\31MHz_4BIT\FPGA\6]
+"version"="0x01C45203"
+"filename"="carma_v1C45203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\31MHz_4BIT\FPGA\7]
+"version"="0x01C45303"
+"filename"="carma_v1C45303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\31MHz_4BIT\FPGA\8]
+"version"="0x01C45303"
+"filename"="carma_v1C45303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\31MHz_4BIT\FPGA\9]
+"version"="0x01C45403"
+"filename"="carma_v1C45403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 8MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\8MHz_4BIT]
+"bandwidth"="7.8125e6"
+
+[CARMA3G\8MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="161"
+"numberOfCrossLags"="320"
+
+# FPGA Configuration #0
+[CARMA3G\8MHz_4BIT\FPGA\0]
+"version"="0x01D47103"
+"filename"="carma_v1D47103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\8MHz_4BIT\FPGA\1]
+"version"="0x01D47203"
+"filename"="carma_v1D47203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\8MHz_4BIT\FPGA\2]
+"version"="0x01D47303"
+"filename"="carma_v1D47303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\8MHz_4BIT\FPGA\3]
+"version"="0x01D47403"
+"filename"="carma_v1D47403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\8MHz_4BIT\FPGA\4]
+"version"="0x01C47103"
+"filename"="carma_v1C47103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\8MHz_4BIT\FPGA\5]
+"version"="0x01C47103"
+"filename"="carma_v1C47103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\8MHz_4BIT\FPGA\6]
+"version"="0x01C47203"
+"filename"="carma_v1C47203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\8MHz_4BIT\FPGA\7]
+"version"="0x01C47303"
+"filename"="carma_v1C47303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\8MHz_4BIT\FPGA\8]
+"version"="0x01C47303"
+"filename"="carma_v1C47303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\8MHz_4BIT\FPGA\9]
+"version"="0x01C47403"
+"filename"="carma_v1C47403.bin"
+
+
+#------------------------------------------------------------------
+# CARMA3G 2MHz configuration (4-bit samples)
+#------------------------------------------------------------------
+
+[CARMA3G\2MHz_4BIT]
+"bandwidth"="1.953125e6"
+
+[CARMA3G\2MHz_4BIT\FPGA]
+"numberOfFpgaConfigurations"="10"
+"numberOfAutoLags"="161"
+"numberOfCrossLags"="320"
+
+# FPGA Configuration #0
+[CARMA3G\2MHz_4BIT\FPGA\0]
+"version"="0x01D49103"
+"filename"="carma_v1D49103.bin"
+
+# FPGA Configuration #1
+[CARMA3G\2MHz_4BIT\FPGA\1]
+"version"="0x01D49203"
+"filename"="carma_v1D49203.bin"
+
+# FPGA Configuration #2
+[CARMA3G\2MHz_4BIT\FPGA\2]
+"version"="0x01D49303"
+"filename"="carma_v1D49303.bin"
+
+# FPGA Configuration #3
+[CARMA3G\2MHz_4BIT\FPGA\3]
+"version"="0x01D49403"
+"filename"="carma_v1D49403.bin"
+
+# FPGA Configuration #4 (corl_mode 0)
+[CARMA3G\2MHz_4BIT\FPGA\4]
+"version"="0x01C49103"
+"filename"="carma_v1C49103.bin"
+
+# FPGA Configuration #5 (corl_mode 4)
+[CARMA3G\2MHz_4BIT\FPGA\5]
+"version"="0x01C49103"
+"filename"="carma_v1C49103.bin"
+
+# FPGA Configuration #6
+[CARMA3G\2MHz_4BIT\FPGA\6]
+"version"="0x01C49203"
+"filename"="carma_v1C49203.bin"
+
+# FPGA Configuration #7 (corl_mode 0)
+[CARMA3G\2MHz_4BIT\FPGA\7]
+"version"="0x01C49303"
+"filename"="carma_v1C49303.bin"
+
+# FPGA Configuration #8 (corl_mode 4)
+[CARMA3G\2MHz_4BIT\FPGA\8]
+"version"="0x01C49303"
+"filename"="carma_v1C49303.bin"
+
+# FPGA Configuration #9
+[CARMA3G\2MHz_4BIT\FPGA\9]
+"version"="0x01C49403"
+"filename"="carma_v1C49403.bin"

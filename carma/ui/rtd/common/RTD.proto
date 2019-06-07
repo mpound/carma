@@ -1,0 +1,476 @@
+// This is the Google Protocol Buffers implementation of serialization for the
+// entire RTD display.
+//
+// This file contains the Google ProtoBuf definition for all data types
+// exchanged by the RTD C++ (server) and Java (client) components.
+//
+// All components were designed to be as easy to work with in code as possible,
+// even at the expense of some encoding (and data size) efficiency. However, the
+// overhead remains minimal at only a few bytes (usually 2-4 bytes per object).
+// This was deemed acceptable to reduce the amount of programming time required.
+//
+// Tags in the range 1-15 take one byte to encode.
+// Tags in the range 16-2047 take two bytes to encode.
+//
+// Reference: https://developers.google.com/protocol-buffers/docs/proto
+// Reference: https://developers.google.com/protocol-buffers/docs/cpptutorial
+//
+// Note that ProtoBuf tags are only required to be unique within a given message
+// type. They can be re-used for different types of messages.
+//
+// The message hierarchy here does not necessarily reflect the C++ or Java
+// object hierarchy. A message is much more similar to a C struct than a true
+// object. It is data storage only, with no code attached. Think of a message
+// as a format for data transport, nothing else.
+//
+// Each serialized object has two major components:
+// 1) the static data (used during initialization)
+// 2) the dynamic data (used during each update)
+//
+// These are grouped into their own sub-objects with each field being required
+// to make programming easier. There is no need to check for the presence of
+// each field before use (as having optional fields would require).
+//
+// Container objects have an additional "repeated RtObject" field which will
+// contain all of their sub-objects. This is not part of the static or dynamic
+// data, and will be provided in both cases.
+
+// C++ code generator uses namespace rtdprotobuf for generated code
+// Java code generator uses package rtdprotobuf for generated code
+package rtdproto;
+
+enum Border {
+	TWO_PIXELS_ALL_SIDES_BORDER				= 1;
+	TWO_PIXELS_LEFT_RIGHT_BOTTOM_BORDER		= 2;
+	TWO_PIXELS_BELOW_BORDER					= 3;
+	ONE_PIXEL_ABOVE_BORDER					= 4;
+	ONE_PIXEL_BELOW_BORDER					= 5;
+	ONE_PIXEL_RIGHT_BORDER					= 6;
+	ONE_PIXEL_LEFT_BORDER					= 7;
+	NO_BORDER								= 8;
+}
+
+enum Layout {
+	NONE_LAYOUT								= 1;
+	UNFILLED_LAYOUT							= 2;
+	CHAIN_LAYOUT							= 3;
+	EOL_CENTERED_LAYOUT						= 4;
+	EOL_RIGHT_JUSTIFIED_LAYOUT				= 5;
+	EOL_LEFT_JUSTIFIED_LAYOUT				= 6;
+}
+
+// Serialized representation of carma::ui::rtd::Cell
+message RtCell {
+
+	message BorderEnabled {
+		required bool top					= 1;
+		required bool bottom				= 2;
+		required bool left					= 3;
+		required bool right					= 4;
+	}
+
+	enum Color {
+		WHITE								= 1;
+		RED									= 2;
+		YELLOW								= 3;
+		GREEN								= 4;
+		BLUE								= 5;
+		ORANGE								= 6;
+		CYAN								= 7;
+		MAGENTA								= 8;
+		BLACK								= 9;
+		PURPLE								= 10;
+		LIGHT_GRAY							= 11;
+		LIGHT_GRAY_TEXT						= 12;
+		EMPTY								= 13;
+	}
+
+	// static data (transmitted only during initialization)
+	message StaticData {
+		required string plotlabel			= 1;
+		required int32 width				= 2;
+		required int32 indent				= 3;
+		required int32 len					= 4;
+		required int32 fontsize				= 5;
+		required bool plottable				= 6;
+		required bool audio					= 7;
+		required BorderEnabled border		= 8;
+		required string description			= 9;
+		required Layout layout				= 10;
+	}
+
+	// dynamic data (transmitted during each update)
+	message DynamicData {
+		required string mpname				= 1; // monitor point name
+		required string dynamicdescription	= 2; // dynamic description
+		required string contents			= 3; // cell contents
+		required Color color				= 4; // color
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// Serialized representation of carma::ui::rtd::RtRow
+message RtRow {
+
+	message StaticData {
+		required string title				= 1;
+		required int32 fontsize				= 2;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// Serialized representation of carma::ui::rtd::RtColumn
+message RtColumn {
+
+	message StaticData {
+		required string title				= 1;
+		required int32 fontsize				= 2;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// Serialized representation of carma::ui::rtd::RtLabel
+message RtLabel {
+
+	enum FontType {
+		FONT_PLAIN							= 1;
+		FONT_BOLD							= 2;
+		FONT_ITALIC							= 3;
+		FONT_BOLD_ITALIC					= 4;
+	}
+
+	message StaticData {
+		required string title				= 1;
+		required int32 fontsize				= 2;
+		required string label				= 3;
+		required FontType fonttype			= 4;
+		required Layout layout				= 5;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// Serialized representation of carma::ui::rtd::RtArea
+message RtArea {
+
+	message StaticData {
+		required string title				= 1;
+		required int32 fontsize				= 2;
+
+		required Border border				= 3;
+		required int32 labelpad				= 4;
+		required int32 unitpad				= 5;
+		required int32 endpad				= 6;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+	repeated RtObject objects				= 3;
+}
+
+// Serialized representation of carma::ui::rtd::RtTable
+message RtTable {
+
+	message StaticData {
+		required string title				= 1;
+		required int32 fontsize				= 2;
+
+		required Border border				= 3;
+		required string labelprefix			= 4;
+		required int32 numrows				= 5;
+		required int32 numcols				= 6;
+		required int32 prefrows				= 7;
+		required int32 prefcols				= 8;
+		required int32 minrows				= 9;
+		required int32 mincols				= 10;
+		required bool displayrowlabels		= 11;
+		required bool displaycollabels		= 12;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+	repeated RtObject objects				= 3;
+}
+
+// Serialized representation of carma::ui::rtd::RtHBox
+// Serialized representation of carma::ui::rtd::RtVBox
+// Serialized representation of carma::ui::rtd::RtFolder
+message RtBox {
+
+	enum BoxType {
+		BOX_HORIZONTAL						= 1;
+		BOX_VERTICAL						= 2;
+		BOX_FOLDER							= 3;
+	}
+
+	enum StretchType {
+		STRETCH_PROPORTIONAL				= 1;
+		STRETCH_SPRING						= 2;
+	}
+
+	message StaticData {
+		required string title				= 1;
+		required int32 fontsize				= 2;
+		required StretchType stretchtype	= 4;
+		required double stretchfactor		= 5;
+		required Border border				= 6;
+	}
+
+	message DynamicData {
+	}
+
+	required BoxType boxtype				= 1;
+	optional StaticData staticdata			= 2;
+	optional DynamicData dynamicdata		= 3;
+	repeated RtObject objects				= 4;
+}
+
+// Serialized representation of carma::ui::rtd::RtSpring
+message RtSpring {
+
+	message StaticData {
+		required int32 minwidth				= 1;
+		required int32 prefwidth			= 2;
+		required double springiness			= 3;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// Serialized representation of carma::ui::rtd::RtSpacer
+message RtSpacer {
+
+	message StaticData {
+		required int32 minwidth				= 1;
+		required int32 prefwidth			= 2;
+		required double weight				= 3;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// Serialized representation of carma::ui::rtd::RtTimeString
+message RtTimeString {
+
+	message StaticData {
+		required string title				= 1;
+		required int32 width				= 2;
+	}
+
+	message DynamicData {
+		required string ut					= 1;
+		required string lst					= 2;
+		required string local				= 3;
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// Serialized representation of carma::ui::rtd::RtTimePanel
+message RtTimePanel {
+
+	message StaticData {
+		required string title				= 1;
+		required bool visible				= 2;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+	repeated RtObject objects				= 3;
+}
+
+// Serialized representation of carma::ui::rtd::RtAzelPlot
+message RtAzelPlot {
+
+	enum PlotMode {
+		PLOTMODE_RADEC						= 1;
+		PLOTMODE_AZEL						= 2;
+	}
+
+	message TelescopeAzEl {
+		required bool online				= 1;
+		required double actaz				= 2;
+		required double actel				= 3;
+	}
+
+	message StaticData {
+		required string title				= 1;
+		required int32 maxnumants			= 2;
+		required int32 fieldwidth			= 3;
+	}
+
+	message DynamicData {
+		required PlotMode plotmode			= 1;
+		required double windspeed			= 2;
+		required double winddirection		= 3;
+		required bool legitsourceposition	= 4;
+		required double sourceaz			= 5;
+		required double sourceel			= 6;
+		repeated TelescopeAzEl telescopes	= 7;
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// Serialized representation of carma::ui::rtd::RtMenu
+message RtMenu {
+
+	message ItemInfo {
+		required string menuname			= 1;
+		required string codename			= 2;
+	}
+
+	message StaticData {
+		required string title				= 1;
+		required int32 fontsize				= 2;
+		repeated ItemInfo iteminfos			= 3;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+}
+
+// class RtDisplay : public RtContainer
+message RtDisplay {
+
+	message RtHelp {
+		required string title				= 1;
+		required string text				= 2;
+	}
+
+	message StaticData {
+		required string title				= 1;
+		required Border border				= 2;
+		required int32 fontsize				= 3;
+
+		required RtHelp generichelp			= 4;
+		required RtHelp specifichelp		= 5;
+	}
+
+	message DynamicData {
+	}
+
+	optional StaticData staticdata			= 1;
+	optional DynamicData dynamicdata		= 2;
+	repeated RtObject objects				= 3;
+}
+
+// A variant object type which can hold any type of RTD object. This somewhat
+// mimics inheritance in C++ (Protocol Buffers do not have any notion of
+// inheritance).
+//
+// Exactly one object type should be found within. Multiple objects are not
+// supported.
+message RtObject {
+	optional RtCell cell					= 1;
+	optional RtRow row						= 2;
+	optional RtColumn column				= 3;
+	optional RtLabel label					= 4;
+	optional RtArea area					= 5;
+	optional RtTable table					= 6;
+	optional RtBox box						= 7;
+	optional RtSpring spring				= 8;
+	optional RtSpacer spacer				= 9;
+	optional RtTimeString timestring		= 10;
+	optional RtTimePanel timepanel			= 11;
+	optional RtAzelPlot azelplot			= 12;
+	optional RtMenu menu					= 13;
+}
+
+// User Interface Description Messages
+//
+// These are the top-level messages that describe the entire display UI. This
+// includes display creation (INITIALIZE), auto-morph (REINITIALIZE), and
+// data update (UPDATE).
+//
+// These are the messages that are sent on the wire.
+
+enum UIMessageRequestCode {
+	REQ_INITIALIZE							= 1; // initialize
+	REQ_UPDATE								= 2; // update
+	REQ_EXIT								= 3; // shutdown connection
+}
+
+enum UIMessageReplyCode {
+	REP_INITIALIZE							= 1; // initialize
+	REP_REINITIALIZE						= 2; // reinitialize (auto-morph)
+	REP_UPDATE								= 3; // update
+}
+
+message UIMessageRequest {
+	required UIMessageRequestCode code		= 1;
+	required int32 sleeptime				= 2; // sleep time (milliseconds)
+}
+
+message UIMessageReply {
+	required UIMessageReplyCode code		= 1;
+	optional RtDisplay display				= 2;
+}
+
+// Revamped simple authentication
+//
+// The current RTD code has an extensive authentication and encryption
+// infrastructure that has been completely unused for at least 5 years.
+// It is time for this code to go away and be replaced by something simpler.
+//
+// This message type should only be used when communicating with the rtdmaster
+// process. It should not be used when communicating with the individual rtd
+// window processes.
+
+enum AuthenticationStatusCode {
+	AUTH_SUCCESS							= 1;
+	AUTH_FAILURE							= 2;
+}
+
+// Sent by the client to the server at start of authentication
+message AuthenticationRequest {
+	required string username				= 1; // user name on client machine
+	required string version					= 2; // client version
+	required string window					= 3; // requested window
+}
+
+// Sent by the server to reply to a message
+message AuthenticationReply {
+	required AuthenticationStatusCode code	= 1; // authentication status
+	required string details					= 2; // details (in case of error)
+}
+
+// vim: set ts=4 sts=4 sw=4 noet:

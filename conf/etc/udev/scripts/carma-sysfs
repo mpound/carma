@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Use the first parameter for the configuration file,
+# otherwise use the default location
+CONFIG="${1:-/etc/cobra/carma15-new.slots}"
+
+stderr() {
+	echo -e "$@" >&2
+	logger -t "udev" "$0: $@"
+}
+
+# Check for the configuration file
+if [[ ! -f $CONFIG ]]; then
+	stderr "config file does not exist: $CONFIG"
+	exit 1
+fi
+
+# Calculate the slot number
+SLOTNO="$(grep -E "^\s*$PCI_SLOT_NAME" "$CONFIG" | awk '{ print $2; }')"
+
+# Check the slot number
+if [[ -z $SLOTNO ]]; then
+	stderr "could not find slot number for device: $PCI_SLOT_NAME"
+	exit 1;
+fi
+
+/bin/mkdir -p "/dev/carma"
+
+if [[ $ACTION = "add" ]]; then
+	/bin/ln -sf "/sys/bus/pci/devices/$PCI_SLOT_NAME" "/dev/carma/$SLOTNO"
+else
+	/bin/rm -f "/dev/carma/$SLOTNO"
+fi
+
+# vim: set ts=8 sts=8 sw=8 noet:

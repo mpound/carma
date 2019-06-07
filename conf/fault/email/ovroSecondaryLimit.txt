@@ -1,0 +1,3 @@
+The secondary mirror on an OVRO (10m) telescope has hit a hard limit. Look here for help:
+
+http://cedarflat.mmarray.org/wiki/Alarms#OvroX.Secondary..5Bx.2Cy.2Cz.5Dlimit.5BPlus.2CMinus.5D

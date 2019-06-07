@@ -1,0 +1,324 @@
+%$Id: pdbwrappers.tex,v 1.7 2007/08/14 21:35:11 mpound Exp $
+\documentclass[preprint]{aastex} % AASTeXv5.0
+
+\begin{document}
+\title{Using the Project Database}
+\author{Douglas Friedel, Marc Pound, Athol Kemball}
+\slugcomment{Version 1.6\ \ August 08, 2007}
+
+
+
+\section{What is the Project Database and Why Do We Need it?}
+
+CARMA will observe many projects over its lifetime.  In any given array
+configuration, there may be as many as 100 projects assigned observing time.
+Keeping track of what has been observed, how many times, for how long,
+and at what quality is a major time-consuming task (as observers who have
+had to keep multiple spreadsheets up-to-date are well aware).  In order
+to maintain easy operations, we must organize and track the progress
+of scientific projects through the telescope system in as automated way
+as possible.  This principal mechanism for doing so is the Project Database.
+
+Essentially all the information needed to accomplish this tracking
+is available in the initial observing proposal and in the observations
+themselves. All accepted proposals automatically get entered into the
+Project Database, so an unobserved project entry already has lots
+of information on obsblocks to be observed, allocated time, source, PI, etc. 
+The science data flow pipeline (AstroHeaderWriter, sdpFiller, quality)
+will extract post-observation information such as how much time the
+observation got, over what hour angle range, how much time remains,
+and the automated quality grade.  The observing script itself as well
+as the PI source catalog are also
+stored in the Project Database as an exact record of what the array was
+commanded to do.  The observer then just has to input the final grade
+and any relevant comments on the observation.
+
+Once this information is in the database, it is available to the observer
+by python queries that can be used to guide which projects should be
+observed next, which still need grades, how much more time a project
+needs etc.  This simplifies the observer's life.
+
+We have created some custom queries in {\tt pdbWrappers.py} that observers
+will use to interact with the project database (and can add more queries
+as needs arise).  The project database wrappers are imported into
+subarrayCommands, so you have all these available at the ``sac'' prompt.
+In the sections below the sac input line (denoted with Sci$>$) is followed
+by an example output from the system.
+
+
+\section{Run a project}
+
+Using run({\tt myscript}) to observe a project is no different from before.
+All changes have been encapsulated in the {\tt newProject} command and
+in {\tt obsdef*.py}.  
+There a limitation now, however, that only projects with project codes
+that are known to the project database may be run. The newProject()
+command will validate project before observing can begin. The level
+of restriction depends on whether it is a science track or commissioning
+track: 
+\begin{itemize}
+\item {\bf TAC-approved science tracks}.  The full obsblockID 
+(project.obsblock.subobsblock) must be known to the project database.
+
+\item {\bf Special projects}.  These are projects with one
+of the special project codes:
+    \begin{itemize}
+    \item ``ctNNN" commissioning projects
+    \item ``csNNN" -- CARMA Summer school
+    \item ``base"  -- baseline
+    \item ``fringe" -- fringe test
+    \item ``flux"  -- flux observations
+    \item ``none" --  unprocessed integrations
+    \item ``opnt" --  optical pointing
+    \item ``rpnt" --  radio pointing
+    \item ``test" --  generic test
+    \item ``tilt" --  tilts
+    \end{itemize}
+\noindent 
+(The project code
+part of the obsblockID before the first dot, e.g. for c0014.OphB11\_C
+the project code is c0014.)
+For observations with these project codes you are free
+to choose any obsblock or subObsblock name.  If they are previously
+unknown to the project database, they will be added.  Note that
+{\bf \emph{arbitrary project codes are no longer allowed}}; 
+for test observations 
+which don't have a commissioning code you can use the code ``test''.
+\end{itemize}
+
+Trial numbers are now assigned automatically
+by {\tt newProject()}; it will ignore any trial number you pass in 
+(that parameter has been kept only so that old scripts won't break).
+{\tt newProject()} will also automatically add the running script
+to the project database as a record of what was run for that trial.
+
+\section{Check the status of a project}
+To check the status (i.e. how much time has been observed) of all obsblocks in a project (e.g. c0014):
+\begin{verbatim}
+Sci> projectStatus(``c0014'')
+
+Project c0014 has 2 obsblocks 
+1: Obsblock OphB11_C is INCOMPLETE
+    Observed/Remaining hours: 1.00/3.50
+    Trial 1 is COMPLETE. 
+    Trial 2 is RUNNING. 
+    Trial 3 is RUNNING. 
+2: Obsblock OphB11_D is INCOMPLETE
+    Observed/Remaining hours: 0.00/3.50
+    Trial 1 is INCOMPLETE. 
+\end{verbatim}
+
+\section{Grade a trial}
+To grade trial 1 of obsblock c0014.OphB11\_C:
+\begin{verbatim}
+Sci> gradeProject("c0014.OphB11_C",1,"A","Marc","This trial is finished")
+
+Marc gave c0014.OphB11_C.1 a grade of A.
+\end{verbatim}
+\noindent Arguments are as follows:\\
+{\bf obsblockID} - the fully-qualified obsblockId, without the trial number.\\
+{\bf trialNo} - trial number\\
+{\bf name} - the name of the person making this edit. No default.\\
+{\bf grade} - String value indicating the overall grade from the observer. (e.g. 'A','C-', etc.). No default.  This string gets converted to a numeric grade inside of the project database manager.  If you wish to insert a particular numeric grade, then place it in quotes, e.g.  '61.3'.\\
+{\bf comment} - any comment from observer about grade. Defaults to empty; above name above name and current date will be prepended to the comment.\\
+{\bf length} - the length of time the track took. Default is -1.0 which means the length calculated by quality should be used. This parameter is usually used to pass partial tracks.
+
+\section{Modify comments on a trial}
+To show the comments for a given obsblock and trial:
+\begin{verbatim}
+Sci> getComments("c0014.OphB11_C",1)
+Trial 1 : Marc Pound : ( Mon Jul  2 17:42:41 2007 UT ) These data are transplendant! 
+\end{verbatim}
+\noindent The output shows who wrote the comment and when. Arguments are as follows:\\
+{\bf obsblockID} - the fully-qualified obsblockId, without the trial number.\\
+{\bf trialNo} - trial number. Default is -1 which means show comments for all trials.
+
+To add comments to the existing comments for the given obsblock and trial:
+\begin{verbatim}
+Sci> addComments("c0014.OphB11_C",2,"Marc Pound", "I have even more to say about this trial")
+\end{verbatim}
+\noindent Arguments are as follows:\\
+{\bf obsblockID} - the fully-qualified obsblockId, without the trial number.\\
+{\bf trialNo} - trial number\\
+{\bf name} - the name of the person making this edit. No default.\\
+{\bf comment} - The comment to add.  Above name and current date will be prepended to the comment.  
+
+To change existing comments (you should have a very good reason for doing this!):
+\begin{verbatim}
+Sci> replaceComments("c0014.OphB11_C",2,"Marc Pound", "I made a mistake before")
+\end{verbatim}
+
+To delete existing comments (should be done only in very rare circumstances!):
+\begin{verbatim}
+Sci> deleteComments("c0014.OphB11_C", 2)
+\end{verbatim}
+
+
+\section{Which projects can be run during a given LST time range}
+To find out which incomplete 1mm projects can be run between 16:00 and 21:00 LST
+\begin{verbatim}
+Sci> projectsWithinRange(16,21,band="1mm")
+
+Found a total of 1 projects with 2 obsblocks matching your query.
+Sorted by PRIORITY:
+      ObsblockID       Band    Hrs_Left    RA        LST_Range    Flex?
+          c0089.g19     1MM      8.00     18:27   ( 01:18, 08:21 )  N
+    c0089.iras16293     1MM      6.00     16:31   ( 01:59, 06:39 )  N
+
+\end{verbatim}
+\noindent  The query returns the available obsblocks, how much more observing
+time they require (Hrs\_Left), the LST range over which they can be observed,
+and whether or not the PI has indicated flexible hour angle scheduling.
+By default the returned list is sorted in order of priority assigned by
+the TAC with highest priority listed first.  
+The lstStart (16) and lstStop (21) arguments can take either decimal hours (i.e 16.5) or sexagesimal (HH:MM(:SS)) arguments, however sexagesimal arguments must be encased in quotes. Note that LST time ranges can wrap around 24:00 (i.e. lstStart=22.5 lstStop=4.0 is valid)
+
+\noindent Optional arguments to refine the search are:\\
+{\bf minHours} - Only show projects with at least this many hours left to observe. Default 2.\\
+{\bf flexHA} - True or False indicating whether to include sources with 'flexible hour angle' scheduling or not. Default: True\\
+{\bf band} - Only return projects for the given Rx band. One of "3mm", "1mm", "1cm", "any". Case-insensitive. Default: any\\
+{\bf arrayConfig} - Only return projects for the specific array configuration.
+One of "A", "B", "C", "D", "E", or "any".  Case insensitive. Default: any\\
+{\bf sort} - How to sort the output. One of "priority", "lst", "timeleft", "none".  Default is "priority".  Case insensitive.
+
+\section{Which projects can be run starting at a given LST}
+To find which incomplete projects can be run starting at 10 hours LST
+that have at least 4 hours left to observe
+\begin{verbatim}
+Sci> projectsStartingAt(10,4)
+
+Using any Rx band 
+Found a total of 9 projects with 17 obsblocks matching your query.
+Sorted by PRIORITY:
+      ObsblockID       Band    Hrs_Left    RA        LST_Range    Flex?
+    c0002.n3627_hcn     3MM     20.00     11:19   ( 21:59, 07:56 )  N
+   c0002.n3627_hcop     3MM     20.00     11:19   ( 21:59, 07:56 )  N
+        c0003.J0927     3MM     40.00     09:26   ( 21:10, 07:46 )  N
+     c0022.weiN3032     3MM      7.20     09:51   ( 20:51, 08:18 )  N
+     c0022.weiU6570     3MM      7.80     11:34   ( 21:00, 09:03 )  N
+     c0022.weiN3773     3MM      6.20     11:37   ( 22:07, 07:57 )  N
+     c0022.weiN3011     3MM      7.40     09:48   ( 20:41, 08:26 )  N
+     c0022.weiU6003     3MM      6.00     10:52   ( 22:17, 07:23 )  N
+     c0022.weiU6805     3MM      8.00     11:49   ( 20:41, 09:29 )  N
+        c0033.oj287     3MM     12.00     08:53   ( 21:01, 07:37 )  N
+        c0035.n3627     3MM     10.00     11:19   ( 21:59, 07:56 )  N
+        c0035.n4736     3MM     13.00     12:49   ( 21:00, 09:42 )  N
+  c0037.frayer_gn26     3MM     42.00     12:35   ( 19:13, 11:22 )  Y
+         c0048.umon     3MM      5.00     07:29   ( 22:17, 05:38 )  Y
+        c0051.sexb1     3MM     16.00     09:56   ( 22:00, 07:12 )  Y
+        c0051.sexb2     3MM     16.00     09:56   ( 22:00, 07:12 )  Y
+     c0071.COSMOS-1     3MM     31.00     09:59   ( 22:11, 07:02 )  Y
+
+
+\end{verbatim}
+\noindent The lstStart (10) argument can take either decimal hours (i.e 16.5) or sexagesimal (HH:MM(:SS)) arguments, however sexagesimal arguments must be encased in quotes.
+
+\noindent Optional arguments to refine the search are:\\
+{\bf minHours} - Only show projects with at least this many hours left to observe. Default 2.\\
+{\bf haLimit} - Only show projects with that will be within hour angle $\pm$ haLimit at the LST start time. Default 3.\\
+{\bf band} - Only return projects for the given Rx band. One of "3mm", "1mm", "1cm", "any". Case-insensitive. Default: any\\
+{\bf arrayConfig} - Only return projects for the specific array configuration.
+One of "A", "B", "C", "D", "E", or "any".  Case insensitive. Default: any\\
+{\bf sort} - How to sort the output. One of "priority", "lst", "timeleft", "none".  Default is "priority".  Case insensitive.
+
+\section{Validate an Obsblock}
+To check that an obsblockID exists in the project database or is a
+commissioning/special project (True means valid, False means invalid/not found):  
+\begin{verbatim}
+Sci> isValidObsblock("c0014.OphB11_C")
+True
+\end{verbatim}
+\noindent This command is called automatically by {\tt newProject()}.
+
+\section{Generate a schedule}
+The project database can be used to generate the observing schedule.
+This is done by querying the project database and then calling
+the {\tt mksched} program with the results.
+To generate a 10-day schedule for the 3mm C array:
+\begin{verbatim}
+Sci1> schedule("C",band="3mm",run=True,days=10)
+# Using Rx band 3MM
+# Using C array configuration
+# Found a total of 41 projects with 127 obsblocks matching your query.
+# Sorted by PRIORITY:
+mksched INPUT file written to /tmp/mksched.in.2007-08-02_15_49.
+Running mksched...
+/opt/rt/bin/mksched file=/tmp/mksched.in.2007-08-02_15_49 days=10 config=C start=2007-Aug-2 fixed=none pivot=0.000000 > /tmp/mksched.out.2007-08-02_15_49
+mksched OUTPUT file written to /tmp/mksched.out.2007-08-02_15_49.
+
+\end{verbatim}
+\noindent The argument {\tt arrayConfig} specifies which array
+configuration you are trying to schdule. It is one of "A", "B", "C", "D", "E"
+(case insensitive, no default); Note "any" is NOT an option here. 
+\noindent Optional arguments to refine the search are:\\
+{\bf minHours} - Only show projects with at least this many hours left to observe. Default 4.\\
+{\bf band} - Only return projects for the given Rx band. One of "3mm", "1mm", "1cm", "any". Case-insensitive. Default: any\\
+{\bf sort} - How to sort the output. One of "priority", "lst", "timeleft", "none".  Default is "priority".  Case insensitive.
+The following parameters map directly to inputs to mksched. Type
+'mksched --desc' or 'mksched --key' for more info on that program
+{\bf run} - Whether or not to run the mksched program on the output file. Default False. \\
+{\bf days} -  The maximum number of days to schedule, 0 means no limit. Default: 10 \\
+{\bf fixed} -  File name for fixed blocks from say a previous run.  These will be added to the schedule BEFORE any new blocks are scheduled.  Default=none which means no fixed blocks. \\
+{\bf pivot} -  Grade below which all projects are scheduled in COMPACT mode. Default 0.
+
+
+
+\section{Adding a script to the project database}
+To add an observing script and its assocaited catalog to obsblock
+c0014.OphB11\_C in the database from file /tmp/myScript (script) and
+/tmp/myCatalog (catalog):
+\begin{verbatim}
+Sci> addScript("c0014.OphB11_C",script="/tmp/myScript",catalog="/tmp/myCatalog")
+
+Successfully loaded /tmp/myScript into database for c0014.OphB11_C 
+\end{verbatim}
+\noindent Note that the obsblock ID is the full qualified ID project.obsblock[.subobsblock] without the trial number (the script gets put in the last trial). If the file name does not begin with a ``/'' then the same directories searched by run() will be searched. Also note that you can individually add a script or a catalog to the database by using script= or catalog=.
+This command is called automatically by newProject if the subarray scriptName variable has been previously (e.g. if {\tt s.getScriptName()} returns something other than ``None''.)
+
+\section{Retrieving a script from the project database}
+To retrieve a script and catalog for obsblock c0014.OphB11\_C from the project database and put them into /tmp/newScript (script) and /tmp/newCatalog (catalog):
+\begin{verbatim}
+Sci> findScript("c0014.OphB11_C",script="/tmp/newScript.obs",catalog="/tmp/newCatalog")
+
+Found script, saving to file /tmp/newScript.obs
+Found catalog, saving to file /tmp/newCatalog
+\end{verbatim}
+\noindent Note that the obsblock ID is the fully-qualified ID project.obsblock[.subobsblock] without the trial number. Also note that, as with addScript, you can individually retrieve a script or a catalog from the database by using script= or catalog=.
+
+\noindent Optional argument:\\
+{\bf trialNo} - the trial number for which to get the script. Default is -1 which means return last INCOMPLETE trial number.\\
+{\bf verbose} - If True, report on locating/saving script. Default is True.
+
+
+This output means that there are 2 obsblocks in project c0014. Both
+obsblocks (OphB11\_C and OphB11\_D) are incomplete\footnote{See
+Table~\ref{tab:status} for the definitions of the status labels.}. Obsblock
+OphB11\_C has three trials that have been observed, one of which has received
+a grade and is complete, and has been credited with 1 out of 3.5 hours of
+observation. The others are marked as RUNNING until the observer has graded
+them. The only trial for obsblock OphB11\_D has not been observed yet.
+
+\begin{deluxetable}{ll}
+\tablecolumns{2}
+\tablewidth{0pt}
+\tablecaption{Meanings of Status Labels}
+\tablehead{\colhead{Status} & \colhead{Meaning}}
+\startdata
+INCOMPLETE & For projects, obsblocks, and subobsblocks, this means that they
+still have observable\\
+&time left in their allocation. For a trial it means it
+has not been observed.\\
+COMPLETE & This means that the projects, obsblock, subosblock, and/or trial
+has been observed\\
+&and the total observed time has met the allocation time
+(i.e. they are no \\
+&longer observable)\\
+RUNNING & For trials this means that they have been (or currently are) being
+observed and are\\
+& awaiting a grade. This has no meaning for projects, obsblocks
+or subobsblocks.\\
+\enddata
+\label{tab:status}
+\end{deluxetable}
+\end{document}
+

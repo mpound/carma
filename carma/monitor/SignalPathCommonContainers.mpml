@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global" author="Erik Leitch">
+
+  <?common ControlCorrelEnum.mpml?>
+  <?common SignalPathCommonMonitorPoints.mpml?>
+
+  <Container name="Input" indexName="inputNo">
+    <CommonMonitorPoint ref="astroBandNo" />
+    <CommonMonitorPoint ref="astroBandInputNo" />
+    <CommonMonitorPoint ref="correlatorDesignation" />
+    <CommonMonitorPoint ref="corrBandNo" />
+    <CommonMonitorPoint ref="corrBandInputNo" />
+    <CommonMonitorPoint ref="antennaNo" />
+    <CommonMonitorPoint ref="polarization" />
+  </Container>
+
+</Common>
+

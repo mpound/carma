@@ -1,0 +1,419 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename ImrUsageDoc.info
+@settitle Using the ORBacus Implementation Repository
+@setcontentsaftertitlepage
+@paragraphindent none
+@c %**end of header
+
+@set BASE_URL http://www.mmarray.org/project/system/API/
+
+@titlepage
+@title Using the ORBacus Implementation Repository
+@subtitle $Revision: 1.8 $
+@subtitle $Date: 2014/03/10 16:33:39 $
+@author Andrew Beard
+@end titlepage
+
+@ifnottex
+
+@node Top
+@top Using the ORBacus Implementation Repository
+
+This document describes the ORBacus Implementation Repository (IMR)  and how to use it.
+
+$Revision: 1.8 $@*
+$Date: 2014/03/10 16:33:39 $@*
+Author: Andrew Beard
+
+@contents
+
+@menu
+* Introduction::
+* Writing IMR-aware CARMA Servers::
+* Example Server Code::
+* Debugging IMR applications::
+* IMR Configuration Details::
+* References::
+@end menu
+
+@end ifnottex
+
+@node Introduction 
+@chapter Introduction
+
+@menu
+* Where to Get This Document::
+* Requirements::
+* The Implementation Repository::
+@end menu
+
+@node Where to Get This Document
+@section Where to Get This Document
+
+An automatically up-to-date copy of this file is available in both
+@uref{@value{BASE_URL}ImrUsageDoc.html, HTML} and
+@uref{@value{BASE_URL}ImrUsageDoc.pdf, PDF} formats.
+
+The source file for this document is available in the CARMA CVS repository as @file{carma/doc/ImrUsageDoc.texi}. 
+
+Complete versions of the example code included in this document are also available from the CVS repository in the files @file{carma/carma/util/Test/Device.idl}, @file{carma/carma/util/Test/DeviceImpl.h/.cc} and @file{carma/carma/util/Test/imrExample.cc}.
+
+@node Requirements
+@section Requirements
+
+@itemize
+@item orbacus 4.1.0 
+@end itemize
+
+This has already been installed in @file{/opt/carmaTools} at OVRO and is
+part of the carma_tools package.
+
+@node The Implementation Repository 
+@section The Implementation Repository
+The ORBacus Implementation Repository (IMR) is a CORBA service which was designed to solve many problems inherent in distributed systems using CORBA.  It's main purpose is to provide a framework and protocols which help increase the reliability of a distributed system.  
+
+At the basic level, CORBA objects are able to communicate with each other by using an Interoperable Object Reference (IOR).  Typically, IORs contain a servers hostname, the port number of the server process and an object key.  When a client receives an IOR to a particular DO, it contacts the host, connects to the given port and issues requests on the object or DO.  This process is known as direct binding.  
+
+The problem with direct binding is that there is no way to guarantee that a given server process is running, resides on the specified hostname or is listening on the specified port.  For instance, most CORBA servers when restarted, choose a new port number to start on.  Thus, despite the fact that the application is running on the same machine and uses the same objects, any IORs held by a client to that server will be invalidated because the port number is now wrong.  This leads to the client raising the common TRANSIENT exception.  The same problem applies if the servant is moved to another host.  
+
+To solve this problem, the IMR uses a technique known as indirect binding.  When a server using the IMR is started, its objects create/publish IORs that instead point to the IMR rather than their own hosts and ports.  Likewise, the IMR becomes responsible for keeping track of which servers reside where and on what ports.  When a client receives an IOR, it now contacts the IMR rather than the server directly.  The IMR in turn contacts the server, verifies that it is running on the expected host and port and instructs the client to now directly bind with the server.  If at a later time the server is restarted or moved to another port, the client will again recontact the IMR and obtain a new valid IOR.  Thus, the IMR allows for transparent migration and reliability which is not available with direct binding.    
+
+In addition, the IMR provides a central location for configuration, can automatically restart all client/server applications and provides access/control over CORBA services.  
+
+@node Writing IMR-aware CARMA Servers 
+@chapter Writing IMR-aware CARMA Servers
+
+@menu
+* Persistency::
+* POA Policies::
+* Additional Requirements::
+* CorbaUtils Simplifications::
+@end menu
+
+@node Persistency 
+@section CORBA Persistency
+There are several Portable Object Adaptor (POA) policies which a developer must pay attention to when writing IMR specific applications.  In particular, several deal with a concept known as persistency.  By default, ORBacus creates POAs with a LifespanPolicy of TRANSIENT.  This means that an IOR for an object is explicitly bound to the lifetime of that object.  Thus, if a server is started, creates an object and publishes an IOR to clients, that IOR is only valid for as long as that instance of the server remains running.  Even if the server is restarted on the exact same host and port, any IOR a client holds to the prior instance is now permanently invalidated.
+
+The POA IdAssignment policy is closely related to the LifespanPolicy.  By default, the SYSTEM_ID policy is used which means that the ORB will automatically assign a unique Object Id to each POA.  As with the LifespanPolicy, if a server POA uses this policy and the server is restarted, the Object Id will be changed by the ORB to a new unique ID, thus invalidating any client-side IORs to the servant.  
+
+In general, CARMA applications should not use the above default policies as they are designed for short lived objects and DOs.  The IMR does not perform rebinding of IORs with the above default policies.  The reason for this is that by definition, TRANSIENT/SYSTEM_ID POAs never need rebinding as they are permanently invalidated when a servant is destroyed.  Rather, the IMR is designed to rebind persistent objects whose persistency is often interrupted by restarts, network failures, etc.  In a nutshell, the IMR provides enforcement of the persistency policies by ensuring that applications are running and properly bound to clients.  
+
+@node POA Policies
+@section POA Policies
+Rather than use the default POA policies listed above, a developer needs to use the inverse policies.  For the LifespanPolicy this is a value of PERSISTENT and for the IdAssignmentPolicy the USER_ID policy should be used.  These policies allow for a DO to continue to exist across multiple invocations of server processes and migration of processes to different hosts. Without the IMR, some external mechanism must be used to enforce that DOs remain truly persistent.  In other words, important IOR parameters must remain constant - namely, we must force an application to be started on the same machine and on the same port number every time.  However, with the IMR this information is abstracted and rebinding allows us to avoid this requirement.  
+
+In addition to the PERSISTENT and USER_ID policies, ORBacus recommends that an ImplicitActivationPolicy value of NO_IMPLICIT_ACTIVATION be used when the above policies are in effect.  This means that a developer must explicitly activate a POA rather than let the ORB do it when the first call is made to _this().  As you will see shortly, this is very easy to do. 
+
+@node Additional Requirements
+@section Additional Requirements
+In addition to changing the above described POA policies, there are a few additional requirements.  First, one must overload the _default_POA method for each servant.  This is required whenever one is customizing POA policies.  
+
+Another requirement of using the IMR is that the ORB must be informed that it is being controlled by the IMR.  This is typically done through command line options that are either appended to the command line by the IMR itself (when it starts a server) or when a user manually starts the program.  These parameters then need to be passed into the orb_init command (or corresponding CorbaUtils getOrb/setOrb command).  IMR related ORBacus options are the -ORBServerId option which tells the ORB the name of the server it is registered with on the IMR  and the -ORBserver_instance option which is only appended by the IMR.  In addition, the server ORB must ofcourse know how to contact the imr - this is accomplished via either the imr=imr.localnet Carma::Program keyword or via the -ORBDefaultInitRef ORBacus option (which the imr keyword wraps).  
+
+@node CorbaUtils Simplifications
+@section @code{CorbaUtils} Simplifications
+When using the @code{carma::util::CorbaUtils} class along with @code{carma::util::Program}, much of the above requirements become trivial to implement.
+
+Creating a POA with the desired policies is as simple as calling @code{CorbaUtils::getPOA("MyPOA")}.  This function returns a POA of the desired name with the PERSISTENT, USER_ID and NO_IMPLICIT_ACTIVATION policies.  
+
+Assuring that the ORB is initialized from command line options only is transparently handled via the @code{Program::orbInit()} method.  This routine will take all command line options, append the imr keyword to them and pass them into orb_init.  Using this routine to initialize an ORB will guarantee that IMR appended options are properly parsed and fed to orb_init.  Since this routine sends all command-line options to the orb_init command, it can also be used if an IMR is not available.  In this case the user of the application would need to use a longer command-line: 
+@example
+myCarmaApp imr=- -- -ORBInitRef NameService=corbaloc::inyo:4000/NameService 
+    -ORBInitRef NotifyService=corbaloc::sabrina:4500/NotifyService
+@end example
+
+As opposed to:
+@example
+myCarmaApp imr=server2
+@end example
+
+The @code{CorbaUtils::runOrb("MyPOA")} method takes care of activating the POA and blocking on the ORB indefinitely.  A developer must be careful to call @code{CorbaUtils::runOrb("MyPOA")} with the same POA name input to @code{CorbaUtils::getPOA("MyPOA")}.  If this isn't done, the RootPOA will be used and no servants will be incarnated.
+
+@node Example Server Code
+@chapter Example Server Code
+
+@menu
+* Where to get example code::
+* Example IDL::
+* Example Implementation::
+* Example main::
+@end menu
+
+The following example creates a hypothetical Device DO and publishes it on the nameserver.  It is fully capable of being used in a system with an IMR (although this isn't required). The example code also makes proper use of reference counting via the carma::util::RefCountGuard class.  For more information please consult the source code directly as it contains many comments that better explain how reference counting is used internally.   
+@node Where to get example code
+@section Where to get example code
+
+All example code is available in its entirety from CVS in the @file{carma/carma/util/Test} directory.  
+
+@node Example IDL
+@section Example IDL
+
+@example
+// IDL in carma/util/Test/Device.idl
+module carma @{
+module util @{
+module test @{
+interface Device @{
+    void reset();
+@};
+@};@};@}; //End module carma::util::test 
+@end example
+
+@node Example Implementation
+@section Example Implementation
+@example
+// C++ in carma/util/Test/DeviceImpl.h
+namespace carma @{
+namespace util @{
+namespace test @{
+class DeviceImpl : 
+    public carma::util::RefCountGuard,
+    public POA_carma::util::test::Device @{
+    public:
+        // Constructor
+        DeviceImpl(PortableServer::POA_ptr poa);
+
+        // Destructor
+        ~DeviceImpl();
+    
+        // Implement the idl defined reset command.
+        void reset() throw (CORBA::SystemException);
+
+        // MUST OVERLOAD _default_POA
+        virtual PortableServer::POA_ptr _default_POA();
+
+    private:
+    
+        PortableServer::POA_var poa_;
+@};
+@}@}@} // End carma::util::test
+
+// C++ in carma/util/Test/DeviceImpl.cc
+DeviceImpl::DeviceImpl(PortableServer::POA_ptr poa) : 
+    poa_(PortableServer::POA::_duplicate(poa)) 
+@{
+    // DeviceImpl is responsible for activating itself and assigning
+    // its own user id.
+    
+    // Create an object id (required when using the USER_ID policy). 
+    PortableServer::ObjectId_var oid = 
+        PortableServer::string_to_ObjectId("Im_a_carma::util::Test::Device");
+
+    // Activate (incarnate servant).
+    poa_->activate_object_with_id(oid, this);
+    
+    // Tell carma::util::RefCountGuard that we are done
+    // THIS MUST BE CALLED LAST!
+    initComplete();
+
+@};
+    
+DeviceImpl::~DeviceImpl()
+@{
+    // Destroy
+    // DO NOT CALL _remove_ref() WITHIN THIS DESTRUCTOR.
+@}
+
+void DeviceImpl::reset() throw (CORBA::SystemException) 
+@{
+    // Reset the device... 
+    // During the duration of any CORBA call the reference count is increased
+    // by 1 but only for the duration of the call!  
+    // Here the reference count == 3. When this function returns to the client
+    // the reference count again == 2.
+@};
+
+PortableServer::POA_ptr DeviceImpl::_default_POA()
+@{
+    return PortableServer::POA::_duplicate(poa_);
+@}
+@end example
+
+@node Example main
+@section Example @code{Program::Main}
+In @code{Program::main()}, we need to create the POA with the proper policies, create the device, publish it on the nameserver and activate the POA.  With CorbaUtils, this is significantly simplified.
+
+@example
+// Program::main in carma/util/Test/imrExample.cc
+int Program::main() @{
+
+    try @{
+
+        // Initialize the ORB - the Program::orbInit() method parses all 
+        // command line options for you - in particular, the imr keyword is 
+        // parsed and any additional parameters after the -- are appended to 
+        // orb_init.  This is particularly important when a server is started
+        // by the IMR as the IMR will append the -ORBServerId and 
+        // -ORBserver_instance options to the command line.
+        if (!orbInit()) @{
+            cerr << "Error initializing ORB - Make sure command line is "
+                << "correct." << endl;
+            return EXIT_FAILURE;
+        @}
+
+        // Instruct CorbaUtils to create a 'persistent' POA with the
+        // PERSISTENT, USER_ID and NO_IMPLICIT_ACTIVATION policies.
+        PortableServer::POA_var devicePOA = CorbaUtils::getPOA("DevicePOA");
+        if (CORBA::is_nil(devicePOA)) @{
+            cerr << "Error creating DevicePOA" << endl;
+            return EXIT_FAILURE;
+        @}
+
+        // Create a Device servant
+        DeviceImpl *dev = new DeviceImpl(devicePOA);
+
+        // Publish it on the nameserver
+        CorbaUtils::addObject("carma.util.test.Device", dev->_this());
+
+        // Servant is incarnated and published at this stage.
+
+        // Block on the orb.  runOrb takes care of POA activation.
+        CorbaUtils::runOrb("DevicePOA");
+
+        // Delete the Device - NEVER CALL DELETE ON A REFERENCE COUNTED IMPL!
+        // ALWAYS CALL _REMOVE_REF() AND THEN ONLY CALL IT ONCE!!!
+        dev->_remove_ref();
+
+        // SEE EXAMPLE CODE FOR MORE DETAILED COMMENTS
+
+    @} catch (CORBA::Exception &ex) @{
+        cerr << ex << endl;
+        return EXIT_FAILURE;
+    @} catch (carma::util::ErrorException &eex) @{
+        cerr << eex << endl;
+        return EXIT_FAILURE;
+    @} catch (...) @{
+        cerr << "Unknown exception in Program::main()" << endl;
+        return EXIT_FAILURE;
+    @}
+    return EXIT_SUCCESS;
+@}
+@end example
+
+@node Debugging IMR applications
+@chapter Debugging IMR applications
+
+@menu
+* Common Coding Mistakes::
+* Techniques for Troubleshooting::
+@end menu
+
+Debugging applications written for use with the IMR can be somewhat tricky.  Configuration of the application with the IMR, coupled with the several necessary steps required by the application create a large number of error states.  This chapter describes typical mistakes and techniques for troubleshooting.
+
+@node Common Coding Mistakes
+@section Common Coding Mistakes
+@emph{POA related errors prevent the application from registering with the IMR.}
+
+Often an application will start and run as expected but will not register itself with the IMR.  This will often be characterized by the IMR continuously reporting a server state of FORKED and never transitioning to the RUNNING state (see IMR Server States below).  Quite often, this can be attributed to one of the following:  
+
+@itemize 
+@item Using a POA with default policies.
+@item Forgetting to overload the _default_POA method.
+@item Unwittingly forgetting to register an object with a POA.
+@item Improperly initializing the ORB.
+@end itemize
+
+With default policies, POAs are not persistent and thus cannot be used by the IMR for rebinding.  Applications which use default policies will typically run and behave normally until the server is shutdown and restarted.  When this happens, all references which clients are holding to that server's DOs become permanently invalidated. When commands are subsequently invoked, exceptions will be raised back to the client.  
+
+One easy way to do this is to forget to overload the _default_POA method on a servant implementation class which was intended to be incarnated by a persistent POA.  This will typically result in the DOs being incarnated by the RootPOA and resulting in the same scenario desribed in the above paragraph.  
+
+Another common error related to POAs is forgetting to register an object with a POA.  Each servant (or CORBA implementation class) must be activated with a specific POA whether it be a user created persistent POA or the default Root POA.  Forgetting to do this can be a time consuming bug to track down since it generally won't be discovered until a client tries to communicate with the servant (and subsequently receives a possibly obscure exception).
+
+When initializing the ORB from within an application, the ORB must be told that the application is expecting to use an IMR.  Typically CARMA applications use the IMR for two functions, first to retrieve IORs to important services such as the Naming Service and Event Service (CORBA refers to these as initial services), and second for rebinding to increase the robustness of a distributed system.  The former use requires that the command line "-ORBDefaultServerId" option be passed to the ORB and the latter requires that the "-ORBServerId" option be passed to the ORB @emph{in addition}.  Without the ORBServerId option, the ORB does not know that it needs to create object references that point to the IMR rather than to the server and host explicitly. 
+
+@node Techniques for Troubleshooting 
+@section Techniques for Troubleshooting
+
+IMR applications are typically started and ran from the IMR/OAD process itself.  Due to this, it can be difficult to retrieve output from the application if something goes wrong.  Fortunately, it is fairly easy to run IMR applications from the command line in a manner such that they are still seen by the IMR.  To do this, you pass in the ORBServerId option explicitly to the application from the command line.  Note that the application still needs to be registered with the IMR.  In CARMA you need to do this after the normal carma::util::Program command line options.
+
+@example    
+@code{abeard@@ovro1 ~>ovroCanHost ant=ovro1 imr=corba -- -ORBServerId CanHostOvro1}
+@end example
+
+In this example, CanHostOvro1 is the server name registered with the IMR.  This technique allows one to conveniently run applications from the command line without resorting to shell script wrappers or redirection.  
+
+Another useful troubleshooting technique is to increase the verboseness of various debugging items in the IMR. This can be used for instance to see when rebinding occurs with the IMR.  See the ORBacus configuration files for details.
+
+@node IMR Configuration Details
+@chapter IMR Configuration Details
+
+@menu 
+* IMR Server States::
+* How Servers are Started and Monitored by the OAD::
+* Additional Server Configuration Options::
+@end menu
+
+In order for servers to be controlled by the IMR they must be registered and configured with the IMR.  We have developed a convenient method for doing this using XML configuration files.  Please see @uref{http://www.mmarray.org/workinggroups/computing/carmaRuntimeConfiguration.pdf, CARMA Runtime Configuration}.
+
+As it turns out, many of the interactions between the IMR and associated servers are not well documented and difficult to understand when diagnosing IMR related server startup problems.  In addition, several configuration parameters are equally as confusing.  This section describes many of these interactions and options in detail.  This section is not required reading for somebody wishing to simply write a CORBA application in CARMA.  It will mostly benefit those interested in learning more about the IMR or those debugging IMR related problems.
+
+@node IMR Server States
+@section IMR Server States
+Servers started by the IMR are assigned several states during the course of their lifetime.  These states are STOPPED, FORKED, STARTING, RUNNING and STOPPING.  The current state of a server can be retrieved using the @code{imradmin} command:
+@example 
+abeard@@bodie abeard>imradmin -ORBDefaultInitRef corbaloc::bodie --get-server-info CarmaWbdcHost
+Server CarmaWbdcHost:
+    ID:                       3
+    Status:                   running
+    Name:                     CarmaWbdcHost
+    Host:                     bodie
+    Path:                     /home/abeard/CARMA/build/optimized/bin/carmaWbdcHost
+    RunDir:                   /home/abeard/CARMA/build/optimized/
+    Arguments:                imr=bodie:20000 emulate=true wait=10 --
+    Activation Mode:          persistent
+    POA Activation:           true
+    Update timeout (ms):      20000
+    Failure timeout (secs):   5
+    Maximum spawn count:      2
+    Started manually:         no
+    Number of times spawned:  0
+@end example
+
+The default state for all servers is STOPPED.  Once the IMR attempts to start a server it is placed in the FORKED state.  This can be due to a remote invocation on an object reference resulting in a LOCATION_FORWARD request, or because the server is registered as 'persistent' with the IMR.  The IMR continuously attempts to restart persistent servers.  Servers remain in the FORKED state until the server initializes an ORB and creates a persistent POA.  If the application never creates a persistent POA, or is not a CORBA application, it will remain in this state for the duration of its lifetime.  When transitioning from STOPPED to FORKED, the retry count ('Number of times spawned' above) is incremented.  If the application fails to startup properly, the retry count may quickly reach the 'Maximum spawn count' at which time no further attempts to start the server will be made by the IMR.  This is generally desireable as you don't want to continuously waste resources trying to start something which consistently fails.
+
+The transition from FORKED to STARTING is triggered by the server creating a persistent POA which then contacts the IMR.  This state is really just a finer grained version of FORKED which indicates that some contact has been made between the IMR and server.  The transition has no bearing on the respawn count.  This state is also generally very short lived since POA creation and activation are usually done in the same block of code. 
+
+Which brings us to the STARTING to RUNNING state transition.  @emph{This transition is triggered by any persistent POA state transition.}  A POA can exist in either the HOLDING (default), ACTIVE, DISCARDING or INACTIVE states.  In general, if a server is in the STARTING state, its persistent POAs are HOLDING.  Next, a server typically activates the POA manager by calling poaManager->activate() which transitions POAs to ACTIVE (and hence triggers servers to transition to RUNNING).  However, other calls can transition the POAs as well, in particular, @code{ORB::destroy} and @code{ORB::shutdown} both call @code{deactivate} on all POAs which causes them to transition to the INACTIVE state.  Unfortunately, this still transitions the server to RUNNING!
+
+This behavior can cause problems if for instance a server creates a POA, executes a bunch of initialization code (which fails), and then destroys the ORB (as it should).  The problem here is that destroying the orb transitions the server to RUNNING and resets the respawn count to 0!  This in turn will cause the IMR to restart the application, repeating the process again and again forever. Care should be taken to transition a server from FORKED to RUNNING as quickly and atomically as possible.  Ultimately, this may be a bug in ORBacus as they probably shouldn't transition a server to RUNNING if persistent POAs are transitioning to INACTIVE.
+
+The RUNNING->STOPPING transition is triggered by the deactivation of a POA manager which can occur in either @code{ORB::destroy} or @code{ORB::shutdown}.  Several types of failures will transition a server back to STOPPED, but it is basically due to the process exiting and being reaped by the OAD.
+
+
+@node How Servers are Started and Monitored by the OAD
+@section How Servers are Started and Monitored by the OAD
+You may recall that an IMR requires that an application known as the OAD (Object Activation Daemon) be running on each machine which will host servers registered with the IMR.  As the name implies, this application is responsible for starting the servers or 'activating' distributed objects.  In the case of ORBacus, the OAD and IMR are the same application, @code{bin/imr}, started with different command line options.  
+
+Internally, when forking a server, the OAD calls @code{fork} followed by @code{execv}.  Prior to the @code{fork}, a @code{pipe} is created and both read and write file descriptors are inherited by the child.  The OAD (parent) then closes the write file descriptor and adds the read file descriptor to a Watcher. The Watcher adds the read file descriptor to a read file descriptor set which is passed to a @code{select} call.  The child doesn't use either the read or write file descriptors created by the @code{pipe}, however, when the child exits, it will cause the read file descriptor to become readable.  This in turn wakes select and thus provides a convenient way to inform the OAD when a server process dies.
+
+@node Additional Server Configuration Options
+@section Additional Server Configuration Options
+There are several additional configurable parameters associated with a server.  Some of these, such as the retry count, server args, command, etc, are relatively self explanatory.  A few, such as the failure-timeout and update-timeout are a bit more obscure.  These values refer to how long a @emph{client} will wait for a server to start when invoking a command.  If a server is not running when a client remotely invokes a command, the client will wait 'failure-timeout' seconds for the server to startup.  If the server doesn't respond in this timeframe, the IMR will @emph{terminate startup of the server}, and increment the retry count.  It will then repeat this process at most 'maximum-spawn-count' times after which the IMR will raise a TRANSIENT exception back to the client. It is thus very important that 'failure-timeout' is @emph{longer} than the startup time of your slowest starting application.  If it isn't, the IMR will fail when it tries to restart applications automatically upon rebinding. 
+
+The 'update-timeout' is closely related to the 'failure-timeout' and is somewhat misleading.  It defines the period of time the client will sleep between checking for an update from the server.  In general, the update-timeout should be some fraction of the failure-timeout.  
+
+As an example, let's take a server which takes 20 seconds to transition from the FORKED to RUNNING state. The failure-timeout and update-timeout are set to 15 and 5 seconds respectively.  A client invokes a remote command on a DO which is hosted by the server, but the server isn't running.  The IMR will first try to start the server (transition it to the FORKED) state.  The client will check the state of the server, and sleep for 5 seconds if it isn't RUNNING yet.  This is repeated 2 more times at which time the failure-timeout is exceeded.  The IMR then @emph{terminates startup of the server and tries again}, repeating the process 'maximum spawn count' tries.  If the server still fails to startup, the IMR raises a TRANSIENT exception back to the client.  Note that even if the server would have started after twenty seconds, @emph{the IMR doesn't give it the chance} and terminates startup of the server.
+
+An interesting scenario occurs when the update-timeout exceeds the failure-timeout.  In this case, the update-timeout effectively becomes the failure-timeout.  This is because the client waits until either the update-timeout expires or the server state changes before checking if failure-timeout has been exceeded.   
+
+Many of these scenarios don't necessarily apply to CARMA since our applications are typically persistent daemons.  However, the configuration options make much more sense when you think of them in the context of a very large distributed system which activates applications @emph{on demand}.  In this type of environment, a server will be started in response to a client request, do its work and then exit until the next client invocation.  Parameters such as the update and failure timeouts are essential for such systems.
+
+@node References
+@chapter References
+1. Henning, M. and S. Vinoski. 1999. @cite{Advanced CORBA Programming with C++}. San Francisco: Addison-Wesley.
+
+The CORBA Bible.
+
+2. ORBacus. @cite{The ORBacus User Guide}. @uref{http://www.orbacus.com/support/new_site/manual/4.1.3/orbacus/index.html, http://www.orbacus.com/support/new_site/manual/4.1.3/orbacus/index.html}.
+
+Documents a slightly newer version.  Contains lots of practical information pertaining to ORBacus.  
+
+3. Beard, A. and C. Gwon. @cite{IMR Proposal}. @uref{http://www.mmarray.org/project/WP/SWUtilities/IMR/IMRproposal.pdf}.
+
+Initial proposal for using the IMR in CARMA - provides brief overview.
+
+4. Beard, A. and C. Gwon. @cite{Overview of IMR and Notification Service}. @uref{http://www.mmarray.org/project/WP/SWUtilities/IMR/ImrAndNotifyPresentation.html}.
+
+Slide show presentation given at UMD f2f January 2004. Provides a more detailed overview of respective services.
+@bye

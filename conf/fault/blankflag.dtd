@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+NOTE: this DTD is meant to be used to verify a pre-processed DAG
+NOTE: configuration file only. It does not try to encapsulate any of
+NOTE: the shorthands used to construct the original DAG file.
+-->
+
+<!-- the top level element -->
+<!ELEMENT dag (bf_output|gather|mp)*>
+<!ATTLIST dag type (blankflag) #REQUIRED>
+
+<!-- a blanking/flagging output - corresponds to a correlator output -->
+<!ELEMENT bf_output (bad|gather_ref|mp|mp_ref|transient|varmap_scope)*>
+<!ATTLIST bf_output astroband CDATA #REQUIRED>
+<!ATTLIST bf_output astroinput CDATA #REQUIRED>
+
+<!--
+     A transient (runtime-changeable) condition
+
+     This allows you to change the DAG at runtime using a control system
+     command. You will use it to disable large sections of monitor points
+     during certain array configurations.
+-->
+<!ELEMENT transient (bad|gather_ref|mp|mp_ref|transient|varmap_scope)*>
+<!ATTLIST transient cond (correlatorNoiseOff) #REQUIRED>
+<!ATTLIST transient subarray CDATA #REQUIRED>
+
+<!-- a grouping of other elements -->
+<!ELEMENT gather (bad|gather_ref|mp|mp_ref|transient|varmap_scope)*>
+<!ATTLIST gather name CDATA #REQUIRED>
+
+<!-- the gather_ref type does not support masking -->
+<!ELEMENT gather_ref EMPTY>
+<!ATTLIST gather_ref name CDATA #REQUIRED>
+
+<!--
+     Capability to stop evaluation based on monitor point value
+
+     This allows you to "chop off" part of the DAG tree based on the
+     value of a monitor point. Everything is done with regular expressions
+     to allow for arbitrarily complex matching schemes.
+
+     We also allow negation to make certain regular expressions easier
+     to write.
+-->
+<!ELEMENT if (bad|if|gather_ref|mp|mp_ref|transient|varmap_scope)*>
+<!ATTLIST if canon CDATA #REQUIRED>
+<!ATTLIST if val CDATA #REQUIRED>
+<!ATTLIST if negate (true|false) #IMPLIED>
+
+<!--
+     Monitor Point
+
+     This represents an instance of a carma::monitor::MonitorPoint in C++.
+
+     When an <mp> node has children, this effects evaluation. When a "bad"
+     node state is encountered, the children are not evaluated, and the first
+     bad node in the tree is reported as the error condition.
+-->
+<!ELEMENT mp (if|mp|mp_ref|transient|varmap_scope)*>
+<!ATTLIST mp canon CDATA #REQUIRED>
+<!ATTLIST mp bit (DRIVE|MONITORDATA|OFFLINE|PHASELOCK) #REQUIRED>
+
+<!-- the mp_ref type does not support masking -->
+<!ELEMENT mp_ref EMPTY>
+<!ATTLIST mp_ref canon CDATA #REQUIRED>
+
+<!--
+     A Bad Node (always fails evaluation)
+
+     This works exactly like a bad monitor point, but does not add anything
+     to the list of faults. It can be used in conjunction with <if> to force
+     a certain path through the DAG to cause blanking.
+-->
+<!ELEMENT bad EMPTY>
+<!ATTLIST bad bit (DRIVE|MONITORDATA|OFFLINE|PHASELOCK) #REQUIRED>
+
+<!--
+     A way to add a variable expansion based on a monitor point name
+
+     This is useful for allowing runtime changeable monitor point names
+     in child nodes without having to enumerate every possibility in
+     <if> conditions.
+
+     The information from this variable map is passed into the email
+     system. This allows the template engine to have some information
+     about the state of the evaluation. For example: antenna number
+     connected to a downconverter input.
+-->
+<!ELEMENT varmap_scope (if|gather_ref|mp|mp_ref|transient|varmap_scope)+>
+<!ATTLIST varmap_scope var CDATA #REQUIRED>
+<!ATTLIST varmap_scope canon CDATA #REQUIRED>

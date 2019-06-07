@@ -1,0 +1,41 @@
+/** @file
+ * Ovro PolarizationControl interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.4 $
+ * $Date: 2011/05/17 16:27:33 $
+ * $Id: ovroPolarizationControl.idl,v 1.4 2011/05/17 16:27:33 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_POLARIZATIONCONTROL_IDL
+#define CARMA_ANTENNA_OVRO_POLARIZATIONCONTROL_IDL
+
+#include "carma/antenna/common/PolarizationControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+/**
+ * OVRO antenna-specific polarization control interface.
+ * The Ovro Antenna Optics CAN module (which controls polarization)
+ * has additional functionality which is not general enough to be
+ * included in the Common Antenna API.  That additional functionality
+ * is included here.
+ */
+interface PolarizationControl : carma::antenna::common::PolarizationControl {
+
+    /**
+     * Set Polarization parameters.
+     * This only applies to 1mm and 3mm receivers.
+     * @param gridAngle Orientation of the grid (Units degrees, Range 0-180)
+     * @param backshortPos Distance between backshort and grid (units mm)
+     */
+    void setParameters(in float gridAngle, in float backshortPos)
+        raises (carma::util::UserException);
+
+}; // End PolarizationControl interface
+};};}; // End carma::antenna::ovro module
+#endif

@@ -1,0 +1,1417 @@
+\documentclass[letterpaper,12pt,oneside,pdftex]{article}
+
+%% My Commands
+\newcommand{\myname}{Ira W. Snyder}
+\newcommand{\myemail}{iws@ovro.caltech.edu}
+\newcommand{\mytitle}{Fault System User Manual}
+
+\newcommand{\emaillink}[1]{\href{mailto:#1}{$<$#1$>$}}
+\newcommand{\sourcecode}[1]{
+    % Any parameters can be changed here to get wider tabs, etc.
+    \VerbatimInput[frame=lines,numbers=left,tabsize=4,fontsize=\scriptsize]{#1}
+}
+\newcommand{\plaintext}[1]{
+    \VerbatimInput[frame=lines,tabsize=4,fontsize=\scriptsize]{#1}
+}
+\newcommand{\fullbox}[1]{\fbox{\begin{minipage}{\textwidth}#1\end{minipage}}}
+\newcommand{\shadebox}[1]{\fcolorbox{black}{shade}{\begin{minipage}{\textwidth}#1\end{minipage}}}
+\newcommand{\titleshadebox}[2]{%
+    \fcolorbox{black}{shade}{%
+        \begin{minipage}{\textwidth}
+            \fcolorbox{black}{GreenYellow}{#1} \\
+            \rule{\textwidth}{0pt} \\
+            #2
+        \end{minipage}
+    } % close fcolorbox
+} % close newcommand
+
+% Packed itemize (decreased spacing between elements)
+\newenvironment{pitemize}{
+\begin{itemize}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{itemize}}
+
+% Packed enumerate (decreased spacing between elements)
+\newenvironment{penumerate}{
+\begin{enumerate}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{enumerate}}
+
+% Document specific commands
+\newcommand{\optattrs}{\textbf{Optional attributes supported:}}
+\newcommand{\reqattrs}{\textbf{Required attributes supported:}}
+\newcommand{\mytime}[2]{\textbf{Time #1:} #2}
+
+%% Packages to include
+
+%% Font to use
+%\usepackage{pslatex}
+%\usepackage{cmbright}
+%\usepackage{concrete}
+%\usepackage{palatino}
+%\usepackage{ae}
+%\usepackage{pxfonts}
+%\usepackage{txfonts}
+
+% To put verbatim text in boxes
+% NOTE: you will need verbatimbox.sty in the same directory
+% NOTE: if it is not already installed globally
+\usepackage{verbatimbox}
+
+% Colors for use in \shadebox
+\usepackage[usenames,dvipsnames]{color}
+\definecolor{shade}{gray}{0.85}
+
+% Fix spacing with 12pt docs
+\usepackage{exscale}
+
+% Extra spacing options
+%\usepackage{setspace}
+%\singlespacing
+%\onehalfspacing
+%\doublespacing
+
+% Remove space at the beginning of paragraphs
+\usepackage{parskip}
+
+% Set Margins
+\usepackage[left=1in,top=1in,right=1in,nohead,nofoot]{geometry}
+
+% Support for nicer tables
+%\usepackage{booktabs}
+\usepackage{tabularx}
+
+% Support for source code listings
+\usepackage{fancyvrb}
+
+% Support for removing all page numbers
+\usepackage{nopageno}
+
+% graphics
+\usepackage{graphicx}
+
+% Support for URLs (unneeded with hyperref)
+%\usepackage{url}
+
+% Support PDF HyperText References
+\usepackage[pdftex,bookmarks,breaklinks=true,%
+            pdftitle={\mytitle},pdfauthor={\myname},%
+            colorlinks]{hyperref}
+
+
+%% Generate Title Page
+\title{\mytitle}
+\author{\myname\\\emaillink{\myemail}}
+\date{\today}
+
+\begin{document}
+
+% Switch font families
+\sffamily
+
+% Title Page
+\maketitle
+\clearpage
+
+% TOC
+\tableofcontents
+\clearpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Revisions}
+
+\begin{tabularx}{\textwidth}{lllX}
+Revision    & Date          & Author    & Remarks \\ \hline
+1.0         & 2010-07-07    & iws       & Initial Revision \\ \hline
+1.1         & 2010-07-22    & iws       & Document Email Service \\ \hline
+1.2         & 2010-07-30    & iws       & Document Email Catchall \\ \hline
+1.3         & 2010-07-30    & iws       & Document Alarm Display Prefix \\ \hline
+1.4         & 2010-10-19    & iws       & Remove ``2'' Program Name Suffix \\ \hline
+1.5         & 2011-01-25    & iws       & Document Astroband Modifications \\ \hline
+1.6         & 2011-06-09    & iws       & Document new syntax and tools \\ \hline
+1.7         & 2011-09-09    & iws       & Document new syntax and tools \\ \hline
+1.8         & 2011-12-19    & iws       & Document error bits and silent alarms \\ \hline
+\end{tabularx}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview}
+
+This document attempts to describe the purpose and function of the fault system,
+as rewritten to support dual science subarray mode by iws in mid-2010.
+
+The fault system has two main functions:
+\begin{penumerate}
+\item to provide blanking and flagging information to the correlator pipelines
+\item to ring the alarm when certain conditions are met
+\end{penumerate}
+
+These functions are independent, but they have similar requirements. Therefore,
+both have been grouped together into the fault system program.
+
+This document has been edited to match the changes in the fault system as
+features have been added or changed. Please see the CVS revision history for
+details. When in doubt about how something works, refer to the code.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Major Features}
+
+The fault system has the following major features:
+\begin{pitemize}
+\item dynamic correlator input $\leftrightarrow$ antenna mapping
+\item report individual error reasons to pipeline (error reason bits)
+\item user-selectable action for each error bit
+\item system wide alarm output
+\item hierarchical evaluation
+\item email reporting of faults
+\item output in astroband/astroinput space
+\item runtime evaluation choices based on monitor point values
+\item alarm history output
+\item separate configurations for alarm, blank/flag, and email
+\end{pitemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Astroband/Astroinput Conversion Rationale}
+
+In January 2011, the fault system was converted to output the blank/flag data in
+terms of astroband/astroinput pairs. Previously, the fault system output all
+blank/flag data in terms of hardware band/baseline pairs.
+
+During CARMA23 and FULL-STOKES modes, several hardware correlator bands are
+combined into a single astronomical band (astroband). During these modes of
+operation, the output data is relabeled such that physical hardware bands 1 and
+2 produce data labeled as astronomical band 1. Likewise, physical hardware bands
+3 and 4 produce data labeled as astronomical band 3, and so on.
+
+In order to support CARMA23 mode, the per-band, per-baseline array of blank/flag
+data would need to be expanded to 276 entries per band. To support FULL-STOKES
+mode, the array of outputs would need to expand to 460 entries per band. This
+was deemed to be too much bloat.
+
+To combat this problem, the fault system now outputs all data in terms of bands
+and inputs. From this output format, it is trivial to synthesize a per-baseline
+output for display: simply combine the data from both outputs which comprise the
+baseline.
+
+Another problem faced during this upgrade was that the monitor system is
+severely limited. It has no concept of hardware being dynamic. This means that
+even though the correlator data products from several hardware bands may be
+labeled with the same band number, the monitor data is not. This is also true of
+the downconverters which are directly connected to each correlator input.
+
+Due to these limitations, it is required that the fault system have different
+input and output data formats. The input format is the ``monitor system view'',
+which is strictly hardware based. It comes directly from the monitor system. The
+output format is the ``data product view'', which is based on the correlator
+data output stream labeling.
+
+The correlator data output stream is labeled in terms of astronomical bands
+(astrobands) and astronomical inputs (astroinputs). During CARMA23 and
+FULL-STOKES mode, these are the synthetic numbers assigned as described above.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Output Format Change Rationale}
+
+In December 2011, the fault system was converted to output the blank/flag data
+as a series of reason indication bits. Previously, the fault system output the
+blank/flag data as an enumeration with values OK, BLANKED, and FLAGGED.
+
+As part of the changes to the RTS software to support CARMA23 and FULL-STOKES
+modes, the visbrick format was changed to add a 32-bit field for each (band,
+baseline, sideband) in the dataset. This field is used to carry a bitmask of the
+reason(s) the sideband has been blanked or flagged, as well as the preference
+for blanking or flagging.
+
+In order to minimize the amount of changes necessary to the pipeline code, a
+MonitorPointByte is used to carry a bitmask of the possible error reasons to the
+pipeline. A small set of error reasons has been settled upon.
+
+In addition, the capability for users to individually control the consequence of
+each error reason was requested. Users are now able to select the actions NONE,
+BLANK, or FLAG for each possible error reason.
+
+Please see \url{http://www.mmarray.org/wiki/Blanking_and_flagging}
+for more information.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Helper Utility Programs}
+
+There are several utility programs which ship with the fault system code. They
+are designed to make your life easier when dealing with the fault system. They
+provide commandline access to various aspects of the fault system.
+
+Most programs support the same set of options for checking the fault system
+configuration file. All options default to ``on'' (the most strict checking) but
+can be turned off if necessary.
+
+The fault system itself only runs with the most strict checking, which cannot be
+disabled. Your configuration should pass all configuration checks before you
+attempt to run the fault system.
+
+\subsection{The \texttt{checkDag} Program}
+
+This program will load, pre-process, and then check the fault system
+configuration files. This program can check both alarm and blank/flag
+configuration files.
+
+During pre-processing, certain XML tags are expanded completely, and become
+useless in the final output. These tags (\verb|<range>| and
+\verb|<attrs_scope>|) will be removed from the output.
+
+It is recommended to use this program often when using any of the syntactic
+shortcuts provided by the XML loader. It will help you catch your mistakes.
+
+By default, this program only writes errors to stderr. However, if desired, it
+can dump out the pre-processed configuration before it is parsed by the fault
+system XML parser. This representation is as close as possible to the fault
+system internal representation.
+
+\textbf{NOTE:} this program cannot catch logic errors. The DAG is a programming
+language which can be checked for syntactic correctness and other common errors.
+However, it is impossible to automatically check that your logic matches what
+you think the program will do.
+
+\subsection{The \texttt{checkFaultSystemEmail} Program}
+
+This program will check the fault system email configuration files to make sure
+that they are syntactically correct, as well as checking that each referenced
+template file exists.
+
+\textbf{NOTE:} this program cannot catch logic errors. The email configuration
+is a minimal processing language with conditionals. It is impossible to
+automatically check that your logic matches what you think the program will do.
+
+\subsection{The \texttt{dumpDagStats} Program}
+
+This program will dump some statistics about the fault system configuration
+file, listing the number of each type of node in each subarray and the alarm
+output.
+
+\subsection{The \texttt{dumpDagMpList} Program}
+
+This program will dump the list of monitor points present in each subarray and
+the alarm output. It is useful for checking that your configuration defines the
+monitor points you think it does.
+
+\subsection{The \texttt{dumpFaults} Program}
+
+This is the command line interface to the fault system error output. The same
+output is provided by the rtdfaulterror RTD program. It has many options to
+limit the output to just what you are interested in.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{RTD Displays}
+
+There are several RTD displays associated with the fault system. They are
+used to provide runtime information to users about why the fault system is
+blanking/flagging data, as well as why the alarm is sounding.
+
+\subsection{The \texttt{rtdfaulterror} Program}
+
+This program has one major limitation. Due to the monitor system's inability to
+cope with variable length data, the program only transports a fixed number of
+faults. If things have gone horribly wrong, some of the faults will be lost.
+
+In root fault mode, the display shows a list of monitor points causing
+blanking/flagging for each astroband. This is useful for determining why a
+certain baseline is being blanked or flagged.
+
+In alarm fault mode, the display shows a list of disabled monitor points (those
+which do not ring the alarm) and a list of faults (those which are causing the
+alarm to ring currently). This is useful for determining why the alarm is
+ringing.
+
+The alarm fault mode also has a display for alarm history. This shows alarms
+that were previously causing the alarm to ring, but are no longer doing so. This
+is intended to help users determine the cause of transient alarms which clear
+themselves quickly.
+
+\subsection{The \texttt{rtdfaultblank} Program}
+
+This program shows a real-time display of blank/flag information for each
+baseline. This is intended to give the user a quick idea of what is being
+blanked and flagged in a convenient graphical display.
+
+This program has support for both the spectral and wideband correlators.
+
+\subsection{The \texttt{rtdfaultstats} Program}
+
+This program shows basic monitor information from the fault system. It is not
+very useful as a user program. It is mostly useful for diagnosing problems with
+the fault system itself.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{CORBA Runtime Configuration Interface}
+
+The fault system interface is quite simple. After a long transition period, the
+interface has become different from the original fault system as written by Tom
+Costa.
+
+\subsection{\texttt{setDriveErrorPreference()}}
+This interface exists for users to set their preference for the drive error
+reason bit. The accepted values are NONE, BLANK, and FLAG. This is exposed
+through the user python interface.
+
+\subsection{\texttt{setMonitorErrorPreference()}}
+This interface exists for users to set their preference for the monitor data
+error reason bit. The accepted values are NONE, BLANK, and FLAG.
+
+\subsection{\texttt{setOfflineErrorPreference()}}
+This interface exists for users to set their preference for the offline error
+reason bit. The accepted values are NONE, BLANK, and FLAG.
+
+\subsection{\texttt{setPhaselockErrorPreference()}}
+This interface exists for users to set their preference for the offline error
+reason bit. The accepted values are NONE, BLANK, and FLAG.
+
+\subsection{\texttt{setNoiseState()}}
+This interface exists for the control system to notify the fault system about
+the correlator noise source state. This is used to make runtime changes to the
+fault system DAG. Specifically, it is used to control transient conditions of
+the form \verb|<transient cond="correlatorNoiseOff">|
+
+\subsection{\texttt{disableAlarms()}}
+This interface exists for users to disable certain monitor points from ringing
+the alarm. This is useful when a non-critical piece of hardware is broken, and
+normal observing can continue until it is fixed.
+
+If unknown monitor points are given to this interface, it will result in an
+exception. The interface is atomic: either all monitor point alarm are disabled,
+or they all remain enabled.
+
+A monitor point alarm can be disabled multiple times. The repeated disables have
+no added effect.
+
+\subsection{\texttt{restoreAlarms()}}
+This interface exists for users to re-enable monitor point alarms that were
+previously disabled with \texttt{disableAlarms()}.
+
+If unknown monitor points are given to this interface, it will result in an
+exception. The interface is atomic: either all monitor point alarms are
+restored, or they all remain disabled.
+
+A monitor point alarm can be restored multiple times. The repeated restores have
+no added effect.
+
+\subsection{\texttt{setAlarmEnable()}}
+This interface exists for users to set the per-subarray alarm state. This is
+used as a convenience to disable the alarms for all hardware which is connected
+to a specific subarray. This usually includes downconverters, correlators, and
+various control system monitor points.
+
+This command changes the state of transient conditions of the form \\
+\verb|<transient cond="alarmEnableSubarray" subarray="X">| (where X is the
+subarray number passed in).
+
+\subsection{\texttt{setAlarmDeadmanSecs()}}
+This interface exists to allow users to instruct the fault system how often to
+call the alarm system. The alarm system will ring the alarm if it has not been
+communicated with recently.
+
+This feature has never been exposed to the high level user interface, but was
+trivial to implement. It is implemented.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Configuration File Syntax}
+
+This section describes the details of the fault system configuration syntax,
+also known as FDAGML (Fault system Directed Acyclic Graph Markup Language). It
+is basically just a shorthand for making a tree of monitor points.
+
+If you are familiar with XML DTD syntax, it may be easier for you just to read
+the fault system DTD. It is easier to understand than the wall of text below.
+However, please note that there are some special contstraints not enforced by
+the DTD, which are explained below.
+
+\subsection{Attribute Inheritance}
+
+Attribute inheritance is supported in the fault system configuration syntax.
+This gives the user the ability to specify a default attribute value near the
+top of the XML parse tree, and have the attribute inherit down to all of its
+children.
+
+It is recommended to use this feature to help reduce the amount of extra text
+necessary in the fault system configuration. Less configuration means less
+mistakes.
+
+Please note that all attributes can be overriden by children nodes in an
+attribute scope. This should be fairly intuitive.
+
+\subsection{Optional vs. Required Attributes}
+
+Some attributes are purely optional. Mostly, these are the attributes that
+inherit to children. They are always optional because the attribute can be set
+correctly in all children to form a valid parse tree.
+
+Other attributes are strictly required. These are mostly indentification
+information on certain types of nodes, as well as most attributes of monitor
+point nodes themselves.
+
+Making things even worse, the required attributes of monitor point nodes are
+context sensitive. This is due to monitor points needing different sets of
+information depending on whether they are used for blank/flag output or alarm
+output.
+
+Some of these requirements cannot be enforced by an XML DTD. Unfortunately,
+getting the parser to output good error messages for these problems is not
+trivial. It is easiest to make small changes to the configuration, so you can
+easily isolate the change that caused the problem.
+
+\subsection{Function Expressions and Variables}
+
+The \verb|<range>| node allows you to have variables which can be expanded
+inside the attributes of child elements. A variable's value is retrieved by
+enclosing the name inside parentheses. This is covered below, in the
+documentation for \verb|<range>|.
+
+To make writing the fault system configuration easier, certain function
+expressions are supported. These are functions which take one or more arguments
+and return a string based on the value of the argument.
+
+Note that the arguments can be either variables or constants. Also note that
+nesting expressions is not allowed. The parser is not that intelligent.
+
+\textbf{Supported Functions:} \\
+\begin{tabular}{lll}
+antCommon   & CARMA antenna number          & (Ovro$|$Bima$|$Sza)X.AntennaCommon \\
+add         & two integers, comma separated & the addition of both integers \\
+sub         & two integers, comma separated & the subtraction of both integers \\
+mul         & two integers, comma separated & the multiplication of both integers \\
+div         & two integers, comma separated & the division of both integers \\
+\end{tabular}
+
+A quick example follows. Please note that the monitor points given are not
+present in the real system, but are used only for demonstration purposes.
+
+\begin{scriptsize}
+\begin{verbatim}
+<!-- variable argument to function antCommon -->
+<range var="antNoVar" first="6" last="7">
+    <gather name="antenna(antNoVar)_gather">
+        <mp canon="(antCommon:antNoVar).online" />
+    </gather>
+</range>
+
+<!-- constant argument to function antCommon -->
+<mp canon="(antCommon:1).online" />
+<mp canon="(antCommon:23).online" />
+\end{verbatim}
+\end{scriptsize}
+
+Produces the following output. Notice how the variables are expanded, and how
+functions work with both variables and constants.
+
+\begin{scriptsize}
+\begin{verbatim}
+<gather name="antenna6_gather">
+    <mp canon="Ovro6.AntennaCommon.online" />
+</gather>
+<gather name="antenna7_gather">
+    <mp canon="Bima1.AntennaCommon.online" />
+</gather>
+
+<mp canon="Ovro1.AntennaCommon.online" />
+<mp canon="Sza8.AntennaCommon.online" />
+\end{verbatim}
+\end{scriptsize}
+
+
+\subsection{The \texttt{<dag>} Node}
+
+This is the top level node in the configuration file. It is used only to have a
+well defined point to start parsing the XML.
+
+\optattrs \\
+\begin{tabular}{lll}
+alarm\_after& any float value   & default alarm\_after timeout \\
+alarm\_prefix&sys, sci1, sci2, eng1, eng2, offline & default alarm\_prefix for MPs \\
+sound       & any text string   & the sound to play for alarms \\
+\end{tabular}
+
+\reqattrs \\
+\begin{tabular}{lll}
+type    & alarmoutput, blankflag & the type of dag this represents \\
+\end{tabular}
+
+\subsection{The \texttt{<attrs\_scope>} Node}
+
+This node type encapsulates the concept of an attribute scope. This can be used
+to give the same set of attributes to all children. This is very useful to make
+a certain attribute easily changeable.
+
+After applying all effects, this node is removed from the pre-processed XML DOM
+parse tree. It is meant for convenience only, and does not effect evaluation.
+
+\optattrs \\
+\begin{tabular}{lll}
+alarm\_after& any float value   & default alarm\_after timeout \\
+alarm\_prefix&sys, sci1, sci2, eng1, eng2, offline & default alarm\_prefix for MPs \\
+canon\_add  & any text string   & see the \verb|<mp>| node for details \\
+canon\_begin& any text string   & see the \verb|<mp>| node for details \\
+sound       & any text string   & the sound to play for alarms \\
+\end{tabular}
+
+\reqattrs \\
+none
+
+\subsection{The \texttt{<range>} Node}
+
+This node provides a looping construct in XML. This can be used to shorten the
+description of many similar components in the DAG. Good examples would be
+antennas or correlator bands.
+
+After applying all effects, this node is removed from the pre-processed XML DOM
+parse tree. It is meant for convenience only, and does not effect evaluation.
+
+In any child node's attributes, the string given to the \verb|var| attribute
+will be expanded to the number of this iteration. The example below shows how
+this works.
+
+\textbf{Example:}
+
+\begin{verbbox}
+<range var="subarrayVar" first="1" last="5">
+    <mp canon="Control.Subarray(subarrayVar).stateRestored" />
+<\range>
+\end{verbbox}
+\titleshadebox{Input}{\theverbbox}
+
+\begin{verbbox}
+<mp canon="Control.Subarray1.stateRestored" />
+<mp canon="Control.Subarray2.stateRestored" />
+<mp canon="Control.Subarray3.stateRestored" />
+<mp canon="Control.Subarray4.stateRestored" />
+<mp canon="Control.Subarray5.stateRestored" />
+\end{verbbox}
+\titleshadebox{Output}{\theverbbox}
+
+\optattrs \\
+none
+
+\reqattrs \\
+\begin{tabular}{lll}
+var         & any text string   & the variable to substitute \\
+first       & any integer       & the first loop iteration number \\
+last        & any integer       & the last loop iteration number \\
+\end{tabular}
+
+\subsection{The \texttt{<gather>} Node}
+
+This node provides a convenient grouping construct in XML. This allows you to
+reference a group of nodes in multiple places in the DAG. It also supports some
+attribute inheritance, to save some typing.
+
+\optattrs \\
+\begin{tabular}{lll}
+alarm\_after& any float value   & default alarm\_after timeout \\
+alarm\_prefix&sys, sci1, sci2, eng1, eng2, offline & default alarm\_prefix for MPs \\
+canon\_add  & any text string   & see the \verb|<mp>| node for details \\
+canon\_begin& any text string   & see the \verb|<mp>| node for details \\
+sound       & any text string   & the sound to play for alarms \\
+\end{tabular}
+
+\reqattrs \\
+\begin{tabular}{lll}
+name        & any text string   & the unique name for this gather \\
+\end{tabular}
+
+\subsection{The \texttt{<gather\_ref>} Node}
+
+This node is a reference to a \verb|<gather>| node. It works as if the
+pointed-to \verb|<gather>| was substituted in its place, including all children.
+Note that the same \verb|<gather>| can be referenced multiple times throughout a
+DAG if necessary.
+
+\optattrs \\
+none
+
+\reqattrs \\
+\begin{tabular}{lll}
+name        & any text string   & the gather node to reference \\
+\end{tabular}
+
+\subsection{The \texttt{<transient>} Node}
+
+This node provides support for transient conditions controlled by the control
+system. This allows certain hierarchies of nodes to be disabled at runtime.
+This node only allows evaluation to progress into its children if the associated
+condition is true.
+
+\optattrs \\
+none
+
+\reqattrs \\
+\begin{tabular}{lll}
+cond        & correlatorNoiseOff & the transient condition \\
+subarray    & 1-5                & the subarray number \\
+\end{tabular}
+
+\subsection{The \texttt{<if>} Node}
+
+This node provides a way to conditionally continue evaluation of the DAG based
+on the value of a monitor point. When evaluating, the value of the monitor point
+is compared against the regular expression.
+
+\optattrs \\
+\begin{tabular}{lll}
+negate      & true, false   & negate the result of the comparison \\
+\end{tabular}
+
+\reqattrs \\
+\begin{tabular}{lll}
+canon       & any monitor point name    & the monitor point to evaluate \\
+val         & a boost::regex regular expression & the regular expression to use \\
+\end{tabular}
+
+\textbf{Example 1:}
+
+\begin{small}
+\begin{verbbox}
+<if canon="Control.Antenna1.subarrayNumber" val="[12]">
+    <mp canon="Ovro1.online">
+        <mp canon="Ovro1.AntennaCommon.Receivers.rxState" />
+    </mp>
+</if>
+\end{verbbox}
+\end{small}
+\titleshadebox{Input}{\theverbbox}
+
+During evaluation, the value of \verb|Control.Antenna1.subarrayNumber| is
+checked. If the value is either 1 or 2, then evaluation continues to the
+\verb|Ovro1.online| monitor point. If not, all children of the \verb|<if>| are
+ignored during this evaluation.
+
+\subsection{The \texttt{<varmap\_scope>} Node}
+
+This node provides a way to substitute the value of a monitor point into child
+nodes. This is particularly useful when you want to use the value of a monitor
+point to change the structure of the DAG.
+
+The substitution works exactly as described for \verb|<range>|, except that the
+value is determined at runtime using the monitor system as input.
+
+\optattrs \\
+none
+
+\reqattrs \\
+\begin{tabular}{lll}
+canon       & any monitor point name    & the monitor point to evaluate \\
+var         & any text string           & the variable name to substitute \\
+\end{tabular}
+
+\textbf{Example 1:}
+
+\begin{small}
+\begin{verbbox}
+<varmap_scope var="antNo" canon="SignalPath.Mapping.Astroband1.Input1.antennaNo">
+    <gather_ref name="antenna(antNo)_gather" />
+</varmap_scope>
+\end{verbbox}
+\end{small}
+\titleshadebox{Input}{\theverbbox}
+
+Now suppose that astroband 1 astroinput 1 is hooked to antenna 23 (SZA antenna
+8). All nodes will have their attributes substituted with the value from the
+monitor point specified. The gather reference will be re-resolved using the new
+name.
+
+\begin{small}
+\begin{verbbox}
+<varmap_scope var="antNo" canon="SignalPath.Mapping.Astroband1.Input1.antennaNo">
+    <gather_ref name="antenna23_gather" />
+</varmap_scope>
+\end{verbbox}
+\end{small}
+\titleshadebox{Output}{\theverbbox}
+
+\textbf{Example 2:}
+
+\begin{small}
+\begin{verbbox}
+<varmap_scope var="antNo" canon="SignalPath.Mapping.SlcBand1.Input1.antennaNo">
+    <if canon="Control.Antenna(antNo).subarrayNumber" val="1">
+        <mp canon="Sldc.Band1.Input1.ifOutPower" />
+    </if>
+</varmap_scope>
+\end{verbbox}
+\end{small}
+\titleshadebox{Input}{\theverbbox}
+
+Assume that the signal path subsystem tells us that antenna 23 (SZA antenna 8)
+is hooked to the first spectral line correlator input. In this case, the
+\verb|<if>| is substituted as shown below.
+
+\begin{small}
+\begin{verbbox}
+<varmap_scope var="antNo" canon="SignalPath.Mapping.SlcBand1.Input1.antennaNo">
+    <if canon="Control.Antenna23.subarrayNumber" val="1">
+        <mp canon="Sldc.Band1.Input1.ifOutPower" />
+    </if>
+</varmap_scope>
+\end{verbbox}
+\end{small}
+\titleshadebox{Output}{\theverbbox}
+
+In this example, the \verb|Sldc.Band1.Input1.ifOutPower| alarm will only be
+active (able to ring the alarm) if antenna 23 is present in the sci1 subarray.
+
+\subsection{The \texttt{<mp>} Node}
+
+This represents a C++ carma::monitor::MonitorPoint instance. It is the only node
+type that has a good/bad value and really effects end product of the evaluation
+of the DAG.
+
+The attributes of the \verb|<mp>| node are a bit different than everything else.
+The list of supported attributes varies based on the parent node type. In the
+documentation below, I have called this ``context''.
+
+\optattrs \\
+\begin{tabular}{lll}
+canon\_last & any text string   & the monitor point canonical name (last part) \\
+\end{tabular}
+
+\reqattrs{} (all contexts) \\
+\begin{tabular}{lll}
+canon       & any text string   & the monitor point canonical name \\
+\end{tabular}
+
+\reqattrs{} (subarray context) \\
+\begin{tabular}{lll}
+bit & DRIVE, MONITORDATA, OFFLINE, PHASELOCK & the error reason to set \\
+\end{tabular}
+
+\reqattrs{} (alarm output context) \\
+\begin{tabular}{lll}
+alarm\_after& any float value   & the alarm timeout \\
+alarm\_prefix&sys, sci1, sci2, eng1, eng2, offline & the alarm prefix for RTD windows \\
+sound       & any text string   & the alarm tone to play for this point \\
+silent      & true or false     & do not ring the alarm if silent=true \\
+\end{tabular}
+
+Note: the canon attribute can be constructed based on inherited attributes and
+the canon\_last attribute. This works based on the following formula, which has
+optional and required parts. This only takes place if the canon attribute was
+not explicitly specified.
+
+Inherited canon\_begin (required) + Inherited canon\_add (optional) +
+canon\_last (required).
+
+\subsection{The \texttt{<mp\_ref>} Node}
+
+This node is a reference to a \verb|<mp>| node. It works as if the pointed-to
+\verb|<mp>| was substituted in its place, including all children. Note that the
+same \verb|<mp>| can be referenced multiple times throughout a DAG if necessary.
+
+\optattrs \\
+none
+
+\reqattrs \\
+\begin{tabular}{lll}
+canon       & any text string   & the monitor point node to reference \\
+\end{tabular}
+
+\subsection{The \texttt{<bf\_output>} Node}
+
+This node provides a starting point for the evaluation of each blank/flag output
+produced by the fault system. For each frame of input data, the fault system
+will evaluate each blank/flag node and all children, and produce the appropriate
+blank/flag data.
+
+\optattrs \\
+none
+
+\reqattrs \\
+\begin{tabular}{lll}
+astroband   & any integer value & astroband number \\
+astroinput  & any integer value & astroinput number \\
+\end{tabular}
+
+\subsection{The \texttt{<bad>} Node}
+
+This node is always bad if evaluated. It is provided for a case where you wish
+to mark an evaluation bad if a certain path is traversed through the DAG. It
+will almost always be used within an \verb|<if>| node.
+
+\optattrs \\
+none
+
+\reqattrs \\
+\begin{tabular}{lll}
+bit & DRIVE, MONITORDATA, OFFLINE, PHASELOCK & the error reason to set \\
+\end{tabular}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Evaluation Order}
+
+Evaluation order is very significant in the fault system. This is due to
+support for hierarchical evaluation.
+
+Hierarchical evaluation is best described with a few simple examples, as shown
+below.
+
+\subsection{Alarm Output Evaluation Example 1}
+\label{alarmoutput-example1}
+
+\begin{minipage}{\textwidth}
+Input: \\
+\begin{scriptsize}
+\begin{verbatim}
+<dag type="alarmoutput" alarm_after="10.0" sound="default">
+    <mp canon="Sldc.Band1.Input1.state">
+        <mp canon="Sldc.Band1.Input1.ifOutPower" />
+        <mp canon="Sldc.Band1.Input1.dataValid" />
+    </mp>
+</dag>
+\end{verbatim}
+\end{scriptsize}
+\end{minipage}
+
+This example is meant to show how hierarchical evaluation of alarm output
+monitor points work. I will describe what happens at each change in monitor
+point validity.
+
+\mytime{1}{normal operation}
+
+The module is plugged in and operating normally. It has been configured
+correctly, and all monitor points listed in the fragment above are valid.
+
+There are no alarms.
+
+\mytime{2}{module unplugged}
+
+The module has been unplugged, and it is no longer reporting any monitor
+information. Therefore, all of its monitor points become invalid on the same
+monitor frame. 10 seconds after this happens, the alarm will sound, and the RTD
+display will report the ``Sldc.Band1.Input1.state'' monitor point as causing the
+alarm.
+
+Note that even though the ifOutPower and dataValid monitor points are also
+invalid, they are \emph{not} listed in the RTD display. This is the major
+benefit of hierarchical evaluation: it makes it much easier to diagnose
+problems.
+
+\mytime{3}{module re-plugged}
+
+The module has been plugged back in, and is reporting valid monitor data. Note
+that ifOutPower and dataValid are still invalid, since the module has not been
+correctly initialized yet.
+
+The alarm will turn off, giving the observers time to reconfigure the module
+appropriately. 10 seconds later, the alarm will turn back on, and the RTD
+display will show both the ifOutPower and dataValid monitor points as causing
+the alarm.
+
+This shows that even if multiple monitor points at the same level of hierarchy
+are bad, they will all be taken into account appropriately.
+
+\mytime{4}{module reconfigured appropriately -- normal operation}
+
+The module has now been reconfigured appropriately, and all monitor data is now
+valid. Everything is back in normal operation, and there are no alarms.
+
+\subsection{Alarm Output Evaluation Example 2}
+
+I have reused the example input provided above in
+\hyperref[alarmoutput-example1]{Alarm Output Evaluation Example 1}. This time,
+we will illustrate a different condition: how disabling alarms effects
+evaluation.
+
+\mytime{1}{normal operation}
+
+The module is plugged in and operating normally. It has been configured
+correctly, and all monitor points listed in the fragment above are valid.
+
+There are no alarms.
+
+\mytime{2}{module unplugged}
+
+Just as explained in the previous example, the module is unplugged and all
+monitor points become invalid. 10 seconds pass, and the alarm is on. Exactly as
+before.
+
+\mytime{3}{disable Sldc.Band1.Input1.ifOutPower}
+
+The user uses the python command
+\texttt{alarmMpDisable('Sldc.Band1.Input1.ifOutPower')}, which disables the
+monitor point from alarming.
+
+Note the previous example, where the RTD display only showed the highest level
+alarm in the tree. This same feature is used here, and the alarm will stay on.
+
+In essence, the user was not paying attention to the RTD display, and this was
+user error. The RTD display still shows the Sldc.Band1.Input1.state monitor
+point. The RTD display shows the Sldc.Band1.Input1.ifOutPower monitor point as
+being disabled.
+
+\mytime{4}{restore Sldc.Band1.Input1.ifOutPower}
+
+The user uses the python command
+\texttt{alarmMpRestore('Sldc.Band1.Input1.ifOutPower')}, which restores the
+monitor point to enabled status. The alarm is still on, and the RTD display
+still shows the Sldc.Band1.Input1.state monitor point.
+
+\mytime{5}{disable Sldc.Band1.Input1.state}
+
+The user uses the python command
+\texttt{alarmMpDisable('Sldc.Band1.Input1.state')}, which disables the
+monitor point from alarming. Due to the hierarchical evaluation, all monitor
+points which are children of this point are disabled as well.
+
+The alarm goes off, and the RTD display shows the Sldc.Band1.Input1.state
+monitor point as being disabled.
+
+Until the user restores the alarm for this monitor point, it will stay disabled.
+You can think of this state as removing the monitor point and all children from
+the fault tree.
+
+
+\subsection{Blank/Flag Output Evaluation Example 1}
+\label{bfoutput-example1}
+
+\begin{minipage}{\textwidth}
+Input: \\
+\begin{scriptsize}
+\begin{verbatim}
+<dag type="blankflag">
+    <gather name="antenna1_gather">
+        <mp canon="Ovro1.AntennaCommon.Drive.state" bit="DRIVE" />
+    </gather>
+
+    <gather name="antenna2_gather">
+        <mp canon="Ovro2.AntennaCommon.Drive.state" bit="DRIVE" />
+    </gather>
+
+    <mp canon="Sldc.Band1.Input1.state" bit="blank">
+        <mp canon="Sldc.Band1.Input1.ifOutPower" />
+    </mp>
+    <mp canon="Sldc.Band1.Input2.state" bit="MONITORDATA">
+        <mp canon="Sldc.Band1.Input2.ifOutPower" bit="PHASELOCK" />
+    </mp>
+
+    <bf_output astroband="1" astroinput="1">
+        <varmap_scope var="antennaNo" canon="SignalPath.Mapping.Astroband1.Input1.antennaNo">
+        <varmap_scope var="corrBandNo" canon="SignalPath.Mapping.Astroband1.Input1.corrBandNo">
+        <varmap_scope var="corrBandInputNo" canon="SignalPath.Mapping.Astroband1.Input1.corrBandInputNo">
+            <if canon="Control.Antenna(antennaNo).subarrayNumber" val="1" negate="true">
+                <bad bit="OFFLINE" />
+            </if>
+
+            <gather_ref name="antenna(antennaNo)_gather" />
+            <mp_ref canon="Sldc.Band(corrBandNo).Input(corrBandInputNo).state" />
+        </varmap_scope>
+        </varmap_scope>
+        </varmap_scope>
+    </bf_output>
+    <bf_output astroband="1" astroinput="2">
+        <varmap_scope var="antennaNo" canon="SignalPath.Mapping.Astroband1.Input2.antennaNo">
+        <varmap_scope var="corrBandNo" canon="SignalPath.Mapping.Astroband1.Input2.corrBandNo">
+        <varmap_scope var="corrBandInputNo" canon="SignalPath.Mapping.Astroband1.Input2.corrBandInputNo">
+            <if canon="Control.Antenna(antennaNo).subarrayNumber" val="1" negate="true">
+                <bad bit="OFFLINE" />
+            </if>
+
+            <gather_ref name="antenna(antennaNo)_gather" />
+            <mp_ref canon="Sldc.Band(corrBandNo).Input(corrBandInputNo).state" />
+        </varmap_scope>
+        </varmap_scope>
+        </varmap_scope>
+    </bf_output>
+
+</dag>
+\end{verbatim}
+\end{scriptsize}
+\end{minipage}
+
+This is a fairly complicated example, but I attempted to keep it free from the
+more powerful constructs, like transients and range nodes. This example attempts
+only to illustrate how \verb|<varmap_scope>| and \verb|<if>| nodes work. In a
+real system, you'd have more antennas, many bands of correlator, and many more
+blank/flag outputs. This is where \verb|<range>| comes in handy.
+
+In this example, we assume a simple ``straight through'' antenna mapping.
+Antenna 1 (Ovro1) is hooked to astroband 1 astroinput 1. Likewise for antenna 2.
+Similarly, we assume a simple ``straight through'' downconverter mapping.
+Spectral Line Downconverter Band 1 Input 1 is hooked to astroband 1 astroinput
+1.
+
+\mytime{1}{normal operation}
+
+Both antennas are online and functioning normally. The downconverters are
+functioning normally and have been configured correctly.
+
+There are no error bits set in the output for astroband 1 inputs 1 and 2.
+
+\mytime{2}{strong winds}
+
+Antenna 1 (Ovro1) is pushed off source by high winds. The
+Ovro1.AntennaCommon.Drive.State monitor point exceeds its error limit, and goes
+into an error state.
+
+Since everything is working normally, the \verb|<gather_ref>| and
+\verb|<mp_ref>| nodes have been resolved appropriately. The blank/flag output
+notices the invalid drive state. The error bitmask will contain the DRIVE bit.
+
+At this point, all baselines which are composed using astroband 1 astroinput 1
+are blanked. This includes auto-correlation 1-1, cross correlation 1-2, cross
+correlation 1-3, and so on.
+
+\mytime{3}{downconverter module unplugged}
+
+Due to gremlins, the downconverter for correlator band 1 input 2 is unplugged
+temporarily. The winds have stopped, and both antennas are on source correctly.
+Both of the Sldc.Band1.Input2 monitor points have become invalid.
+
+Due to the Sldc.Band1.Input2.state monitor point setting its error bit to
+MONITORDATA , all baselines composed using astroband 1 astroinput 2 will have an
+error bitmask with the MONITORDATA bit set. The RTD display reports that the
+Sldc.Band1.Input2.state monitor point is causing blanking on these baselines.
+
+\mytime{4}{downconverter module re-plugged}
+
+Someone has noticed the problem and has re-plugged the Sldc.Band1.Input2
+downconverter module back in. The Sldc.Band1.Input2.state monitor point has
+become valid, but the ifOutPower is still invalid, since the module has not been
+configured correctly. All other monitor points are valid.
+
+The baselines composed using astroband 1 astroinput 2 have the PHASELOCK error
+bit set, due to the Sldc.Band1.Input2.ifOutPower monitor point. The RTD display
+shows this monitor point as causing an error for these baselines.
+
+\mytime{5}{downconverter reconfigured}
+
+The Sldc.Band1.Input2 downconverter has been reconfigured correctly. There are
+no invalid monitor points. No error bits are set, therefore no blanking or
+flagging occurs, and all data gets written as usual.
+
+\subsection{Blank/Flag Output Evaluation Example 2}
+
+I have reused the example input provided above in
+\hyperref[bfoutput-example1]{Blank/Flag Output Evaluation Example 1}. This time,
+we will illustrate a different condition: when nothing is hooked to a correlator
+input. Antenna mapping is still ``straight-through'', just like the previous
+example.
+
+\mytime{1}{normal operation}
+
+Both correlator inputs have antennas attached, and everything is operating
+normally. No monitor points are invalid.
+
+No error bits are set, and therefore no blanking or flagging occurs.
+
+\mytime{2}{antenna 1 offline}
+
+Antenna 1 (Ovro1) is moved to the offline subarray, to undergo routine
+maintenance. The control system monitor data shows that there is no longer
+anything connected to correlator input 1.
+
+When the antenna is moved to the offline subarray, the monitor point
+Control.Antenna1.subarrayNumber changes from 1 (sci1) to 5 (offline). This
+causes the \verb|<if>| condition to become true, which causes the \verb|<bad>|
+node to be evaluated. This causes the OFFLINE bit to be set in the error
+bitmask.
+
+\mytime{3}{antenna 1 back online}
+
+Antenna 1 (Ovro1) is moved back into the Sci1 subarray. The monitor point
+Control.Antena1.subarrayNumber changes from 5 (offline) to 1 (sci1). The
+\verb|<if>| condition is no longer satisfied, the \verb|<bad>| node is not
+evaluated, and the OFFLINE bit is not set in the error bitmask anymore.
+
+\subsection{Blank/Flag Output Evaluation Example 3}
+
+\begin{minipage}{\textwidth}
+Input: \\
+\begin{scriptsize}
+\begin{verbatim}
+<dag type="blankflag">
+
+    <!-- three antennas -->
+    <range var="antNoVar" first="1" last="3">
+        <gather name="antenna(antNoVar)_gather">
+            <transient cond="correlatorNoiseOff" subarray="1">
+                <mp canon="Ovro(antNoVar).AntennaCommon.Drive.state" bit="DRIVE" />
+            </transient>
+        </gather>
+    </range>
+
+    <!-- downconverter for each input -->
+    <range var="inputNoVar" first="1" last="3">
+        <mp canon="Sldc.Band1.Input(inputNoVar).state" bit="MONITORDATA">
+            <mp canon="Sldc.Band1.Input(inputNoVar).ifOutPower" bit="PHASELOCK" />
+        </mp>
+    </range>
+
+    <!-- per-astroband, per-astroinput blank flag outputs -->
+    <bf_output astroband="1" astroinput="1">
+        <gather_ref name="antenna1_gather" />
+        <mp_ref canon="Sldc.Band1.Input1.state" />
+    </bf_output>
+
+    <bf_output astroband="1" astroinput="2">
+        <gather_ref name="antenna2_gather" />
+        <mp_ref canon="Sldc.Band1.Input2.state" />
+    </bf_output>
+
+    <bf_output astroband="1" astroinput="3">
+        <gather_ref name="antenna3_gather" />
+        <mp_ref canon="Sldc.Band1.Input3.state" />
+    </bf_output>
+
+<\dag>
+\end{verbatim}
+\end{scriptsize}
+\end{minipage}
+
+In this example, we take the previous example and use some of the shortcut
+syntax for creating many similar structures. In addition, we introduce the
+concept of transients and reference nodes.
+
+As noted in the description of the configuration file syntax, each \verb|<mp>|
+node can only be defined once per DAG. This is so that the attributes are
+exactly the same across the entire DAG. This is a strategy to avoid
+conflicts. Reference nodes are used to avoid this situation. Each \verb|<mp>|
+and \verb|<gather>| node is only defined once, but they are used in multiple
+locations.
+
+Just like the previous examples, the antenna mapping is ``straight through''. We
+have omitted the \verb|<varmap_scope>| nodes to show how to hardcode things if
+necessary. While this is probably unrealistic for antennas, it serves to
+illutstrate the use of references.
+
+\mytime{1}{normal operation}
+
+The control system has enabled drive blanking, and the transient nodes are
+allowing evaluation to pass through them. The blank/flag evalution for astroband
+1 astroinput 1 contains the following monitor points:
+
+\begin{verbatim}
+Ovro1.AntennaCommon.Drive.state
+Sldc.Band1.Input1.state
+Sldc.Band1.Input1.ifOutPower
+\end{verbatim}
+
+\mytime{2}{drive blanking disabled}
+
+The control system has turned on the noise source (opposite of
+correlatorNoiseOff) and therefore the transient nodes now behave differently.
+They do not allow evaluation to pass through them and instead evaluate as good.
+
+This means the blank/flag evaluation for astroband 1 astroinput 1 contains
+the following monitor points:
+
+\begin{verbatim}
+Sldc.Band1.Input1.state
+Sldc.Band1.Input1.ifOutPower
+\end{verbatim}
+
+Note that we have only removed part of the blank/flag evaluation. Everything
+else is still in place, just as it would have been without transients.
+Everything outside of a transient node doesn't change.
+
+No matter what happens to the Drive.state monitor points now, it will not cause
+blanking or flagging of data. They are completely disabled until the control
+system decides to re-enable this transient.
+
+It should now be clear how transients work.
+
+\mytime{3}{normal operation}
+
+The control system turns off the noise source (correlatorNoiseOff), and the
+system resumes normal operation. We are back to the start state.
+
+\mytime{4}{downconverter mis-configuration}
+
+Something bad happened, and the Sldc.Band1.Input1 downconverter became
+mis-configured. The downconverter is still reporting valid data, so the
+Sldc.Band1.Input1.state monitor point is still valid, however the
+Sldc.Band1.Input1.ifOutPower monitor point has become invalid. The error bitmask
+contains the PHASELOCK bit.
+
+After the evaluation has taken place, the RTD display will report that the
+Sldc.Band1.Input1.ifOutPower monitor point is causing an error for all baselines
+comprised using astroband 1 astroinput 1.
+
+\mytime{5}{normal operation}
+
+The downconverter is reconfigured, and everything is back to normal operation
+again.
+
+\mytime{6}{downconverter is unplugged}
+
+Gremlins strike again, and the Sldc.Band1.Input3 downconverter is unplugged. It
+is not reporting any monitor data, and so both the state and ifOutPower monitor
+points are invalid.
+
+The RTD display shows that the Sldc.Band1.Input3.state monitor point is causing
+an error (MONITORDATA) for baselines which are composed using astroband 1 input
+3. Baseline 1-2 is unaffected; it does not use the input 3 downconverter.
+
+Just like in the alarm output example, only the most relevant monitor point is
+displayed. The children have no effect.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Speed and Benchmarks}
+
+The original fault system code was written to be very fast, which it was. This
+was likely due to the real time nature of the RTS system, as well as the
+original (slower) hardware that was in use at the time.
+
+The new fault system has been mostly rewritten from scratch, though much of the
+code was re-used from the original implementation. This was due to the need for
+extra features not present in the original code. As a consequence, most of the
+original optimization work has been lost. As a benefit, the code is now much
+easier to understand, as well as test.
+
+On average, the new fault system is rougly 5-10 times slower than the original
+fault system. As this document is written (July 2010), my test machine takes
+rougly 10-15 milliseconds to process each monitor frame. This is far under the
+maximum processing time of 500ms, so it poses no problem.
+
+The rare operation of a changed correlator input $\leftrightarrow$ antenna
+mapping makes the processing take even longer, due to the need to update lots of
+internal data structures. When this change happens, it rougly doubles the time
+taken to process the frame where the change happened: 20-30 milliseconds. This
+is still well underneath the maximum processing time of 500ms, and again it
+poses no problems.
+
+In January 2011, the fault system program was profiled using the callgrind mode
+of the valgrind tool suite. This provided feedback that most of the time was
+spent inside the \verb|std::map find()| method. This hot spot was eliminated by
+pre-caching reference nodes at startup. This avoids the lookup on each monitor
+data frame. It has provided significant speed improvements.
+
+In June 2011, the fault system program was upgraded to add support for
+\verb|<bad>|, \verb|<if>|, and \verb|<varmap_scope>|. The added generality is
+being used to support automatic disablement of antenna and downconverter alarms.
+This flexibility came at a price: the fault system is back to the original speed
+of about 15 milliseconds per frame. Profiling the applicated with callgrind
+showed no major hot spots which could be improved.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Silent Alarms}
+
+As of December 2011, the fault system has support for silent alarms. Monitor
+points with this attribute set still send email, but do not ring the alarm. They
+play no sound.
+
+These monitor points still show up on all RTD displays, with the addition of the
+words "SILENT" to their right.
+
+These alarms are meant to be used to warn the RTS and hardware groups about
+error conditions which the observers cannot themselves deal with.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Alarm History}
+
+As of June 2011, the fault system now keeps track of alarms which have expired.
+These are defined as monitor points which were causing the alarm to ring, but
+are no longer doing so.
+
+This feature was designed to allow users to find out which monitor point rang
+the alarm for a brief period before they were able to respond. This information
+is displayed in the fault system RTD pages.
+
+An example of the format is shown below:
+
+\begin{verbbox}
+Ovro1.online bad 982.5 sec end 09 Jun 2011 19:54:46.000
+\end{verbbox}
+\titleshadebox{Example Alarm History Item}{\theverbbox}
+
+The example can be interpreted as follows: the \verb|Ovro1.online| monitor point
+was bad for 982.5 seconds in total (including the time waiting for the
+\verb|alarm_after=| timeout). The monitor point became valid on 09 Jun 2011 at
+19:54:46.000 UTC.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Email Reporting of Faults}
+
+The old SZA control system has support for emailing users when alarms are
+triggered by the fault system. This feature was deemed very useful, and so has
+been implemented for the new CARMA fault system.
+
+\subsection{Configuration}
+
+The configuration of the email feature is reasonably simple, much simpler than
+the main fault system configuration. The default configuration lives in
+\verb|conf/fault/email.tab|. The format is the standard CARMA table format. An
+example file follows.
+
+\begin{verbbox}
+#|regex                    |email                       |ratelimit     |
+#|s                        |s                           |i             |
+  .*scriptState             fault/email/script.txt       60
+  .*                        fault/email/catchall.txt     600
+\end{verbbox}
+\shadebox{\theverbbox}
+
+As you can see, there are three fields: a regular expression, a file containing
+an email template, and a ratelimit interval (in seconds).
+
+The regular expression will be tested against all alarms that have been
+activated by the fault system at the end of each monitor frame. If the regular
+expression matches, an email will be constructed using the file specified in the
+second column.
+
+The ratelimit interval is designed to stop a flood of email from being sent.
+After an email is sent, all monitor points that match the regular expression
+must be continuously good (not causing an alarm) for the full period of the
+ratelimit interval before another email will be sent.
+
+To support catchall operation, the email system will stop trying to match an
+alarm fault against the regular expressions in the order they are listed in the
+file. This means that a regular expression such as \verb|.*| can be used at the
+end of the file with a generic email message. This will ensure that specific
+faults can generate a customized message, while all other faults can still
+generate a generic email.
+
+\subsection{Email Message Format}
+
+As noted above, a template email file is provided for each regular expression.
+The file will be used to construct an email message with the format shown below.
+It should be obvious how the template is used: it is inserted directly into the
+top of the email.
+
+\textbf{Source Email File:} (such as fault/email/script.txt in the example) \\
+\begin{verbbox}
+This is a test message.
+It has three lines.
+This is the last line.
+\end{verbbox}
+\shadebox{\theverbbox}
+
+\textbf{Generated Email Message:} \\
+\begin{verbbox}
+Subject: Fault System Alarm -- 18:51:20.000
+This is a test message.
+It has three lines.
+This is the last line.
+
+
+List of monitor points that caused this email to be sent:
+Control.Subarray1.scriptState
+
+
+This email automatically generated by the CARMA Fault System
+Monitor Frame: 665934160
+Timestamp: 18:51:20.000
+\end{verbbox}
+\shadebox{\theverbbox}
+
+\subsection{Enabling the Email Service}
+
+The CARMA Fault System leaves the email service disabled by default. This is to
+prevent the email service from running in test configurations. The observers do
+not need to be confused by the email service running on test machines.
+
+The fault system has several configuration options for the email reporting
+service. They are very intuitive, please see the output of
+\verb|faultSystem --keywords| for details.
+
+\end{document}
+
+% vim: set ts=4 sts=4 sw=4 expandtab nocindent noautoindent textwidth=80:

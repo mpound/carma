@@ -1,0 +1,12 @@
+COMMENT:       random number generator seed = 1
+nbody = 23
+mfrac = 0.3
+i/o flag = 0 0
+comment = "a b c"
+intP1 = 257
+intP2 = 257
+intP3 = 101
+intP4 = 101
+intP5 = 417
+intP6 = 43742
+Finishing off computing:   n=23

@@ -1,0 +1,21 @@
+#-----------------------------------------------------------------------
+# The default LL configuration maps:
+#
+#    C1-15L to inputs of the 8 SLCOR crates,
+#   C16-23L to pairs of inputs of the 8 WBCOR crates, and
+#    C1-23L to the first 23 digitizers of the C3G correlator
+#-----------------------------------------------------------------------
+
+C[1-15]L:A  SLCOR[1-8]:[1-15]
+
+C[16-23]L:A WBCOR[1-8]:[1-8]
+C[16-23]L:A WBCOR[1-8]:[9-16]
+
+C[1-15]L:D DIG[1-15]
+C[16-23]L:B DIG[16-23]
+
+
+
+
+
+

@@ -1,0 +1,333 @@
+/** @file
+ * $Id: Device.h.cgwon,v 1.1 2003/07/09 18:18:36 cgwon Exp $
+ * 
+ * Pure abstract base class for all CAN Bus devices.
+ *
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/09 18:18:36 $
+ *
+ */
+
+#ifndef CARMA_CANBUS_DEVICE_H
+#define CARMA_CANBUS_DEVICE_H
+
+// C++ includes
+#include <vector>
+#include <map>
+#include <string>
+
+// Carma includes
+#include "carma/canbus/CanOutput.h"
+#include "carma/canbus/Types.h"
+
+namespace carma {
+namespace canbus {
+
+	/**
+	 * Abstract base class for all CAN Bus devices. 
+	 * Device provides an abstract base class for CANbus devices 
+     * implementing the <A HREF="http://www.mmarray.org/system/CanAPI/
+     *CANbusMessageIDprotocol.pdf"> Carma CANbus Message ID Protocol.</A>  
+     * It is intended 
+     * that all API CAN device implementations will derive directly from this 
+     * class and define all API specific details such as control interfaces,
+     * how to pack/unpack CAN messages, message ids, and where to place 
+     * monitor data.  This is mostly accomplished by overloading the 
+     * Device::processMsg routine and defining additional control methods
+     * that may or may not be exposed to higher level processes through
+     * CORBA or some other means.  By using Device as a base class for all
+     * CANbus devices, it is possible for the carma::canbus::Master class 
+     * to easily manage multiple types of devices with different API ids 
+     * while only retaining a list of pointers to this abstract base class.
+     * As a result, the carma::canbus::Master class handles nearly all of 
+     * the details and bookeeping regarding retrieval and processing of 
+     * CAN messages.
+     *
+     *  Device State. It is essential that anybody deriving from this base
+     *  understand how the state of a Device is set and used.  A Device has
+     *  three states (ONLINE, OFFLINE and INITIALIZED) which can be set and
+     *  retrieved with the Device::getState and Device::setState methods. In 
+     *  many cases only the ONLINE and OFFLINE state will be used.  All devices 
+     *  are initialized to OFFLINE unless explicitly reinitialized in the 
+     *  derived class.  The carma::canbus::Master class will automatically 
+     *  set any ONLINE or INITIALIZED Device to OFFLINE if no CAN messages 
+     *  are received from it in a designated time frame of about 1 second.  
+     *  This is done by calling Device::getLastRxTime and comparing the result
+     *  to the current time. On the other hand, it is entirely the 
+     *  responsibility of the creator of a Device derivative to explicitly 
+     *  set the state to ONLINE.  This could be most easily accomplished in 
+     *  Device::processMsg by adding logic to compare the lastRxTime to the 
+     *  current time. 
+     *
+     *  This has important consequences regarding how Device::simulateMsg 
+     *  should be defined in the derivative. carma::canbus::Master calls 
+     *  Device::simulateMsg on any Devices that are in the OFFLINE state.  
+     *  Device::simulateMsg returns a carma::canbus::Message object and 
+     *  the Master places that message directly into the CAN message queue.  
+     *  As a result, it looks exactly like a message retrieved from the 
+     *  CANbus but with one important distinction - an rxTime is not 
+     *  automatically stamped on the message (carma::canbus::CanIo stamps 
+     *  all incoming messages using Message::setRxMjd). Whether simulated 
+     *  or not, Master copies this rxTime from the Message to the lastRxTime
+     *  on the device using Device::setLastRxTime.  Thus when a Message is 
+     *  simulated with
+     *  Device::simulateMsg, it is necessary that the implementer stamp these 
+     *  messages with an mjd that will assure that the Device remains OFFLINE.
+     *  The best way to do this is to set the MJD on messages created in 
+     *  simulateMsg to the lastRxTime of the device using Device::getLastRxTime.
+     *  For example, in simulateMsg one would add the following...
+     *
+     *  carma::canbus::Message msg;
+     *  
+     *  // Set message data, ids, etc
+     *  
+     *  msg.setRxMjd(this->getLastRxTime());
+     *  
+     *  return msg;
+     *  
+     *  Memory allocation.  Any implementor of the device class will need to 
+     *  be cognizant of how memory should be created and destroyed for their 
+     *  device.  In particular any Device implementation that is also 
+     *  inheriting from a CORBA control interface cannot simply call delete.  
+     *  They should instead call CORBA routines to decrement reference counts 
+     *  and destroy memory.  Please see Henning & Vinoski, Ch 11.7 pg 493 for 
+     *  detailed information on deleting CORBA servant objects.
+	 */    
+    class Device {
+    public:
+	
+		/**
+		 * Device constructor.  
+		 * Constructs a device with the given api and node.
+		 * @param api unique code identifying a specific set of 
+		 * instructions and CAN message formats.  
+		 * @param node unique location id on a CAN bus. 
+         * @param io Reference to CanOutput class - should be obtained
+         * from downcasting the canbus::Master reference in inherited
+         * canbus::Master class.
+		 */ 	
+		Device(apiType api, nodeType node, CanOutput &io);
+		
+        /**
+         * Device destructor.
+         * Device class destructor is declared virtual here because
+         * in general the Master class will maintain only a container
+         * of Device class pointers.  When this container or any
+         * of the objects in the container are destroyed, we must assure
+         * that the associated object destructors get called as well 
+         * (i.e. not just the Device destructor but the destructor for
+         * it's derivatives as well).  
+         */
+		virtual ~Device();
+
+		/**
+		 * Return api code of device. 
+		 * @return 8 bit api code.
+		 */ 
+		apiType getApi() const;
+		
+		/** 
+		 * Return node location code of device.
+		 * @return 9 bit node id.
+		 */ 		
+		nodeType getNode() const;
+		
+        /**
+         * Return the key for this device.
+         * The key is used by the Master class to store Devices in a 
+         * map.  Thus the key must be unique for each Device and node
+         * on a network.  This routine returns this unique key which 
+         * is created from the api and node ids.
+         * @return key unique identifier for instance of Device.
+         * @see carma::canbus::createKey
+         */
+        keyType getKey() const;
+          
+/**** REVIEW
+ Reviewer: csg
+ Comments: make all "get" functions of type const: getBoardType, getSerialNumber, getBusId, getState, getLastRxTime
+ */
+		/** 
+		 * Return board type id of device.
+		 * @return 8 bit board type id.
+		 */  
+		boardType getBoardType();
+		
+		/**
+		 * Return serial number of device.
+		 * @return 9 bit serial number id.
+		 */ 
+		serialNumberType getSerialNumber();
+		
+		/**
+		 * Return bus Id that node resides on. 
+		 * @return bus Id of device. 
+		 */
+		busIdType getBusId();
+
+		/**
+		 * Status access routine. 
+		 * @return status of device. 
+		 */ 
+		deviceStateType getState();
+		
+        /**
+		 * Get Last RX Time for device.  
+		 * @return MJD of last message received. 
+		 */ 
+		double getLastRxTime();
+        
+        /**
+         * Return a map of devices controls.
+         * This method returns a map of control messages that can be 
+         * sent to the device from this class.  It must be defined
+         * by the implementor.
+         * @return map<msgType, string> Describing controls and their
+         * corresponding msgType.
+         */
+        virtual map<msgType, string> getControls() const = 0;
+       
+		/**
+		 * Return a map of devices half second monitor points.
+		 * This routine returns a map of the half second monitor points
+         * that are processed by this Device class.  This function is 
+         * necessary for properly simulating a device when the device is 
+         * OFFLINE, since master first calls this method to determine which
+         * messages to simulate on a half second timescale. 
+		 * @return map<msgType, string> map of msgType and a string 
+         * describing it's function.
+         * @see Device::simulateMsg
+         * @see carma::canbus::Master
+		 */ 
+		virtual map<msgType, string> getHalfSecMonitors() const = 0;
+		
+        /**
+         * Return a map of devices slow monitor points.
+         * This routine returns a map of slow monitor points (5 second)
+         * that are processed by this Device class. It must be defined by
+         * the implementor of this base class and is needed to properly
+         * simulate a device when OFFLINE.
+         * @return map<msgType, string> map of msgType and a string
+         * describing it's function.
+         * @see Device::simulateMsg
+         * @see carma::canbus::Master
+         */
+        virtual map<msgType, string> getSlowMonitors() const = 0;
+
+        /** 
+		 * Set state of device. 
+		 * The implementor should define the logic that sets the state to
+         * ONLINE.  This is generally determined by checking the Devices 
+         * lastRxTime variable via Device::getLastRxTime. canbus::Master is 
+         * responsible for setting a devices state to OFFLINE when messages
+         * haven't been received for that device in a certain amount of time. 
+		 * @param state device state.
+		 */ 
+		void setState(deviceStateType state);
+
+		/** 
+		 * Set busId of device. 
+         * This routine is called internally by canbus::Master whenever 
+         * it receives a CAN message addressed to the Device. The busId is
+         * generally construted from the Janz CAN device name to assure
+         * uniqueness. The user in general should not have to set a Devices
+         * busId explicitly.
+		 * @param busId of device. 
+		 */
+		void setBusId(busIdType busId);
+		
+		/**
+		 * Set latest rx time. 
+         * This method should be called to set the MJD of the last time
+         * a message was received for this device.  In general it is called
+         * every time a message is received addressed to a particular device.
+         * There are however caveats related to simulating OFFLINE nodes.
+		 * @param rxMjd Mean Julian Day of message rx.
+         * @see Device::simulateMsg
+		 */  
+		virtual void setLastRxTime(double rxMjd);
+		
+		/**
+		 * Process a CAN message. 
+		 * This routine is intended to be overridden for each concrete
+		 * class representing a physical device.  This routine should
+		 * define how to process CAN message data based on the msgType.
+         * It should encapsulate either directly or indirectly all 
+         * details related to unpacking CAN messages, processing the data
+         * and placing it into the monitor system. 
+		 * @param mid the 10bit canbus::msgType indicating message function.
+		 * @param data reference to a byte vector containing raw 
+		 * CAN data.
+		 */
+/**** REVIEW
+ Reviewer: csg
+ Comments: consider renaming "mid" to "messageId"
+ */
+		virtual void processMsg(msgType mid, vector<byteType>& data) = 0;
+
+        /**
+         * Simulate a CAN message.
+         * This routine is intended to simulate CAN messages when the Device
+         * is in the OFFLINE state.  An implementer of this class
+         * is required to overload this message and return the appropriate 
+         * carma::canbus::Message for a given msgType (message id).  The 
+         * Message is automatically placed into the shared CAN Message queue
+         * and processed by Master exactly as if it came from the CANbus.
+         * This enables a user to completely emulate the CANbus device and
+         * Janz hardware as well, while exercising the majority of code 
+         * involved in processing a CAN message.
+         * Please note that in order to maintain the proper state of the 
+         * device (ONLINE, INITIALIZED or OFFLINE) the user should not set
+         * the rx time of the simulated message to the current time
+         * but rather to the last true msg rx time.  If the implementer
+         * chooses not to do this, the state may continuously fluctuate 
+         * between ONLINE and OFFLINE producing confusing results.  
+         * Note also that the msgTypes which simulateMsg is called with
+         * by canbus::Master are retrieved via the above 
+         * Device::getHalfSecMonitors and Device::getSlowMonitors routines.  
+         * Thus simulateMsg must properly handle all msgTypes returned from 
+         * these routines.
+         * @param mid 10bit id indicating message function.
+         * @see carma::canbus::Message::setRxMjd
+         * @see carma::canbus::Device::setLastRxTime
+         * @see carma::canbus::Device::setState
+         */
+
+/**** REVIEW
+ Reviewer: csg
+ Comments: consider renaming "mid" to "messageId"
+ */
+		virtual Message simulateMsg(msgType mid) = 0;
+
+		// Standard Control messages.
+		/**
+		 * Perform a software reset of module.
+         * Software resets differ from hardware resets in that they are
+         * directed only to the Device itself rather than the bus as a whole.
+		 */
+		void reset();
+
+	protected:
+        
+		volatile const apiType api_;
+		volatile const nodeType node_;
+        volatile const keyType key_;
+		boardType boardType_;
+		serialNumberType serialNumber_;
+		busIdType busId_;
+		deviceStateType state_;
+		CanOutput& io_;  // Output access only!!!!!
+        double lastRxMjd_;
+
+	
+		enum standardControls {
+			RESET                         = 0x000,
+            START_CHANNEL_1_FAST_SAMPLING = 0x004,
+            START_CHANNEL_2_FAST_SAMPLING = 0x005,
+		};
+	private:
+    };
+}; // End namespace canbus
+}; // namespace carma
+#endif // CARMA_CANBUS_DEVICE_H

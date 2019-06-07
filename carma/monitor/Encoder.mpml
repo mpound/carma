@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Encoder monitor point definitions.  There are two encoders - Az and El -->
+<!-- $Id: Encoder.mpml,v 1.6 2011/09/26 17:48:22 iws Exp $                                                                 -->
+
+<Common scope="global" author="Andrew Beard">
+
+        <Container name="Encoder">
+
+            <MonitorPoint name="encoderPosition" type="double" priority="useful" >
+                <shortName>Position</shortName>
+                <description>Encoder position reading</description>
+                <units>deg</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="encoderAlarm" type="bool" >
+                <shortName>Encoder Alarm</shortName>
+                <description>
+                    True when the Heidenhain encoder alarm flag has been set.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="noStartAlarm" type="bool" >
+                <shortName>No Start Bit</shortName>
+                <description>
+                    State of the Heidenhain No Start Bit flag. 
+                    True if  has been set.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="encoderNotPresent" type="bool" >
+                <shortName>Encoder Not Present</shortName>
+                <description>
+                    Encoder not present flag.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="ps24v" type="float">
+                <shortName>+24V</shortName>
+                <description>+24V Power Supply Voltage</description>
+                <units>V</units>
+                <warnLo>20.0</warnLo>
+                <warnHi>28.0</warnHi>
+                <errLo>18.0</errLo>
+                <errHi>30.0</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="ps5vDigital" type="float">
+                <shortName>+5V Digital</shortName>
+                <description>+5V Digital Power Supply Voltage</description>
+                <units>V</units>
+                <warnLo>4.85</warnLo>
+                <warnHi>5.15</warnHi>
+                <errLo>4.75</errLo>
+                <errHi>5.25</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="ps5vEncoder" type="float">
+                <shortName>+5V Encoder</shortName>
+                <description>
+                    Encoder power supply voltage measured before the switch.
+                </description>
+                <units>V</units>
+                <warnLo>4.85</warnLo>
+                <warnHi>5.15</warnHi>
+                <errLo>4.75</errLo>
+                <errHi>5.25</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="ps5vEncoderAfterSwitch" type="float">
+                <shortName>+5V After Switch</shortName>
+                <description>
+                    +5V encoder power supply voltage measured after the switch.
+                </description>
+                <units>V</units>
+                <warnLo>4.85</warnLo>
+                <warnHi>5.15</warnHi>
+                <errLo>4.75</errLo>
+                <errHi>5.25</errHi>
+            </MonitorPoint>
+                
+            <MonitorPoint name="fpgaVersion" type="string">
+                <shortName>FPGA Ver.</shortName>
+                <description>
+                    FPGA code version in major.minor format.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="moduleTemp" type="float">
+                <shortName>Mod Temp</shortName>
+                <description>
+                    On-board module temperature.
+                </description>
+                <units>C</units>
+            </MonitorPoint>
+
+        </Container>
+
+</Common>

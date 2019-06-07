@@ -1,0 +1,76 @@
+
+Reviewer: Colby Kraybill //-REV-JCK
+Id: $Id: Time.review2,v 1.1 2003/04/03 18:35:47 scott Exp $
+
+Initial Comment: Makefile.init fails if you do not have gcc 2.95.3
+
+Coding Review Checklist:
+
+1) Passes compile-run sequence, coverage of test
+
+  See above re: Makefile.init
+
+  Platforms:
+    Redhat 7.3 comes with 2.96
+    Debian potato comes with 2.95.4
+    Redhat 8.0 comes with 3.2
+    SuSE 8.1 comes with 3.2
+
+  Peter supplied the following compile line that works for
+  2.95.4 and 2.96
+
+  g++ -I$CARMA -g Time.cc main.cc -o main -lrt -ldl
+
+  Does not compile under 3.2
+
+Result: Fail, does not compile on target platform 3.2
+
+
+Coverage of Time.cc by main.cc
+  g++ -I$CARMA -pg -fprofile-arcs -ftest-coverage -g Time.cc main.cc -o main -lrt -ldl 
+  (note, had to add -pg)
+  % ./main ; gcov Time.cc
+  aborts under gcc 2.96
+
+  Provides coverage information under 2.95.4
+  30.47% of 128 source lines executed in file Time.cc (as reported by gcov)
+
+Result: Fail?  Code test only covers ~30 of executable lines in source.  
+(shouldn't this be part of code inspection and not review?)
+  
+2) Adheres to design document.
+Result: N/A.  No design document for Time.x[cc,h]
+
+3) doxygen build does not work via makefile because of 2.95.3 limitation
+   above.  Ran doxygen Dox
+Result: Pass, class and all public/protected methods are documented per guidelines.
+
+4) Style
+
+     getMJD() "must" be getMjd().  Ref 3.1-9.
+
+     The methods related to returning FrameCounts should have the find suffix
+       instead of the get suffix.  There are no corrisponding set versions of these
+       methods.  Ref 3.2-18.
+     
+     void methods getTime(), getDate(), etc "should" be named appendTime and appendDate
+     to denote what they do.   Ref 3.2-32.
+
+     Layout of code in Time.cc should have whitespace between operators and more
+     obvious split line indentation
+     For example, on line 326:
+       os<<setw(2)<<hrs<<":"<<setw(2)<<mins<<":"
+        <<setw(width)<<setprecision(precision)<<realSeconds;
+     "should" be
+       os << setw(2) << hrs << ":" << setw(2) << mins << ":"
+          << setw(width) << setprecision(precision) << realSeconds;
+     Ref, 4.1-40 and 6.2-92
+   
+Result: Fail due to one "must".  Are "shoulds" a reason to fail too?
+
+5)...
+
+6) Thumbs down.
+Result: Fail.  No thumbs up.
+
+

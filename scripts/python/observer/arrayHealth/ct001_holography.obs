@@ -1,0 +1,239 @@
+# $Id: ct001_holography.obs,v 1.15 2009/05/09 00:57:40 lamb Exp $
+# Script to acquire data for making holography maps.
+#
+# To use:
+#
+#   run('ct001_holography', <parameters>)
+#
+#   All parameters are optional, they are space or comma separated pairs.
+#   See below for optional parameters.
+#
+#
+# @Author James W. Lamb, Stuartt Corder, Caltech
+#
+# History
+# 07-Apr-2009: JWL      Updated for Steve Scott's run command
+# 22-Oct-2008: JWL      Changed 'restart' to come from parameter to 'run()'
+# 20-Oct-2008: JWL      Standardized imports
+# 04-Aug-2008: JWL      Imported strftime
+# 25-Jul-2008: JWL      Added logging to file. Added Array Health email.
+# 02-Jul-2008: JWL      Changed sample step size to be correct for holography
+# 16-Jun-2008: Original version
+#
+#
+
+#-------------------------- Help --------------------------
+""" Scans a subset of antennas to make a holography map.
+
+    Usage:
+
+    run('ct001_holography', <parameters>)
+
+    Parameters
+
+        loFreq = 95.0
+            LO frequency to tune to
+
+        source = '3c454.3'
+            Source to use for beam map
+
+        testAnts = [3]
+            List of antennas to map
+
+        gridSize = 31
+            Linear size of grid to map. The number of points in the map is
+            the square of this, gridSize**2
+
+        stepSize = 0.0
+            Distance between grid points. If non zero, this is the step
+            size in arcmin. If zero the step size is calculated from the
+            Nyquist sampling distance to give an aperture plane map that
+            is 1 pixel greater than the aperture diameter at the highest
+            frequency
+
+        intTime = 10.0
+            Integration time to use
+
+        intReps = 1
+            Number if integrations at each grid point
+
+        mapReps = 1
+            Number of times to repeat the whole map
+
+        circle = False
+            If True, only points within a circle of diameter
+            ~gridSize will be sampled
+
+        elLimit = 30
+            Minimum elevation to take data at
+
+        debug = False
+            For testing. Does not run any commands that affect the subarray.
+
+Note that 'restart' can be used as a standard parameter for the run command.
+If restart = True, the script will try to avoid most of the
+reliminary setup, including tuning and pointing. NOTE: The script checks the
+actual LO frequency, so when 'restart' is True the frequency parameter must
+also be set.
+"""
+#------------------------ End of Help ------------------------
+
+import runCommand as rc
+from holoBeamMap import *
+import subarrayCommands as sc
+import printFunctions as pf
+import arrayHealthUtils as ah
+from time import strftime
+import carmaHelpers as helpers
+
+#----Parameters----
+#
+p = rc.Params()
+p.add("loFreq", type = float, default = 95.0,
+       description="LO frequency used in measurement")
+p.add("source", type = str, default = "3c454.3",
+       description="Source for pointing and holography",
+       required = True)
+p.add("testAnts", type = rc.antlist, default = [1],
+       description="Antenna or list of antennas to measure",
+       required = True)
+p.add("gridSize", type = int, default = 31,
+       description="Number of points in az and el directions")
+p.add("stepSize", type = float, default = 0.0,
+       description = "Map interval (arcsec) or 0.0 for automatic")
+p.add("intTime", type = float, default = 10.0,
+       description = "Time spent on each integration, s")
+p.add("intReps", type = int, default = 1,
+       description = "Number of integrations per pointing")
+p.add("mapReps", type = int, default = 1,
+       description = "Number of times to do whole map")
+p.add("elLimit", type = float, default = 30,
+       description = "Minimum observing limit, deg")
+p.add("circle", type = bool, default = False,
+       description = "Map within a circle only (default: square)?")
+p.add("debug", type = bool, default = False,
+       description = "Run in debug mode (minimum system impact)?")
+
+p.processInputParameters()
+#----End Parameters----
+
+loFreq   = p.loFreq
+source   = p.source
+testAnts = p.testAnts
+gridSize = p.gridSize
+stepSize = p.stepSize
+intTime  = p.intTime
+intReps  = p.intReps
+mapReps  = p.mapReps
+elLimit  = p.elLimit
+circle   = p.circle
+debug    = p.debug
+
+#----Other useful variables----
+#
+trackFilename = 'ct001_holography.obs' # name of this file
+projectCode   = 'ct001'
+obsblock      = sc.yearMonthDay()
+pi            = 'Array Health'
+email         = 'arrayhealth@mmarray.org'
+
+# Rarely edited parameters
+bandSetup = [
+    (1, sc.BW500, 1.75),
+    (2, sc.BW500, 2.25),
+    (3, sc.BW500, 2.75)
+]
+
+#----Project set up----
+#
+idString = "ct001_holography.obs, " + "$Revision: 1.15 $".strip('$')
+logFileName = strftime("holography%Y.log")
+lm = ah.LogMessage("Astro. Holography", "web/holography", logFileName, idString)
+lm.message("Options:")
+lm.message("    source = " + str(source), noRtd = True)
+lm.message("  testAnts = " + str(testAnts), noRtd = True)
+lm.message("  gridSize = " + str(gridSize), noRtd = True)
+lm.message("  stepSize = " + str(stepSize), noRtd = True)
+lm.message("   intTime = " + str(intTime), noRtd = True)
+lm.message("   intReps = " + str(intReps), noRtd = True)
+lm.message("   mapReps = " + str(mapReps), noRtd = True)
+lm.message("   elLimit = " + str(elLimit), noRtd = True)
+lm.message("    circle = " + str(circle), noRtd = True)
+lm.message("     debug = " + str(debug), noRtd = True)
+lm.message("   restart = " + str(restart), noRtd = True)
+if testAnts == [] :
+    pf.printError("Must specify antennas (e.g., 'ct001_holography.obs testAnts = [1, 2]')")
+    raise ScriptReturn, "Must specify antenna(s)"
+lm.message("Setting up project ct001")
+if debug :
+    pf.printInfo("Running in debug mode")
+else :
+    sc.sendMsg(projectCode, pi, email, trackFilename, start = 1)
+    sc.newProject(projectCode, obsblock)
+    sc.constraints()
+sc.radioInit()
+
+testAnts = helpers.makeList(testAnts)
+lm.message("Antenna(s) to map: %s" % str(testAnts))
+lm.message("Source is " + source)
+
+if restart :
+    currentLoFreq = sc.queryDouble("Control.Subarray1.loFreq", retries = 20)
+    if (abs(loFreq - currentLoFreq)) > 0.5 :
+        lm.message("Tuning receivers to LO frequency = %.3f" % loFreq)
+        if not debug : sc.freq(loFreq, sc.USB, 0.0, None)
+else :
+    lm.message("Tuning receivers to LO frequency = %.3f" % loFreq)
+    if not debug : sc.freq(loFreq, sc.USB, 0.0, None)
+
+#----Frequency and correlator setup----
+#
+maxIf = 0
+for band in bandSetup :
+    ifFreq = band[2]
+    maxIf = max(maxIf, ifFreq)
+if restart :
+    try :
+        sc.checkbands()
+    except AssertionError :
+        lm.message("Setting up correlator bands")
+        for band in bandSetup :
+            lm.message("Configuring band %d: %s, %.3f GHz" % (band[0], band[1], band[2]))
+            if not debug : sc.configband(band[0], band[1], loFreq + band[2])
+        sc.checkbands()
+else :
+    lm.message("Setting up correlator bands")
+    for band in bandSetup :
+        lm.message("Configuring band %d: %s, %.3f GHz" % (band[0], band[1], band[2]))
+        if not debug : sc.configband(band[0], band[1], loFreq + band[2])
+    sc.checkbands()
+
+#----Grid step size----
+#
+maxSkyFreq = loFreq + maxIf
+if stepSize == 0.0 :
+    oversample = 1.0 + 1.0 / gridSize
+    stepSizePerAnt = getHoloMapSteps(testAnts, maxSkyFreq, oversample)
+    lm.message("Oversampling relative to Nyquist = %.3f" % oversample)
+else :
+    stepSizePerAnt = []
+    for ant in testAnts :
+        stepSizePerAnt.append(stepSize)
+    lm.message("Step size is %d arcmin" % stepSize)
+if circle :
+    lm.message("Measuring circular region")
+else :
+    lm.message("Measuring square region")
+
+#----Start the patterns.----
+#
+lm.message("Starting map")
+acquireBeamMap(source, testAnts, stepSizePerAnt, gridSize, mapReps, intTime, \
+               intReps, circle, elLimit, restart, lm, debug)
+
+#----Tidy up----
+sc.resetProject()
+sc.alarmon()
+lm.close()
+
+# end ct001_holography

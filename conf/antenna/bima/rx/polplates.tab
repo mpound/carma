@@ -1,0 +1,11 @@
+#
+# $Id: polplates.tab,v 1.2 2007/03/03 01:32:17 colby Exp $
+#
+# Change lcp to be 100 counts from 50 counts.  50 counts
+# gets us to close to wedging the plate motor
+#
+#|name |a     |b     |c     |d      |
+#|s    |i     |i     |i     |i      |
+rcp     10923  19661  22938  7646
+lcp     100    30583  30583  100 
+clear   21845  8738   15292  15292 

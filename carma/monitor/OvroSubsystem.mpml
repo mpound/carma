@@ -1,0 +1,3103 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<Subsystem name="Ovro" count="6" indexName="antennaNo" priority="useful"
+           author="Andy Beard">
+
+   <?common AntennaCommon.mpml?>
+   <?common AntennaIF.mpml?>
+   <?common CanbusCommon.mpml?>
+   <?common Encoder.mpml?>
+   <?common GunnPll.mpml?>
+   <?common LoReferenceMonitor.mpml?>
+   <?common SisReceiver.mpml?>
+   <?common TiltmeterCommon.mpml?>
+   <?common TimestampCommon.mpml?>
+   <?common Varactor.mpml?>
+   <?common OnlineCommon.mpml?>
+
+   <?common MonitorStats.mpml?>
+   <CommonContainer ref="MonitorSubsystemStats" />
+
+   <CommonMonitorPoint ref="timestamp" />
+   <CommonMonitorPoint ref="online" />
+
+   <CommonContainer ref="AntennaCommon" />
+
+   <!-- The Ovro antennas optimally contain two busses each. -->
+   <!-- This is a little trickery to easily display this info on RTD -->
+   <Container name="Can">
+        <CommonContainer ref="Host" />
+        <CommonContainer ref="Bus" count="2" />
+   </Container>
+
+   <Container name="Cryo">
+
+
+      <!-- ************************************************** -->
+      <!-- CryoCompressor module monitor point definitions   -->
+      <!-- ************************************************** -->
+      <Container name="Compressor">
+        <description>Cryo Compressor CAN module </description>
+
+         <CommonMonitorPoint ref="state" />
+
+         <!-- Blanking frame monitor packet 1 -->
+         <MonitorPoint name="ambientTemp" type="float">
+            <shortName>T (ambient)</shortName>
+            <longName>Ambient Temperature</longName>
+            <description>Ambient air temp underneath platform</description>
+            <units>C</units>
+            <precision>1</precision>
+         </MonitorPoint>
+
+         <MonitorPoint name="cabinetTemp" type="float">
+            <shortName>T (cabinet)</shortName>
+            <longName>Cabinet Temperature</longName>
+            <units>C</units>
+            <precision>1</precision>
+            <description>Compressor environmental enclosure
+                internal temperature</description>
+         </MonitorPoint>
+
+         <MonitorPoint name="compressorTemp" type="float">
+            <shortName>T (compressor)</shortName>
+            <longName>Compressor Temperature</longName>
+            <units>C</units>
+            <precision>1</precision>
+            <description>Compressor cabinet internal temperature</description>
+         </MonitorPoint>
+
+         <MonitorPoint name="returnTemp" type="float">
+            <shortName>T (return)</shortName>
+            <longName>Return Temperature</longName>
+            <units>C</units>
+            <precision>1</precision>
+            <description>Compressor return helium gas temperature</description>
+         </MonitorPoint>
+
+         <!-- Blanking frame monitor packet 2 -->
+         <MonitorPoint name="highSidetemp" type="float">
+            <shortName>T (high side)</shortName>
+            <longName>High Side Temperature</longName>
+            <units>C</units>
+            <precision>1</precision>
+            <description>
+                Compressor high side helium gas temperature.
+            </description>
+            <errLo>5.0</errLo>
+            <warnLo>10.0</warnLo>
+            <warnHi>85.0</warnHi>
+            <errHi>90.0</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="supplyPressure" type="float">
+            <shortName>P (supply)</shortName>
+            <longName>Supply Pressure</longName>
+            <units>PSI</units>
+            <precision>1</precision>
+            <description>Compressor high side helium gas pressure
+            </description>
+            <warnLo>200.0</warnLo>
+            <warnHi>280.0</warnHi>
+            <errLo>180.0</errLo>
+            <errHi>300.0</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="returnPressure" type="float">
+            <shortName>P (return)</shortName>
+            <longName>Return Pressure</longName>
+            <units>PSI</units>
+            <precision>1</precision>
+            <description>Compressor return helium gas pressure
+            </description>
+         </MonitorPoint>
+
+         <MonitorPoint name="outLouverCmd" type="float">
+            <shortName>Out Louv Cmd</shortName>
+            <units>%</units>
+            <precision>2</precision>
+            <description>Environmental enclosure outlet louver command voltage.
+            </description>
+         </MonitorPoint>
+
+         <!-- Blanking frame monitor packet 3 -->
+         <MonitorPoint name="inLouverCmd" type="float">
+            <shortName>In Louv Cmd</shortName>
+            <units>%</units>
+            <precision>2</precision>
+            <description>Environmental enclosure inlet louver command voltage
+            </description>
+         </MonitorPoint>
+
+         <MonitorPoint name="outLouverPos" type="float">
+            <shortName>Out Louv Pos</shortName>
+            <units>%</units>
+            <precision>2</precision>
+            <description>Environmental enclosure outlet louver actual position
+            return voltage </description>
+         </MonitorPoint>
+
+         <MonitorPoint name="inLouverPos" type="float">
+            <shortName>In Louv Pos</shortName>
+            <units>%</units>
+            <precision>2</precision>
+            <description>Environmental enclosure inlet louver actual position
+            return voltage </description>
+         </MonitorPoint>
+
+         <!-- Blanking frame monitor packet 4 -->
+         <MonitorPoint name="heCylinderPressure" type="float">
+            <shortName>P (cylinder)</shortName>
+            <units>PSI</units>
+            <precision>1</precision>
+            <description>Helium cylinder pressure </description>
+         </MonitorPoint>
+
+         <MonitorPoint name="highPressureAlarm" type="bool">
+            <shortName>Pressure Alarm</shortName>
+            <description>Compressor high pressure alarm</description>
+            <warnHi>true</warnHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="highTemperatureAlarm" type="bool">
+            <shortName>Comp Temp Alarm</shortName>
+            <description>Compressor high temperature alarm</description>
+            <warnHi>true</warnHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="roomTemperatureAlarm" type="bool">
+            <shortName>Room Temp Alarm</shortName>
+            <description>Compressor room temperature alarm</description>
+            <warnHi>true</warnHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="fridgeDriveState" type="enum">
+            <shortName>Drive</shortName>
+            <longName>Drive Status</longName>
+            <description>Refrigerator drive on or off</description>
+            <enum name="OFF"/> <!-- Ox00 -->
+            <errHi>OFF</errHi>
+            <enum name="ON"/>  <!-- 0x01 -->
+         </MonitorPoint>
+
+         <MonitorPoint name="tempError" type="float">
+            <shortName>Temp Error</shortName>
+            <longName>Temperature Error</longName>
+            <units>C</units>
+            <precision>2</precision>
+            <description>
+                Actual supply temperarature minus setpoint temperature.
+            </description>
+         </MonitorPoint>
+
+         <MonitorPoint name="tempLoopState" type="enum">
+            <shortName>Loop State</shortName>
+            <description>State of temperature control loop for
+            compressor cabinet </description>
+            <enum name="DISABLED" /> <!-- 0x00 -->
+            <enum name="ENABLED" />  <!-- 0x01 -->
+         </MonitorPoint>
+
+         <MonitorPoint name="moduleTemperature" type="float">
+            <shortName>Mod Temp</shortName>
+            <description>CAN module internal temperature</description>
+            <precision>1</precision>
+         </MonitorPoint>
+
+         <!-- Blanking frame monitor packet 5 -->
+         <MonitorPoint name="powerSupply24v" type="float">
+            <shortName>+24V</shortName>
+            <longName>Positive 24V Power Supply Voltage</longName>
+            <units>V</units>
+            <precision>1</precision>
+            <description>24 volt power supply voltage</description>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="powerSupply12v" type="float">
+            <shortName>+12V</shortName>
+            <longName>Positive 12V Power Supply Voltage</longName>
+            <units>V</units>
+            <precision>1</precision>
+            <description>12 volt power supply voltage</description>
+            <warnLo>11.5</warnLo>
+            <warnHi>12.5</warnHi>
+            <errLo>11.0</errLo>
+            <errHi>13.0</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="powerSupply5vAnalog" type="float">
+            <shortName>+5V Analog</shortName>
+            <units>V</units>
+            <precision>1</precision>
+            <description>5 volt analog power supply voltage</description>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="powerSupply5vDigital" type="float">
+            <shortName>+5V Digital</shortName>
+            <units>V</units>
+            <precision>1</precision>
+            <description>5 volt digital power supply voltage</description>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+         </MonitorPoint>
+
+
+         <!-- System monitor packets -->
+
+         <!-- Include common microprocessor monitor points -->
+         <CommonContainer ref="Xac" />
+
+      </Container>
+
+      <!-- ************************************************** -->
+      <!-- *********** End CryoCompressor device ************ -->
+      <!-- ************************************************** -->
+
+      <!-- ************************************************** -->
+      <!-- CryoTemperature module monitor point definitions   -->
+      <!-- ************************************************** -->
+      <Container name="Dewar" >
+        <description>Cryo temperatures CAN module</description>
+
+         <CommonMonitorPoint ref="state" />
+
+         <MonitorPoint name="firstStageTemp" type="float">
+            <shortName>1st Stage Temp</shortName>
+            <units>K</units>
+            <description>Cryostat first stage temperature</description>
+            <precision>2</precision>
+         </MonitorPoint>
+
+         <MonitorPoint name="shieldTemp" type="float">
+            <shortName>Shield Temp</shortName>
+            <units>K</units>
+            <description>1st Stage Shield Temperature</description>
+            <precision>2</precision>
+         </MonitorPoint>
+
+         <MonitorPoint name="heliumPotTemp" type="float">
+            <shortName>He Pot Temp</shortName>
+            <units>K</units>
+            <description>Helium Pot Temperature</description>
+            <precision>2</precision>
+         </MonitorPoint>
+
+         <MonitorPoint name="plate4kTemp" type="float">
+            <shortName>4K Plate Temp</shortName>
+            <units>K</units>
+            <description>Four Kelvin Plate Temperature</description>
+            <precision>2</precision>
+            <warnLo>3.5</warnLo>
+            <warnHi>5.5</warnHi>
+            <errLo>3.0</errLo>
+            <errHi>6.5</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="hastingsVac" type="float">
+            <shortName>Hastings Vac</shortName>
+            <units>mtorr</units>
+            <description>Cryostat vacuum, Hastings gauge</description>
+            <precision>2</precision>
+         </MonitorPoint>
+
+         <MonitorPoint name="modionVac" type="float">
+            <shortName>Modion Vac</shortName>
+            <units>utorr</units>
+            <description>Cryostat vacuum, Modion gauge</description>
+            <precision>2</precision>
+         </MonitorPoint>
+
+         <MonitorPoint name="ps24v" type="float">
+            <shortName>+24V</shortName>
+            <longName>24V Power Supply</longName>
+            <units>V</units>
+            <description>+24 V power supply voltage </description>
+            <precision>2</precision>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="ps12v" type="float">
+            <shortName>+12V</shortName>
+            <longName>12V Power Supply</longName>
+            <units>V</units>
+            <description>+12 V power supply voltage </description>
+            <precision>2</precision>
+            <warnLo>11.5</warnLo>
+            <warnHi>12.5</warnHi>
+            <errLo>11.0</errLo>
+            <errHi>13.0</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="ps5vAnalog" type="float">
+            <shortName>+5V Analog</shortName>
+            <units>V</units>
+            <description>+5 V analog power supply voltage </description>
+            <precision>2</precision>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="ps5vDigital" type="float">
+            <shortName>+5V Digital</shortName>
+            <units>V</units>
+            <description>+5 V digital power supply voltage </description>
+            <precision>2</precision>
+         </MonitorPoint>
+
+         <!-- System monitor packets -->
+
+         <!-- Include common microprocessor monitor points -->
+         <CommonContainer ref="Xac" />
+      </Container>
+
+      <!-- End CryoTemperature module monitor point definitions -->
+
+   </Container>
+
+   <!-- End Cryo Container -->
+
+    <Container name="Frontend">
+    </Container>
+
+    <!-- Drive Container -->
+    <Container name="Drive" priority="vital">
+        <MonitorPoint name="sourcename" type="string">
+            <shortName>Source</shortName>
+            <longName>Sourcename</longName>
+            <description>
+                Source name for ra/dec
+            </description>
+            <width>8</width>
+        </MonitorPoint>
+        <MonitorPoint name="rightAscension" type="double">
+            <shortName>RA</shortName>
+            <longName>RightAscension</longName>
+            <description>
+               Apparent right ascension
+            </description>
+            <units>rad</units>
+        </MonitorPoint>
+        <MonitorPoint name="declination" type="double">
+            <shortName>Dec</shortName>
+            <longName>Declination</longName>
+            <description>
+             Apparent declination
+            </description>
+            <units>rad</units>
+        </MonitorPoint>
+        <MonitorPoint name="errorSky" type="float">
+            <shortName>SkyErr</shortName>
+            <longName>ErrorSky</longName>
+            <description>
+                Total tracking error on the sky
+            </description>
+            <precision>1</precision>
+            <units>arcsec</units>
+        </MonitorPoint>
+        <!-- These enums must agree exactly with AntennaCommon -->
+        <MonitorPoint name="driveState" type="enum">
+            <shortName>DriveState</shortName>
+            <longName>Drive State</longName>
+            <description>
+              The state of the drive system
+            </description>
+            <enum name="TRACK">
+              <description> Tracking</description>
+            </enum>
+            <enum name="CLOSE">
+              <description>
+                Close to the source - the antenna is no longer slewing but is
+                trying to track the source within tolerance. If the antenna is
+                in TRACK and then falls outside the tolerance, it will go into
+                this state.
+              </description>
+            </enum>
+            <enum name="SLEW">
+              <description>Slewing</description>
+            </enum>
+            <enum name="STOW">
+              <description>Currently in stow position</description>
+            </enum>
+            <enum name="SNOW">
+              <description>Currently minimizing snow buildup</description>
+            </enum>
+            <enum name="STOP">
+              <description>Stopped, drive power off</description>
+            </enum>
+            <enum name="DISABLE">
+              <description>
+                Manually disabled at the antenna, or collision detected.
+              </description>
+            </enum>
+            <enum name="HWLIMIT">
+                <description>Hardware limit</description>
+            </enum>
+            <enum name="SWLIMIT">
+                <description>Software limit</description>
+            </enum>
+            <enum name="ERROR">
+                <description>Error state (stalled/power problem)</description>
+            </enum>
+            <enum name="LOCAL">
+                <description>
+                    Antenna is under local control (i.e. handpaddle).
+                </description>
+            </enum>
+            <enum name="TEST">
+                <description>
+                    Drive system is in a test mode.
+                </description>
+            </enum>
+            <enum name="FATAL">
+                <description>
+                    A fatal drive system error has been detected.
+                    These errors include an az overlap switch failure,
+                    an impossible rate of motion in either axis, 
+                    an illegal azimuth podition, or a drive controller 
+                    overtemp.
+                </description>
+            </enum>
+
+            <errHi>ERROR</errHi>
+            <errHi>HWLIMIT</errHi>
+            <errHi>DISABLE</errHi>
+            <warnHi>SWLIMIT</warnHi>
+            <errHi>LOCAL</errHi>
+            <errHi>TEST</errHi>
+            <errHi>FATAL</errHi>
+        </MonitorPoint>
+
+        <!-- These enums must agree exactly with AntennaCommon -->
+        <MonitorPoint name="driveMode" type="enum">
+            <shortName>DriveMode</shortName>
+            <longName>Drive Control Mode</longName>
+            <description> Commanded mode of drive system </description>
+             <enum name="AZEL" >
+              <description>
+                Horizon coordinate system (azimuth and elevation)
+              </description>
+             </enum>
+             <enum name="EQUAT" >
+              <description>Equatorial coordinate system (ra/dec)</description>
+             </enum>
+             <enum name="STOW" >
+              <description>Stow</description>
+             </enum>
+             <enum name="SNOW">
+              <description>Minimize snow buildup on antennas</description>
+             </enum>
+             <enum name="STOP" >
+              <description>Stopped, with drive system turned off</description>
+             </enum>
+             <enum name="TEST" >
+              <description>
+                Drive system is in testing mode for engineering purposes.
+                This may be because of an open servo loop or becaues the
+                drive module has been placed in engineering mode.
+              </description>
+             </enum>
+             <errHi>TEST</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="sequenceNo" type="int">
+            <shortName>SeqNo</shortName>
+            <longName>Sequene Number</longName>
+            <description>
+                Sequence number of last completed drive command.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="sequenceNoSuccess" type="bool" >
+            <shortName>SeqNoSuccess</shortName>
+            <longName>Sequence Number Success</longName>
+            <description>
+                Indicates if the command associated with the last sequence
+                number was successful.
+            </description>
+            <errHi>false</errHi>
+        </MonitorPoint>
+
+        <Container name="Track" >
+            <MonitorPoint name="requestedAzimuth" type="double">
+                <shortName>ReqAz</shortName>
+                <longName>RequestedAzimuth</longName>
+                <description>
+                    Requested azimuth; north=0.  This is the total requested
+                    azimuth including offsets.
+                </description>
+                <precision>3</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="actualAzimuth" type="double">
+                <shortName>ActAz</shortName>
+                <longName>Actual azimuth</longName>
+                <description> Actual azimuth; north=0 </description>
+                <precision>3</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="errorAzimuth" type="float">
+                <shortName>AzErr</shortName>
+                <longName>ErrorAzimuth</longName>
+                <description>
+                    Error between the actual and requested azimuth, on encoder
+                </description>
+                <precision>1</precision>
+                <units>arcsec</units>
+            </MonitorPoint>
+            <MonitorPoint name="errorAzimuthSky" type="float">
+                <shortName>AzSkyErr</shortName>
+                <longName>ErrorAzimuthSky</longName>
+                <description>
+                    Error between the actual and requested azimuth, on the sky
+                </description>
+                <precision>1</precision>
+                <units>arcsec</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="rmsErrorAzimuth" type="float">
+                <shortName>AzRMSErr</shortName>
+                <longName>ErrorAzimuthRMS</longName>
+                <description>
+                    Azimuth error RMS over last twenty frames. Calculated
+                    with respect to zero, not the mean error.
+                </description>
+                <precision>2</precision>
+                <units>arcsec</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="requestedElevation" type="double">
+                <shortName>ReqEl</shortName>
+                <longName>RequestedElevation</longName>
+                <description>
+                    Requested elevation; horizon=0. This is the total requested
+                    elevation, including offsets.
+                </description>
+                <precision>3</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="actualElevation" type="double">
+                <shortName>ActEl</shortName>
+                <longName>Actual elevation</longName>
+                <description> Actual elevation; horizon=0 </description>
+                <precision>3</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="errorElevation" type="float">
+                <shortName>ElErr</shortName>
+                <longName>ErrorElevation</longName>
+                <description>
+                    Error between the requested and actual elevation
+                </description>
+                <precision>1</precision>
+                <units>arcsec</units>
+            </MonitorPoint>
+            <MonitorPoint name="rmsErrorElevation" type="float">
+                <shortName>ElRMSErr</shortName>
+                <longName>ErrorElevationRMS</longName>
+                <description>
+                    Elevation error RMS over last twenty frames. Calculated
+                    with respect to zero, not the mean error.
+                </description>
+                <precision>2</precision>
+                <units>arcsec</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="azimuthRate" type="float">
+                <shortName>AzRate</shortName>
+                <longName>AzimuthRate</longName>
+                <description>
+                    Azimuth rate (on the encoder, not sky)
+                </description>
+                <precision>3</precision>
+                <units>deg/min</units>
+            </MonitorPoint>
+            <MonitorPoint name="elevationRate" type="float">
+                <shortName>ElRate</shortName>
+                <longName>ElevationRate</longName>
+                <description>
+                    Elevation rate
+                </description>
+                <precision>3</precision>
+                <units>deg/min</units>
+            </MonitorPoint>
+            <MonitorPoint name="azEastCurrent" type="float">
+                <shortName>azEastI</shortName>
+                <longName>EastAzimuthMotorCurrent</longName>
+                <precision>1</precision>
+                <units>A</units>
+                <description>East azimuth drive motor current</description>
+            </MonitorPoint>
+            <MonitorPoint name="azWestCurrent" type="float">
+                <shortName>azWestI</shortName>
+                <longName>WestAzimuthMotorCurrent</longName>
+                <precision>1</precision>
+                <units>A</units>
+                <description>West azimuth drive motor current</description>
+            </MonitorPoint>
+            <MonitorPoint name="azPreloadCurrent" type="float">
+                <shortName>preloadI</shortName>
+                <longName>PreloadCurrent</longName>
+                <precision>1</precision>
+                <units>A</units>
+                <description>Azimuth drive motors current difference</description>
+            </MonitorPoint>
+            <MonitorPoint name="elCurrent" type="float">
+                <shortName>ElI</shortName>
+                <longName>ElevationMotorCurrent</longName>
+                <precision>1</precision>
+                <units>A</units>
+                <description>Elevation drive motor current</description>
+            </MonitorPoint>
+            <MonitorPoint name="wrapLogic" type="enum">
+              <shortName>wrapLogic</shortName>
+              <longName>Wrap Logic</longName>
+              <description>
+                The azimuth drive can operate over more than a full circle,
+                and the wrap logic dictates how the ambiguities are resolved.
+                Direction are defined as viewed from above.
+              </description>
+              <enum name="ZERO">
+               <description>
+                 Do not modify target position (no turns added).
+               </description>
+              </enum>
+              <enum name="ADD">
+               <description>
+                 Add a turn to the target position (in AZ).
+               </description>
+              </enum>
+              <enum name="SUB">
+               <description>
+                Subtract a turn to the target position (in AZ).
+               </description>
+              </enum>
+            </MonitorPoint>
+            <MonitorPoint name="limit" type="enum">
+                <shortName>HwSwLimit</shortName>
+                <longName>HwSwLimit</longName>
+                <description>Hardware and/or software limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="HW">
+                 <description>Hardware limit detected</description>
+                </enum>
+                <enum name="SW">
+                 <description>Software limit detected</description>
+                </enum>
+                <enum name="HWSW">
+                 <description>A hardware and software limit has
+                   has been exceeded on different axes
+                 </description>
+                </enum>
+            </MonitorPoint>
+            <MonitorPoint name="emergencyOff" type="enum">
+                <shortName>EmergOff</shortName>
+                <longName>EmergencyOff</longName>
+                <description>
+                    Drive controllers disabled by the emergency off
+                    switch in the sidecab.
+                </description>
+                <enum name="OK">
+                 <description>Drive not disabled</description>
+                </enum>
+                <enum name="SIDECAB">
+                 <description>
+                    Drives disabled by emergency off switch in sidecab
+                 </description>
+                </enum>
+                <errHi>SIDECAB</errHi>
+             </MonitorPoint>
+             <MonitorPoint name="disabled" type="enum">
+                <shortName>Disable</shortName>
+                <longName>Disabled</longName>
+                <description>
+                    Drive controllers disabled by the local/remote/off switch in
+                    the base of the mount (teepee).
+                </description>
+                <enum name="OK">
+                 <description>Drive not disabled</description>
+                </enum>
+                <enum name="TEEPEE">
+                 <description>
+                    Drives disabled by local/remote/off switch in mount base
+                 </description>
+                </enum>
+                <errHi>TEEPEE</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="controllerFault" type="enum">
+                <shortName>Fault</shortName>
+                <longName>ControllerFault</longName>
+                <description>Drive controllers fault states</description>
+                <enum name="OK">
+                 <description>No drive faults</description>
+                </enum>
+                <enum name="AZ">
+                 <description>Azimuth drive controller fault</description>
+                </enum>
+                <enum name="EL">
+                 <description>Elevation drive controller fault</description>
+                </enum>
+                <enum name="AZEL">
+                 <description>Az and el drive controller faults</description>
+                </enum>
+                <errHi>AZ</errHi>
+                <errHi>EL</errHi>
+                <errHi>AZEL</errHi>
+            </MonitorPoint>
+
+        </Container>
+
+        <Container name="Limit" >
+            <description>
+                Hardware and software limit conditions
+            </description>
+            <MonitorPoint name="azSwLimit" type="enum">
+                <shortName>AzSwLimit</shortName>
+                <longName>AzimuthSoftwareLimit</longName>
+                <description>Azimuth software limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="PLUSLIM">
+                 <description>
+                    Software azimuth limit exceeded in + direction
+                 </description>
+                </enum>
+                <enum name="MINUSLIM">
+                 <description>
+                    Software azimuth limit exceeded in - direction
+                 </description>
+                </enum>
+                <enum name="ERROR">
+                 <description>
+                    Hardware limit status could not be correctly determined.
+                 </description>
+                </enum>
+                <errHi>PLUSLIM</errHi>
+                <errHi>MINUSLIM</errHi>
+                <errHi>ERROR</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="elSwLimit" type="enum">
+                <shortName>ElSwLimit</shortName>
+                <longName>ElevationSoftwareLimit</longName>
+                <description>Elevation software limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="PLUSLIM">
+                 <description>
+                    Software elevation limit exceeded in + direction
+                 </description>
+                </enum>
+                <enum name="MINUSLIM">
+                 <description>
+                    Software elevation limit exceeded in - direction
+                 </description>
+                </enum>
+                <enum name="ERROR">
+                 <description>
+                    Hardware limit status could not be correctly determined.
+                 </description>
+                </enum>
+                <errHi>PLUSLIM</errHi>
+                <errHi>MINUSLIM</errHi>
+                <errHi>ERROR</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="azHwLimit" type="enum">
+                <shortName>AzHwLimit</shortName>
+                <longName>AzimuthHardwareLimit</longName>
+                <description>Azimuth hardware limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="PLUSLIM">
+                 <description>
+                    Hardware azimuth limit exceeded in + direction
+                 </description>
+                </enum>
+                <enum name="MINUSLIM">
+                 <description>
+                    Hardware azimuth limit exceeded in - direction
+                 </description>
+                </enum>
+                <enum name="ERROR">
+                 <description>
+                    Hardware limit status could not be correctly determined.
+                 </description>
+                </enum>
+                <errHi>PLUSLIM</errHi>
+                <errHi>MINUSLIM</errHi>
+                <errHi>ERROR</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="elHwLimit" type="enum">
+                <shortName>ElHwLimit</shortName>
+                <longName>ElevationHardwareLimit</longName>
+                <description>Elevation hardware limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="PLUSLIM">
+                 <description>Hardware elevation limit exceeded in + direction</description>
+                </enum>
+                <enum name="MINUSLIM">
+                 <description>Hardware elevation limit exceeded in - direction</description>
+                </enum>
+                <enum name="ERROR">
+                 <description>
+                    Hardware limit status could not be correctly determined.
+                 </description>
+                </enum>
+                <errHi>PLUSLIM</errHi>
+                <errHi>MINUSLIM</errHi>
+                <errHi>ERROR</errHi>
+            </MonitorPoint>
+
+        </Container>
+
+        <Container name="Point" >
+            <MonitorPoint name="offsetAz" type="double">
+                <shortName>offAz</shortName>
+                <longName>Azimuth pointing offset</longName>
+                <description>Azimuth pointing offset as an arc, not a coordinate offset</description>
+                <precision>2</precision>
+                <units>arcmin</units>
+            </MonitorPoint>
+            <MonitorPoint name="offsetEl" type="double">
+                <shortName>offEl</shortName>
+                <longName>Elevation pointing offset</longName>
+                <description>Elevation pointing offset in arcmin</description>
+                <precision>2</precision>
+                <units>arcmin</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="mountOffsetAz" type="double">
+                <shortName>mountOffAz</shortName>
+                <longName>Azimuth pointing offset</longName>
+                <description>Azimuth pointing offset as an arc, not a coordinate offset</description>
+                <precision>2</precision>
+                <units>arcmin</units>
+            </MonitorPoint>
+            <MonitorPoint name="mountOffsetEl" type="double">
+                <shortName>mountOffEl</shortName>
+                <longName>Elevation pointing offset</longName>
+                <description>Elevation pointing offset in arcmin</description>
+                <precision>2</precision>
+                <units>arcmin</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="refractionModel" type="enum">
+                <shortName>refracModel</shortName>
+                <longName>Refraction Model</longName>
+                <description>Refraction Model</description>
+                <enum name="OPTICAL"/>
+                <enum name="RADIO"/>
+                <warnHi>OPTICAL</warnHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="refraction" type="float">
+                <shortName>refrac</shortName>
+                <longName>Refraction</longName>
+                <description>Refraction pointing correction</description>
+                <precision>2</precision>
+                <units>arcmin</units>
+            </MonitorPoint>
+
+            <!-- This is the analog tilt, as read by the microvax,
+                not to be confused with the tiltmeter device -->
+            <MonitorPoint name="tilt" type="float">
+                <shortName>TiltMag</shortName>
+                <longName>TiltMagnitude</longName>
+                <description>
+                    Inclination of the azimuth axis from vertical
+                </description>
+                <precision>2</precision>
+                <units>arcmin</units>
+                <warnHi>0.5</warnHi>
+                <errHi>1.0</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="tiltDirection" type="float">
+                <shortName>TiltDir</shortName>
+                <longName>TiltDirection</longName>
+                <description>
+                    Direction of inclination of the azimuth axis from
+                    vertical, 0=north
+                </description>
+                <precision>0</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <Container name="Constants" >
+                <MonitorPoint name="m1" type="double">
+                    <shortName>m1</shortName>
+                    <longName>m1</longName>
+                    <description>
+                        Mount pointing constant: az encoder offset
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="m2" type="double">
+                    <shortName>m2</shortName>
+                    <longName>m2</longName>
+                    <description>
+                        Mount pointing constant: el encoder offset
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="m3" type="double">
+                    <shortName>m3</shortName>
+                    <longName>m3</longName>
+                    <description>
+                        Mount pointing constant: non-orthogonality of axes
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="m4" type="double">
+                    <shortName>m4</shortName>
+                    <longName>m4</longName>
+                    <description>
+                        Mount pointing constant: axis verticality, North/South
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="m5" type="double">
+                    <shortName>m5</shortName>
+                    <longName>m5</longName>
+                    <description>
+                        Mount pointing constant: axis verticality, East/West
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="r1" type="double">
+                    <shortName>r1</shortName>
+                    <longName>r1</longName>
+                    <description>
+                        Radio beam pointing constant: az collimation error
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="r2" type="double">
+                    <shortName>r2</shortName>
+                    <longName>r2</longName>
+                    <description>
+                        Radio beam pointing constant: el collimation error
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="r3" type="double">
+                    <shortName>r3</shortName>
+                    <longName>r3</longName>
+                    <description>
+                        Radio beam pointing constant: sag, deltaEl=sag*cos(el)
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="o1" type="double">
+                    <shortName>o1</shortName>
+                    <longName>o1</longName>
+                    <description>
+                        Optical beam pointing constant: az collimation error
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="o2" type="double">
+                    <shortName>o2</shortName>
+                    <longName>o2</longName>
+                    <description>
+                        Optical beam pointing constant: el collimation error
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="o3" type="double">
+                    <shortName>o3</shortName>
+                    <longName>o3</longName>
+                    <description>
+                        Optical beam pointing constant: sag, deltaEl=sag*cos(el)
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="af0" type="double">
+                    <shortName>af0</shortName>
+                    <longName>af0</longName>
+                    <description>
+                        Tiltmeter aft/forward zero
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+                <MonitorPoint name="lr0" type="double">
+                    <shortName>lr0</shortName>
+                    <longName>lr0</longName>
+                    <description>
+                        Tiltmeter left/right zero
+                    </description>
+                    <precision>2</precision>
+                    <units>arcmin</units>
+                </MonitorPoint>
+            </Container>
+        </Container>
+
+        <Container name="Weather">
+             <MonitorPoint name="ambientTemp" type="double">
+               <shortName>Tamb</shortName>
+               <longName>Ambient Temperature</longName>
+               <description>
+                   Ambient temperature
+                </description>
+                <precision>1</precision>
+                <units>C</units>
+              </MonitorPoint>
+             <MonitorPoint name="dewpointTemp" type="double">
+               <shortName>Tdew</shortName>
+               <longName>Dewpoint Temperature</longName>
+               <description>
+                   Dewpoint temperature
+                </description>
+                <precision>1</precision>
+                <units>C</units>
+              </MonitorPoint>
+             <MonitorPoint name="barometricPressure" type="double">
+               <shortName>Barom</shortName>
+               <longName>Barometric Pressure</longName>
+               <description>
+                  Barometric pressure
+               </description>
+               <precision>1</precision>
+               <units>mbar</units>
+               <errHi>820</errHi>
+               <warnHi>800</warnHi>
+               <warnLo>720</warnLo>
+               <errLo>700</errLo>
+             </MonitorPoint>
+             <MonitorPoint name="windSpeed" type="double">
+               <shortName>Wind</shortName>
+               <longName>Wind speed</longName>
+               <description>
+                    Wind speed
+                </description>
+                <precision>1</precision>
+                <units>mph</units>
+              </MonitorPoint>
+             <MonitorPoint name="windDirection" type="double">
+               <shortName>WindDir</shortName>
+               <longName>Wind Direction</longName>
+               <description>
+                   Wind direction - by meteorilogical convention,
+                    the direction that the wind is coming from. Zero is north.
+                </description>
+                <precision>0</precision>
+                <units>deg</units>
+              </MonitorPoint>
+        </Container>
+
+        <Container name="System">
+            <description>
+                Monitor points pertinent to timing and state of the drive loop.
+                In general, displayed latency values should increase in the
+                order of definition below - e.g. encoder latency should be less
+                than loop wake delay which should be less than loop wake actual,
+                etc. Most values are in milliseconds since current frame, so
+                if things are really hosed, negative values are possible and
+                a good indicator.
+            </description>
+
+            <MonitorPoint name="timingErrorCount" type="int" >
+                <shortName>Encoder Timing Errors</shortName>
+                <description>
+                    Count indicating the number of times that the drive loop
+                    could not be executed due to old or missing encoder
+                    readings.
+                </description>
+                <errHi>1</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="encoderOfflineCount" type="int" >
+                <shortName>Encoder Offline Count</shortName>
+                <description>
+                    Count indicating the number of frames that the drive loop
+                    tried to retrieve encoder readings but couldn't due to the
+                    modules being in a state other than ONLINE.  A small count
+                    is normal due to startup latency.
+                </description>
+                <warnHi>50</warnHi>
+                <errHi>100</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="azEncoderLatency" type="float" >
+                <shortName>Az Read Latency</shortName>
+                <description>
+                    Azimuth encoder read latency after the frame boundary.
+                    This value can be negative if for instance encoder readings
+                    are not being updated.
+                </description>
+                <units>ms</units>
+                <errLo>0.0</errLo>
+                <errHi>25.0</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="elEncoderLatency" type="float" >
+                <shortName>El Read Latency</shortName>
+                <description>
+                    Elevation encoder read latency after the frame boundary.
+                    This value can be negative if for instance encoder readings
+                    are not being updated.
+                </description>
+                <units>ms</units>
+                <errLo>0.0</errLo>
+                <errHi>25.0</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="loopWakeDelay" type="float" >
+                <shortName>Loop Wake Delay</shortName>
+                <description>
+                    Period of time from the current frame boundary after which
+                    the drive loop is programmed to wake upon.
+                </description>
+                <units>ms</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="loopWakeActual" type="float" >
+                <shortName>Loop Wake Time</shortName>
+                <description>
+                    Period of time after the current frame boundary that the
+                    drive loop actually wakes upon.  Can be negative, if for
+                    instance the loop is deadlocked.
+                </description>
+                <units>ms</units>
+                <errLo>0.00</errLo>
+                <errHi>100.0</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="loopDone" type="float" >
+                <shortName>Loop Done Time</shortName>
+                <description>
+                    Elapsed time in milliseconds following the current frame
+                    since the last drive loop iteration completed.  This does
+                    not include time spent writing data to the monitor system.
+                    This value can be negative if for instance the drive loop
+                    is deadlocked.
+
+                    Total amount of time spent in a single drive loop iteration.
+                </description>
+                <units>ms</units>
+                <errLo>0.00</errLo>
+                <errHi>100.0</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="azPointingCorrection" type="float">
+                <shortName>Az Pointing Correction</shortName>
+                <longName>Total Az Pointing Correction</longName>
+                <description>
+                    The total angular correction added to the raw encoder value
+                    to align antenna with the az/el coordinate system.
+                </description>
+                <units>arcsec</units>
+                <precision>1</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="elPointingCorrection" type="float">
+                <shortName>El Pointing Correction</shortName>
+                <longName>Total El Pointing Correction</longName>
+                <description>
+                    The total angular correction added to the raw encoder value
+                    to align antenna with the az/el coordinate system.
+                </description>
+                <units>arcsec</units>
+                <precision>1</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="azServoBias" type="float" >
+                <shortName>Az Servo Bias</shortName>
+                <longName>Azimuth Servo Bias</longName>
+                <description>The azimuth servo loop bias.</description>
+                <units>arcmin</units>
+                <precision>2</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="elServoBias" type="float" >
+                <shortName>El Servo Bias</shortName>
+                <longName>Elevation Servo Bias</longName>
+                <description>The elevation servo loop bias.</description>
+                <units>arcmin</units>
+                <precision>2</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="azOverlapSwitchFail" type="bool">
+                <shortName>Az Overlap Fail</shortName>
+                <longName>Az Overlap Switch State</longName>
+                <description>
+                    State of the azimuth overlap switch.  The azimuth overlap
+                    switch is critical to safe drive operation.  Failure of
+                    this switch can result in the dish destructively wrapping
+                    itself up.  It is possible to detect a limited subset
+                    of azimuth switch failures, if one is detected stop the
+                    drive, remove it from the array and notify staff
+                    immediately.  DO NOT attempt to get around this error
+                    with the hand paddle or via restarts.
+                    An Az overlap switch failure sets the drive to FATAL.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="impossibleRate" type="bool">
+                <shortName>Impossible Rate</shortName>
+                <longName>Impossible rate of motion</longName>
+                <description>
+                    An impossible rate of motion in either or both axes
+                    was detected from the difference in encoder readings.
+                    The overlap bit is not used to compute the az rate.
+                    An impossible rate failure sets the drive to FATAL.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="forbiddenAz" type="bool">
+                <shortName>Forbidden Az</shortName>
+                <longName>Forbidden Azimuth</longName>
+                <description>
+                    The azimuth inferred from the encoder and overlap bit
+                    is outside of the limits. It is possible that this can
+                    be caused by a failure of the az overlap switch. Because
+                    of the possible destruction that this type fo failure can
+                    cause, specific actions must be taken. If this failure
+                    occurs, stop the antenna, remove it from the array, and
+                    notify staff. DO NOT attempt to get around this error 
+                    with the hand paddle or via restarts.
+                    A forbidden az failure sets the drive to FATAL.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+        </Container>
+
+        <Container name="DriveModule">
+
+            <CommonMonitorPoint ref="state" />
+
+            <MonitorPoint name="reqAzimuthRate" type="float">
+                <shortName>Req Az Rate</shortName>
+                <description>
+                    The requested azimuth encoder rate.  This is the rate
+                    requested by the software servo loop.  It corresponds to
+                    the rate that would be measured on the encoder.
+                </description>
+                <units>deg/min</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="cmdAzimuthRate" type="float">
+                <shortName>Cmd Az Rate</shortName>
+                <description>
+                    Rate corresponding to commanded voltage.  This is typically
+                    identical to the requested az rate but may differ if the
+                    requested rate was too large.
+                </description>
+                <units>deg/min</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="reqAzimuthVoltage" type="float">
+                <shortName>Req Az Voltage</shortName>
+                <description>
+                    Commanded azimuth voltage sent to the module.
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="cmdAzDac" type="float">
+                <shortName>Cmd Az Dac</shortName>
+                <description>
+                    Output voltage commanded on the Az drive DAC.
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="maxAzRate" type="float">
+                <shortName>Max Az Rate</shortName>
+                <description>
+                    Maximum rate antenna can be slewed at.
+                </description>
+                <units>deg/min</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="maxAzVoltage" type="float">
+                <shortName>Max Az Volts</shortName>
+                <description>
+                    Maximum voltage allowed by drive software AND module.
+                    This voltage corresponds to the voltage required to
+                    drive at the maximum azimuth rate.
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="reqElevationRate" type="float">
+                <shortName>Req El Rate</shortName>
+                <description>
+                    The requested elevation encoder rate.  This is the rate
+                    requested by the software servo loop.  It corresponds to
+                    the rate that would be measured on the encoder.
+                </description>
+                <units>deg/min</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="cmdElevationRate" type="float">
+                <shortName>Cmd El Rate</shortName>
+                <description>
+                    Rate corresponding to commanded voltage.
+                    This represents the elevation rate after compensating for
+                    leverarm and max rate.
+                </description>
+                <units>deg/min</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="reqElevationVoltage" type="float">
+                <shortName>Req El Voltage</shortName>
+                <description>
+                    Commanded elevation voltage sent to the module.
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="cmdElDac" type="float">
+                <shortName>Cmd El Dac</shortName>
+                <description>
+                    Output voltage commanded on the El drive DAC.
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="maxElRate" type="float">
+                <shortName>Max El Rate</shortName>
+                <description>
+                    Maximum rate antenna can be slewed at.
+                </description>
+                <units>deg/min</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="maxElVoltage" type="float">
+                <shortName>Max El Volts</shortName>
+                <description>
+                    Maximum voltage allowed by drive software AND module.
+                    This voltage corresponds to the voltage required to
+                    drive at the maximum azimuth rate.
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="driveOn" type="bool">
+                <shortName>Drive On</shortName>
+                <description>
+                    Indicates state of power to drive system - when disabled
+                    power to the whole system is off and the brakes
+                    are applied.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="azEnable" type="bool">
+                <shortName>Az Enable</shortName>
+                <description>
+                    State of azimuth drive.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="elEnable" type="bool">
+                <shortName>El Enable</shortName>
+                <description>
+                    State of elevation drive.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="baseSwitch" type="enum">
+                <shortName>Teepee Switch</shortName>
+                <description>
+                    Toggle switch in the teepee that allows remote,
+                    local or off control of the antenna drives.
+                </description>
+                <enum name="OFF"/> <!-- 0x00 -->
+                <enum name="REMOTE"/> <!-- 0x01 -->
+                <enum name="LOCAL"/> <!-- 0x02 -->
+                <errHi>OFF</errHi>
+                <errHi>LOCAL</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="deadmanTimeout" type="bool">
+                <shortName>Timeout</shortName>
+                <description>
+                    True when the deadman has timed out.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="engineeringMode" type="enum">
+                <shortName>Mode</shortName>
+                <description>
+                    Reflects whether or not the module is in engineering mode,
+                    when it will not respond to rates from the host.
+                </description>
+                <enum name="NORMAL" />      <!-- 0x00 -->
+                <enum name="ENGINEERING" /> <!-- 0x01 -->
+                <errHi>ENGINEERING</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="azPosLimit" type="bool">
+                <shortName>+Az Limit</shortName>
+                <description>Azimuth positive limit</description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="azNegLimit" type="bool">
+                <shortName>-Az Limit</shortName>
+                <description>Azimuth Negative Limit</description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="elPosLimit" type="bool">
+                <shortName>+El Limit</shortName>
+                <description>Elevation Positive Limit</description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="elNegLimit" type="bool">
+                <shortName>-El Limit</shortName>
+                <description>Elevation Negative Limit</description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="westAzOverTemp" type="bool">
+                <shortName>W Az Over Temp</shortName>
+                <description>West Azimuth Drive Over Temperature</description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="westAzFault" type="bool">
+                <shortName>W Az Fault</shortName>
+                <description>
+                    Indicates a west azimuth drive fault
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="eastAzOverTemp" type="bool">
+                <shortName>E Az Over Temp</shortName>
+                <description>
+                    Indicates east azimuth drive is over temperature.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="eastAzFault" type="bool">
+                <shortName>E Az Fault</shortName>
+                <description>
+                    Indicates an east azimuth drive fault
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="elOverTemp" type="bool">
+                <shortName>El Over Temp</shortName>
+                <description>
+                    Indicates elevation drive over temperature.
+                </description>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="elFault" type="bool">
+                <shortName>El Fault</shortName>
+                <longName>Elevation Drive Fault</longName>
+                <errHi>true</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="azOverlap" type="bool">
+                <shortName>AzOverlap</shortName>
+                <longName>Az overlap switch</longName>
+                <description>
+                    Az overlap wrap switch is activated.
+                    This is a direct readout of the hardware switch
+                    and is activated for azimuths less than about -5 degrees.
+                    It is used to resolve the amibiguity of encoder readings
+                    in the range [270,360] degrees. If the switch is activated
+                    readings in this range are mapped to [-90,0] degrees.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="westAzCurrent" type="float">
+                <shortName>W Az Current</shortName>
+                <description>
+                    Motor current for west Az motor.
+                </description>
+                <units>A</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="eastAzCurrent" type="float">
+                <shortName>E Az Current</shortName>
+                <description>
+                    Motor current for east Az motor.
+                </description>
+                <units>A</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="elCurrent" type="float">
+                <shortName>El Current</shortName>
+                <description>
+                    Motor current for El motor.
+                </description>
+                <units>A</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="ps24v" type="float">
+                <shortName>+24V</shortName>
+                <longName>Positive 24 Volt Power Supply Voltage</longName>
+                <units>V</units>
+                <warnLo>20.0</warnLo>
+                <warnHi>28.0</warnHi>
+                <errLo>18.0</errLo>
+                <errHi>30.0</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="ps5vDigital" type="float">
+                <shortName>+5V Digital</shortName>
+                <longName>Positive 5V Digital Power Supply Voltage</longName>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="ps5_3vAnalog" type="float">
+                <shortName>+5.3V Analog</shortName>
+                <longName>Positive 5.3V Analog Power Supply Voltage</longName>
+                <description>
+                    Positive 5.3V analog power supply voltage.
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="psNeg5_3vAnalog" type="float">
+                <shortName>-5.3V Analog</shortName>
+                <longName>Negative 5.3V Analog Power Supply Voltage</longName>
+                <description>
+                    Negative 5.3V analog power supply voltage.
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="ps24vTeepee" type="float">
+                <shortName>+24V Teepee</shortName>
+                <description>
+                    +24 V Teepee power supply voltage.
+                </description>
+                <units>V</units>
+                <warnLo>20.0</warnLo>
+                <warnHi>28.0</warnHi>
+                <errLo>18.0</errLo>
+                <errHi>30.0</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="fpgaVersion" type="string">
+                <shortName>FPGA Ver.</shortName>
+                <description>
+                    FPGA code version in major.minor format.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="moduleTemp" type="float">
+                <shortName>Mod Temp</shortName>
+                <description>
+                    On-board module temperature.
+                </description>
+                <units>C</units>
+            </MonitorPoint>
+
+
+            <CommonContainer ref="Xac" />
+
+        </Container>
+
+        <Container name="AzEncoder">
+            <description>
+                Dummy container for the azimuth encoder device.
+            </description>
+            <CommonMonitorPoint ref="state" />
+            <CommonContainer ref="Encoder"/>
+            <CommonContainer ref="Xac" />
+        </Container>
+
+        <Container name="ElEncoder">
+            <description>
+                Dummy container for the elevation encoder device.
+            </description>
+            <CommonMonitorPoint ref="state" />
+            <CommonContainer ref="Encoder"/>
+            <CommonContainer ref="Xac" />
+    </Container>
+    </Container>
+
+    <!-- ************************************************** -->
+    <!-- Tiltmeter module monitor point definitions         -->
+    <!-- ************************************************** -->
+    <CommonContainer ref="TiltmeterModule" name="Tiltmeter" />
+    <!-- ************************************************** -->
+    <!-- ************** End Tiltmeter module*************** -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- Secondary Mirror module monitor point definitions  -->
+    <!-- ************************************************** -->
+    <Container name="Secondary" >
+        <description>10-M Secondary Mirror</description>
+
+        <!-- Common state monitor point -->
+        <CommonMonitorPoint ref="state" />
+
+        <!-- Blanking Frame Monitor Packet 2 -->
+        <MonitorPoint name="xPosition" type="double">
+            <shortName>X Position</shortName>
+            <longName>X Position</longName>
+            <description>Current x-position of mirror</description>
+            <units>mm</units>
+        </MonitorPoint>
+        <MonitorPoint name="yPosition" type="double">
+            <shortName>Y Position</shortName>
+            <longName>Y Position</longName>
+            <description>Current y-position of mirror</description>
+            <units>mm</units>
+        </MonitorPoint>
+        <MonitorPoint name="zPosition" type="double">
+            <shortName>Z Position</shortName>
+            <longName>Z Position</longName>
+            <description>Current z-position of mirror</description>
+            <units>mm</units>
+        </MonitorPoint>
+
+        <!-- Blanking Frame Monitor Packet 3 -->
+        <MonitorPoint name="xMovementStatus" type="enum">
+            <shortName>X Status</shortName>
+            <longName>X Movement Status</longName>
+            <description>Status of x-axis movement</description>
+            <enum name="IDLE"/>           <!-- 0x00 -->
+            <enum name="POSITION_OK">     <!-- 0x01 -->
+                <description>Requested position has been acquired.</description>
+            </enum>
+            <enum name="MOVING">          <!-- 0x02 -->
+                <description>Moving to a requested position.</description>
+            </enum>
+            <enum name="STUCK">           <!-- 0x03 -->
+                <description>Unable to reach requested position.</description>
+            </enum>
+            <enum name="SOFT_LIMIT_POS">  <!-- 0x04 -->
+                <description>At software positive limit</description>
+            </enum>
+            <enum name="SOFT_LIMIT_NEG">  <!-- 0x05 -->
+                <description>At software negative limit</description>
+            </enum>
+            <enum name="HARD_LIMIT_POS">  <!-- 0x06 -->
+                <description>At hardware positive limit</description>
+            </enum>
+            <enum name="HARD_LIMIT_NEG">  <!-- 0x07 -->
+                <description>At hardware negative limit</description>
+            </enum>
+            <enum name="MANUAL">          <!-- 0x08 -->
+                <description>
+                    Axis commanded to move a specific number of steps
+                    (engineering use).
+                </description>
+            </enum>
+            <enum name="ERROR">           <!-- 0x09 -->
+                <description>
+                    Some error condition detected; both limits active,
+                    LVDT reseting, etc.
+                </description>
+            </enum>
+            <enum name="STOP">            <!-- 0x0A -->
+                <description>
+                    An immediate stop has been issued or another axis is in
+                    MANUAL.
+                </description>
+            </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="yMovementStatus" type="enum">
+            <shortName>Y Status</shortName>
+            <longName>Y Movement Status</longName>
+            <description>Status of y-axis movement</description>
+            <enum name="IDLE"/>           <!-- 0x00 -->
+            <enum name="POSITION_OK">     <!-- 0x01 -->
+                <description>Requested position has been acquired.</description>
+            </enum>
+            <enum name="MOVING">          <!-- 0x02 -->
+                <description>Moving to a requested position.</description>
+            </enum>
+            <enum name="STUCK">           <!-- 0x03 -->
+                <description>Unable to reach requested position.</description>
+            </enum>
+            <enum name="SOFT_LIMIT_POS">  <!-- 0x04 -->
+                <description>At software positive limit</description>
+            </enum>
+            <enum name="SOFT_LIMIT_NEG">  <!-- 0x05 -->
+                <description>At software negative limit</description>
+            </enum>
+            <enum name="HARD_LIMIT_POS">  <!-- 0x06 -->
+                <description>At hardware positive limit</description>
+            </enum>
+            <enum name="HARD_LIMIT_NEG">  <!-- 0x07 -->
+                <description>At hardware negative limit</description>
+            </enum>
+            <enum name="MANUAL">          <!-- 0x08 -->
+                <description>
+                    Axis commanded to move a specific number of steps
+                    (engineering use).
+                </description>
+            </enum>
+            <enum name="ERROR">           <!-- 0x09 -->
+                <description>
+                    Some error condition detected; both limits active,
+                    LVDT reseting, etc.
+                </description>
+            </enum>
+            <enum name="STOP">            <!-- 0x0A -->
+                <description>
+                    An immediate stop has been issued or another axis is in
+                    MANUAL.
+                </description>
+            </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="zMovementStatus" type="enum">
+            <shortName>Z Status</shortName>
+            <longName>Z Movement Status</longName>
+            <description>Status of z-axis movement</description>
+            <enum name="IDLE"/>           <!-- 0x00 -->
+            <enum name="POSITION_OK">     <!-- 0x01 -->
+                <description>Requested position has been acquired.</description>
+            </enum>
+            <enum name="MOVING">          <!-- 0x02 -->
+                <description>Moving to a requested position.</description>
+            </enum>
+            <enum name="STUCK">           <!-- 0x03 -->
+                <description>Unable to reach requested position.</description>
+            </enum>
+            <enum name="SOFT_LIMIT_POS">  <!-- 0x04 -->
+                <description>At software positive limit</description>
+            </enum>
+            <enum name="SOFT_LIMIT_NEG">  <!-- 0x05 -->
+                <description>At software negative limit</description>
+            </enum>
+            <enum name="HARD_LIMIT_POS">  <!-- 0x06 -->
+                <description>At hardware positive limit</description>
+            </enum>
+            <enum name="HARD_LIMIT_NEG">  <!-- 0x07 -->
+                <description>At hardware negative limit</description>
+            </enum>
+            <enum name="MANUAL">          <!-- 0x08 -->
+                <description>
+                    Axis commanded to move a specific number of steps
+                    (engineering use).
+                </description>
+            </enum>
+            <enum name="ERROR">           <!-- 0x09 -->
+                <description>
+                    Some error condition detected; both limits active,
+                    LVDT reseting, etc.
+                </description>
+            </enum>
+            <enum name="STOP">            <!-- 0x0A -->
+                <description>
+                    An immediate stop has been issued or another axis is in
+                    MANUAL.
+                </description>
+            </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="lvdtResetting" type="bool" >
+            <shortName>LVDT Resetting</shortName>
+            <longName>LVDT Reset In Progress</longName>
+            <description>LVDT sensor failure flag</description>
+        </MonitorPoint>
+
+        <!-- Blanking Frame Monitor Packet 4 -->
+        <MonitorPoint name="xLimitPlus" type="enum" >
+            <shortName>+X Limit</shortName>
+            <longName>Positive X Limit</longName>
+            <description>Limit reached flag</description>
+            <enum name="NOT_REACHED"/>
+            <enum name="REACHED"/>
+            <errHi>REACHED</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="xLimitMinus" type="enum" >
+            <shortName>-X Limit</shortName>
+            <longName>Negative X Limit</longName>
+            <description>Limit reached flag</description>
+            <enum name="NOT_REACHED"/>
+            <enum name="REACHED"/>
+            <errHi>REACHED</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="yLimitPlus" type="enum" >
+            <shortName>+Y Limit</shortName>
+            <longName>Positive Y Limit</longName>
+            <description>Limit reached flag</description>
+            <enum name="NOT_REACHED"/>
+            <enum name="REACHED"/>
+            <errHi>REACHED</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="yLimitMinus" type="enum" >
+            <shortName>-Y Limit</shortName>
+            <longName>Negative Y Limit</longName>
+            <description>Limit reached flag</description>
+            <enum name="NOT_REACHED"/>
+            <enum name="REACHED"/>
+            <errHi>REACHED</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="zLimitPlus" type="enum" >
+            <shortName>+Z Limit</shortName>
+            <longName>Postive Z Limit</longName>
+            <description>Limit reached flag</description>
+            <enum name="NOT_REACHED"/>
+            <enum name="REACHED"/>
+            <errHi>REACHED</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="zLimitMinus" type="enum" >
+            <shortName>-Z Limit</shortName>
+            <longName>Negative Z Limit</longName>
+            <description>Limit reached flag</description>
+            <enum name="NOT_REACHED"/>
+            <enum name="REACHED"/>
+            <errHi>REACHED</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="zTracking" type="enum">
+            <shortName>Z Tracking</shortName>
+            <longName>Z Tracking Status</longName>
+            <description>Z-axis tracking on 10m antennas.</description>
+            <units>mm</units>
+            <enum name="ON"/>
+            <enum name="OFF"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="adcZero" type="float">
+            <shortName>ADC Zero</shortName>
+            <longName>ADC Zero Voltage</longName>
+            <description>
+                Reading on the MAX 1270 input connected to ground.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="modTemp" type="float">
+            <shortName>Mod Temp</shortName>
+            <longName>Module Temperature</longName>
+            <units>C</units>
+            <precision>1</precision>
+            <description>Module temperature</description>
+        </MonitorPoint>
+
+        <!-- Blanking Frame Monitor Packet 1 -->
+        <MonitorPoint name="psPos5v" type="float" >
+            <shortName>+5V Supply</shortName>
+            <longName>5V Power Supply Voltage</longName>
+            <description>+5V General power supply voltage</description>
+            <units>V</units>
+            <precision>2</precision>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="psPos12v" type="float" >
+            <shortName>+12V Supply</shortName>
+            <longName>12V Power Supply Voltage</longName>
+            <description>12V power supply voltage</description>
+            <units>V</units>
+            <precision>2</precision>
+            <warnLo>11.5</warnLo>
+            <warnHi>12.5</warnHi>
+            <errLo>11.0</errLo>
+            <errHi>13.0</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="psNeg12v" type="float" >
+            <shortName>-12V Supply</shortName>
+            <longName>-12V Power Supply Voltage</longName>
+            <description>-12V power supply voltage</description>
+            <units>V</units>
+            <precision>2</precision>
+            <warnLo>-12.5</warnLo>
+            <warnHi>-11.5</warnHi>
+            <errLo>-13.0</errLo>
+            <errHi>-11.0</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="psPos24v" type="float" >
+            <shortName>+24V Supply</shortName>
+            <longName>24v Power Supply Voltage</longName>
+            <description>24V power supply voltage</description>
+            <units>V</units>
+            <precision>2</precision>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <!-- Include common microprocessor monitor points -->
+        <CommonContainer ref="Xac" />
+
+    </Container>
+    <!-- ************************************************** -->
+    <!-- *********** End Secondary Mirror Module ********** -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- ************ Antenna Optics Module *************** -->
+    <!-- ************************************************** -->
+    <Container name="Optics">
+        <description>10-M Antenna Optics CAN module</description>
+
+        <!-- Common state monitor point -->
+        <CommonMonitorPoint ref="state" />
+
+        <MonitorPoint name="rxSelectState" type="enum">
+            <shortName>Rx Select State</shortName>
+            <longName>Rx Select State</longName>
+            <description>State of receiver selection mechanism.</description>
+            <enum name="UNKNOWN_OR_BAD"/> <!-- 0x00 -->
+            <enum name="MOVING"/>         <!-- 0x01 -->
+            <enum name="RX_CM"/>          <!-- 0x02 -->
+            <enum name="RX_3MM"/>         <!-- 0x03 -->
+            <enum name="RX_1MM"/>         <!-- 0x04 -->
+            <enum name="GRID"/>           <!-- 0x05 -->
+            <enum name="MANUAL"/>         <!-- 0x06 -->
+            <enum name="STUCK"/>          <!-- 0x07 -->
+        </MonitorPoint>
+
+        <MonitorPoint name="requestedRx" type="enum">
+            <shortName>Last Requested Rx</shortName>
+            <longName>Last Requested Rx</longName>
+            <description>Last Requested Rx</description>
+            <enum name="RX_CM"/>
+            <enum name="RX_3MM"/>
+            <enum name="RX_1MM"/>
+            <enum name="GRID"/>
+            <enum name="NONE"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="calState" type="enum">
+            <shortName>Cal State</shortName>
+            <longName>Calibration State</longName>
+            <description>
+                Instantaneous state of calibration mechanism.
+            </description>
+            <enum name="UNKNOWN">
+                <description>Unknown or bad.</description>
+            </enum>
+            <enum name="MOVING"/>
+            <enum name="SKY"/>
+            <enum name="AMBIENT_LOAD"/>
+            <enum name="PARTIAL">
+                <description>Partially reflecting vane</description>
+            </enum>
+            <enum name="HOT_LOAD"/>
+            <enum name="STUCK"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="ambLoadTemp" type="float">
+            <shortName>Amb Load Temp</shortName>
+            <longName>Ambient Load Temperature</longName>
+            <description>Temperature of ambient load absorber</description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="hotLoadTemp" type="float">
+            <shortName>Hot Load Temp</shortName>
+            <longName>Hot Load Temperature</longName>
+            <description>Temperature of hot calibration source</description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="hotLoadCurrent" type="float">
+            <shortName>Hot Load Current</shortName>
+            <longName>Hot Load Current</longName>
+            <description>Current of hot load heater</description>
+            <units>A</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="tertiaryPos" type="enum">
+            <shortName>Tertiary Pos</shortName>
+            <longName>Tertiary Position</longName>
+            <description>Position of tertiary mirror.</description>
+            <!-- Warning used in cast - order must be retained. -->
+            <enum name="UNKNOWN"/>        
+            <enum name="MOVING"/>
+            <enum name="RX_MM_POS"/>
+            <enum name="RX_CM_POS"/>
+            <enum name="STUCK"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="tertBits" type="byte">
+            <shortName>Tertiary Stat Bits</shortName>
+            <description>
+                FPGA register value for tertiary mirror status.
+                Bit meanings:
+                0: mm receiver position sensor
+                1: cm receiver position sensor
+                2: Stop sensor
+                3: CW control
+                4: CCW control
+            </description>
+            <units>bitmap</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="mmSelectPos" type="enum">
+            <shortName>mm Select Pos</shortName>
+            <longName>mm Select Position</longName>
+            <description>Position of millimeter select mechanism</description>
+            <enum name="UNKNOWN"/>
+            <enum name="MOVING"/>
+            <enum name="RX_3MM_POS"/>
+            <enum name="RX_1MM_POS"/>
+            <enum name="GRID_POS"/>
+            <enum name="MANUAL"/>
+            <enum name="STUCK"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="mmSelAngle" type="float">
+            <shortName>mm Rx Angle</shortName>
+            <longName>Millimeter Rx Angle</longName>
+            <description>
+                Millimeter receiver select mechanism angle.
+            </description>
+            <units>deg</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="setVoltage" type="float">
+            <shortName>Raw Set V</shortName>
+            <description>
+                Raw voltage measured on readout pot wihtout any calibration
+                to degrees or offset applied.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="servoState" type="enum">
+            <shortName>Servo State</shortName>
+            <description>
+                Status of the mm receiver select mechanism position servo.
+            </description>
+            <enum name="SERVO_OFF"/>
+            <enum name="SERVO_ON"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="angleError" type="float">
+            <shortName>Angle Error</shortName>
+            <description>
+                Angular error in the position of the mm receiver select
+                mechanism relative to the currently requested value.
+            </description>
+            <units>deg</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="angleOffset" type="float">
+            <shortName>Angle Offset</shortName>
+            <longName>Angle Offset</longName>
+            <description>
+                Offset that is added to the requested anle of the mm receiver
+                select mechanism.  This is principally required to get an
+                accurate position for the grid so that the nominal angle
+                setting will match the ideal position.
+            </description>
+            <units>deg</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="dataValid" type="bool" >
+            <shortName>DataValid</shortName>
+            <longName>Data Valid</longName>
+            <description>Flags if state of module was consistent with good
+                visibility data during last blanking period.
+                FALSE: Not in valid state during all or part of previous frame.
+                TRUE: In valid state for all of previous frame.
+            </description>
+            <errHi>false</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="refVoltage" type="float">
+            <shortName>Reference V</shortName>
+            <longName>Reference Voltage</longName>
+            <description>Reference Voltage</description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="mmSelBits" type="byte">
+            <shortName>FPGA Rx Stat Bits</shortName>
+            <description>
+                FPGA register value for millimeter rx select mechanism status.
+                Bit meanings:
+                0: Done
+            </description>
+            <units>bitmap</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="cmCalState" type="enum">
+            <shortName>cm Cal State</shortName>
+            <longName>Centimeter Rx Cal State</longName>
+            <description>
+                Position of the calibrator for the current cm receiver.
+            </description>
+            <enum name="UNKNOWN"/>
+            <enum name="MOVING"/>
+            <enum name="SKY"/>
+            <enum name="AMB"/>
+            <enum name="STUCK"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="cmLoadTemp" type="float">
+            <shortName>cm Load Temp</shortName>
+            <longName>Centimeter Absorber Load Temp</longName>
+            <description>
+                Temperature of ambient absorber for centimeter receivers.
+            </description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="cmCalBits" type="byte">
+            <shortName>cm Cal Stat Bits</shortName>
+            <description>
+                FPGA register value for centimeter calibrator mechanism status.
+                Bit meanings:
+                0: Sky position sensor
+                1: Ambient load position sensor
+                2: Stop sensor
+                3: CW control
+                4: CCW control
+            </description>
+            <units>bitmap</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="mmCalState" type="enum">
+            <shortName>mm Cal State</shortName>
+            <longName>Millimeter Rx Cal State</longName>
+            <description>
+                Position of the calibrator for the current mm receiver.
+            </description>
+            <enum name="UNKNOWN"/>
+            <enum name="MOVING"/>
+            <enum name="SKY"/>
+            <enum name="AMB"/>
+            <enum name="PARTIAL"/>
+            <enum name="HOT"/>
+            <enum name="STUCK"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="mmCalBits" type="byte">
+            <shortName>mm Cal Stat Bits</shortName>
+            <description>
+                FPGA register value for millimeter calibrator mechanism status.
+                Bit meanings:
+                0: Sky position sensor
+                1: Ambient load position sensor
+                2: Dielectric vane position sensor
+                3: Stop sensor
+                4: CW control
+                5: CCW control
+            </description>
+            <units>bitmap</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="mmLoadTemp" type="float">
+            <shortName>mm Load Temp</shortName>
+            <longName>Millimeter Absorber Load Temp</longName>
+            <description>
+                Temperature of ambient absorber for millimeter receivers.
+            </description>
+            <units>C</units>
+         </MonitorPoint>
+
+        <MonitorPoint name="fpgaVersion" type="string">
+            <shortName>FPGA Ver.</shortName>
+            <description>
+                FPGA code version in major.minor format.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="modTemp" type="float">
+            <shortName>Module Temp</shortName>
+            <longName>Module Temperature</longName>
+            <description>Temperature of module</description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps24v" type="float">
+            <shortName>+24V PS</shortName>
+            <longName>24V PSU Voltage</longName>
+            <description>24V power supply unit voltage</description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5v" type="float">
+            <shortName>+5V PS</shortName>
+            <longName>5V Digital PSU Voltage</longName>
+            <description>5V digital power supply unit voltage</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos12v" type="float">
+            <shortName>+12V PS</shortName>
+            <longName>+12V Analog PSU Voltage</longName>
+            <description>+12V analog power supply unit voltage</description>
+            <units>V</units>
+            <warnLo>11.5</warnLo>
+            <warnHi>12.5</warnHi>
+            <errLo>11.0</errLo>
+            <errHi>13.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psNeg12v" type="float">
+            <shortName>-12V PS</shortName>
+            <longName>-12V Analog PSU Voltage</longName>
+            <description>-12V analog power supply unit voltage</description>
+            <units>V</units>
+            <warnLo>-12.5</warnLo>
+            <warnHi>-11.5</warnHi>
+            <errLo>-13.0</errLo>
+            <errHi>-11.0</errHi>
+        </MonitorPoint>
+
+
+        <!-- Include common microprocessor monitor points -->
+        <CommonContainer ref="Xac"/>
+
+    </Container>
+    <!-- ************************************************** -->
+    <!-- **********  End Antenna Optics Module ************ -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- ********* EnvironmentalMonitor Module ************ -->
+    <!-- ************************************************** -->
+    <Container name="EnvironmentalMonitor">
+        <description>10-M Antenna Environmantel Monitor CAN module</description>
+
+        <!-- Common state monitor point -->
+        <CommonMonitorPoint ref="state" />
+
+        <MonitorPoint name="sidecabTemp" type="float">
+            <shortName>Sidecab Temp</shortName>
+            <longName>Sidecab Temperature</longName>
+            <description>Temperature in the sidecab</description>
+            <units>C</units>
+            <errHi>28.01</errHi>
+            <warnHi>25.01</warnHi>
+            <warnLo>17.99</warnLo>
+            <errLo>14.99</errLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="outsideTemp" type="float">
+            <shortName>Outside Temp</shortName>
+            <longName>Outside Temperature</longName>
+            <description>Temperature outside of sidecab</description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="lensCapState" type="enum">
+            <shortName>Lens Cap State</shortName>
+            <longName>Lens Cap State</longName>
+            <description>Shows the state of the lens cap for the optical
+                pointing camera.  The camera is on when the lens cap is open.
+            </description>
+            <enum name="CLOSED" />
+            <enum name="OPEN" />
+            <enum name="OPENING" />
+            <enum name="CLOSING" />
+            <enum name="STUCK_OPEN" />
+            <enum name="STUCK_CLOSED" />
+            <enum name="STUCK_OPENING" >
+                <description>Became stuck in process of opening</description>
+            </enum>
+            <enum name="STUCK_CLOSING" >
+                <description>Became stuck in process of closing</description>
+            </enum>
+            <enum name="ERROR" />
+            <warnHi>OPENING</warnHi>
+            <warnHi>CLOSING</warnHi>
+            <errHi>STUCK_OPEN</errHi>
+            <errHi>STUCK_CLOSED</errHi>
+            <errHi>STUCK_OPENING</errHi>
+            <errHi>STUCK_CLOSING</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="cameraState" type="enum">
+            <shortName>Camera State</shortName>
+            <longName>Camera State</longName>
+            <description>Indicator for the camera/lens cap control signal.
+            </description>
+            <enum name="CAMERA_OFF">
+                <description>Camera off/lens cap on.</description>
+            </enum>
+            <enum name="CAMERA_ON">
+                <description>Camera on/lens cap off.</description>
+            </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="lensCapClosed" type="bool" >
+            <shortName>Lens Cap Closed</shortName>
+            <longName>Lens Cap Fully Closed</longName>
+            <description>Indicator for lens cap microswitch for
+                closed position.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="lensCapOpen" type="bool" >
+            <shortName>Lens Cap Open</shortName>
+            <longName>Lens Cap Fully Open</longName>
+            <description>Indicator for lens cap microswitch for
+                open position.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="emergencySwitch" type="enum">
+            <shortName>Emergency Switch</shortName>
+            <longName>Emergency Key Switch</longName>
+            <description>Status of the emergency key switch in the sidecab that
+                disables the antenna drives.
+            </description>
+            <enum name="DRIVES_DISABLED"/>
+            <enum name="DRIVES_ENABLED"/>
+        </MonitorPoint>
+
+        <!-- Blanking frame packet 2 -->
+        <MonitorPoint name="sidecabDoorOpen" type="bool" >
+            <shortName>Sidecab Door Open</shortName>
+            <longName>Sidecab Door Open</longName>
+            <description>Status of sidecab door:
+                TRUE: Door is open
+                FALSE: Door is closed
+            </description>
+            <errHi>true</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="teepeeDoorOpen" type="bool" >
+            <shortName>Teepee Door Open</shortName>
+            <longName>Teepee Door Open</longName>
+            <description>Status of teepee door:
+                TRUE: Door is open
+                FALSE: Door is closed
+            </description>
+            <errHi>true</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="timeSincePPM" type="int">
+            <shortName>Time Since PPM</shortName>
+            <longName>Time Since Last PPM</longName>
+            <description>Time elapsed since last pulse-per-minute signal to
+                the micro-vax.
+            </description>
+            <units>s</units>
+        </MonitorPoint>
+        <MonitorPoint name="ps1State" type="enum" >
+            <shortName>PS1 State</shortName>
+            <longName>Power Supply 1 State</longName>
+            <description>Reports state of 24 V power supply 1.
+            </description>
+            <enum name="OFF"/>
+            <enum name="ON"/>
+            <enum name="UNKNOWN"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="modTemp" type="float">
+            <shortName>Module Temp</shortName>
+            <longName>Module Temperature</longName>
+            <description>Temperature within the CAN module</description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps2State" type="enum" >
+            <shortName>PS2 State</shortName>
+            <longName>Power Supply 2 State</longName>
+            <description>Reports state of 24 V power supply 2.
+            </description>
+            <enum name="OFF"/>
+            <enum name="ON"/>
+            <enum name="UNKNOWN"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps3State" type="enum" >
+            <shortName>PS3 State</shortName>
+            <longName>Power Supply 3 State</longName>
+            <description>Reports state of 24 V power supply 3.
+            </description>
+            <enum name="OFF"/>
+            <enum name="ON"/>
+            <enum name="UNKNOWN"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps24vAntenna" type="float" >
+            <shortName>+24V Antenna</shortName>
+            <longName>24V antenna power supply voltage</longName>
+            <description>General antenna +24 V power supply voltage
+            </description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps24vThermalShutdown" type="float" >
+            <shortName>+24V Thermal Shutdown</shortName>
+            <longName>Antenna 24 V Thermal Shutdown Voltage</longName>
+            <description>General antenna +24 V power supply voltage
+                measures at the thermal shutdown module.
+            </description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps24vModule" type="float" >
+            <shortName>+24V Module</shortName>
+            <longName>24V module power supply voltage</longName>
+            <description>+24 V power supply inside module</description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5vDigital" type="float" >
+            <shortName>+5V Digital</shortName>
+            <longName>5V Power Supply</longName>
+            <description>5V Digital power supply voltage</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps3_3vDigital" type="float" >
+            <shortName>+3.3V Digital</shortName>
+            <longName>3.3V Power Supply Voltage</longName>
+            <description>3.3V digital power supply voltage</description>
+            <units>V</units>
+            <warnLo>3.0</warnLo>
+            <warnHi>3.6</warnHi>
+            <errLo>2.7</errLo>
+            <errHi>3.9</errHi>
+        </MonitorPoint>
+
+        <!-- Include common microprocessor monitor points -->
+        <CommonContainer ref="Xac"/>
+
+    </Container>
+    <!-- ************************************************** -->
+    <!-- *******  End EnvironmentalMonitor Module ********* -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- **************** YIG PLL Module ****************** -->
+    <!-- ************************************************** -->
+    <Container name="Yig">
+        <description>YIG Oscillator Pll CAN Module</description>
+
+        <!-- Common state monitor point -->
+        <CommonMonitorPoint ref="state" />
+
+
+        <MonitorPoint name="lockState" type="enum">
+            <shortName>LockState</shortName>
+            <longName>Lock State</longName>
+            <description>Current state of lock state machine</description>
+            <enum name="UNLOCKED"/>
+            <enum name="SEARCHING">
+                <description>Sweeping YIG tuning current</description>
+            </enum>
+            <enum name="REFINING">
+                <description>Reducing error voltage</description>
+            </enum>
+            <enum name="LOCKED"/>
+            <enum name="RELOCK"/>
+            <errHi>UNLOCKED</errHi>
+            <warnHi>SEARCHING</warnHi>
+            <warnHi>REFINING</warnHi>
+            <warnHi>RELOCK</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="lockBitStatus" type="enum" >
+            <shortName>Lock Bit Status</shortName>
+            <longName>Hardware Lock Bit Status</longName>
+            <description>
+                Status of the hardware lock bit.  This is distinct
+                from the lock state machine status.
+            </description>
+            <enum name="UNLOCKED"/>
+            <enum name="LOCKED"/>
+            <errHi>UNLOCKED</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="yigFreq" type="double">
+            <shortName>YigFreq</shortName>
+            <longName>Yig Frequency</longName>
+            <description>
+                YIG operating frequency with 1MHz resolution.  A 0.0 value
+                reading indicates that YIG tuning voltage is out of range.
+            </description>
+            <units>GHz</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="dataValid" type="bool" >
+            <shortName>DataValid</shortName>
+            <longName>Data Valid</longName>
+            <description>Flags if state of module was consistent with good
+                visibility data during last blanking period.
+                TRUE: System OK for data acquisition; the YIG is locked and
+                    the error voltage minimized.
+                FALSE: Possible data corruption.
+            </description>
+            <errHi>false</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="refStatus" type="enum" >
+            <shortName>RefStatus</shortName>
+            <longName>Reference Status</longName>
+            <description>Condition of the 10MHz reference</description>
+            <enum name="BAD">
+                <description>Reference is bad (absent or too low).
+                </description>
+            </enum>
+            <enum name="GOOD"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="loopGainRes" type="int" >
+            <shortName>LoopGain</shortName>
+            <longName>Loop Gain</longName>
+            <description>Loop gain in % of maximum gain</description>
+            <units></units>
+        </MonitorPoint>
+
+        <MonitorPoint name="dampingRes" type="int" >
+            <shortName>DampingRes</shortName>
+            <longName>Damping Resistance</longName>
+            <description>Damping resistance in ohms</description>
+            <units>ohm</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="ifLevel" type="float" >
+            <shortName>IfLevel</shortName>
+            <longName>IF Level</longName>
+            <description>IF level voltage.</description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="errorVoltage" type="float" >
+            <shortName>ErrorVoltage</shortName>
+            <longName>Error Voltage</longName>
+            <description>Error voltage</description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="yigCurrent" type="float" >
+            <shortName>YigCurrent</shortName>
+            <longName>YIG Current</longName>
+            <description>YIG coarse tuning current</description>
+            <units>mA</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="noiseMeterVoltage" type="float" >
+            <shortName>NoiseMeterVoltage</shortName>
+            <longName>Noise Meter Voltage</longName>
+            <description>Noise meter voltage</description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="sweepStatus" type="enum" >
+            <shortName>SweepStatus</shortName>
+            <longName>Sweep Status</longName>
+            <description>Status of the hardware sweep.  This is ON by default
+                (when the module is reset), but may be turned off or on
+                manually.
+            </description>
+            <enum name="OFF"/>
+            <enum name="ON"/>
+            <warnHi>OFF</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="autoRelockStatus" type="enum" >
+            <shortName>AutoRelockStatus</shortName>
+            <longName>Automatic Relock Status</longName>
+            <description>Status of the auto relock loop.  Auto-relock is
+                enabled by default and will cause the YIG to automatically
+                try and relock if it falls out of lock.
+            </description>
+            <enum name="OFF"/>
+            <enum name="ON" />
+        </MonitorPoint>
+
+        <MonitorPoint name="relockCount" type="byte" >
+            <shortName>AutoRelockCount</shortName>
+            <longName>Auto-relock Count</longName>
+            <description>Number of times the YIG has tried to relock.  If a
+                new frequency command is sent, the relock count is reset to
+                zero.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="yigId" type="byte" >
+            <shortName>YigId</shortName>
+            <longName>YIG ID</longName>
+            <description>YIG ID</description>
+        </MonitorPoint>
+
+        <MonitorPoint name="calDate" type="string" >
+            <shortName>Cal Date</shortName>
+            <longName>Calibration Date</longName>
+            <description>
+                Date module was calibrated.
+            </description>
+            <width>9</width>
+        </MonitorPoint>
+
+        <MonitorPoint name="modTemp" type="float" >
+            <shortName>ModTemp</shortName>
+            <longName>Module Temperature</longName>
+            <description>Temperature of CAN module</description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos24vAnalog" type="float" >
+            <shortName>+24V</shortName>
+            <longName>Positive 24V PSU Voltage</longName>
+            <description>+24V PSU voltage</description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos5vDigital" type="float" >
+            <shortName>+5V</shortName>
+            <longName>Positive 5V PSU Voltage</longName>
+            <description>+5V digital PSU voltage</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos5vAnalog" type="float" >
+            <shortName>+5V Analog</shortName>
+            <longName>Positive 5V Analog PSU Voltage</longName>
+            <description>+5V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 4 -->
+        <MonitorPoint name="psPos9v" type="float" >
+            <shortName>+9 V</shortName>
+            <longName>Positive 9V PSU Voltage</longName>
+            <description>+9V analog PSU voltage</description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos15v" type="float" >
+            <shortName>+15 V</shortName>
+            <longName>Positive 15V PSU Voltage</longName>
+            <description>+15V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>14.5</warnLo>
+            <warnHi>15.5</warnHi>
+            <errLo>14.0</errLo>
+            <errHi>16.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psNeg5vAnalog" type="float" >
+            <shortName>-5V Analog</shortName>
+            <longName>Negative 5V Analog PSU Voltage</longName>
+            <description>-5V analog PSU voltage</description>
+            <units>V</units>
+            <warnHi>-4.85</warnHi>
+            <warnLo>-5.15</warnLo>
+            <errHi>-4.75</errHi>
+            <errLo>-5.25</errLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="psNeg15v" type="float" >
+            <shortName>-15V</shortName>
+            <longName>Negative 15V PSU Voltage</longName>
+            <description>-15v analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>-15.5</warnLo>
+            <warnHi>-14.5</warnHi>
+            <errLo>-16.0</errLo>
+            <errHi>-14.0</errHi>
+        </MonitorPoint>
+
+        <!-- Include common microprocessor monitor points -->
+        <CommonContainer ref="Xac"/>
+
+    </Container>
+    <!-- ************************************************** -->
+    <!-- **************** End YIG PLL Module ************** -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- ***********  LO Reference Monitor Module  ******** -->
+    <!-- ************************************************** -->
+    <Container name="LoReferenceContainer" >
+        <CommonMonitorPoint ref="state" />
+
+        <!-- Common Device from LOReferenceMonitor.mpml -->
+        <CommonContainer ref="LoReference"/>
+
+        <!-- Include common microprocessor points -->
+        <CommonContainer ref="Xac"/>
+
+    </Container>
+
+    <!-- ************************************************** -->
+    <!-- ******** End LO Reference Monitor Module ********* -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- *************** Antenna IF Module **************** -->
+    <!-- ************************************************** -->
+    <Container name="AntennaIfContainer" count="2" >
+
+        <CommonMonitorPoint ref="state" />
+
+        <CommonContainer ref="AntennaIF"/>
+
+        <!-- Include common microprocessor points -->
+        <CommonContainer ref="Xac"/>
+
+    </Container>
+    <!-- ************************************************** -->
+    <!-- ************** End Antenna IF Module************** -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- ********* Rx Temperature Control Module ********** -->
+    <!-- ************************************************** -->
+    <Container name="RxThermalControl">
+        <description>
+            The 10-m Electronics Temperature Controller CAN module controls
+            and monitors the temperature of the electronics modules in the
+            thermal enclosure on the receiver plate.  There are two control
+            loops, one for each end of the component mounting plate.  Loop 1
+            is at the left end of the plate and loop 2 is at the right end when
+            viewing the receiver plate with the antenna at zenith.
+            Temperatures are sensed using DS18B20 1-wire thermometers and
+            the temperature is controlled by applying current to power
+            resistors on the plate.  The currents are generated with a pulse
+            width modulated (PWM) H-bridge for high efficiency.
+        </description>
+
+        <!-- Common state monitor point -->
+        <CommonMonitorPoint ref="state" />
+
+        <!-- Blanking frame monitor packet 1 -->
+        <MonitorPoint name="loopTemp" type="float" count="2">
+            <shortName>LoopTemp</shortName>
+            <longName>Loop Temperature</longName>
+            <description>
+                Temperature read by loop thermometer.
+            </description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="airTemp" type="float" >
+            <shortName>AirTemp</shortName>
+            <longName>Enclosure Air Temperature</longName>
+            <description>
+                Temperature measured inside the thermal enclosure.
+            </description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="moduleTemp" type="float" >
+            <shortName>ModuleTemp</shortName>
+            <longName>Module Temperature</longName>
+            <description>
+                Temperature of the CAN module.
+            </description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 2 -->
+        <MonitorPoint name="heaterVoltage" type="float" count="2" >
+            <shortName>HeaterV</shortName>
+            <longName>Heater Voltage</longName>
+            <description>
+                Voltage applied to loop heater.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="heaterCurrent" type="float" count="2" >
+            <shortName>HeaterI</shortName>
+            <longName>Heater Current</longName>
+            <description>
+                Current applied to loop heater.
+            </description>
+            <units>A</units>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 3 & 5 -->
+        <MonitorPoint name="heaterLoopState" type="enum" count="2" >
+            <shortName>LoopState</shortName>
+            <longName>Loop State</longName>
+            <description>
+                Status of the internal temperature feedback loop.
+            </description>
+            <enum name="HEAT_OFF" >
+                <description>Heater off.</description>
+            </enum>
+            <enum name="NOMINAL" >
+                <description>Loop error less than 0.1C.</description>
+            </enum>
+            <enum name="HI_BAD_RANGE" >
+                <description>
+                    Temperature too high, heater out of range.
+                </description>
+            </enum>
+            <enum name="HI_IN_RANGE" >
+                <description>
+                    Temperature too high, heater in range.
+                </description>
+            </enum>
+            <enum name="LOW_BAD_RANGE" >
+                <description>
+                    Temperature too low, heater out of range.
+                </description>
+            </enum>
+            <enum name="LOW_IN_RANGE" >
+                <description>
+                    Temperature too low, heater in range.
+                </description>
+            </enum>
+            <enum name="MANUAL" >
+                <description>
+                    Manual PWM mode.
+                </description>
+            </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="powerFraction" type="float" count="2" >
+            <shortName>Power Frac</shortName>
+            <longName>Power Fraction</longName>
+            <description>
+                Fraction of maximum power as a percentage.
+            </description>
+            <units>%</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="tempDiff" type="float" count="2" >
+            <shortName>TempDiff</shortName>
+            <longName>Temperature Difference</longName>
+            <description>
+                Difference between set point and actual temperature.
+            </description>
+            <units>K</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="integratedDiff" type="float" count="2" >
+            <shortName>IntegDiff</shortName>
+            <longName>Integrated Temperature Difference</longName>
+            <description>
+                Integrated difference between set point and actual temperature.
+            </description>
+            <units>K s</units>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 4  & 6 -->
+        <MonitorPoint name="heaterLoopGain" type="float" count="2" >
+            <shortName>LoopGain</shortName>
+            <longName>Heater Loop Gain</longName>
+            <description>Loop gain.</description>
+            <units>% max pwr per K</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="integConstant" type="float" count="2" >
+            <shortName>LoopIntegC</shortName>
+            <longName>Loop Integration Constant</longName>
+            <description>
+                Loop gain for integrator.
+            </description>
+            <units>% max pwr K per s</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="rateConstant" type="float" count="2" >
+            <shortName>LoopRateC</shortName>
+            <longName>Loop Rate Constant</longName>
+            <description>Loop rate constant.</description>
+            <units>% max pwr s per K</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="bandwidth" type="float" count="2" >
+            <shortName>LoopBW</shortName>
+            <longName>Loop Bandwidth</longName>
+            <description>Loop bandwidth.</description>
+            <units>Hz</units>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 7 -->
+        <MonitorPoint name="ps24v" type="float" >
+            <shortName>+24V</shortName>
+            <longName>24V Power Supply Voltage</longName>
+            <description>24V power supply voltage.</description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psPos12v" type="float" >
+            <shortName>+12V</shortName>
+            <longName>+12V Power Supply Voltage</longName>
+            <description>
+                +12V thermal control power supply voltage.
+            </description>
+            <units>V</units>
+            <warnLo>11.5</warnLo>
+            <warnHi>12.5</warnHi>
+            <errLo>11.0</errLo>
+            <errHi>13.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="psNeg12v" type="float" >
+            <shortName>-12V</shortName>
+            <longName>-12V Power Supply Voltage</longName>
+            <description>
+                -12V thermal control power supply voltage.
+            </description>
+            <units>V</units>
+            <warnLo>-12.5</warnLo>
+            <warnHi>-11.5</warnHi>
+            <errLo>-13.0</errLo>
+            <errHi>-11.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5v" type="float" >
+            <shortName>+5V</shortName>
+            <longName>5V Power Supply Voltage</longName>
+            <description>
+                5V thermal control power supply voltage.
+            </description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <CommonContainer ref="Xac"/>
+
+    </Container>
+    <!-- ************************************************** -->
+    <!-- ******* End Rx Temperature Control Module ******** -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- ********** Bias Tuned Gunn Pll Modules ************ -->
+    <!-- ************************************************** -->
+    <Container name="Gunn1mm">
+        <description>Dummy container for the common Gunn device.</description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="GunnPll"/>
+        <CommonContainer ref="Xac"/>
+    </Container>
+    <Container name="Gunn3mm">
+        <description>Dummy container for the common Gunn device.</description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="GunnPll"/>
+        <CommonContainer ref="Xac"/>
+    </Container>
+    <Container name="Gunn1cm">
+        <description>Dummy container for the varactor module.</description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="VaractorModule" name="Varactor"/>
+        <CommonContainer ref="Xac"/>
+    </Container>
+
+    <!-- ************************************************** -->
+    <!-- ********* End Bias Tuned Gunn Pll Module ********* -->
+    <!-- ************************************************** -->
+
+    <!-- ************************************************** -->
+    <!-- ************  SIS Receiver Module  *************** -->
+    <!-- ************************************************** -->
+    <Container name="Rx1mm" count="2"> <!-- 0 is Left Pol, 1 is Right Pol -->
+        <description> Dummy container for the Sis Receiver device.</description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="SisReceiver"/>
+        <CommonContainer ref="Xac"/>
+    </Container>
+
+    <Container name="Rx3mm">
+        <description> Dummy container for the Sis Receiver device.</description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="SisReceiver"/>
+        <CommonContainer ref="Xac"/>
+    </Container>
+    <!-- ************************************************** -->
+    <!-- *********** End SIS Receiver Module ************** -->
+    <!-- ************************************************** -->
+
+    <?common RxBias.mpml?>
+    <CommonContainer ref="RxBias" />
+
+    <Container name="RxBiasTemps">
+
+        <MonitorPoint  name="tempFirstStage" type="float">
+          <shortName>1st Stage Temp</shortName>
+          <description>
+            Temperature sensor on 1st stage radiation shield. 
+          </description>
+          <units>K</units>
+        </MonitorPoint>
+
+        <MonitorPoint  name="tempSecondStage" type="float">
+          <shortName>2nd Stage Temp</shortName>
+          <description>
+            Temperature sensor on 2nd stage cold head. 
+          </description>
+          <units>K</units>
+          <errLo>5.0</errLo>
+          <errHi>30.0</errHi>
+        </MonitorPoint>
+
+    </Container>
+
+</Subsystem>

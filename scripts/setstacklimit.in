@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# Simple script to set the stack ulimit for the imr process
+#
+# We are having trouble in Dual Science Subarray mode, because the
+# imr process is running out of VM space due to too many threads.
+#
+# The default stack size is 8MB. This also carries over to the pthread
+# per-thread stack. This can be seen with the following command:
+# $ ulimit -s
+# 8192
+#
+# This can be seen by running the following command:
+# $ cat /proc/`pidof imr`/status | grep -E '^Vm|^Threads'
+# VmPeak:  2669928 kB
+# VmSize:  2219728 kB
+# VmLck:         0 kB
+# VmHWM:     12956 kB
+# VmRSS:     10092 kB
+# VmData:  2210124 kB
+# VmStk:        84 kB
+# VmExe:        16 kB
+# VmLib:      8504 kB
+# VmPTE:      1164 kB
+# Threads:        266
+#
+# You'll notice that we're running 266 threads. Multiply by 8192 and you
+# get 2179072 kB. This tracks the VmSize number fairly closely.
+#
+# In dual science mode, we are running ~375 threads. This means that we're
+# using 3072000 kB of VmSize space. This is dangerously close to the 3GB
+# VmSize limit on 32-bit Linux.
+#
+# To solve this problem, we lower the per-process (and per-thread) stack size
+# to 6144 kB (6MB), a decrease of 25%. This should allow us 512 threads,
+# which pushes the problem away for a while.
+#
+
+ulimit -s 6144
+exec "$@"

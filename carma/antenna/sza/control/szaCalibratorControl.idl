@@ -1,0 +1,36 @@
+/**
+ * @author Erik Leitch
+ */
+#ifndef CARMA_ANTENNA_SZA_CONTROL_SZACALIBRATORCONTROL_IDL
+#define CARMA_ANTENNA_SZA_CONTROL_SZACALIBRATORCONTROL_IDL
+
+#include "carma/antenna/common/CalibratorControl.idl"
+#include "carma/antenna/common/RxControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+  module antenna {
+    module sza {
+      module control {
+
+	/**
+	 * SZA antenna-specific calibrator control interface.
+	 */
+	interface CalibratorControl : carma::antenna::common::CalibratorControl {
+
+	  void homeTertiary()
+	    raises (carma::util::UserException);
+
+	  void positionTertiaryAngle(in double angleDegrees)
+	    raises (carma::util::UserException);
+
+	  void positionTertiaryRx(in carma::antenna::common::RxControl::Type rx)
+	    raises (carma::util::UserException);
+
+	}; // End szaCalibratorControl interface
+      };
+    };
+  };
+}; // End carma::antenna::sza::control module
+
+#endif

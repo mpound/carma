@@ -1,0 +1,140 @@
+#!/bin/bash 
+#
+# attempt to stress test the imr/delay engine to make it hang
+# Thu Dec 23 14:24:13 EST 2004 - mwp
+# this does not include Dave M's recent watch addition because
+# we want to see it hang.
+
+#-----------------------------------------
+# sh functions for interferometry testing
+#-----------------------------------------
+
+cleanup() {
+    cmd="rm -rf $topdir"
+    echo $cmd
+    $cmd
+}
+
+fail() {
+    echo CARMA-TEST: FAIL carma/interferometry `basename $prog`
+    echo  "=========== DELAY ENGINE STRESS TEST END ================="
+}
+
+# make the directories used in testing
+makeTestDirs() {
+    if [ -d $topdir ] ; then
+        \rm -rf $topdir
+    fi 
+
+    for x in log ; do
+        cmd="mkdir -p $testarea/$x"
+        echo $cmd
+        $cmd
+        if [ $? -ne 0 ] ; then
+            echo mkdir -p $testarea/$x failed
+            fail
+        fi
+    done
+}
+
+pass() {
+    echo CARMA-TEST: PASS $prog
+    echo  "=========== DELAY ENGINE STRESS TEST END ================="
+}
+
+setupCrossTest() {
+    antparam="`dirname $0`/cross_test.antparam"
+    decstart=20.18
+    decstep=10.0
+    decend=20.20
+    harange=4.0
+    timestep=30.0
+}
+
+setupFullTest() {
+    antparam="`dirname $0`/carma_fake.antparam"
+    decstart=-20.0
+    decstep=10.0
+    decend=80.0
+    harange=6.0
+    timestep=30.0
+}
+
+#-------------------------------------
+# Begin main program
+#-------------------------------------
+
+if [ $# -ne 2 ]; then
+    echo "Usage:  $0 imrTestCount delayTestCount"
+    echo "where imrTestCount is the number of times to start and stop the imr"
+    echo "and delayTestCount is the number of times to run the delay test for"
+    echo "each imr invocation. The total number of tests is imrTestCount*delayTestCount"
+    exit 1
+fi
+
+imrTestCount=$1
+delayTestCount=$2
+((numTests=$imrTestCount*$delayTestCount))
+
+prog=`basename $0`
+topdir="/tmp/carma.interferometry.tests.$prog.$USER.$$"
+
+echo  "=========== DELAY ENGINE STRESS TEST START ===================="
+echo  " TOTAL NUMBER OF TESTS: $numTests "
+
+while [ $imrTestCount -gt 0 ] ;
+do
+
+ mkdir -p $topdir/imr
+ imrxml=imr/`basename $0`.$USER.$$.conf.xml
+ sed -e "s?/home/mpound/src/carma?$PWD?g" < conf/imr/delayEngineTestLocal.xml > conf/$imrxml
+
+
+ scripts/rc.carma --nosu --file $imrxml --imr localhost stop
+ echo "scripts/rc.carma --nosu --file $imrxml --imr localhost stop" > /tmp/stopTheImr
+ scripts/rc.carma --nosu --file $imrxml --imr localhost start
+
+ if [ $? -ne 0 ] ; then
+    cleanup
+    echo "failed to start imr/monitor services"
+    echo CARMA-TEST: FAIL carma/interferometry `basename $prog`
+    exit 1
+ fi
+
+
+ #----------------------------------------------------------
+ # Wait to make sure all processes are running
+ # This is a workaround for intermittent hanging of the test.
+ echo " Waiting a bit to make sure all processes have started..."
+ sleep 15
+ #----------------------------------------------------------
+
+delayTestCount=$2
+while [ $delayTestCount -gt 0 ] ;
+ do 
+    setupCrossTest
+    antparam="`dirname $0`/cross_test.antparam"
+
+    cmd="carma/interferometry/Test/DelayEngineTestHarness syslog=f traceLevel=7 logfile=/dev/stdout antparam=$antparam decstart=$decstart decend=$decend decstep=$decstep harange=$harange timestep=$timestep selftest=f imr=localhost"
+
+
+    echo "Running Test: $cmd"
+    $cmd
+    res=$?
+
+    if [ $res -eq 0 ] ; then
+	pass
+    else
+	fail
+    fi
+ ((delayTestCount--))
+ done
+
+ scripts/rc.carma --nosu --file $imrxml --imr localhost stop
+ cleanup
+ rm conf/$imrxml
+ rm /tmp/stopTheImr
+
+((imrTestCount--))
+done
+exit 0

@@ -1,0 +1,82 @@
+/**@file 
+ * Control interface for the Master Clock
+ * 
+ * <dl><dt><b>Author </b></dt><dd>Chul Gwon </dl> 
+ * $Revision: 1.3 $
+ * $Date: 2011/05/17 16:27:39 $
+ * $Id: clockSystem.idl,v 1.3 2011/05/17 16:27:39 iws Exp $
+ */
+
+#ifndef CARMA_CLOCK_SYSTEM_IDL
+#define CARMA_CLOCK_SYSTEM_IDL
+
+/**
+ * 
+ * @page ClockControl Control Interface
+ *
+ * This documentation describes the idl defined control interface to the 
+ * Master Clock Subsystem.  This is probably not necessary since there
+ * is only one DO, but we'll put it in for completeness and maintainability.
+ * The interface consists of the following:<br>
+ * carma::clock::System - the global clock system access DO.<br>
+ * carma::clock::ClockControl - Clock control DO.<br>
+ */
+
+#include "carma/clock/ClockControl.idl"
+
+module carma {
+module clock {
+
+/**
+ * Carma Master Clock system access interface.
+ * This interface declares the access and control interface for the
+ * Master Clock Subsystem.  It serves as a single
+ * entry point from which to access CAN device control object references.  In 
+ * addition it provides methods which act on the CANbus as a whole such as 
+ * the reset method. 
+ */
+interface System {
+    
+    /**
+     * Retrieve control object for all clock objects (which is just
+     * the one.
+     * @exception carma::util::UserException on failure.
+     */
+    carma::clock::ClockControl GlobalClock()
+        raises (carma::util::UserException);
+
+    /**
+     * Retrieve control object for individual clock CAN devices.
+     * This will do the same as GlobalClock for now since there is
+     * only one device
+     * @exception carma::util::UserException on failure.
+     */
+    carma::clock::ClockControl Clock()
+      raises (carma::util::UserException);
+
+    /**
+     * Reset all modules.
+     * Resets all modules on all controlled busses via Dio reset lines.
+     * @exception carma::util::UserException on failure.
+     */
+    void reset() raises (carma::util::UserException);
+
+    /**
+     * Reset all modules.
+     * Resets all modules on all controlled busses via CAN reset message.
+     * @exception carma::util::UserException on failure.
+     */
+    void softReset() raises (carma::util::UserException);
+
+    /**
+     * Quit.
+     * Exits host application.  FOR DEBUGGING ONLY - It is very likely this
+     * will be removed on the producation system (we don't want people 
+     * accidently terminating our applications).
+     */
+    void quit() raises (carma::util::UserException);
+    
+}; // End SystemControl interface
+}; // End downconverter module
+}; // End carma module
+#endif

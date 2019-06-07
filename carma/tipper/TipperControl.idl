@@ -1,0 +1,52 @@
+#ifndef CARMA_TIPPER_IDL
+#define CARMA_TIPPER_IDL
+
+#include "carma/util/UserException.idl"
+
+/**
+ * @file TipperControl.idl
+ *
+ * This is the IDL file for the CARMA Tipper/Opacity monitor
+ *
+ * @author Colby Gutierrez-Kraybill
+ *
+ * @version $Id: TipperControl.idl,v 1.4 2011/05/17 16:28:08 iws Exp $
+ *
+ * This describes the DO interface for the Tipper subsystem.
+ *
+ * @see http://www.mmarray.org/project/WP/nothereyet
+ */
+
+module carma
+{
+  /**
+   * Namespace for the Tipper system.
+   * @see http://cvs.mmarray.org/project/WP/nothereyet
+   */
+  module tipper
+  {
+
+    /**
+     * The CARMA canonical name for this Distributed Object
+     */
+    const string TIPPER_NAME = "carma.tipper.TipperControl";
+
+    /**
+     * %TipperControl interface
+     */
+    interface TipperControl
+    {
+
+      /**
+        * Place holder
+       */
+      void doTip()
+        raises ( carma::util::UserException );
+
+    };
+  };
+};
+
+#endif /* CARMA_TIPPER_IDL */
+
+// vim: set expandtab smarttab sw=2 ts=2 :

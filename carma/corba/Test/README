@@ -1,0 +1,14 @@
+This directory contains several examples and tests of the corba::Server 
+and corba::Client classes.
+
+For a simple introduction, see tHelloServer.cc & tHelloClient.cc.  These 
+apps create, publish and invoke operations on a simple 'Hello' DO.  
+
+A more complicated example is highlighted in the tObjectManagerServer.cc app.
+It shows how to create an ObjectManager servant which in turn manages and 
+returns other CORBA servants (ala our Antenna API).
+
+More thorough testing and less user friendly examples exist in tNameServer.cc 
+and tServerDetails.cc.  
+
+All test apps require running an imr and nameserver.

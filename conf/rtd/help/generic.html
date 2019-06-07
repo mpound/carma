@@ -1,0 +1,125 @@
+<!DOCTYPE HTML >
+<html>
+  <head>
+    <title>Generic RTD Help    </title>
+    
+  </head>
+    <center>
+      <h2>
+        Help for All RTD Windows
+      </h2>
+    </center>
+    <h3>
+      Overview
+    </h3>
+    Windows are started with the <b>NewWin</b> menu and replaced by another 
+    window with the <b>Morph</b> menu. A window is a set of set of folders 
+    (often a single folder) containing cells of realtime data. There are no 
+    restrictions on starting multiple copies of a window, a strategy that may 
+    be useful for simultaneously viewing info from different folders of the 
+    same window. The cells have a rectangular outline and contain realtime 
+    data that is refreshed at the same sample interval as the time that is 
+    displayed at the bottom of the window. A question mark indicates that 
+    valid data is not being received by the monitor system. The sample 
+    interval is the same for all cells and can be changed under the <b>Monitor</b> 
+    menu. The history of the values within the cells as a function of time 
+    begins to accumulate when the window is brought up and will store up to a 
+    maximum of 200 samples.
+
+    <p>
+      The line at the bottom that displays UT, LST and Local time can be used 
+      to ensure that data are being transferred and the display is alive. 
+      These times are only updated when a new set of samples is received 
+      giving infrequent updates whan a long sample interval is selected. If 
+      data are not being transferred the times will often be replaced with 
+      &quot;Connection stalled&quot;. In this event, just kill the window and start 
+      another. The Local time is from the computer running the Java display 
+      and its function is to show that the program is alive locally.
+    </p>
+    <h3>
+      Cells
+    </h3>
+    Cell selection plays a role in several menu choices and is accomplished by 
+    a single mouse left-click within the cell. The outline around a cell will 
+    increase in thickness when a cell is selected. A second click in the 
+    selected cell will deselect the cell, as will selecting a different cell 
+    with a left-click. Selection may be moved forward with the Tab key or in 
+    reverse with Shift+Tab. The history of a cell may be displayed in text 
+    form or as a plot by first selecting the desired cell and then selecting <b>List</b> 
+    or <b>Plot</b> in the <b>Monitor</b> menu. The list or plot will then 
+    update as new data are received displaying up to 1000 samples.
+
+    As an alternative to the procedure described above, right clicking on any
+    cell will automatically select the cell, then open a context-sensitive
+    menu which allows you to choose any of the possible actions described below.
+
+    <p>
+      The background color for the cells is used to draw attention to unusual 
+      conditions. <br>The general association of colors is:
+    </p>
+    <ul compact="compact">
+      <li>
+        Yellow: warning
+      </li>
+      <li>
+        Red: bad, trouble
+      </li>
+      <li>
+        Green: busy, moving or good
+      </li>
+    </ul>
+    A red cell will not trigger the CARMA alarm system unless it has been
+    configured as part of the fault system.
+    <h3>
+      Plotting
+    </h3>
+    In addition to graphing cell data as previously described, data from 
+    additional cells may be added to an existing plot with <b>AddToPlot</b> 
+    from the <b>Monitor</b> menu. The new data will be added to the plot that 
+    was <b>last selected</b> (had the focus, as shown by an emphasized title 
+    bar). If no plot window exists or the last selected has been closed, then 
+    the AddToPlot will cause a new plot to be started. The sampling interval 
+    of the data is controlled in the <b>Monitor</b> menu of the parent window. 
+    Invalid data, as indicated by a question mark, will not be plotted, 
+    resulting in discontinuities in the trace. A right-click on a plot will 
+    give many options, including <b>Scaling</b>, <b>Print</b>, <b>Zoom</b>, 
+    and <b>Save</b>. Holding down a left-click and dragging in the plot 
+    defines a rectangle that sets the area to be plotted. The rectangle may 
+    not be correctly drawn if an undate occurs during the drag, but the area 
+    is none the less correctly defined. Traces may only be added to plots from 
+    cells in the same window (including folders) as the cell that originated 
+    the plot. There is currently no way to remove a trace from a plot.
+
+    <h3>
+      Audio
+    </h3>
+    Most cells have audio capability that is disabled by default. If a cell 
+    has a green outline then audio is enabled. Toggling the audio 
+    enable/disable is done by selecting the cell and then clicking the <b>Audio</b> 
+    in the <b>Monitor</b> menu. If the cell does not have audio capabilities 
+    then Audio will not be enabled when the cell is selected (it will be 
+    &quot;greyed out&quot;). Audio is triggered when the cell background is red and 
+    results in a quadruple beep once a minute on the workstation that is 
+    running the RTD display.
+    Note that this audio capability is not related to the general CARMA alarm
+    and fault system.
+
+    <h3>
+      Folders
+    </h3>
+    Some of the windows contain tabbed folders that can be selected. The 
+    folders provide a way of selecting part of the data from a window, such as 
+    a single downconverter from a suite of four. Data for all of the folders 
+    in a window are active while the window is active so simultaneous plots 
+    and lists can be mixed from various folders. The keypad can be used to 
+    quickly switch folders; N moves to the next folder and P to the previous.
+
+    <h3>
+      File Menu
+    </h3>
+    The <b>File</b> menu allows the current window to be printed to a printer 
+    or file by selecting <b>Print</b>. Selection of <b>Close</b> in this menu 
+    closes the current window while <b>Exit</b> closes all windows within this 
+    Java session and exits the RTD session.
+  </body>
+</html>

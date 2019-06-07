@@ -1,0 +1,29 @@
+# dewar13.tab
+
+cyl 7528, motor 7528
+rapid warmup heaters: crimp connections, power resistors
+  (used often as test dewar)
+heater on stage 3: 2 power resistors in parallel, one
+   with one tab sheared off; band D mixer has extra
+   hole so heater can be installed 2with 2 screws
+
+heater on stage 2: power resistor
+
+sensors: 47105, unlabelled, 7396, 7700, 6724
+
+band B:
+mixer 31-016-1 (built in matching network) with 150 ohm
+   matching network, 100 ohms to gnd
+at room temp, 1 mV = 23.4 uA
+HEMT 15
+0.010 thick copper strp from back of mixer to spider
+simple pole pieces, 0.24 diam magnet
+
+band D:
+mixer 31-015-4A with built in bias board, 100 ohms to gnd
+wafer 5, device (4,1)
+at room temp, 1 mv = 20.66 uA
+0.010 copper strap from back of mixer to spider
+HEMT 26 
+simple pole pieces, 0.24 diam magnet
+

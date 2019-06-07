@@ -1,0 +1,61 @@
+/** @file
+ * Ovro carma::antenna::ovro::EnvironmentalControl interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.7 $
+ * $Date: 2011/05/17 16:27:33 $
+ * $Id: EnvironmentalControl.idl,v 1.7 2011/05/17 16:27:33 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_ENVIRONMENTALCONTROL_IDL
+#define CARMA_ANTENNA_OVRO_ENVIRONMENTALCONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+/**
+ * EnvironmentalControl nameserver name.
+ */
+const string ENVIRONMENT_NAME = "Environment";
+
+/**
+ * OVRO Antenna Environmental control interface.
+ * The Ovro Antenna Environmental Monitor CAN module has additional
+ * functionality which is not general enough to be included in the Common
+ * Antenna API.  The additional functionality is included here and published
+ * as a separate DO.
+ */
+interface EnvironmentalControl {
+
+    /**
+     * Turn camera on or off.
+     * @param on True for on false for off.
+     */
+    void enableCamera(in boolean on) raises (carma::util::UserException);
+
+    /**
+     * Turn sidecab power off!!!
+     * Yes, this is indeed a dangerous command and should only be used in an
+     * emergency.  This shuts off power to the entire sidecab, including the
+     * linux host such that no hardware can be monitored or controlled any
+     * longer.  IT REQUIRES THAT THE POWER BE RESTORED MANUALLY!!! This could
+     * involve a long drive to the high site if nobody is there!
+     */
+    void turnSidecabPowerOff() raises (carma::util::UserException);
+
+    /**
+     * Enable or disable one of the three 24 Volt power supplies.
+     * Turns on or off one of the sidecab 24V supplies.
+     * @param supplyNo 0 for all, 1 - 3 for specific power supply.
+     * @param on True to enable power supply, false to disable it.
+     */
+    void enable24vPs(in unsigned short supplyNo, in boolean on)
+        raises (carma::util::UserException);
+
+}; // End EnvironmentalControl interface
+};};}; // End carma::antenna::ovro module
+#endif

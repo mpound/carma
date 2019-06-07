@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>CARMA Project Database Information Help</title>
+	<style>
+table {
+	width:100%;
+	border-spacing:0px;
+	border-collapse:collapse;
+	border:1px solid black;
+}
+th {
+	color:#ffffff;
+	background-color:#555555;
+	padding:3px;
+	vertical-align:top;
+	text-align:left;
+	border:1px solid black;
+}
+td {
+	padding:7px 5px 7px 5px;
+	border:1px solid black;
+}
+tr#zebra {
+	background-color:#dedede;
+}
+h1 {
+	border-bottom: 2px solid black;
+}
+h2 {
+	border-bottom: 1px solid gray;
+}
+div#top {
+	width: 95%;
+}
+	</style>
+</head>
+<body>
+
+<div id="top">
+
+<h1>Help for the CARMA Project Database Information Window</h1>
+
+<h2>General Tab</h2>
+
+<p>
+The <tt>Timestamp</tt> field displays the timestamp where this monitor data
+was updated. It should update every frame unless there is a problem in the
+<tt>carmaProjectDatabaseManagerHost</tt> application.
+</p>
+
+<p>
+The <tt>online</tt> field is set to <tt>true</tt> every frame that the
+<tt>carmaProjectDatabaseManagerHost</tt> application is running.
+</p>
+
+<p>
+The <tt>currentMethod</tt> and <tt>currentMethodStart</tt> fields show
+information about which CORBA method is running at the current instant, and
+how long it has been running. These fields are only updated for CORBA methods
+which access the database. All other methods are pure C++, and should be
+extremely fast.
+</p>
+
+<h2>Server Info Tab</h2>
+
+<p>
+This tab displays information about each server in the MongoDB replication
+dataset. The information displayed is identical to that produced by the mongo
+shell command <tt>rs.status()</tt>. It should be helpful in diagnosing any
+problems with replication to offsite locations.
+</p>
+
+<p>
+The <tt>timestamp</tt> field displays the time when the information for this
+server was updated.
+</p>
+
+<p>
+The <tt>name</tt> field displays the hostname and port number of one member of
+the MongoDB replica set.
+</p>
+
+<p>
+The <tt>health</tt> field contains a value (0 or 1) which tells you whether
+this member of the MongoDB replica set is healthy.
+</p>
+
+<p>
+The <tt>uptime</tt> field contains the number of seconds that this member of
+the MongoDB replica set has been running. This is the amount of time that the
+MongoDB server process has been running, not the host uptime.
+</p>
+
+<p>
+The <tt>ping</tt> field contains the ping time in milliseconds, as determined
+by the MongoDB replica set peer you are querying from. In this case, it should
+always be the ping time from <tt>sdp.mmarray.org</tt> to the other peers.
+Lower is better.
+</p>
+
+</div>
+
+</body>
+</html>
+<!-- vim: set tw=78 ts=4 sts=4 sw=4: -->

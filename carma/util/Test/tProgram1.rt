@@ -1,0 +1,64 @@
+#! /bin/csh -f
+#
+#   a slightly more complicated example of a program that produces more
+#   output than just 1 line, and we still want to add this to the testing
+#   environment.  
+#
+#   Instead of calling 'carma-runtest' a bit more work is done, and the
+#   output format "CARMA-TEST: PASS|FAIL  <label> <executable>" is also
+#   produced here.
+
+set cleanup=1
+foreach _a ($*)
+  if (X$_a == X--help) then
+    echo runtime test for tProgram1
+    echo Arguments:
+    echo "  cleanup=$cleanup"
+    exit 0
+  else
+    set $_a
+  endif
+end
+
+set ok=1
+set tmp=tmp$$
+
+# run programs
+
+carma/util/Test/tProgram1 | tail -13 > $tmp.1
+if ($status) set ok=0
+
+carma/util/Test/tProgram1 nbody=023 seed=1 mfrac=0.3 rfrac=0.9 comment="a b c" iflag=0 oflag=false -- | tail -13 > $tmp.2
+if ($status) set ok=0
+
+carma/util/Test/tProgram1 intP1=0Xaa0 intP2=304 intP3=0xDEAD intP4=0x0 intP5=0 intP6=027 nbody=017 seed=1 mfrac=1.234 rfrac=0.9 comment="a b c" iflag=0 oflag=false -- --foo baz=34 | tail -15 > $tmp.3
+if ($status) set ok=0
+
+carma/util/Test/tProgram1 -- -ally_opp -file /my/path/here | tail -16 > $tmp.4
+if ($status) set ok=0
+
+carma/util/Test/tProgram1 -- | tail -13 > $tmp.5
+if ($status) set ok=0
+
+#  collect if each test ran fine
+foreach i (1 2 3 4 5)
+  diff -q $tmp.$i $srcdir/carma/util/Test/tProgram1.out$i
+  if ($status) then
+    set ok=0
+    diff $tmp.$i $srcdir/carma/util/Test/tProgram1.out$i
+  endif
+end
+
+if ($cleanup) then
+  rm -f $tmp.*
+else
+  echo Not removing $tmp.*
+endif
+
+#  report in the standard format
+if ($ok) then
+  echo CARMA-TEST: PASS carma/util tProgram1
+else
+  echo CARMA-TEST: FAIL carma/util tProgram1
+  exit 1
+endif

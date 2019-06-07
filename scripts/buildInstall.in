@@ -1,0 +1,1633 @@
+#!/usr/bin/env python
+
+# This is an approximation of the old tcsh buildInstall script. It attempts
+# to keep all of the old functionality, while also being simpler to maintain.
+# It is a real bonus that python has functions.
+
+import os
+import re
+import pwd
+import sys
+import time
+import pickle
+import shutil
+import socket
+import logging
+import optparse
+import platform
+import tempfile
+import traceback
+import subprocess
+
+# Chop off the leading datetime prefix, it is very annoying
+# to have to specify datetime.datetime to access this class
+from datetime import datetime
+
+################################################################################
+###                       Global Configuration Variables                     ###
+################################################################################
+
+BUILD_EMAIL_ADDRESS = 'rts@mmarray.org'
+ROLL_EMAIL_ADDRESS = 'array-status@mmarray.org'
+
+BUILD_EMAIL_SUBJECT = 'CARMA Software Build'
+
+SYSTEM_BUILD_USERNAME = 'control'
+
+DEFAULT_CC = "gcc"
+DEFAULT_CXX = "g++"
+DEFAULT_CFLAGS = "-ggdb -O2 -pipe"
+DEFAULT_CXXFLAGS = "-ggdb -O2 -pipe"
+
+REVISION = '$Revision: 1.181 $'
+
+CHECKSUM_FILENAME = 'checksum.md5'
+COMMENT_FILENAME = 'comment.txt'
+DIFF_FILENAME = 'differences.txt'
+CONFIG_CHECK_FILE = 'config.pickle'
+
+################################################################################
+###                       Global Utility Functions                           ###
+################################################################################
+
+# This works just like mkdir -p
+# It doesn't fail if the directory already exists
+def mkdir_p(d):
+    if not os.path.isdir(d):
+        os.makedirs(d)
+
+# This changes a symlink to point to a new target
+#
+# It doesn't fail when the original symlink doesn't exist
+# It does fail on permissions errors
+def update_symlink(source, link_name):
+
+    # The os.unlink() function can fail if the link doesn't exist
+    #
+    # We are very careful to stifle only "does not exist" errors here. We
+    # still want to warn on permissions errors.
+    try:
+        os.unlink(link_name)
+    except OSError, e:
+        if e.errno != 2:
+            logging.error('Unable to unlink %s: %s', link_name, e.strerror)
+            raise
+
+    # Now we create the symlink
+    #
+    # This can fail because of permissions errors, and we want to warn the
+    # user when things go wrong. Log the message and re-raise the exception
+    try:
+        os.symlink(source, link_name)
+    except OSError, e:
+        logging.error('Unable to create symlink %s -> %s: %s', link_name, source, e.strerror)
+        raise
+
+def setup_logging(level=logging.INFO, stream=sys.stdout):
+
+    # get the default logger instance
+    logger = logging.getLogger()
+
+    # set the default output level
+    logger.setLevel(level)
+
+    # connect the logger to the requested stream
+    ch = logging.StreamHandler(stream)
+
+    # set the output format
+    fmt = '%(asctime)s %(levelname)s: %(message)s'
+    formatter = logging.Formatter(fmt)
+
+    # and hook it all together
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+# A nice timer that prints a countdown display
+def fancy_wait(seconds, doPrint=True):
+    for i in xrange(seconds, 0, -1):
+        if doPrint:
+            sys.stdout.write('%d ' % (i, ))
+            sys.stdout.flush()
+
+        # do the actual sleep
+        time.sleep(1)
+
+    # print the last newline in print mode
+    if doPrint:
+        sys.stdout.write('\n')
+
+# Send some email
+def send_email(address, subject, message):
+    try:
+        cmd = ['mail', '-s', subject, address]
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        proc.communicate(message)
+        ret = proc.wait()
+        if ret != 0:
+            logging.error('Failed to send email: %s', os.strerror(ret))
+
+    except Exception, e:
+        logging.error('Exception while sending email: %s', str(e))
+
+# Get a fully sanitized path
+def sanitize_path(path):
+    return os.path.abspath(os.path.expanduser(path))
+
+def get_architecture():
+    return platform.machine()
+
+def get_release():
+    return platform.dist()[1]
+
+def get_hostname():
+    return socket.gethostbyaddr(socket.gethostname())[0]
+
+def get_username():
+    return pwd.getpwuid(os.geteuid())[0]
+
+def get_java_home():
+    path = '/opt/jdk'
+    try:
+        path = os.environ['JAVA_HOME']
+    except:
+        pass
+
+    return os.path.realpath(path)
+
+def get_top_of_tree(arch, rel, user=None):
+    if user is None:
+        user = 'control'
+
+    p = os.path.expanduser('~%s/Carma-%s-%s' % (user, arch, rel))
+    return os.path.realpath(p)
+
+def get_rts_symlink(arch, rel):
+    return '/misc/rt/current-%s-%s' % (arch, rel)
+
+def handle_rmtree_error(fn, path, excinfo):
+    logging.warn('unable to remove: %s', path)
+
+def get_build_comments(d):
+    logging.info('Reading build comments')
+
+    header = '\nCOMMENTS:\n'
+    try:
+        name = os.path.join(d, COMMENT_FILENAME)
+        f = open(name, 'r')
+        lines = f.readlines()
+        lines = [l for l in lines if not re.match('^\s*#', l)]
+        contents = ''.join(lines)
+        return header + contents
+    except Exception, e:
+        logging.error('Exception while reading comment file: %s', str(e))
+        contents = 'None provided by user'
+        return header + contents
+
+def get_build_differences(d):
+    logging.info('Reading build differences')
+
+    header = '\nDIFFERENCES:\n'
+    try:
+        name = os.path.join(d, DIFF_FILENAME)
+        f = open(name, 'r')
+        lines = f.readlines()
+        disclaimer = "Ignoring differences not in CVS - see differences.txt for the complete list.\n" 
+        disclaimed = [ line for line in lines if line[0] != '?' ]
+        contents = ''.join(disclaimed)
+        return header + disclaimer + contents + '\n'
+    except Exception, e:
+        logging.error('Exception while reading differences file: %s', str(e))
+        contents = 'No differences present\n'
+        return header + contents + '\n'
+
+################################################################################
+# Configuration Object and Configuration Checking
+################################################################################
+
+class BuildConfig(object):
+    def __init__(self, opts, args):
+        self.prefix = opts.prefix
+        self.architecture = opts.architecture
+        self.osrelease = opts.osrelease
+        self.cvs_update = opts.cvs_update
+
+    def __eq__(self, rhs):
+        return self.prefix == rhs.prefix \
+           and self.architecture == rhs.architecture \
+           and self.osrelease == rhs.osrelease \
+           and self.cvs_update == rhs.cvs_update
+
+    def __ne__(self, rhs):
+        return not self == rhs
+
+    def __repr__(self):
+        return 'prefix=%s arch=%s rel=%s cvs_update=%s' % (self.prefix, \
+                                                           self.architecture, \
+                                                           self.osrelease, \
+                                                           self.cvs_update)
+
+def save_configuration(opts, args):
+    logging.info('saving current configuration')
+    myconfig = BuildConfig(opts, args)
+    name = os.path.join(opts.prefix, CONFIG_CHECK_FILE)
+
+    # write the current configuration
+    try:
+        pickle.dump(myconfig, open(name, 'wb'))
+    except:
+        logging.warn('unable to save current configuration info')
+        lines = traceback.format_exc().split('\n')
+        for l in lines:
+            logging.error(l)
+
+def check_configuration(opts, args):
+    logging.info('checking configuration compatibility')
+    myconfig = BuildConfig(opts, args)
+    name = os.path.join(opts.prefix, CONFIG_CHECK_FILE)
+
+    # check the configurations
+    try:
+        oldconfig = pickle.load(open(name, 'rb'))
+        if myconfig != oldconfig:
+            logging.error('previous and current configurations are not compatible')
+            logging.error('current: %s', myconfig)
+            logging.error('previous: %s', oldconfig)
+            sys.exit(1)
+    except IOError:
+        logging.info('no previous configuration found')
+
+    logging.info('configurations are compatible')
+
+def check_configuration_targeted(prefix, args):
+    logging.info('checking if this was a targeted build')
+    name = os.path.join(prefix, CONFIG_CHECK_FILE)
+
+    try:
+        config = pickle.load(open(name, 'rb'))
+        return config.cvs_update == False
+    except IOError:
+        logging.info('no previous configuration found')
+        return False
+
+################################################################################
+###                       The BuildInstall Object                            ###
+################################################################################
+
+# A class to handle all aspects of building and installing
+# the CARMA control system software
+class BuildInstall(object):
+
+    def __init__(self, options):
+
+        # save the options
+        self.options = options
+
+        # save the really common variables seperately
+        self.TOP_OF_TREE  = self.options.top_of_tree
+        self.TOP_OF_SRC   = os.path.join(self.TOP_OF_TREE, 'carma')
+        self.TOP_OF_BUILD = os.path.join(self.TOP_OF_TREE, 'build')
+        self.TOP_OF_RT    = os.path.join(self.TOP_OF_TREE, 'rt')
+
+        # get the current and previous CVS tags
+        self.CURR_TAGID = self.getDefaultTagid(self.options.precise)
+
+        # Temporary file to hold the comments (automatically closed on destruction)
+        self.TEMP_COMMENT_FILE = None
+        self.TEMP_DIFF_FILE = None
+
+        # state directory
+        self.STATE_DIR = '/opt/state/current'
+
+        # install prefix autogeneration
+        if self.options.prefix is None:
+            self.options.prefix = os.path.join(self.TOP_OF_RT, self.CURR_TAGID)
+
+        # default compiler and flags
+        self.CC = DEFAULT_CC
+        self.CXX = DEFAULT_CXX
+        self.CFLAGS = DEFAULT_CFLAGS
+        self.CXXFLAGS = DEFAULT_CXXFLAGS
+
+        # compiler and flags
+        arch = get_architecture()
+        if arch == 'i686':
+            if self.options.sixtyfourbit:
+                logging.error('You are trying to do an x86_64 build on a %s machine!', arch)
+                logging.error('This is not supported. Aborting build. Sorry.')
+                sys.exit(1)
+
+            # default options are fine for 32-on-32
+            logging.info('Performing a 32-on-32 build!')
+        elif arch == 'x86_64':
+            if self.options.sixtyfourbit:
+                # default options are fine for 64-on-64
+                logging.info('Performing a 64-on-64 build!')
+            else:
+                # need special options for 32-on-64
+                logging.info('Performing a 32-on-64 build!')
+                self.CFLAGS += ' -m32'
+                self.CXXFLAGS += ' -m32'
+        else:
+            logging.error('Architecture %s is not currently supported!', arch)
+            logging.error('Aborting build. Sorry.')
+            sys.exit(1)
+
+    def createDirectoryStructure(self):
+        logging.info('Creating directory structure')
+        mkdir_p(self.TOP_OF_SRC)
+        mkdir_p(self.TOP_OF_BUILD)
+        mkdir_p(self.TOP_OF_RT)
+
+    def makeEmailSubject(self, status):
+        n = datetime.now().strftime(r'%Y-%m-%d-%H%M')
+        return '%s: %s (%s)' % (BUILD_EMAIL_SUBJECT, status, n)
+
+    def handleFatalException(self, step, mail=True):
+
+        # grab the exception we're handling
+        exc = sys.exc_info()[1]
+
+        # log the error to the screen
+        logging.error('Fatal error encountered during step: %s', step)
+        logging.error('Message: %s', str(exc))
+        logging.error('Aborting build. Sorry.')
+
+        # print the backtrace into the log, one line at a time
+        logging.debug('Backtrace:')
+        lines = traceback.format_exc().split('\n')
+        for l in lines:
+            logging.debug(l)
+
+        # now exit the program
+        sys.exit(1)
+
+    def runBuildMode(self):
+        logging.info('Starting a build with mode=%s', self.options.build_type)
+        step = 'unset step'
+
+        # this exception block handles all cases of setting up prerequisites.
+        # we shouldn't be sending email for failures at this point.
+        try:
+
+            # Check the CARMA-tools directory
+            step = 'Check CARMA-tools'
+            self.checkCarmaTools()
+
+            if self.options.incremental:
+                step = 'Check incremental build support'
+                self.checkIncrementalBuild()
+
+            # Check the username
+            step = 'Check username'
+            self.checkUsername()
+
+            # Check that we are running the build as the correct user
+            step = 'Check running user'
+            self.checkRunningUser()
+
+            # print the options out to the user
+            logging.info('Build Options:')
+            logging.info('top-of-tree:    %s', self.TOP_OF_TREE)
+            logging.info('source dir:     %s', self.TOP_OF_SRC)
+            logging.info('build dir:      %s', self.TOP_OF_BUILD)
+            logging.info('install dir:    %s', self.options.prefix)
+            logging.info('carma-tools:    %s', self.options.carma_tools)
+            logging.info('rt-link:        %s', self.options.link_name)
+            logging.info('miriad-home:    %s', self.options.miriad_home)
+            logging.info('java-home:      %s', self.options.java_home)
+            logging.info('precise:        %s', self.options.precise)
+            logging.info('64-bit:         %s', self.options.sixtyfourbit)
+            logging.info('cvs-update:     %s', self.options.cvs_update)
+            logging.info('cvs-tag:        %s', self.options.cvs_tag)
+            logging.info('cvs-diff:       %s', self.options.cvs_diff)
+            logging.info('incremental:    %s', self.options.incremental)
+            logging.info('install:        %s', self.options.install)
+            logging.info('user comment:   %s', self.options.comment)
+            logging.info('send email:     %s', self.options.email)
+            logging.info('update IERS:    %s', self.options.iers_update)
+
+            logging.info('sleeping 10 seconds for you to abort')
+            step = 'User Confirmation'
+            fancy_wait(10)
+
+            # prompt the user for comments
+            if self.options.comment:
+                step = 'Prompt for comments'
+                self.doPromptForComment()
+
+        except (KeyboardInterrupt, SystemExit):
+            # this catches the case where the wait timer is canceled by the
+            # user, and exits cleanly from there
+            print
+            logging.info('Exit requested, aborting build!')
+            sys.exit(0)
+        except Exception:
+            self.handleFatalException(step, mail=False)
+            sys.exit(1)
+
+        # this is the real part of the build, where we should be sending
+        # email and notifying everyone when there is a failure.
+        try:
+
+            # create the directory strucuture
+            step = 'Create directory structure'
+            self.createDirectoryStructure()
+
+            # run a CVS checkout if the source directory is no good
+            step = 'CVS checkout'
+            path = os.path.join(self.TOP_OF_SRC, 'CVS')
+            if not os.path.isdir(path):
+                self.doCVSCheckout()
+
+            # update IERS table
+            if self.options.iers_update:
+               step = 'Update IERS table'
+               self.doIERSUpdate()
+
+            # run a CVS update if requested
+            if self.options.cvs_update:
+                step = 'CVS update'
+                self.doCVSUpdate()
+
+            # check for differences in the source directory
+            if self.options.cvs_diff:
+                step = 'CVS differences'
+                self.doCVSCheckDifferences()
+
+            # clean the build directory
+            if not self.options.incremental:
+                step = 'clean build directory'
+                self.doCleanBuildDirectory()
+
+            # always re-run autoreconf
+            step = 'GNU autoreconf'
+            self.doAutoreconf()
+
+            # configure the build
+            step = 'GNU configure'
+            self.doConfigure()
+
+            # build the software
+            step = 'GNU make'
+            self.doMake()
+
+            # check the software
+            if self.options.make_check:
+                step = 'GNU make check'
+                self.doMakeCheck()
+
+            # install the software
+            if self.options.install:
+                step = 'Install control system software'
+                self.doInstall()
+
+                # save the current configuration
+                save_configuration(self.options, None)
+
+                # install the differences file
+                step = 'Install differences file'
+                self.doInstallDifferences()
+
+            # generate MD5 checksums only on the install directory
+            if self.options.install and self.options.md5sum:
+                step = 'Generate MD5 checksums of install directory'
+                self.doGenerateMD5()
+
+            # install the comments if we installed the build
+            if self.options.install and self.options.comment:
+                step = 'Install comments'
+                self.doInstallComment()
+
+            # tag the build in CVS
+            if self.options.cvs_tag:
+                step = 'Tag the build in CVS'
+                self.doCVSTag()
+
+                step = 'Checkin current state restoration file'
+                self.doCVSCommitState()
+
+            # let everybody know that the build finished
+            msg = 'CARMA Software Build done'
+            logging.info(msg)
+
+            if self.options.email:
+                mail =  'Username: %s\n' % self.options.username
+                mail += 'Hostname: %s\n' % get_hostname()
+                mail += '\n'
+                mail += 'Build successful!\n'
+                mail += '\n'
+                mail += 'Options used for build:\n'
+                mail += 'CARMA-tools: %s\n' % self.options.carma_tools
+                mail += 'top-of-tree: %s\n' % self.TOP_OF_TREE
+                mail += 'source dir:  %s\n' % self.TOP_OF_SRC
+                mail += 'build dir:   %s\n' % self.TOP_OF_BUILD
+                mail += 'install dir: %s\n' % self.options.prefix
+
+                if self.options.comment:
+                    mail += '\n'
+                    mail += get_build_comments(self.options.prefix)
+
+                mail += get_build_differences(self.options.prefix)
+
+                subject = self.makeEmailSubject('success')
+                send_email(BUILD_EMAIL_ADDRESS, subject, mail)
+
+        except SystemExit:
+            # this catches sys.exit. Ugly.
+            pass
+        except Exception:
+            self.handleFatalException(step, mail=True)
+            sys.exit(1)
+
+    def doInstall(self):
+        logging.info('Installing control system software into: %s', self.options.prefix)
+
+        jopt = '-j%s' % self.options.jobs
+        cmd = ['make', jopt, 'install']
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_BUILD)
+        if ret != 0:
+            raise Exception('Install failed')
+
+        cmd = ['make', 'install-java']
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_BUILD)
+        if ret != 0:
+            raise Exception('Install Java failed')
+
+    # Copy this script to all older builds
+    def runUpdateMode(self):
+        logging.info('Updating the buildInstall script in all previous builds')
+
+        # CVS update to the latest version
+        if self.options.cvs_update:
+            logging.info('Performing CVS update')
+            cmd = ['cvs', '-q', 'update', '-dP', 'scripts/buildInstall']
+            ret = subprocess.call(cmd, cwd=self.TOP_OF_SRC)
+            if ret != 0:
+                logging.warn('CVS update failed')
+
+        # copy the script to all previous builds
+        logging.info('Copying buildInstall script to previous builds')
+        builds = self.getPreviousBuilds()
+        for b in builds:
+            src = os.path.realpath(sys.argv[0])
+            dst = os.path.join(self.TOP_OF_SRC, b, 'scripts', 'buildInstall')
+
+            try:
+                logging.info('cp %s %s', src, dst)
+                shutil.copy2(src, dst)
+            except Exception, e:
+                logging.error('copy failed: %s', str(e))
+
+    def checkUsername(self):
+
+        # unspecified username: get it from the environment
+        if self.options.username is None:
+            self.options.username = get_username()
+
+        # local builds take any username
+        if self.options.build_type == 'local':
+            return
+
+        # check the username against the illegal usernames
+        regex = re.compile('^\s*(obs|control|)\s*$', re.IGNORECASE)
+        if not regex.match(self.options.username):
+            return
+
+        # uh-oh, we got an illegal username: prompt until they fix it
+        while True:
+            name = raw_input('enter your username: ')
+            if not regex.match(name):
+                self.options.username = name
+                return
+            else:
+                print 'username "%s" is invalid, try again' % name
+
+    # Make sure the script is running as the correct user
+    #
+    # For local builds, this can be any user. We don't care, and assume
+    # that the user knows what they're doing. For all other builds, we
+    # must be running as control.
+    def checkRunningUser(self):
+
+        if self.options.build_type == 'local':
+            return
+
+        if pwd.getpwuid(os.geteuid())[0] != SYSTEM_BUILD_USERNAME:
+            raise Exception('this script must be run by the user "%s" only!' % SYSTEM_BUILD_USERNAME)
+
+    # Checkout the CARMA source from CVS
+    #
+    # This checks out the source into the TOP_OF_TREE/carma directory.
+    # It is careful to avoid creating the repository substructure underneath
+    # this directory.
+    def doCVSCheckout(self):
+        logging.info('Running CVS checkout')
+
+        cvsroot = 'ssh.ovro.caltech.edu:/sw/cvscarma'
+        cmd = ['cvs', '-q', '-d', cvsroot, 'co', '-d', 'carma', 'carma']
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_TREE)
+        if ret != 0:
+            raise Exception('CVS checkout failed: %s' % os.strerror(ret))
+
+    # Update the CARMA source from CVS
+    #
+    # This runs a CVS update on an existing source directory. It preserves any
+    # changes which exist in the source directory.
+    def doCVSUpdate(self):
+        logging.info('Running CVS update')
+
+        cmd = ['cvs', '-q', 'update', '-dPA']
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_SRC)
+        if ret != 0:
+            raise Exception('CVS update failed: %s' % os.strerror(ret))
+
+    # Update the IERS data in conf/catalogs/IERS.tab
+    # This runs scripts/iers.cron which does the actual work.
+    def doIERSUpdate(self):
+        logging.info('Running IERS update')
+
+        # configure has not run yet: use the '.in' version
+        rundir = self.TOP_OF_SRC + "/scripts/iers.cron.in"
+        cmd = [ rundir ]
+        ret = subprocess.call(cmd)
+        if ret != 0:
+            raise Exception('IERS update failed')
+
+    # Run autoreconf
+    #
+    # This gets the GNU Autotools setup correct for the build
+    def doAutoreconf(self):
+        logging.info('Running GNU autoreconf')
+
+        cmd = ['autoreconf', '-if']
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_SRC)
+        if ret != 0:
+            raise Exception('autoreconf failed: %s' % os.strerror(ret))
+
+    # Check for differences between the local and server CVS repositories
+    def doCVSCheckDifferences(self):
+        logging.info('Checking for differences in working copy')
+
+        try:
+            # Cannot write to self.options.prefix yet: it does not exist
+            # until after the install is finished. Use an automatically-deleted
+            # temporary file instead
+            self.TEMP_DIFF_FILE = tempfile.NamedTemporaryFile()
+            fd = open(self.TEMP_DIFF_FILE.name, 'w+')
+            cmd = ['cvs', '-q', 'diff', '-u']
+            ret = subprocess.call(cmd, cwd=self.TOP_OF_SRC, stdout=fd)
+            if ret != 0:
+                logging.warn('Your CVS source tree contains differences which are not')
+                logging.warn('checked into the master CVS repository! Be aware!')
+
+                fd.seek(0)
+                print ''.join(fd.readlines())
+                fd.close()
+        
+                # fail the build if differences are not allowed
+                if not self.options.allow_differences:
+                    logging.error('CVS differences are not allowed. Aborting.')
+                    logging.error('To proceed anyway, use the --allow-diffs option.')
+                    raise Exception('CVS differences present in working copy')
+
+        except Exception, e:
+            logging.error('Exception during CVS diff: %s', str(e))
+            raise
+
+
+
+    def doCVSCommitState(self):
+        logging.info('Commiting current state to CVS')
+
+        path = os.path.join(self.STATE_DIR, 'current.txt')
+        if not os.path.isfile(path):
+            logging.warn('No state file (%s) exists' % path)
+            return
+
+        msg = 'buildInstall initiated tag'
+        cmd = ['cvs', '-q', 'ci', '-m', msg, 'current.txt']
+        ret = subprocess.call(cmd, cwd=self.STATE_DIR)
+        if ret != 0:
+            raise Exception('CVS checkin failed: %s' % os.strerror(ret))
+
+    def doCVSTag(self):
+        logging.info('Tagging source repository with ID: %s', self.CURR_TAGID)
+
+        cmd = ['cvs', '-q', 'tag', '-F', self.CURR_TAGID]
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_SRC)
+        if ret != 0:
+            raise Exception('CVS tag failed: %s' % os.strerror(ret))
+
+    def getPreviousBuilds(self):
+        try:
+            dirs = os.listdir(self.TOP_OF_RT)
+            l = [d for d in dirs if re.match('^UPDATE-', d)]
+            return l
+        except Exception:
+            logging.info('No previous builds exist in: %s', self.TOP_OF_RT)
+            return []
+
+    def getPreviousInstall(self):
+        builds = self.getPreviousBuilds()
+        builds.sort()
+
+        # if there are no previous builds, this is easy
+        if len(builds) == 0:
+            return None
+
+        # Now we need to find the current build and get the
+        # previous one from the list of builds, if possible.
+        #
+        # The main clause in this block will get us the correct
+        # previous build in the case of incrementals.
+        try:
+            index = builds.index(self.CURR_TAGID)
+            ret = builds[index - 1]
+            return ret
+        except ValueError:
+            # This happens if the CURR_TAGID build could not be found.
+            # This is normally the case with a fresh, non-incremental
+            # build.
+            #
+            # We should return the last build in the sorted list, which
+            # is the last build that happened.
+            return builds[-1]
+        except IndexError:
+            # This happens if we found the CURR_TAGID build, but there
+            # was not a previous build. This case is unlikely to happen
+            # in practice, but could be caused by the very first build
+            # being an incremental
+            return None
+
+        # and this just saves us in case I didn't expect something
+        return None
+
+    def getDefaultTagid(self, precise=False):
+
+        arch = self.options.architecture
+        rel  = self.options.osrelease
+
+        now = datetime.now()
+        s = 'UPDATE-%s-%s-' % (arch, rel)
+
+        if precise:
+            s += now.strftime('%Y-%m-%d-%H%M')
+        else:
+            s += now.strftime('%Y-%m-%d')
+
+        # cvs cannot have dots in the name: replace them with dashes
+        s = s.replace('.', '-')
+        return s
+
+    # Check the provided CARMA-Tools
+    def checkCarmaTools(self):
+        logging.info('Checking the CARMA-tools path')
+        ct = self.options.carma_tools
+
+        if not os.path.isdir(ct):
+            msg = 'CARMATOOLS=%s does not exist. Build Aborted.\n' % ct
+            raise Exception(msg)
+
+    def doCleanBuildDirectory(self):
+        logging.info('Cleaning build directory')
+
+        shutil.rmtree(self.TOP_OF_BUILD, onerror=handle_rmtree_error)
+        mkdir_p(self.TOP_OF_BUILD)
+
+    # Check that an incremental build is supported
+    def checkIncrementalBuild(self):
+        logging.info('Checking if an incremental build is allowed')
+
+        # check that a previous makefile exists
+        path = os.path.join(self.TOP_OF_BUILD, 'Makefile')
+        if not os.path.isfile(path):
+            msg = 'No previous Makefile in build directory (%s). Incremental build not supported.' % path
+            raise Exception(msg)
+
+        # check that the prefix matches our prefix
+        cmd = ['awk', '/^prefix =/ { print $3; }', path]
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        (stdoutdata, stderrdata) = proc.communicate()
+        ret = proc.wait()
+        if ret != 0:
+            raise Exception('unable to find previous setting for --prefix: %s' % os.strerror(ret))
+
+        # get and check the previous prefix
+        prefix = stdoutdata.strip()
+        if self.options.prefix != prefix:
+            logging.error('Prefix mismatch: incremental build is not possible')
+            logging.error('previous install prefix: %s', prefix)
+            logging.error('new install prefix: %s', self.options.prefix)
+            raise Exception('prefix mismatch: incremental build is not possible')
+
+    # Run the GNU Autoconf configure script
+    def doConfigure(self):
+        logging.info('Running configure')
+
+        confexe = os.path.join(self.TOP_OF_SRC, 'configure')
+        ccenv = 'CC=%s' % self.CC
+        cxxenv = 'CXX=%s' % self.CXX
+        cflagsenv = 'CFLAGS=%s' % self.CFLAGS
+        cxxflagsenv = 'CXXFLAGS=%s' % self.CXXFLAGS
+        prefixopt = '--prefix=%s' % self.options.prefix
+        ctopt = '--with-carma-tools=%s' % self.options.carma_tools
+        miropt = '--with-miriad-home=%s' % self.options.miriad_home
+        javaopt = '--with-java-home=%s' % self.options.java_home
+        dbmsopt = '--with-use-dbms-default=%s' % self.options.use_dbms
+
+        cmd = [confexe, ccenv, cxxenv, cflagsenv, cxxflagsenv, prefixopt, ctopt, miropt, javaopt, dbmsopt]
+        if self.options.make_check:
+            cmd.append('--enable-integration-tests')
+
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_BUILD)
+        if ret != 0:
+            raise Exception('configure failed: %s' % os.strerror(ret))
+
+    # Run GNU make
+    def doMake(self):
+        logging.info('Running make -j%s', self.options.jobs)
+
+        jopt = '-j%s' % self.options.jobs
+        cmd = ['make', jopt]
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_BUILD)
+        if ret != 0:
+            raise Exception('Failed to run make: %s' % os.strerror(ret))
+
+    # Run 'make check'
+    def doMakeCheck(self):
+        logging.info('Running make -j%s check', self.options.jobs)
+
+        jopt = '-j%s' % self.options.jobs
+        cmd = ['make', jopt, 'check']
+        ret = subprocess.call(cmd, cwd=self.TOP_OF_BUILD)
+        if ret != 0:
+            raise Exception('Failed to run make check: %s' % os.strerror(ret))
+
+    def doGenerateMD5(self):
+        logging.info('Generate MD5 checksums')
+
+        try:
+            md5file = os.path.join(self.options.prefix, CHECKSUM_FILENAME)
+            findcmd = ['find', self.options.prefix, '-type', 'f',
+                       '!', '-name', CHECKSUM_FILENAME, '-print0']
+            xargscmd = ['xargs', '-0', 'md5sum']
+
+            devnull = open('/dev/null', 'w')
+            fd = open(md5file, 'w')
+
+            # build the find command
+            findproc = subprocess.Popen(findcmd, cwd=self.options.prefix,
+                                        stdout=subprocess.PIPE, stderr=devnull)
+
+            # pipe the output from find to xargs, write stdout to checksum.md5
+            xargsproc = subprocess.Popen(xargscmd, stdin=findproc.stdout,
+                                         stdout=fd, stderr=devnull)
+
+            # run the pipe
+            xargsproc.communicate()
+            ret = xargsproc.wait()
+            if ret != 0:
+                logging.error('Checksum generation failed: %s', os.strerror(ret))
+
+            # close the file descriptors
+            fd.close()
+            devnull.close()
+
+        except Exception, e:
+            logging.error('Exception during Checksum generation: %s', str(e))
+
+    def doPromptForComment(self):
+        logging.info('Prompt for user comments')
+
+        # create the initial contents of the comments file
+        contents = []
+        contents.append('# This file can contain any comments you like.\n')
+        contents.append('# The contents will be sent via email to interested\n')
+        contents.append('# parties when this build is installed.\n')
+        contents.append('#\n')
+        contents.append('# ALL lines beginning with "#" will be removed automatically.\n')
+
+        # create a file to contain the comments, write the default contents
+        f = tempfile.NamedTemporaryFile()
+        f.file.writelines(contents)
+        f.file.flush()
+
+        # some users don't have a default EDITOR set :(
+        try:
+            os.environ['EDITOR']
+        except KeyError:
+            os.environ['EDITOR'] = 'vim'
+
+        # let the user edit the file
+        ret = os.system('$EDITOR %s' % f.name)
+        if ret != 0:
+            raise Exception('error in running editor for comment')
+
+        # save the reference to the temporary file for later
+        # it is deleted when it goes out of scope
+        self.TEMP_COMMENT_FILE = f
+
+    def doInstallComment(self):
+        logging.info('Install user comments')
+
+        try:
+            src = self.TEMP_COMMENT_FILE.name
+            dst = os.path.join(self.options.prefix, COMMENT_FILENAME)
+            logging.info('cp %s %s', src, dst)
+            shutil.copy2(src, dst)
+        except Exception, e:
+            logging.error('Exception during comment install: %s', str(e))
+
+    def doInstallDifferences(self):
+        logging.info('Install CVS differences')
+
+        try:
+            src = self.TEMP_DIFF_FILE.name
+            dst = os.path.join(self.options.prefix, DIFF_FILENAME)
+            logging.info('cp %s %s', src, dst)
+            shutil.copy2(src, dst)
+        except Exception, e:
+            logging.error('Exception during differences install: %s', str(e))
+
+################################################################################
+###                       The Rollback Object                                ###
+################################################################################
+
+class Rollback(object):
+    def __init__(self, options):
+        self.options = options
+
+        self.TOP_OF_TREE  = self.options.top_of_tree
+        self.TOP_OF_SRC   = os.path.join(self.TOP_OF_TREE, 'carma')
+        self.TOP_OF_RT    = os.path.join(self.TOP_OF_TREE, 'rt')
+
+        self.builds = self.getBuildList()
+
+    # Check if a CVS tag exists
+    def checkCvsTagExists(self, tag, filename='Makefile.am'):
+        logging.info('Checking for CVS tag: %s', tag)
+
+        try:
+            cmd = ['cvs', '-q', 'stat', '-v', filename]
+            proc = subprocess.Popen(cmd, cwd=self.TOP_OF_SRC, stdout=subprocess.PIPE)
+            (stdoutdata, stderrdata) = proc.communicate()
+            ret = proc.wait()
+            if ret != 0:
+                prettycmd = ' '.join(cmd)
+                errstr = os.strerror(ret)
+                raise Exception('failure running command "%s": %s' % (prettycmd, errstr))
+
+            pat = re.compile(r'^\t' + re.escape(tag) + r'\s+\(.*$')
+            lines = stdoutdata.splitlines()
+            for line in lines:
+                logging.debug('Checking cvs stat line: %s', line)
+                if re.match(pat, line):
+                    logging.debug('Found cvs tag: %s', tag)
+                    return True
+
+            logging.debug('Unable to find cvs tag: %s', tag)
+            return False
+        except Exception, e:
+            logging.error('Exception during check for CVS tag %s: %s' % (tag, str(e)))
+            return False
+
+    # Generate the ChangeLog file for this build
+    #
+    # This generates a ChangeLog which lists the changes between two
+    # CVS tags.
+    #
+    # This command is NOT fatal
+    def doCreateChangelog(self, previd, currid):
+        logging.info('Creating ChangeLog from CVS repository')
+
+        try:
+
+            # check to make sure that we actually have builds
+            if previd is None:
+                raise Exception('no previous build')
+
+            if currid is None:
+                raise Exception('no current build')
+
+            # check to make sure the tags actually exist also
+            #
+            # This avoids generating changelogs which start at the beginning of
+            # the repository when one of the tags does not exist.
+            if not self.checkCvsTagExists(previd):
+                raise Exception('cvs tag %s does not exist' % previd)
+
+            if not self.checkCvsTagExists(currid):
+                raise Exception('cvs tag %s does not exist' % currid)
+
+            # build the cvs2cl command
+            cvs2cl = os.path.join(self.TOP_OF_SRC, 'scripts', 'cvs2cl.pl')
+            spec = '%s:%s' % (previd, currid)
+            cmd = [cvs2cl, '-S', '--no-wrap', '--delta', spec, '--stdout']
+            proc = subprocess.Popen(cmd, cwd=self.TOP_OF_SRC, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            (stdoutdata, stderrdata) = proc.communicate()
+            ret = proc.wait()
+            if ret != 0:
+                raise Exception('cvs2cl.pl failure: %s' % os.strerror(ret))
+
+            header = '\nCHANGELOG (CVS tag %s to %s):\n' % (previd, currid)
+            return header + stdoutdata
+
+        except Exception, e:
+            logging.error('Exception during ChangeLog generation: %s', str(e))
+            return '\nChangeLog generation failed: %s\n' % str(e)
+
+    def getBuildList(self):
+        # check the install directory
+        if not os.path.isdir(self.TOP_OF_RT):
+            raise OSError('directory %s does not exist' % self.TOP_OF_RT)
+
+        # list the directory
+        dirs = os.listdir(self.TOP_OF_RT)
+        dirs = [d for d in dirs if re.match('^UPDATE-', d)]
+        dirs.sort()
+
+        return dirs
+
+    # get the current build name
+    def getCurrentBuildName(self):
+        name = os.path.realpath(self.options.link_name)
+        if not os.path.exists(name):
+            name = 'None'
+
+        return name
+
+    # run the rollback object
+    def runRollbackMode(self):
+
+        if self.options.rollback_arg == 'list':
+            self.do_list()
+        else:
+            self.do_choose(self.options.rollback_arg)
+
+    def runCarmaSystem(self, arg):
+        logging.info('Running: carmaSystem %s', arg)
+
+        cmd = ['/opt/rt/scripts/carmaSystem', arg]
+        ret = subprocess.call(cmd)
+        if ret != 0:
+            logging.error('Failed to run: carmaSystem %s: %s', arg, os.strerror(ret))
+            logging.error('Continuing anyway')
+
+    def find_build_by_number(self, num):
+        # if this is a negative build, try and go backwards
+        if num < 0:
+            cur = self.getCurrentBuildName()
+            base = os.path.basename(cur)
+            try:
+                index = self.builds.index(base)
+            except ValueError:
+                msg = 'unable to find current build, negative numbers not allowed'
+                raise ValueError(msg)
+
+            # calculate the absolute build number
+            num = index + num
+
+        # check the build number
+        if num < 0 or num >= len(self.builds):
+            raise IndexError('build number is out of range')
+
+        # ok, we have an absolute build number, use it
+        try:
+            ret = self.builds[num]
+        except IndexError:
+            raise IndexError('unable to find build #%s' % num)
+
+        return ret
+
+    def find_build_from_string(self, line):
+        # drop all whitespace
+        line = line.strip()
+
+        # handle empty input
+        if line == '':
+            raise Exception('no build number entered')
+
+        # handle the case where no builds exist
+        if len(self.builds) == 0:
+            raise Exception('no builds to choose from')
+
+        # handle 'latest' and 'install'
+        if line.lower() in ('latest', 'install'):
+            return self.builds[-1]
+
+        # handle explicitly named builds
+        if line in self.builds:
+            return line
+
+        # handle a numbered build
+        try:
+            num = int(line)
+        except Exception:
+            raise Exception('unable to parse %s as integer' % line)
+
+        # let this exception bubble up if it happens
+        line = self.find_build_by_number(num)
+        return line
+
+    def do_list(self):
+        """list all possible builds supported for rollback"""
+
+        # get the current build name
+        cur = self.getCurrentBuildName()
+        cur_base = os.path.basename(cur)
+
+        # and list all available builds
+        print
+        print 'Current Build: %s' % cur
+        print 'Available Builds:'
+        for i in xrange(len(self.builds)):
+
+            # this handles putting stars next to the current build
+            extra = ''
+            if self.builds[i] == cur_base:
+                extra = ' <-- CURRENT BUILD'
+
+            print '%3d - %s%s' % (i, self.builds[i], extra)
+
+        print
+
+    def get_roll_description(self, line, old_source, new_source):
+        # handle special case 'install'
+        if line.strip().lower() == 'install':
+            return 'install'
+
+        # not an install, try to figure out whether this is a rollback
+        # or rollforward
+        try:
+            oldstat = os.stat(os.path.join(old_source, CHECKSUM_FILENAME))
+            newstat = os.stat(os.path.join(new_source, CHECKSUM_FILENAME))
+            if oldstat.st_ctime < newstat.st_ctime:
+                return 'rollforward'
+        except:
+            # unable to determine if this is a rollback or rollforward
+            pass
+
+        return 'rollback'
+
+    def do_choose(self, line):
+        """choose a build to roll back/forward to"""
+
+        try:
+            build = self.find_build_from_string(line)
+        except Exception, e:
+            print
+            print 'ERROR: %s' % str(e)
+            print
+            return
+
+        # find the actual directories for each build
+        link_name  = self.options.link_name
+        old_source = self.getCurrentBuildName()
+        new_source = os.path.join(self.TOP_OF_RT, build)
+
+        # check what type of action was performed
+        rollstr = self.get_roll_description(line, old_source, new_source)
+
+        # print information about the current and new links
+        print
+        print 'current build: %s' % old_source
+        print 'new build:     %s' % new_source
+        print 'rt symlink:    %s' % link_name
+
+        # check that the sources are not identical
+        if old_source == new_source:
+            print
+            print 'links are identical!'
+            print
+            return
+
+        # tell the user what we are going to do
+        print
+        print 'Actions to be taken:'
+        if self.options.restart:
+            print '- stop control system'
+        print '- update control system software symlink'
+        if self.options.restart:
+            print '- restart control system'
+        print
+        print 'sleeping 10 seconds for you to abort'
+
+        # nice wait timer
+        try:
+            fancy_wait(10)
+        except KeyboardInterrupt:
+            print '\nABORTED\n'
+            return
+
+        # stop the (old) control system
+        if self.options.restart:
+            self.runCarmaSystem('stop')
+
+        # ok, line is now a good build, move it
+        try:
+            update_symlink(new_source, link_name)
+        except Exception:
+            print
+            print 'ERROR: unable to move link!'
+            print
+            return
+
+        # start the new control system
+        if self.options.restart:
+            self.runCarmaSystem('start')
+
+        # print a nice message to the screen
+        msg =  '\n'
+        msg += 'A software %s has been performed!\n' % rollstr
+        msg += 'OLD: %s\n' % old_source
+        msg += 'NEW: %s\n' % new_source
+        msg += '\n'
+        if not self.options.restart:
+            msg += 'The control system was NOT restarted automatically. You\n'
+            msg += 'will probably want to do this with: carmaSystem restart\n'
+            msg += '\n'
+        msg += 'OBSERVERS:\n'
+        msg += 'You MUST re-initialize each subarray control system by\n'
+        msg += 'simply restarting each sac session(sci1/sci2/eng1).\n'
+        print msg
+        print
+
+        if self.options.email:
+            logging.info('Sending email to %s', ROLL_EMAIL_ADDRESS)
+
+            # was this a targeted build
+            old_targeted_build = check_configuration_targeted(old_source, None)
+            new_targeted_build = check_configuration_targeted(new_source, None)
+
+            # create the ChangeLog only for roll-forward to save time
+            changes = ''
+            if rollstr in ('rollforward', 'install'):
+                previd = os.path.basename(old_source)
+                currid = os.path.basename(new_source)
+                changes = self.doCreateChangelog(previd, currid) + '\n'
+
+            # get the build comments and differences
+            comments = get_build_comments(new_source)
+            differences = get_build_differences(new_source)
+
+            # send the email
+            subject = 'CARMA Software %s' % rollstr[0].upper() + rollstr[1:]
+            mail =  'Username: %s\n' % self.options.username
+            mail += 'Hostname: %s\n' % get_hostname()
+            mail += msg
+            mail += comments
+            mail += differences
+            mail += changes
+            send_email(ROLL_EMAIL_ADDRESS, subject, mail)
+
+################################################################################
+### The Main Program                                                         ###
+################################################################################
+
+# Check for incompatible build type options
+def check_and_set_build_type(option, opt_str, value, parser, build_type):
+    if parser.values.build_type is not None:
+        arg1 = parser.values.build_option_previous
+        arg2 = option
+        logging.error('multiple build types specified: cannot use %s and %s together', arg1, arg2)
+        sys.exit(1)
+
+    parser.values.build_type = build_type
+    parser.values.build_option_previous = option
+
+# OptionParser callback for -R
+#
+# This implements making -R an alias for the rollback tool's 'choose' function.
+# We only need this because we want to setup two variables when this is
+# called.
+def optcb_short_R(option, opt_str, value, parser):
+    v = parser.values
+
+    check_and_set_build_type(option, opt_str, value, parser, 'rollback')
+    setattr(v, 'rollback_arg', value)
+
+# OptionParser callback for -L
+#
+# This implements making -L an alias for the rollback tool's 'list' function.
+# We only need this because we want to setup two variables when this is
+# called.
+def optcb_short_L(option, opt_str, value, parser):
+    v = parser.values
+
+    check_and_set_build_type(option, opt_str, value, parser, 'rollback')
+    setattr(v, 'rollback_arg', 'list')
+
+# OptionParser callback for --lab
+#
+# This implements the logic to make the lab build setup a special set of
+# parameters, all of which can be overridden by later options
+def optcb_lab_build(option, opt_str, value, parser):
+    v = parser.values
+
+    check_and_set_build_type(option, opt_str, value, parser, 'lab')
+    setattr(v, 'acc', 'labacc')
+    setattr(v, 'install', True)
+    setattr(v, 'cvs_tag', False)
+
+# OptionParser callback for --local
+#
+# This implements the logic to make a local build setup a special set of
+# parameters, all of which can be overridden by later options
+def optcb_local_build(option, opt_str, value, parser):
+    v = parser.values
+
+    check_and_set_build_type(option, opt_str, value, parser, 'local')
+
+    arch = parser.values.architecture
+    rel = parser.values.osrelease
+    user = parser.values.username
+    setattr(v, 'top_of_tree', get_top_of_tree(arch, rel, user))
+
+    setattr(v, 'acc', get_hostname())
+    setattr(v, 'install', True)
+    setattr(v, 'cvs_tag', False)
+
+# OptionParser callback for --cedarflat
+#
+# This implements the logic so that cedarflat has a special set of
+# parameters, all of which can be overridden by later options
+def optcb_cedarflat_build(option, opt_str, value, parser):
+    v = parser.values
+
+    check_and_set_build_type(option, opt_str, value, parser, 'cedarflat')
+    setattr(v, 'acc', 'acc')
+    setattr(v, 'install', True)
+    setattr(v, 'cvs_tag', True)
+    setattr(v, 'precise', True)
+    setattr(v, 'email', True)
+    setattr(v, 'iers_update', True)
+
+# OptionParser callback for --postbuild
+#
+# This implements the logic so that cedarflat-postbuild has a special set of
+# parameters, all of which can be overridden by later options
+def optcb_cedarflat_postbuild(option, opt_str, value, parser):
+    v = parser.values
+
+    # a postbuild is basically a roll-forward to the latest build
+    check_and_set_build_type(option, opt_str, value, parser, 'rollback')
+    setattr(v, 'rollback_arg', 'install')
+    setattr(v, 'restart', True)
+    setattr(v, 'email', True)
+
+# OptionParser callback for --64-bit
+#
+# This implements the logic to make a 64-bit build setup a special set of
+# parameters. The architecture option is the target architecture, not the
+# build architecture.
+#
+# We also take care to update the top_of_tree if it has not been changed
+# from the default.
+def optcb_64bit(option, opt_str, value, parser):
+    v = parser.values
+
+    setattr(v, 'sixtyfourbit', True)
+    setattr(v, 'architecture', 'x86_64')
+
+    # Update the default top-of-tree for the new architecture
+    # if it has not been previously overridden by the user.
+    arch = get_architecture()
+    rel  = getattr(v, 'osrelease')
+    totpath = get_top_of_tree(arch, rel)
+    if getattr(v, 'top_of_tree') == totpath:
+        totpath = get_top_of_tree('x86_64', rel)
+        setattr(v, 'top_of_tree', totpath)
+
+def main():
+
+    # setup the logging infrastructure
+    setup_logging()
+
+    # renice this process down as far as possible
+    os.nice(19)
+
+    # this is a bit of a hack to make this --help output wider
+    os.environ['COLUMNS'] = '112'
+
+    # get the architecture and release
+    # NOTE: this ALWAYS defaults to an i686 build
+    arch = 'i686'
+    rel  = get_release()
+
+    # option parser usage text
+    usage = """%prog [options]
+
+A program to build the CARMA RTS software
+
+You should be especially aware that the following options have a default
+value based on the architecture and RHEL/CentOS release: --top-of-tree,
+--rt-link, and --prefix.
+
+By default, this program performs an i686 (32-bit) build. When you force a
+64 bit build with --64-bit, this may change the architecture used in the
+automatically generated paths.
+
+You should be aware that options are parsed in the order they are specified.
+If you issue "buildInstall --email --no-email", the "--no-email" will take
+precedence. THIS IS ESPECIALLY TRUE OF THE SHORTCUT COMMANDS.
+"""
+
+    # build the option parser
+    parser = optparse.OptionParser(version=REVISION, usage=usage)
+
+    parser.set_defaults(email=False)
+    parser.set_defaults(top_of_tree=get_top_of_tree(arch, rel))
+    parser.set_defaults(link_name=get_rts_symlink(arch, rel))
+    parser.set_defaults(username=get_username())
+    parser.set_defaults(verbose=False)
+
+    parser.set_defaults(install=False)
+    parser.set_defaults(jobs=os.sysconf('SC_NPROCESSORS_ONLN'))
+    parser.set_defaults(tag=False)
+    parser.set_defaults(acc='acc')
+    parser.set_defaults(incremental=False)
+    parser.set_defaults(cvs_update=True)
+    parser.set_defaults(iers_update=False)
+    parser.set_defaults(cvs_diff=True)
+    parser.set_defaults(prefix=None)
+    parser.set_defaults(carma_tools=os.path.realpath('/opt/carmaTools'))
+    parser.set_defaults(miriad_home=os.path.realpath('/array/miriad/cvs'))
+    parser.set_defaults(java_home=get_java_home())
+    parser.set_defaults(precise=False)
+    parser.set_defaults(make_check=False)
+    parser.set_defaults(md5sum=True)
+    parser.set_defaults(comment=True)
+    parser.set_defaults(allow_differences=False)
+
+    parser.set_defaults(restart=False)
+
+    # setup the default values for certain non-arguments
+    #
+    # we still want some values in the options returned by the option parser,
+    # but we don't want them to be under direct user control. Therefore, we
+    # use this backdoor method to stick them into the options returned by the
+    # parser. This is done before the parser runs, so that we can override them
+    # from callback functions.
+    parser.set_defaults(architecture=arch)
+    parser.set_defaults(osrelease=rel)
+    parser.set_defaults(build_type=None)
+    parser.set_defaults(build_option_previous=None)
+    parser.set_defaults(use_dbms='false')
+    parser.set_defaults(sixtyfourbit=False)
+    parser.set_defaults(rollback_arg='list')
+
+    ### The Simple Option Group
+    helptext = 'Aliases for common sets of functionality'
+    group = optparse.OptionGroup(parser, 'Shortcut Commands', description=helptext)
+
+    helptext='perform a cedarflat build: equivalent to --acc=acc -t --precise --email --iers_update'
+    group.add_option('--cedarflat', action='callback', callback=optcb_cedarflat_build,
+                     help=helptext)
+
+    helptext='perform a lab build: equivalent to --acc=labacc --no-email'
+    group.add_option('--lab', action='callback', callback=optcb_lab_build,
+                     help=helptext)
+
+    helptext='perform a local build: equivalent to --acc=`hostname` --no-email --top-of-tree=/home/$USER/Carma-ARCH-REL'
+    group.add_option('--local', action='callback', callback=optcb_local_build,
+                     help=helptext)
+
+    group.add_option('--cedarflat-postbuild', action='callback', callback=optcb_cedarflat_postbuild,
+                     help='perform a postbuild for cedarflat: equivalent to -R install --restart --email')
+
+    parser.add_option_group(group)
+
+    ### The Common Option Group
+    helptext = 'Options that can be used in any mode'
+    group = optparse.OptionGroup(parser, 'Common Options', description=helptext)
+
+    group.add_option('--email', dest='email', action='store_true', help='send email')
+    group.add_option('--no-email', dest='email', action='store_false', help='do NOT send email')
+
+    group.add_option('--top-of-tree', dest='top_of_tree', metavar='PATH',
+                     help='top of tree build path (default: %default)')
+
+    group.add_option('--rt-link', dest='link_name', metavar='PATH',
+                     help='rt symlink (default: %default)')
+
+    group.add_option('-u', '--username', dest='username', metavar='NAME',
+                     help='your username (default: %default)')
+
+    group.add_option('--verbose', dest='verbose', action='store_true',
+                     help='enable verbose (debugging) output for this script')
+
+    parser.add_option_group(group)
+
+    ### The Build Option Group
+    helptext = 'Options that are only used when building'
+    group = optparse.OptionGroup(parser, 'Build Options', description=helptext)
+
+    group.add_option('-j', '--jobs', dest='jobs', metavar='NUM', type='int',
+                     help='number of parallel make jobs to run (default: %default)')
+
+    group.add_option('-t', '--tag', dest='cvs_tag', action='store_true',
+                     help='tag successful builds in CVS')
+
+    group.add_option('--acc', dest='acc', metavar='HOSTNAME',
+                     help='set ACC computer hostname (default: %default)')
+
+    group.add_option('--incremental', dest='incremental', action='store_true',
+                     help='perform an incremental build')
+
+    group.add_option('--no-cvs-update', dest='cvs_update',
+                     action='store_false', help='inhibit CVS update')
+
+    group.add_option('--no-cvs-diff', dest='cvs_diff',
+                     action='store_false', help='inhibit CVS diff and ignore --allow-diffs')
+
+    group.add_option('--prefix', dest='prefix', metavar='PATH',
+                     help='install into the PATH directory (default: automatically generated)')
+
+    group.add_option('--carma-tools', metavar='PATH', dest='carma_tools',
+                     help='use a custom CARMA-tools (default: %default)')
+
+    group.add_option('--miriad-home', metavar='PATH', dest='miriad_home',
+                     help='use a custom MIRIAD home (default: %default)')
+
+    group.add_option('--java-home', metavar='PATH', dest='java_home',
+                     help='use a custom JAVA home (default: %default)')
+
+    group.add_option('--precise', dest='precise', action='store_true',
+                     help='use a very precise date+time tagged build directory')
+
+    group.add_option('--64-bit', action='callback', callback=optcb_64bit,
+                     help='perform a 64-bit build')
+
+    group.add_option('--make-check', dest='make_check', action='store_true',
+                     help='run make check (including integration tests)')
+
+    group.add_option('--no-md5sum', dest='md5sum', action='store_false',
+                     help='create checksum.md5 in install directory')
+
+    group.add_option('--no-comment', dest='comment', action='store_false',
+                     help='create comments file in install directory')
+
+    group.add_option('--iers-update', dest='iers_update', action='store_true',
+                     help='fetch new IERS data from USNO and create IERS.tab' )
+
+    group.add_option('--allow-diffs', dest='allow_differences', action='store_true',
+                     help='allow modified files in the working copy')
+
+    parser.add_option_group(group)
+
+    ### The Rollback Option Group
+    helptext = 'Options that only work when rolling back/forward'
+    group = optparse.OptionGroup(parser, 'Rollback Options', description=helptext)
+
+    group.add_option('-R', action='callback', callback=optcb_short_R, type='string', nargs=1,
+                     metavar='NUM', help='rollback to a specific build (negatives allowed)')
+
+    group.add_option('-L', action='callback', callback=optcb_short_L,
+                     help='list builds available for rollback')
+
+    group.add_option('--restart', dest='restart', action='store_true',
+                     help='stop and restart the system after changing the link')
+
+    parser.add_option_group(group)
+
+    # if there is nothing in argv, print the help and exit
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
+
+    # parse the arguments
+    (opts, args) = parser.parse_args()
+
+    # turn on verbose messages if requested
+    if opts.verbose:
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+
+    logging.debug('OPTS: %s', opts)
+    logging.debug('ARGS: %s', args)
+
+    if opts.build_type == None:
+        logging.error('No command specified')
+        logging.error('Please use --cedarflat, --lab, or --local to do a build')
+        logging.error('Please use -R, -L, or --postbuild to do a roll forward/backward')
+        sys.exit(1)
+
+    if opts.build_type in ('cedarflat', 'lab', 'local'):
+        bi = BuildInstall(opts)
+        bi.runBuildMode()
+    elif opts.build_type == 'update':
+        bi = BuildInstall(opts)
+        bi.runUpdateMode()
+    elif opts.build_type == 'rollback':
+        ro = Rollback(opts)
+        ro.runRollbackMode()
+    else:
+        logging.error('unknown build type selected: %s', opts.build_type)
+        logging.error('choices are "build", "rollback", and "update"')
+        sys.exit(1)
+
+# if we're running as a script, run main
+if __name__ == '__main__':
+    main()
+
+# vim: set ts=4 sts=4 sw=4 et:

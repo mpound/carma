@@ -1,0 +1,85 @@
+#! /bin/csh -f
+#
+#  Master script to simplify analysing OVRO pointing 
+#  directly from the 'optical.data' format
+#
+#  and to save Dave Woody from typing too much, we're not calling it "run point" ....
+#
+#  $Id: runpoint,v 1.10 2015/03/02 17:16:55 teuben Exp $
+#  
+
+#          hardcoded for now for the carma site
+set p=/home/teuben/carma/carma/misc/point
+set a=/home/teuben/astromake/
+set date=`date +%d%b%y`
+set data=/home/obs/optical.ovro.data
+
+foreach arg ($*)
+   if (X$arg == X--help || X$arg == X-help || X$arg == X-h) goto help
+   set $arg
+end
+
+#          get the intel compiler environment, somehow somewhere
+if ($?ASTROMAKE) then
+  source $ASTROMAKE/astromake_start
+  astroload intel
+else if (-e $a/astromake_start) then
+  source $a/astromake_start
+  astroload intel
+else
+  echo Warning: assuming you have preloading the intel compiler environment
+endif
+
+#  	   we're hiding a little environment script in the development directory
+pushd $p                     >& /dev/null
+source point_csh
+popd                         >& /dev/null
+
+
+echo "Welcome to OVRO Pointing Fitting"
+echo ""
+echo "intel: `which icc`"
+echo "PGPLOT: $PGPLOT_DIR"
+
+#                                POINT needs a file (or symlink) optical.data
+if (! -e optical.data) then
+  echo Trying to set a valid symlink to optical.data from $data
+  if (-e $data) then
+    echo "ln -s $data optical.data"
+    ln -s $data optical.data
+  else
+    echo Fatal error: no optical.data or data=$data, try setting data=
+    exit 1
+  endif
+else
+  echo Using your local optical.data
+endif
+
+if ($date == 0) then
+  # manual mode
+  exec $p/point 
+else
+  # automated mode
+  echo "exec $p/run0 point=$p/point date=$date"
+  exec $p/run0 point=$p/point date=$date
+endif
+
+exit 0
+
+help:
+   echo "Usage: $0 [a=$a] [p=$p] [date=ddmmmyy]"
+   echo "   a= root directory of ASTROMAKE, the assumed loader for the intel compiler"
+   echo "   p= root directory of POINT, formally CARMA/misc/point, compiled in-place"
+   echo "   date = either a valid ddyyymm day to automatically run pointing (e.g. 11jul05)"
+   echo "          or:    0                   to run pointing interactively"
+   echo "          The default is today (date=$date)"
+   echo "   data=  a valid optical.data file that a local optical.data will be symlinked"
+   echo "          to. Note any existing optical.data file would have to be removed in"
+   echo "          order for a new data= to take effect."
+   echo ""
+   echo "This script will setup a shell environment and run the OVRO point program"
+   echo "to fit radio or optical pointing coefficients"
+   echo "In batch mode it will produce files azelplot-N.ps, timeplot-N.ps, "
+   echo "point-N.log and run0-N.log"
+   echo "prepare a summary on-screen of the Old and New pointing coefficients"
+   echo "and finally produce a snippted of python code for subarrayInit.py, if needed"

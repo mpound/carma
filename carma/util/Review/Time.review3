@@ -1,0 +1,65 @@
+
+Reviewer: Colby Kraybill //-REV-JCK
+Id: $Id: Time.review3,v 1.2 2003/04/09 11:53:03 colby Exp $
+
+Coding Review Checklist:
+
+1) Initially fails compiling under gcc 3.2
+
+   Issues:
+     Time.h has predefined default values in it.
+     Time.cc also has these predefined values for the same
+     methods (getDateTimeString(double, int = 0), etc...)
+
+     According to the ANSI C++ standard, see 8.3.6.4,
+     this is not allowed.  Quote:  ... A default argument,
+     shall not be redefined by a later declaration (not
+     even the same value)
+
+     However, the gcc 3.2 complier does allow having the
+     default value to be defined either in the .h or .cc files.
+     Doxygen pulls out default values if they're in the .h
+     files (re: steve), so, I'll leave them there, but
+     remove them from .cc
+
+     Steve fixed, now compiles under 3.2, 2.96-110 and 2.95.4
+
+	Platforms:
+	 Redhat 7.3 (gcc 2.96-110)
+	 SuSE 8.1 (gcc 3.2)
+     Debian woody (gcc 2.95.4)
+	 
+Result: Pass
+
+2) Coverage of Time.cc 
+	Wasn't sure about how to put cppunit into source tree.  Worked it
+	into conf/opt/cppunit and created links to include files and a link for the
+	libcppunit.a file into carma/lib
+
+	Test run and seemed to complete correctly.  Suggest that unit tests are more
+	clear about pass/fail.
+
+	100.00% of 103 source lines executed in file Time.cc (as reported by gcov)
+
+Result: Pass 
+  
+3) Adheres to design document.
+	Result: N/A.  No design document for Time.x[cc,h]
+
+4) Documentation
+    Running make doc:
+	Time.h:202: Warning: Member getFITSdateString of class carma::util::Time is not documented.
+	Time.h:189: Warning: argument `frame' of command @param is not found in the argument list of carma::util::Time::getDateString(int imjd) const
+	Time.h:189: Warning: The following parameters of carma::util::Time::getDateString(int imjd) const are not documented: parameter imjd
+
+Result: Fail, not fully documented.
+
+5) Style
+
+     getMJD() exception.
+	 
+Result: Pass
+
+5) Summary
+Result: Conditional Pass, need to take care of documentation 
+

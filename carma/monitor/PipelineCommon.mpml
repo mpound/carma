@@ -1,0 +1,893 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- $Id: PipelineCommon.mpml,v 1.93 2014/07/22 21:00:13 scott Exp $ -->
+
+<!-- Common monitor containers and monitor points for the Pipeline -->
+
+<Common scope="global" author="Rick Hobbs">
+
+    <?common NoiseStatusCommon.mpml?>
+    <?common SignalPathCommonMonitorPoints.mpml?>
+
+    <Container name="PipelineStatus" priority="useful" >
+        <description>Overall pipeline health.</description>
+
+             <MonitorPoint name="startOffset" type="int" >
+                <shortName>Start</shortName>
+                <longName>Pipeline Start Time</longName>
+                <description>
+                    Pipeline start time in milliseconds following the dataFrame
+                    being processed.  This is also the time that monitor data
+                    was received from the monitor/fault system.
+                </description>
+                <units>ms</units>
+             </MonitorPoint>
+
+             <MonitorPoint name="maxStartOffset" type="int" >
+                <shortName>Max Start</shortName>
+                <longName>Maximum Pipeline Start Time</longName>
+                <description>
+                    Maximum pipeline start time.  This is useful for
+                    determining how to set system delays.
+                </description>
+                <units>ms</units>
+             </MonitorPoint>
+
+             <MonitorPoint name="stopOffset" type="int" >
+                <shortName>Finish</shortName>
+                <longName>Pipeline Finish Time</longName>
+                <description>
+                    Pipeline stop time in milliseconds following the dataFrame.
+                </description>
+                <units>ms</units>
+             </MonitorPoint>
+
+             <MonitorPoint name="maxStopOffset" type="int" >
+                <shortName>Max Finish</shortName>
+                <longName>Maximum Pipeline Finish Time</longName>
+                <description>
+                    Maximum pipeline stop time.  This is useful for
+                    determining how to set system delays.
+                </description>
+                <units>ms</units>
+             </MonitorPoint>
+
+             <MonitorPoint name="totalProcTime" type="float" priority="useful">
+                <shortName>Total Wall Time</shortName>
+                <units>ms</units>
+                <description>
+                    Total wall clock processing time from the beginning to the
+                    end of the pipeline.  Due to multithreading this value
+                    can be lower than the sum of the CPU times above.
+                </description>
+                <warnHi>170.0</warnHi>
+                <errHi>250.0</errHi>
+             </MonitorPoint>
+
+             <MonitorPoint name="maxTotalProcTime" type="float"
+                           priority="useful">
+                <shortName>Max Total Wall Time</shortName>
+                <units>ms</units>
+                <description>
+                    Maximum total wall clock processing time from the beginning
+                    to the end of the pipeline.
+                </description>
+             </MonitorPoint>
+
+             <MonitorPoint name="dataFrame" type="int" >
+                <shortName>Data Frame</shortName>
+                <longName>Data Frame Count</longName>
+                <description>
+                    This is the frame count for the data currently
+                    being processed by the pipeline.
+                </description>
+                <width>12</width>
+             </MonitorPoint>
+
+             <MonitorPoint name="missedFrames" type="int" >
+                <shortName>Missed Corr Data</shortName>
+                <longName>Missed Cor Data Frames</longName>
+                <description>
+                    Number of frames for which no correlator data arrived.
+                </description>
+             </MonitorPoint>
+
+             <MonitorPoint name="missedMonitorFrames" type="int">
+                <shortName>Missed Monitor Data</shortName>
+                <longName>Missed Monitor Data</longName>
+                <description>
+                    Number of frames for which no monitor data arrived or
+                    arrived too late for processing.
+                </description>
+             </MonitorPoint>
+
+    </Container> <!-- PipelineStatus -->
+
+    <Container name="StageStats" priority="useful" persistent="true">
+
+        <description>Contains generic stage statistics.</description>
+
+        <MonitorPoint name="state" type="bool">
+           <shortName>Active</shortName>
+           <units></units>
+           <description>
+                Indicates if this stage is active or not.
+           </description>
+           <warnLo>false</warnLo>
+           <warnHi>false</warnHi>
+         </MonitorPoint>
+
+        <MonitorPoint name="procTime" type="float" priority="useful">
+           <shortName>CPU Time</shortName>
+           <longName>Processing Time</longName>
+           <units>ms</units>
+           <description>
+              The amount of CPU time used to process data in this stage. Note
+              that stages are multithreaded so this does not correspond to the
+              wall clock time.
+           </description>
+            <warnHi>170.0</warnHi>
+            <errHi>250.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="maxProcTime" type="float" priority="useful">
+           <shortName>Max CPU Time</shortName>
+           <longName>Maximum Processing Time</longName>
+           <units>ms</units>
+           <description>
+              The maximum amount of time used to process data in this stage.
+           </description>
+            <warnHi>500.0</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="dataFrameCount" type="int">
+            <shortName>Data Frame</shortName>
+            <longName>Data Frame Count</longName>
+            <description>
+               Frame count of correlator data.
+            </description>
+            <width>12</width>
+        </MonitorPoint>
+
+        <MonitorPoint name="procStat" type="enum">
+            <shortName>Proc Stat</shortName>
+            <longName>Stage Processing Status</longName>
+            <description>
+                Indicates the success or failure of stage processing.
+            </description>
+            <enum name="GOOD"/>
+            <enum name="BAD"/>
+            <enum name="INPROGRESS"/>
+            <enum name="PENDING"/>
+            <warnHi>INPROGRESS</warnHi>
+            <errHi>BAD</errHi>
+        </MonitorPoint>
+
+    </Container> <!-- Stage Stats -->
+
+    <Container name="CatchDataStage" priority="useful">
+        <description>
+            Catch Data stage of Pipeline
+        </description>
+
+        <MonitorPoint name="dataFrameCount" type="int">
+            <shortName>Data Frame Count</shortName>
+            <units></units>
+            <description>
+               Frame Count of Correlator Data.  Note this corresponds to the
+               time period which the data was sampled during.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="lastTransmissionOffset" type="int">
+            <shortName>Last Band Tx</shortName>
+            <longName>Last Band Transmit Time</longName>
+            <description>
+                Last band data transmit time in milliseconds since data frame.
+            </description>
+            <units>ms</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="lastReceiveOffset" type="int">
+            <shortName>Last Band Rx</shortName>
+            <longName>Last Band Receive Time</longName>
+            <description>
+                Last band data receive time in milliseconds since data frame.
+            </description>
+            <units>ms</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="maxTransmissionOffset" type="int">
+            <shortName>Max Band Tx</shortName>
+            <longName>Max Band Transmit Time</longName>
+            <description>
+                Max band data transmit latency (ms) since process started.
+            </description>
+            <units>ms</units>
+            <warnHi>700</warnHi>
+            <errHi>1700</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="maxReceiveOffset" type="int">
+            <shortName>Max Band Rx</shortName>
+            <longName>Max Band Receive Time</longName>
+            <description>
+                Max band data receive time (ms) since process started.
+            </description>
+            <units>ms</units>
+            <warnHi>700</warnHi>
+            <errHi>1700</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="numberOfBandsCaught" type="short">
+           <shortName>Bands Caught Count</shortName>
+           <units></units>
+           <description>
+              Number of Correlator Bands caught for current half second
+           </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="bandsSeen" type="string">
+           <shortName>Astro Bands Seen</shortName>
+           <units></units>
+           <description>
+              A range formatted list of bands that were seen for the 
+              current half second.
+           </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="pctCaughtTotal" type="float">
+           <shortName>Total Caught</shortName>
+           <units>%</units>
+           <description>
+              Percentage of bands caught since start of process. This is a
+              weighted average where each band is given equal weight (common
+              mean). The percentage for each band is reset upon receipt of
+              the very first record for that band so that startup latencies
+              do not taint the statistics.
+           </description>
+           <errLo>50.0</errLo>
+           <warnLo>80.0</warnLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="upFrames" type="int">
+            <shortName>Upframes</shortName>
+            <longName>Uptime in Frames</longName>
+            <description>
+                Total number of frames processed since this application was
+                last restarted.
+            </description>
+        </MonitorPoint>
+
+    </Container> <!-- CatchDataStage -->
+
+    <Container name="BlankFlagStage" priority="useful">
+
+        <MonitorPoint name="pctBlanked" type="int">
+           <shortName>Data Blanked</shortName>
+           <units>%</units>
+           <description>
+              Percentage of Data Blanked
+           </description>
+           <warnHi>50</warnHi>
+           <errHi>75</errHi>
+         </MonitorPoint>
+
+        <MonitorPoint name="pctFlagged" type="int">
+           <shortName>Data Flagged</shortName>
+           <units>%</units>
+           <description>
+              Percentage of Data Flagged
+           </description>
+           <warnHi>50</warnHi>
+           <errHi>75</errHi>
+         </MonitorPoint>
+
+    </Container> <!-- BlankFlagStage -->
+
+    <Container name="TsysStage" priority="useful">
+
+         <!-- vital for the MIRIAD header, don't muck it up -->
+         <MonitorPoint name="tsysCalActive" type="bool" priority="vital">
+            <shortName>Tsys Cal Active</shortName>
+            <longName>Tsys Calibration Active</longName>
+            <description>
+                Indicates if tsys calibration is applied to the visibility data.
+            </description>
+        </MonitorPoint>
+        
+        <MonitorPoint name="fluxCalActive" type="bool" >
+           <shortName>Flux Cal Active</shortName>
+           <longName>Flux Calibration Active</longName>
+           <description>
+                Indicates if flux calibration is actively being applied to data.
+           </description>
+        </MonitorPoint>
+
+        <CommonMonitorPoint ref="noiseStatus" />
+
+    </Container> <!-- TsysStage -->
+
+    <Container name="IntegratorStage" priority="vital">
+        <MonitorPoint name="mode" type="string">
+           <shortName>mode</shortName>
+           <units></units>
+           <description>
+              Blanking or Flagging mode
+           </description>
+         </MonitorPoint>
+
+        <MonitorPoint name="integrationNumber" type="int">
+           <shortName>IntNum</shortName>
+           <units></units>
+           <description>
+              Number representing the integration
+           </description>
+         </MonitorPoint>
+
+        <MonitorPoint name="numberOfRecords" type="int">
+           <shortName>numRecords</shortName>
+           <units></units>
+           <description>
+              Number records going into the integration
+           </description>
+         </MonitorPoint>
+
+        <MonitorPoint name="frameCount" type="int">
+           <shortName>frameCount</shortName>
+           <units></units>
+           <description>
+              Current frame count for this integration
+           </description>
+         </MonitorPoint>
+
+        <MonitorPoint name="recordCount" type="int">
+           <shortName>recordCount</shortName>
+           <units></units>
+           <description>
+              Current record count for this integration
+           </description>
+         </MonitorPoint>
+         
+         <MonitorPoint name="desiredIntegTime" type="float">
+            <shortName>DesiredIntegTime</shortName>
+            <units>s</units>
+            <description>
+               Desired Integration Time
+            </description>
+            <precision>1</precision>
+         </MonitorPoint>
+         
+         <MonitorPoint name="recordClusterSize" type="int">
+            <shortName>RecordCluster</shortName>
+            <description>
+               The records in an integration can be clustered into groups
+               followed by an inter record cluster gap. This is useful for
+               on the fly uses such as mosaicking and pointing where the 
+               gap is used for changing offsets and slewing. Any value
+               can be used where there are no gaps (gapTime=0) to produce
+               an uninterrupted stream of records. 
+            </description>
+         </MonitorPoint>
+         
+         <MonitorPoint name="gapTime" type="float">
+            <shortName>GapTime</shortName>
+            <units>s</units>
+            <description>
+               Length of the inter record cluster gap
+            </description>
+            <precision>1</precision>
+         </MonitorPoint>
+         
+         <MonitorPoint name="currentSeqNo" type="int">
+            <shortName>CurrentSeqNo</shortName>
+            <longName>Current Sequence Number</longName>
+            <description>
+                Integration sequence number placed in the monitor system
+                after integration is complete.
+            </description>
+        </MonitorPoint>
+        
+        <MonitorPoint name="pendingSeqNo" type="int">
+            <shortName>PendingSeqNo</shortName>
+            <longName>Pending Sequence Number</longName>
+            <description>
+                Integration sequence number to be placed in the monitor
+                system after the current integration is complete.
+            </description>
+        </MonitorPoint>
+        
+        <MonitorPoint name="integrating" type="bool" >
+           <shortName>Integrating</shortName>
+           <longName>Integration in Progress</longName>
+           <description>
+              Integration in progress indicator. An integration consists
+              of integrated records with possible gaps between each record.
+           </description>
+           <warnLo>false</warnLo>
+           <warnHi>false</warnHi>
+        </MonitorPoint>
+         
+        <MonitorPoint name="recordIntegrating" type="bool" >
+           <shortName>Record Integrating</shortName>
+           <longName>Record Integration in Progress</longName>
+           <description>
+              A record of correlator data is being integrated.
+              This MP will be false during the inter-record gaps and
+              is used to drive the Astro Header Writer integrations.
+           </description>
+           <warnLo>false</warnLo>
+           <warnHi>false</warnHi>
+         </MonitorPoint>
+         
+         <MonitorPoint name="noData" type="bool" >
+            <shortName>No Data</shortName>
+            <description>
+                True if we are integrating but no data is in the pipeline.
+            </description>
+            <errHi>true</errHi>
+         </MonitorPoint>
+         
+         <MonitorPoint name="timeSinceLastIntegration" type="float">
+            <shortName>TimeSinceLastInteg</shortName>
+            <longName>Time Since Last Integration</longName>
+            <description>Time since last integration completed</description>
+            <units>s</units>
+            <errHi>60</errHi>
+            <precision>0</precision>
+         </MonitorPoint>
+    </Container> <!-- IntegratorStage -->
+
+    <Container name="VisBrickStage" priority="vital">
+        <MonitorPoint name="outFileName" type="string" persistent="true">
+           <shortName>Output Filename</shortName>
+           <units></units>
+           <description>
+              Output filename being written
+           </description>
+        </MonitorPoint>
+        <MonitorPoint name="scienceData" type="bool">
+            <shortName>ScienceData</shortName>
+            <longName>Is Science Data</longName>
+            <description>
+                Only science data is written to the visbrick.
+                When this MP is false, indicating non-science data collection,
+                the data are not written to the visbrick. Non-science data
+                is used for system functions such as pointing and focus
+                peak-up.
+            </description>
+            <errHi>false</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="fileError" type="bool">
+            <shortName>File Error</shortName>
+            <longName>File Error State</longName>
+            <description>
+                Indicates a problem opening, closing or writing to the visbrick.
+            </description>
+            <errHi>true</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="fileWriteCount" type="int" persistent="true" >
+            <shortName>File Writes</shortName>
+            <description>
+                The number of times we have written records to the filesystem.
+            </description>
+        </MonitorPoint>
+        
+        <MonitorPoint name="fileWriteTime" type="float" persistent="true">
+           <shortName>Last File Write Time</shortName>
+           <units>ms</units>
+           <description>
+                The amount of time taken to write the last record.
+           </description>
+        </MonitorPoint>
+        <MonitorPoint name="fileWriteTimeMin" type="float" persistent="true">
+           <shortName>Min File Write Time</shortName>
+           <units>ms</units>
+           <description>
+                The minimum amount of time taken to write a record.
+           </description>
+        </MonitorPoint>
+        <MonitorPoint name="fileWriteTimeMax" type="float" persistent="true">
+           <shortName>Max File Write Time</shortName>
+           <units>ms</units>
+           <description>
+                The maximum amount of time taken to write a record.
+           </description>
+        </MonitorPoint>
+        <MonitorPoint name="fileWriteTimeMean" type="float" persistent="true">
+           <shortName>Avg File Write Time</shortName>
+           <units>ms</units>
+           <description>
+                The average amount of time taken to write a record.
+           </description>
+        </MonitorPoint>
+        <MonitorPoint name="fileWriteTimeStdDev" type="float" persistent="true">
+           <shortName>Std Dev File Write Time</shortName>
+           <units>ms</units>
+           <description>
+                The standard deviation of file write time.
+           </description>
+        </MonitorPoint>
+        <MonitorPoint name="bytesWritten" type="float" persistent="true">
+           <shortName>Bytes Written</shortName>
+           <units>MB</units>
+           <description>
+              Number of MBytes written to current visbrick file.
+           </description>
+         </MonitorPoint>
+        <MonitorPoint name="maxFilesize" type="int" persistent="true">
+           <shortName>Max File Size</shortName>
+           <units>MB</units>
+           <description>
+              Maximum size of output file.
+           </description>
+        </MonitorPoint>
+        <MonitorPoint name="serializationTime" type="float" persistent="true">
+           <shortName>Serialization Time</shortName>
+           <units>ms</units>
+           <description>
+              Time to serialize correlator data before writing to file.
+           </description>
+            <warnHi>170.0</warnHi>
+            <errHi>250.0</errHi>
+        </MonitorPoint>
+    </Container> <!-- VisBrickStage -->
+
+    <Container name="CatchDataBand" priority="useful">
+
+        <description>
+            Timing and error statistics on band specific information
+            inside the catchData application.  These instances are responsible
+            for receiving correlator band data from the correlator crate
+            CorrelatorCarmaServer processes.
+        </description>
+
+        <MonitorPoint name="active" type="bool">
+            <shortName>Active</shortName>
+            <longName>Collection Active</longName>
+            <description>
+                Indicates if data collection is active or not.
+            </description>
+            <errHi>false</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="corbaObjectName" type="string">
+            <shortName>Corba Object Name</shortName>
+            <longName>Corba Object Name (DO Name)</longName>
+            <description>
+                The name of the Corba object which is being caught from the
+                correlator band servers.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="pctCaught" type="float" >
+            <shortName>Total Caught</shortName>
+            <units>%</units>
+            <description>
+                Total percentage caught for each Band since start of process.
+                Value is reset upon reception of the first record so the
+                percentage will be zero if no records have ever been received,
+                then start at 100% when the first packet comes in.  This
+                provides a value that is not tainted by startup latencies of
+                various bands and helps to more easily discern if timing is
+                indeed problematic.
+            </description>
+            <errLo>50.0</errLo>
+            <warnLo>80.0</warnLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="duplicateRecordsCaught" type="int">
+            <shortName>Duplicate Records</shortName>
+            <longName>Number of Duplicate Records</longName>
+            <description>
+                The number of correlator records received with duplicate
+                information.  The check for this is at the baseline level.
+                If a record contains duplicate baselines, no matter how many,
+                the band is marked as a duplicate.  The duplicate baselines
+                are ignored.
+            </description>
+            <errHi>1</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="lateRecordsCaught" type="int">
+            <shortName>Late Records</shortName>
+            <longName>Number of Late Records</longName>
+            <description>
+                The number of correlator records received too late to
+                include in pipeline processing.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="droppedRecords" type="int">
+            <shortName>Dropped Records</shortName>
+            <longName>Number of Dropped Records</longName>
+            <description>
+                The number of records which were either not received at all
+                from the correlator band server or received too late for
+                processing by the pipeline.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="assemblyLatency" type="float">
+            <shortName>Assembly Latency</shortName>
+            <longName>Band Object Assembly Latency</longName>
+            <description>
+                Time following the sample frame that the carma band object
+                was assembled. Band object assembly occurs in the
+                CorrelatorCarmaServer immediately following the socket read of
+                a cobra::CorrelatorBand object from the CorrelatorBandServer
+                process.
+            </description>
+            <units>ms</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="transmissionLatency" type="float">
+            <shortName>Transmit Latency</shortName>
+            <longName>Band Object Transmit Latency</longName>
+            <description>
+                Time following the sample frame that the carma band object
+                was serialized and transmitted via CORBA to the CatchData
+                application from the CorrelatorCarmaServer.  Transmission
+                occurs after carma band object assembly from a
+                cobra::CorrelatorBand object. This time does not include
+                serialization, demarshalling and transmission latencies.
+            </description>
+            <units>ms</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="receiveLatency" type="float">
+            <shortName>Receive Latency</shortName>
+            <longName>Band Object Receive Latency</longName>
+            <description>
+                Time following the sample frame that the carma band object
+                was received, demarshaled and deserialized by the catchData
+                application.
+            </description>
+            <units>ms</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="deserializationError" type="bool">
+            <shortName>Deserialization Error</shortName>
+            <longName>Deserialization Error</longName>
+            <description>
+                Indicates if there was an error on the last deserialization.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="deserializationErrorCount" type="int">
+            <shortName>Deserialization Error Count</shortName>
+            <longName>Deserialization Error Count</longName>
+            <description>
+                Number of deserialization errors.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="corbaDemarshallingTime" type="float" >
+            <shortName>Corba Demarshal Time</shortName>
+            <longName>Corba Dermarshalling Time</longName>
+            <description>
+                Time in ms it took to demarshal the last received correlator
+                data byte array.
+            </description>
+            <units>ms</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="deserializationTime" type="float" >
+            <shortName>Deserialization Time</shortName>
+            <longName>Deserialization Time</longName>
+            <description>
+                Time in ms it took to deserialize the last received corba
+                byte array into a C++ CorrelatorData object.
+            </description>
+            <units>ms</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalProcTime" type="float" >
+            <shortName>Total Event Proc Time</shortName>
+            <longName>Total Event Processing Time</longName>
+            <description>
+                Total amount of time in ms it took to process the last corr data
+                event.  Includes demarshalling, deserialization and anything else
+                done in the event.
+            </description>
+            <units>ms</units>
+        </MonitorPoint>
+
+    </Container>
+
+    <Container name="Decimation" >
+        <description>
+            Container for per-band decimation information.
+        </description>
+
+        <MonitorPoint name="decimate" type="enum" >
+            <shortName>Decimate</shortName>
+            <longName>Decimate</longName>
+            <description>Indicates if Decimation is being applied</description>
+            <enum name="YES">
+                <description>Do Decimation</description>
+            </enum>
+            <enum name="NO">
+                <description>Do not Decimate</description>
+            </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="expectedChannels" type="int">
+            <shortName>Expected Channels</shortName>
+            <units></units>
+            <errLo>0</errLo>
+            <description>
+                Number of channels expected by the decimator
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="outputChannels" type="int">
+            <shortName>Output Channels</shortName>
+            <units></units>
+            <description> Number of channels output by the decimator</description>
+        </MonitorPoint>
+
+        <MonitorPoint name="numLags" type="int">
+            <shortName>Lags</shortName>
+            <longName>Number of Lags</longName>
+            <description>Number of input lags</description>
+         </MonitorPoint>
+
+        <MonitorPoint name="keepEndChannels" type="bool">
+            <shortName>Keep End Channels</shortName>
+            <units></units>
+            <description>
+                True if first and last spectral channels are kept.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="window" type="enum" >
+            <shortName>Window</shortName>
+            <longName>Window Type</longName>
+            <description>Type of window applied to data</description>
+            <enum name="NONE">
+                <description>No Window</description>
+            </enum>
+            <enum name="HANNING">
+                <description>Hanning Window</description>
+            </enum>
+        </MonitorPoint>
+
+    </Container>
+
+    <Container name="SelfCal">
+        <MonitorPoint name="astroBandNo" type="int">
+            <shortName>Astroband</shortName>
+            <description>
+                The astroband number currently being processed.
+            </description>
+            <warnLo>0</warnLo>
+        </MonitorPoint>
+
+        <CommonMonitorPoint ref="polarization" />
+
+        <MonitorPoint name="convergence" type="bool">
+            <shortName>Converged</shortName>
+            <longName>Solution Convergence Status</longName>
+            <description>
+                True if the solution converged, false otherwise.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="iterations" type="int">
+            <shortName>Convergence Iterations</shortName>
+            <longName>Convergence Iterations</longName>
+            <description>
+                The number of iterations it took to converge.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="maxIterations" type="int">
+            <shortName>Maximum Iterations</shortName>
+            <longName>Maximum Iterations</longName>
+            <description>
+                The maximum number of iterations that will be tried for
+                convergence.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="refAnt" type="int">
+            <shortName>Reference Antenna No.</shortName>
+            <longName>Reference Antenna Number</longName>
+            <description>
+                The antenna number used for the reference. 
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="seenAnts" type="string">
+            <shortName>Ants Seen</shortName>
+            <longName>Candidate antennas seen</longName>
+            <description>
+                A range formatted string showing candidate antennas 
+                seen on this self cal iteration.
+            </description>
+        </MonitorPoint>
+
+    </Container>
+
+    <Container name="LastIntegration" priority="vital">
+        <description>
+            Header information associated with the last completed integration
+        </description>
+        <MonitorPoint name="integNumber" type="int" persistent="true" >
+           <shortName>IntegNum</shortName>
+           <description>
+              Number of last completed integration
+           </description>
+           <width>10</width>
+         </MonitorPoint>
+    </Container>
+
+    <Container name="CorrelatorPublisherStage">
+
+        <MonitorPoint name="recordsPublished" type="int"
+                      persistent="true" priority="useful">
+           <shortName>Records Published</shortName>
+           <units>ms</units>
+           <description>
+              Number of records published to the notification service.
+           </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="lastCorbaSendLatency" type="float"
+                      persistent="true" priority="useful">
+           <shortName>Last CORBA Send Latency</shortName>
+           <units>ms</units>
+           <description>
+              Latency of the most recent CORBA notification send operation.
+           </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="corbaSendLatencyMin" type="float"
+                      persistent="true" priority="useful">
+           <shortName>Min CORBA Send Latency</shortName>
+           <units>ms</units>
+           <description>
+              Minimum latency of CORBA send operations.
+           </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="corbaSendLatencyMax" type="float"
+                      persistent="true" priority="useful">
+           <shortName>Max CORBA Send Latency</shortName>
+           <units>ms</units>
+           <description>
+              Maximum latency of CORBA send operations.
+           </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="corbaSendLatencyAvg" type="float"
+                      persistent="true" priority="useful">
+           <shortName>Avg CORBA Send Latency</shortName>
+           <units>ms</units>
+           <description>
+              Average latency of CORBA send operations.
+           </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="corbaSendLatencyStdDev" type="float"
+                      persistent="true" priority="useful">
+           <shortName>Std Dev CORBA Send Latency</shortName>
+           <units>ms</units>
+           <description>
+              Standard deviation latency of CORBA send operations.
+           </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="lastCorbaSendSize" type="float"
+                      persistent="true" priority="useful">
+           <shortName>Last CORBA Send Size</shortName>
+           <units>KB</units>
+           <description>
+              Size in kilobytes of the most recent CORBA notifcation send operation
+           </description>
+        </MonitorPoint>
+    </Container>
+
+</Common>

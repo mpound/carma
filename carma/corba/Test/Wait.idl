@@ -1,0 +1,17 @@
+#ifndef CARMA_CORBA_TEST_WAIT_IDL
+#define CARMA_CORBA_TEST_WAIT_IDL
+
+module carma {
+module corba {
+module test {
+
+    const string WAIT_NAME = "carma.corba.test.waiter";
+
+    interface Wait {
+
+        void pause( in unsigned long ms );
+
+    }; // interface Wait 
+
+};};}; // module carma::corba::test
+#endif

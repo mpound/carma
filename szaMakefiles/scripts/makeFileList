@@ -1,0 +1,36 @@
+#!/bin/csh
+
+#-----------------------------------------------------------------------
+# Usage:
+#
+# $1 suffix of the makefile to create
+# $2 directory prefix
+# $3 directory suffix
+# $4 path to the directory where the created makefile should reside
+#
+# cd to the specified directory, create the list of dependency files,
+# and use emacs to edit the result to a Makefile.am-style include file
+#-----------------------------------------------------------------------
+
+set carma          = `pwd`
+set emacsMacroPath = $carma/szaMakefiles/scripts/emacs_macros
+set makefilePath   = $carma/szaMakefiles/makefiles
+
+# cd to the directory and create the file list
+
+cd $2/$3
+\ls *.c *.cc > $makefilePath/$4/makefile_am_include_$1
+
+# Use emacs to edit the filelist and turn it into a Makefile.am-style
+# include file that can be included from the main Makefile.am
+
+set arg1 = '"'$2'"'
+set arg2 = '"'$3'"'
+echo $arg1 $arg2
+
+emacs $makefilePath/$4/makefile_am_include_$1 -batch -l $emacsMacroPath --eval "(makefile-entry $arg1 $arg2)"
+echo "include szaMakefiles/makefiles/$4/makefile_am_include_$1" >> $makefilePath/$4/makefile_am_include_libs_auto
+
+
+
+

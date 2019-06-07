@@ -1,0 +1,21 @@
+#ifndef CARMA_CORBA_TEST_TERMINATOR_IDL
+#define CARMA_CORBA_TEST_TERMINATOR_IDL
+
+module carma {
+module corba {
+module test {
+
+    const string TERMINATOR_NAME = "carma.corba.test.Terminator";
+
+    /**
+     * Interface to demonstrate explicit termination of an application using
+     * the carma::corba::Server class.
+     */
+    interface Terminator {
+        
+        void kill();
+
+    }; // interface Terminator 
+
+};};}; // module carma::corba::test
+#endif

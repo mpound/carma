@@ -1,0 +1,59 @@
+#! /usr/bin/python
+
+
+# Script to generate input data for the tSelfcal program.
+# Input: fileIn fileOut
+#
+# The input file has 4 columns, containing:
+# Ant#   VisAmp  VisPhase(deg)   SNR
+# Any line containing a '#' is treated as a comment and discarded
+# Any line starting with 'noise' should be followed by the amount of noise
+# that will be added as a complex random variable with rms of noise in 
+# both the real and imag components.
+#
+# @author Steve Scott
+# $Id: genSelfcalData,v 1.1 2007/03/23 00:49:58 scott Exp $
+#
+# $CarmaCopyright$
+#
+from math import *
+
+debug = True
+fname = "genSelfcal1.dat"
+
+f=open(fname, mode='r', buffering=1)
+# read all the lines into a list
+lines=f.readlines()
+
+data = []
+noise = 0
+
+for l in lines :
+    if l.find("#") != -1: continue
+    if l.find("noise") != -1:
+        s = l.split()
+        noise = float(s[1])
+        continue
+    s = l.split()
+    if len(s) == 0: continue
+    if len(s) != 4:
+        print "Error: input line does not contain 4 parameters"
+        print l
+        continue
+    ant = int(s[0])
+    amp = float(s[1])
+    pha = float(s[2])
+    snr = float(s[3])
+    pharad = radians(pha)
+    data += (ant, amp*cos(pharad), amp*sin(pharad), snr)
+    if debug :
+        print l
+        print ant, amp, pha, snr
+        
+if debug : 
+    print 'random noise:', noise
+    print data
+    
+# ! Incomplete- need to generate baseline datafile!!    
+    
+#

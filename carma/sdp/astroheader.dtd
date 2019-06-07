@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!ELEMENT VISDATA (INTEGRATION)*>
+<!ATTLIST VISDATA version CDATA #REQUIRED>
+
+<!ELEMENT INTEGRATION (KW)*>
+<!ATTLIST INTEGRATION startframe CDATA #REQUIRED>
+
+<!--
+    Valid Types:
+    a - string
+    c - complex
+    d - double
+    i - int
+    j - short
+    r - real
+-->
+<!ELEMENT KW EMPTY>
+<!ATTLIST KW name CDATA #REQUIRED>
+<!ATTLIST KW type (a|c|d|i|j|r) #REQUIRED>
+<!ATTLIST KW length CDATA #REQUIRED>
+<!ATTLIST KW value CDATA #REQUIRED>

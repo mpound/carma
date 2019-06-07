@@ -1,0 +1,516 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "/opt/rt/scripts/imrSingleton /opt/rt/bin/">
+    <!ENTITY RUN_DIR "/opt/rt">
+    <!ENTITY DEFAULT_DIR "/opt//rt">
+    <!ENTITY USE_DB "useDBMS=false">
+    <!ENTITY LOG "">
+    <!ENTITY LOGDEBUG "logfile=/tmp/debug.log traceFile=/tmp/debug.log">
+    <!ENTITY EMULATE  "true">
+    <!ENTITY SIMULATE "true">
+
+    <!ENTITY THISFILE "&RUN_DIR;/conf/imr/marcLocal.xml">
+    <!ENTITY CONTROLSTATEDIR "/tmp/mpound/state">
+    <!ENTITY OBSTOOLSCONF "/n/algol1/mpound/conf/observertools.conf.mwp">
+
+    <!-- correlator hardware -->
+    <!ENTITY CARMAINI "correlator/carma15-2pol.ini">
+    <!ENTITY COBRAINI "correlator/carma15.ini">
+
+    <!-- correlator simulation -->
+    <!ENTITY SIMCARMAINI "correlator/carma15-test.ini">
+    <!ENTITY SIMCARMABANDXML SYSTEM "simCarmaBand.xml">
+    <!ENTITY SIMC3GBANDXML SYSTEM "simCarma3GBand.xml">
+    <!ENTITY SIMBANDSERVER "localhost">
+    <!ENTITY SIMCOBRASERVER "localhost">
+    <!ENTITY SIMWIDEBANDXML SYSTEM "simWideBand.xml" >
+    <!ENTITY SIMCOBRAINI "correlator/sza16Sim.ini" >
+
+]>
+
+<!-- My config. Exists simply to test various applications I'm developing, -->
+<!-- as well as the required infrastructure which grows more everyday.     -->
+
+<!-- $Id: marcLocal.xml.in,v 1.27 2014/11/03 19:21:22 iws Exp $ -->
+<domain>
+
+
+    <oad hostname="localhost">
+        
+        <!-- Core Monitor -->
+        <server name="FrameCollator"
+                path="&BIN_DIR;frameCollator"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; delay=600" 
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf" 
+                system="monitor"
+                critical="true"
+                startup-priority="&monitor-core;"/>
+
+        <server name="FaultSystem" 
+                path="&BIN_DIR;faultSystem"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; blankFlagFile=fault/test/bf_good.xml outputCMS=intermediate runEmailService=false"
+                system="monitor"
+                startup-priority="&monitor-core;"/>
+        
+<!--
+        <server name="FaultSystem" 
+                path="&BIN_DIR;faultSystem"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; alarmFile=fault/test/alarm_good.xml blankFlagFile=fault/test/bf_good.xml outputCMS=intermediate runEmailService=false"
+                system="monitor"
+                startup-priority="&monitor-core;"/>
+-->
+<!-- If you run FaultSystem in outputCMS=intermediate, you MUST also
+     run PipelineSync inputCMS=intermediate outputCMS=final or
+     you monitor system will never update!!!
+-->
+        <!-- Data Pipeline Process -->
+        <server name="PipelineSync"
+                path="&BIN_DIR;monitorPipelineSync"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; inputCMS=intermediate outputCMS=final" 
+                critical="true"
+                system="monitor"
+                startup-priority="&monitor-core;"/>
+
+        <!-- Core Control -->
+        <server name="Subarray1" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;" 
+                args="runSAT=true &LOG; &USE_DB;"
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                critical="true"
+                system="control" 
+                startup-priority="&control;"/>
+
+        <server name="Subarray2" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=2 runSAT=true &LOG; &USE_DB;"
+                critical="true"
+                system="control" 
+                startup-priority="&control;"/>
+
+<!--
+        <server name="Subarray3" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=3 runSAT=true &LOG; &USE_DB;" 
+                critical="true"
+                system="control" 
+                startup-priority="&control;"/>
+        
+        <server name="Subarray4" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=4 runSAT=true &LOG; &USE_DB;" 
+                critical="true"
+                system="control" 
+                startup-priority="&control;"/>
+-->
+
+        <server name="ControlState"
+                path="&BIN_DIR;carmaControlState"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; statedir=&CONTROLSTATEDIR;"
+                critical="false" 
+                system="control" 
+                startup-priority="&control;"/>
+
+        <server name="ControlFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=control"
+                system="monitor"
+                startup-priority="&monitor;"/>
+        
+        <server name="DelayEngineFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=delayEngine delay=250"
+                system="interferometry"
+                startup-priority="&monitor;"/>
+        
+        <!-- Pipeline -->
+        <!--
+                -->
+<!--
+ARGS IF USING CORRDATAREMAPPER
+                args="&LOG; &USE_DB; sl=true f=correlator/slcorrelator.conf astrobandName=carma.correlator.astroband"
+-->
+
+        <server name="AstroFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=astro delay=400" 
+                startup-priority="&monitor;"/>
+
+        <server name="SlcDataCatcher" 
+                path="&BIN_DIR;catchData"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; mode=sl" 
+                system="data" critical="true"
+                startup-priority="&subsystem;"/>
+
+        <server name="SlPipelineFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=slpipeline delay=400"  
+                startup-priority="&monitor;"/>
+
+        <server name="SlPipeline" 
+                path="&BIN_DIR;pipeline"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; mode=sl monitorDelay=350 traceLevel=0 vbdir=/opt/visbrick" 
+                system="data" critical="true"
+                startup-priority="&subsystem;" />
+
+<!--
+        <server name="C3g23PipelineFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=c3g23pipeline delay=400" 
+                system="data"
+                startup-priority="&monitor;"/>
+
+        <server name="C3g23DataCatcher" 
+                path="&BIN_DIR;catchData"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; mode=c3g23"
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                system="data"
+                startup-priority="&subsystem;"/>
+
+        <server name="C3g23Pipeline" 
+                path="&BIN_DIR;pipeline"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; mode=c3g23 vbdir=/opt/visbrick monitorDelay=375" 
+                system="data" critical="true"
+                startup-priority="&subsystem;" />
+-->
+
+<!--
+ARGS IF USING CORRDATAREMAPPER
+                args="&LOG; &USE_DB; sl=true f=correlator/wbcorrelator.conf astrobandName=carma.correlator.astroband"
+
+        <server name="WbcDataCatcher" 
+                path="&BIN_DIR;catchData"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; mode=wb" 
+                startup-priority="&subsystem;"/>
+
+        <server name="WbPipelineFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=wbpipeline delay=400" 
+                startup-priority="&monitor;"/>
+
+        <server name="WbPipeline" 
+                path="&BIN_DIR;pipeline"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; mode=wb vbdir=/tmp monitorDelay=300" 
+                startup-priority="&subsystem;"/>
+
+-->
+ <!--
+-->
+
+        <!-- Process Monitor -->
+        <server name="ProcessMonitorFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=Imr delay=150" 
+                system="monitor" 
+                startup-priority="&monitor-core;" />
+
+            <server name="ProcessMonitor" path="&BIN_DIR;processMonitor"
+                directory="&RUN_DIR;" 
+                args="&LOG; file=&THISFILE; writedelay=0.110 poll=5"
+                system="monitor" 
+                startup-priority="&monitor-core;" />
+
+        <!-- Alarm Processes -->
+        <server name="alarmFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=alarm"
+                startup-priority="&subsystem-core;"/>
+        <server name="alarmControl" 
+                path="&BIN_DIR;carmaAlarm"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; mode=control emulate=&EMULATE;" 
+                startup-priority="&subsystem;" />
+
+        <server name="SignalPath" path="&BIN_DIR;carmaSignalPathMapper"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB;"
+                startup-priority="&subsystem;"/>
+
+        <server name="CorrDataRemapper" 
+                path="&BIN_DIR;carmaCorrelatorDataRemapper"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB;"
+                startup-priority="&subsystem-core;"
+                system="data"
+                critical="true" />
+
+        <server name="SignalPathFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=signalPath"
+                startup-priority="&subsystem-core;"/>
+
+
+
+        <server name="MonitorAverage" path="&BIN_DIR;monitorAverageWriter"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; nice=5 dbconffile=dbms/dbms.devel.conf dotiming=false dotransfer=false dosdp=true noframe=true nominute=true" 
+                system="monitor" critical="true" />
+
+        <server name="AstroHeaderWriter" path="&BIN_DIR;astroHeaderWriter"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; dbconffile=dbms/dbms.devel.conf"
+                system="monitor"  critical="true"  />
+        
+        <server name="DataFlowFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; subsystem=dataflow delay=130" />
+    
+        <!-- Canbus Infrastructure -->
+        <server name="RemoteCan" 
+                path="&BIN_DIR;canOverIpServer"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB;" /> 
+
+        <!-- Antenna -->
+        <server name="Ovro1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro1 delay=300 "
+                system="ovro" />
+        
+        <server name="Ovro1CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; ant=1 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+        
+        <server name="Ovro1Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; awdelay=.150 emulate=&EMULATE; antenna=ovro1" 
+                system="ovro" />
+
+        <server name="Ovro2FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro2 delay=300 "
+                system="ovro" />
+        
+        <server name="Ovro2CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; ant=2 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro2Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; emulate=&EMULATE; antenna=ovro2" 
+                system="ovro" />
+
+        <server name="Ovro3FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro3 delay=300 "
+                system="ovro"/>
+        
+        <server name="Ovro3CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; ant=3 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro3Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; emulate=&EMULATE; antenna=ovro3"
+                system="ovro"  />
+
+
+<!-- Move this line up or down to add or remove antennas
+        <server name="Ovro4FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro4 delay=300 "
+                system="ovro"/>
+        
+        <server name="Ovro4CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; ant=4 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro4Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; emulate=&EMULATE; antenna=ovro4"
+                system="ovro"  />
+
+        <server name="Ovro5FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro5 delay=300 "
+                system="ovro"/>
+        
+        <server name="Ovro5CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; ant=5 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro5Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; emulate=&EMULATE; antenna=ovro5"
+                system="ovro"  />
+
+        <server name="Ovro6FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=ovro6 delay=300 "
+                system="ovro"/>
+        
+        <server name="Ovro6CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; ant=6 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro6Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &USE_DB; emulate=&EMULATE; antenna=ovro6"
+                system="ovro"  />
+        
+        Move this line up or down to add or remove antennas -->
+
+        <!-- Master clock 
+        <server name="MasterClock"
+                path="&BIN_DIR;carmaClockHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; emulate=&EMULATE;" 
+                startup-priority="&subsystem;"/>
+        
+        <server name="MasterClockFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=masterclock delay=75 " />
+
+        <server name="Loberotator" 
+                path="&BIN_DIR;carmaLoberotatorHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; emulate=&EMULATE; sim=true"/>
+
+        <server name="LoberotatorFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=loberotator"
+                startup-priority="&monitor;"/>
+
+        <server name="lorefFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=loref delay=150"
+                startup-priority="&monitor;"/>
+    
+        <server name="LOrefHost" path="&BIN_DIR;/carmaLORefHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; emulate=&EMULATE; synth1_8662=false synth1_mux=122 synth2_8662=false synth2_mux=112 synth3_8662=false synth3_mux=124 counter_gpib=14 switch_gpib=9" 
+                critical="true" />
+-->
+
+        <server name="weatherFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=weather delay=200"
+                startup-priority="&monitor;"/>
+        <server name="WeatherHost" path="&BIN_DIR;/weatherStation"
+                directory="&RUN_DIR;" 
+                args="&USE_DB; emulate=&EMULATE; &LOG;" />
+
+        </oad>
+
+<!-- include simulated bands -->
+<!-- Note can only include CARMA or WIDE, not both because port numbers are identical, -->
+<!-- unless simwidebandxml is changed to use a different host server than simcarmabandxml -->
+<!--  This makes CorrelatorBandServer dump core.  -->
+<!--
+&SIMCARMABANDXML;
+&SIMWIDEBANDXML;
+-->
+&SIMC3GBANDXML;
+
+    <oad hostname="localhost">
+        <!-- Downconverter -->
+        <server name="Sldc" 
+                path="&BIN_DIR;carmaSldcHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; emulate=&EMULATE; sim=&SIMULATE;"
+                system="correlator"  />
+        
+        <server name="SldcFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=Sldc delay=300 "
+                system="correlator"  />
+        
+    </oad>
+
+<!--
+    <oad hostname="localhost">
+        <server name="Wbdc"
+                path="&BIN_DIR;carmaWbdcHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; emulate=&EMULATE; sim=&SIMULATE;"
+                system="correlator"  />
+            
+        <server name="WbdcFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=Wbdc delay=320"
+                system="correlator"  />
+    </oad>
+-->
+
+<!--
+-->
+    <oad hostname="localhost">
+        <server name="PdbmFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; subsystem=projectdatabasemanager"
+                startup-priority="&monitor;"/>
+
+        <server name="PdbmHost" path="&BIN_DIR;/carmaProjectDatabaseManagerHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &USE_DB; hostname=localhost database=test rt=false"
+                critical="true" />
+    </oad>
+<oad hostname="localhost">
+        <server name="carmaMonitorSystemServer" 
+                path="&BIN_DIR;/tCmss"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB;"
+                startup-priority="&monitor;"/>
+
+        <server name="carmaMonitorSystemRtdServer" 
+                path="&BIN_DIR;/tRtdServerTask"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; host=localhost clientPort=5665"
+                startup-priority="&monitor;"/>
+</oad>
+
+</domain>

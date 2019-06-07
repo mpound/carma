@@ -1,0 +1,12 @@
+# 54-49.tab
+# test data for this mixer lost; using copy of 54-28.tab
+#
+#|loGHz |t    |v     |i    |dvm  |dvp  |
+#|r     |r    |r     |r    |r    |r    |
+#
+210.    3.50    8.8    120.     -.5  .5
+210.    5.00    8.4    120.     -.5  .5
+#
+270.    3.50    8.8    120.     -.5  .5
+270.    5.00    8.4    120.     -.5  .5
+

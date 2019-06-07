@@ -1,0 +1,4 @@
+A tertiary mirror on an SZA telescope is not homed correctly.
+
+See this page for help on resolving the problem:
+http://cedarflat.mmarray.org/wiki/Alarms#SzaX.AntennaCommon.Receivers.rxState

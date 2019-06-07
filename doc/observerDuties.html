@@ -1,0 +1,309 @@
+<html> <head> <title>Observer Duties</title> </head>
+<body>
+
+By <B>Observer</B> we currently mean the person who builds a fresh carma tree
+and checks out all currently possibly capabilities of the array. This process
+of a weekly rotating observer was started early March 2005, with Andy Beard.
+See the <A HREF=systemLog.html>Observer's Log</A> for a chronological log of how
+the system changed over the course of time.
+
+<hr>
+<h1> Standard checklist </h1>
+<ul> 
+<li>Stop the system
+<br><kbd> /opt/rt/scripts/controlSystem stop </kbd> 
+<li> Make sure no processes are left running
+<BR><kbd>/opt/rt/scripts/controlSystem alive</kbd>   
+<li>Start system and verify that all processes are running
+<br><kbd>/opt/rt/scripts/controlSystem start</kbd> 
+<br>Use <kbd>/opt/rt/bin/imradmin --imr corba --tree</kbd> 
+<br> and grep for any processes that are 
+<kbd>Stopping</kbd> <kbd>Starting</kbd> <kbd>Stopped</kbd> or <kbd>Forked</kbd>. 
+</li>
+<li>If a process is stopped, try to find out why:  
+    <ol><li>grep for the executable name in the logs 
+    (or better yet search in the database using the Log Browser).
+    </li>
+    <li>Check how many times it has been respawned:<br>
+    <tt>imradmin --imr corba --get-server-info <i>ProcessName</i></tt>
+    </li>
+    </ol>
+Try restarting the process:<br>
+<tt>imradmin --imr corba --reset-server <i>ProcessName</i></tt><br>
+<tt>imradmin --imr corba --start-server <i>ProcessName</i></tt><br>
+Note any problems in the observer's log.
+</li>
+
+<li>Check that all 16 bands of correlator data are being caught. 
+<br> <kbd>/opt/rt/scripts/rtd win=wbpipeline </kbd> 
+<li> Check taht all monitor data are published with 
+<br> <kbd>/opt/rt/bin/dumpMonitor stats=t </kbd> 
+<li> Check that sac works
+<br> <kbd>/opt/rt/scripts/sac --imr corba </kbd>
+ <ul> 
+  <li> Set the locations and delay offsets of the ovro antennas:
+  <br><tt>ovrosetup()</tt>
+  </li>
+  <li> Get a monitor point: 
+  <br><kbd>print s.query("Carma.Ovro1.AntennaCommon.Drives.Azimuth.actualAzimuth")</kbd> 
+  <br>(same thing, a shorter way):
+  <br><kbd>print s.query("Carma.Ovro1.Drive.Azimuth.actualAzimuth")</kbd> 
+
+  </li>
+  <li> Delay engine self test returns 1 for success: 
+  <br><kbd>print de.selfTest(0)</kbd>
+  <li> Move an antenna: 
+  <br><kbd>s.move(az, el, antNum)</kbd>
+  <br> verify all antenna motion with 
+  <br><kbd> /opt/rt/scripts/rtd->Antennas->AntennaCommon->Drives </kbd>
+  </li>
+  <li> Track a source: <br><kbd>s.track("sourcename")</kbd>
+  <br>Print the delay to antenna 1 for this source:<br>
+  <tt>print s.query("Carma.DelayEngine.DelayData1.totalDelay")</tt>
+  </li>
+  <li> Stow antenna: <br><kbd>s.stow(antNum)</kbd>
+  </li>
+ </ul>
+<li> Get some recent monitor data from the database (1/2sec, 1min, astro):
+<br> <b>Chul, help, help!</b>
+</li>
+<li> Get some recent info from the log:
+<br> On database.ovro.caltech.edu:
+<br><tt>scripts/rtd win=log dbName=localhost</tt>
+<br>will bring up the log browser.  The realtime window is still broken,
+but the database window works.  Until the database is opened
+to other domains, you must log into database.ovro.caltech.edu to
+view the database log window (and remote java is <b>really</b> slow).
+<br>
+Realtime, for now: <tt>tail -f /var/carma/accLog/control.log</tt>
+</li>
+<li> More database tests
+<br> <b>Athol, Harold, help, help!</b>
+</li>
+<li> <a href="CPUtable.html">Record CPU/memory</a> 
+usage on ACC. System total, and major processes:
+<br> frameCollator
+<br> monitorAverageWriter
+<br> faultSystem 
+</li>
+<li> <a href="CPUtable.html">Record CPU/memory</a> 
+on corba. System total, and major processes:
+<br> notification service
+<br> name service
+<br> imr
+<br> catchData
+<br> pipeline
+</li>
+<li> <a href="CPUtable.html">Record CPU/memory</a> 
+on database. System total, and major processes:
+<br> notification service
+<br> mysqld
+<br> monitorDataLoader 
+<br> syslog2Db 
+</li>
+</ul> 
+
+<hr>
+<H1> Tips &amp; Tricks:</H1>
+
+<li> Observers must login as control@acc</li>
+<li> <em>Do not</em> do any development as control.</li>
+<li> Note any problems/solutions in the <a href=systemLog.html>Observer's Log</a>.  (Write them in 
+the file $CARMA/doc/systemLog.html in your sandbox and check it in).</li>
+<li> The script /opt/rt/scripts/controlSystem (you guessed it) controls the system. It will control the processes listed in /opt/rt/conf/imr/carma.xml.</li>
+<pre>
+controlSystem [ start | stop | status ]
+</pre>
+<li> To check the running processes:
+<pre>
+imradmin --imr corba --tree
+</pre>
+Processes should be "running" or "active."  You can grep the output for 
+"forked" or "stopped" to find problem processes.  You can also use
+/opt/rt/scripts/imrConsole but that is slow over the internet.
+</li>
+<li>To update control's sandbox and install to /opt/rt:
+<pre>
+cd /home/control/carma
+cvs update -dAP
+cd /home/control/carma/build/optimized
+make
+[make check]
+make install
+</pre>
+<li> When you do and update and install as control, you should tag
+the tree, <em>after ensuring that it runs properly</em>. To tag
+the tree:
+<br>
+<pre>
+ssh control@acc
+cd /home/control/carma
+cvs tag TAGNAME
+</pre>
+</li>
+<li>To run subarray control:</li>
+<pre>
+sac --imr corba
+</pre>
+<li> For tcsh users, "exec tcsh" creates some convenient aliases.</li>
+<hr>
+
+
+
+<H1> Introduction </H1>
+
+First some basics:
+<OL>
+<LI>
+The carma software is distributed accross a number of machines in the
+private OVRO net (<I>machine</I><B>.carma.pvt</B>). 
+
+<LI>The account name that
+controls the array and various subsystems on the various computers
+is called <B>control</B> and should be used for all array control.
+Some hardware access can be done by other users, correlator? weather?
+
+<LI> The run time system ... (/opt/rt/..)
+
+<LI>
+Important directories (e.g. CARMA_TOOLS and CARMA_PKG) are all residing
+on NFS shared directories, viz.
+<PRE>
+       CARMA_TOOLS     /opt/carmaTools         (usually a symlink to a version)
+       CARMA_PKG       /sw/carma_pkg                 ?? not always present ??
+</PRE>
+Note: the command <B>df</B> may not show them until you have accessed the directory. This
+makes it hard to remember what it's called, but such is life without .....
+</OL>
+
+<H1> Building/Updating </H1>
+
+The first thing could do is start a fresh build, though most of the time
+we use the current build in control.
+<P>
+It perhaps goes without saying that you should only build/update
+when 
+<A HREF=http://tinderbox.ovro.caltech.edu/tinderbox/carma/status.html>tinderbox</A>
+looks healthy!
+
+<H3> Fresh build </H3>
+
+
+<PRE>
+
+#tag when you do a cvs update and build as control
+
+
+
+#To tag a properly running tree:
+  ssh control@acc
+  cd /home/control/carma
+  cvs tag TAGNAME
+</pre>
+
+<H3> Updates build </H3>
+
+<pre>
+   exec tcsh                        # the .cshrc file contains a handy "carma" environment
+   cd $CARMA_SRC
+   cvs -n -q update                 # get an idea what's been updated since last check
+
+   cd $CARMA_BUILD
+   make all                         # rebuild the system
+
+
+if you use bash, you don't have environment variables, so this is the other route:
+
+   cd ~/carma
+   cvs -q update -PAd
+   autoreconf -i -s                  # maybe not needed, but doesn't hurt (and nice for paranoidi)
+   cd build/optimized
+   ./config.status --recheck         # maybe not needed, but doesn't hurt (and nice for paranoidi)
+   make all                          # rebuild (all is actually the default, so "make" was enough)
+
+</pre>
+
+
+You could also check the system, with
+<pre>
+
+   make check                        # check the system, you could skip this if you're brave
+
+</pre>
+
+but there is perhaps a chance this might confuse the running system. So, don't run this
+on a "hot" system, better shut it down first (see below).
+
+
+<H1> Installing  </H1>
+
+<PRE>
+
+      # First the running system needs to be stopped
+
+  /opt/rt/scripts/controlSystem stop
+
+      # this can take a while
+
+  make install
+
+      # now restart the system, and this WILL take a while
+
+  /opt/rt/scripts/controlSystem start
+
+      # wait with any new commands until the system is given you a shell prompt
+      # you may have to hit the RETURN key a few times
+
+
+
+</PRE>
+
+<H1> Configuring </H1>
+
+
+<H1> Running </H1>
+
+This is best done from an account that is NOT called <B>control@acc</B>, i.e.
+ideally not even on the ACC. 
+
+<PRE>
+    /opt/rt/scripts/imrConsole corba.carma.pvt 
+
+    # this command start a java console, which may take a while to appear.
+    # and especially on remote links can be an exersize in patience
+
+    imrtree
+
+    would be a reasonable alternative to view the IMR tree
+
+    # now check if everything looks ok, in particular the control system binary
+    # on the acc.carma.pvt machine sometimes needs tbe restarted and/or reset 
+    # to get it going.
+
+    dumpMonitor list=t
+    dumpMonitor component=Weather frames=1
+    cd /var/carma/log
+       check out:  control.log monitor.log etc.
+
+    % ssh environment
+    % ps auxw
+       should see 
+          /opt/carmaTools.optimize/bin/imr
+	  /opt/rt/bin/frameScriberPublisher
+	  /opt/rt/bin/weatherStation
+	  ...
+     % cd /var/carma
+
+
+     ** a useful thing to know would be to restart a subsystem..., e.g. take weather.
+
+    /opt/rt/scripts/sac --imr corba.carma.pvt
+
+    # files in /var/carma/{log, imr, oad}
+      imr:   acc_20000      acc.carma.pvt_20000
+      log:   carma.log  monitor.log control.log interferometry.log alter.log
+
+</PRE>
+
+</body>
+</html>

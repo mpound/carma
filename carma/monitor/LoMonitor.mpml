@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- LO Monitor monitor point definitions.  The LO Monitor is common to both -->
+<!-- the wideband and spectral downconverter systems.                        -->
+<!-- Author: Andrew Beard                                                    -->
+<!-- $Id: LoMonitor.mpml,v 1.13 2013/04/19 17:47:04 abeard Exp $              -->
+
+<Common scope="global" author="Andy Beard">
+
+    <Container name="LoMonitor" >
+    
+       <!-- Blanking frame monitor packet 1 -->
+       <MonitorPoint name="pmStat" type="enum">
+         <shortName>Measurement</shortName>
+         <longName>Power meter / frequency counter status</longName>
+         <description>Power meter measurement status
+         </description>
+         <enum name="resetting">
+            <description>Resetting the power meter/counter</description>
+         </enum>
+         <enum name="SETTING_UP">
+            <description>Power meter/counter is being initialized</description>
+         </enum>
+         <enum name="SELECTING_CHAN">
+            <description>Power meter/counter is selecting next channel to read</description>
+         </enum>
+         <enum name="REQUEST_PWR">
+            <description>Power meter/counter is requesting a power measurement</description>
+         </enum>
+         <enum name="READ_POWER">
+            <description>Power meter is reading power</description>
+         </enum>
+         <enum name="REQUEST_FREQ">
+            <description>Power meter/counter is requesting a frequency measurement</description>
+         </enum>
+         <enum name="READ_FREQ">
+            <description>Power meter/counter is reading frequency</description>
+         </enum>
+         <enum name="UNUSED_1"/>
+         <enum name="UNUSED_2"/>
+         <enum name="UNUSED_3"/>
+         <enum name="UNUSED_4"/>
+         <enum name="UNUSED_5"/>
+       </MonitorPoint>
+       <MonitorPoint name="pmChannel" type="short" >
+        <shortName>Channel</shortName>
+        <longName>Power meter channel</longName>
+        <description>Current channel number being measured
+        </description>
+       </MonitorPoint>
+
+
+        <!-- Blanking frame monitor packet 2 -->
+        <MonitorPoint name="ps5vAnalog" type="float" >
+          <shortName>+5V Analog</shortName>
+          <longName>5V Analog</longName>
+          <description>5V analog power supply voltage
+          </description>
+          <units>V</units>
+          <warnLo>4.85</warnLo>
+          <warnHi>5.15</warnHi>
+          <errLo>4.75</errLo>
+          <errHi>5.25</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps5vDigital" type="float" >
+          <shortName>+5V Digital</shortName>
+          <longName>5V Digital</longName>
+          <description>5V digital power supply voltage
+          </description>
+          <units>V</units>
+          <warnLo>4.85</warnLo>
+          <warnHi>5.15</warnHi>
+          <errLo>4.75</errLo>
+          <errHi>5.25</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps24v" type="float" >
+          <shortName>+24V</shortName>
+          <longName>24 Volt</longName>
+          <description>24v power suply voltage
+          </description>
+          <units>V</units>
+          <warnLo>20.0</warnLo>
+          <warnHi>28.0</warnHi>
+          <errLo>18.0</errLo>
+          <errHi>30.0</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="temp" type="float" >
+          <shortName>Temperature</shortName>
+          <longName>Temperature</longName>
+          <description>Module temperature</description>
+          <units>C</units>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packets 3 - 18 -->
+        <Container name="LoChan" count="8">
+            <MonitorPoint name="loFreq" type="double" >
+                <shortName>Frequency</shortName>
+                <longName>LO Frequency</longName>
+                <description>LO Frequency value</description>
+                <units>Hz</units>
+                <width>12</width>
+            </MonitorPoint>
+            <MonitorPoint name="loVoltage" type="float" >
+                <shortName>1st Lock</shortName>
+                <longName>Lo Phaselock Voltage</longName>
+                <description>LO phase-locked oscillator lock voltage
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+            <MonitorPoint name="lockStat" type="enum">
+                <shortName>Phase</shortName>
+                <longName>Phaselock status</longName>
+                <description>LO phaselock status
+                </description>
+                <enum name="UNLOCKED"/>
+                <enum name="LOCKED"/>
+                <errHi>UNLOCKED</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="loPower" type="float" >
+                <shortName>Power</shortName>
+                <longName>LO Power</longName>
+                <description>LO Phase locked oscillator power level
+                </description>
+                <units>dBm</units>
+            </MonitorPoint>
+            <MonitorPoint name="measureStat" type="enum">
+                <shortName>Measurement</shortName>
+                <longName>Measurement status</longName>
+                <description>Last LO measurement status</description>
+                <enum name="POWER_LOW"/>
+                <enum name="POWER_OK"/>
+            </MonitorPoint>
+            <MonitorPoint name="lo2Voltage" type="float">
+                <shortName>2nd Lock</shortName>
+                <longName>LO 2nd lock voltage</longName>
+                <description>phase-locked oscillator 2nd lock voltage
+                </description>
+                <units>V</units>
+            </MonitorPoint>
+        </Container>
+  </Container>
+</Common>

@@ -1,0 +1,716 @@
+#!/bin/env python
+#
+# $Id: ovroDriveControl.py.in,v 1.10 2005/06/14 17:26:20 rick Exp $
+#
+# script to send drive commands to ovro antennas
+#
+# Rick Hobbs
+#
+from Tkinter import *
+import time
+from Dialog import Dialog
+import os
+
+
+class AntCtrl(Frame):
+
+    # constructor
+    def __init__(self, parent=None):
+        Frame.__init__(self, parent)
+        self.pack()
+        self.master.title('Ovro Drive Control')
+        self.az = DoubleVar()
+        self.el = DoubleVar()
+        self.azOff = DoubleVar()
+        self.elOff = DoubleVar()
+        self.azZero = DoubleVar()
+        self.elZero = DoubleVar()
+        self.mazOff = DoubleVar()
+        self.melOff = DoubleVar()
+        self.tiltZeroaf = DoubleVar()
+        self.tiltZerolr = DoubleVar()
+        self.pcazOff = DoubleVar()
+        self.pcelOff = DoubleVar()
+        self.pcSag   = DoubleVar()
+        self.pcm1    = DoubleVar()
+        self.pcm2    = DoubleVar()
+        self.pcm3    = DoubleVar()
+        self.pcm4    = DoubleVar()
+        self.pcm5    = DoubleVar()
+        self.ra      = DoubleVar()
+        self.dec     = DoubleVar()
+        self.seqNo   = IntVar()
+        self.stop = BooleanVar()
+        self.stow = BooleanVar()
+        self.updateWeather = BooleanVar()
+        self.source = StringVar()
+        self.aperture = StringVar()
+        self.apertureSelect = StringVar()
+        self.masterAnt = IntVar()
+        self.imrhost = StringVar()
+        self.imrhost.set('imr')
+        self.numAnts = 15
+
+        self.resetValues()
+        
+        # setup IMR
+        self.setupImr(self)
+
+        rtFrame = Frame(self, relief=GROOVE, bd=2)
+        rtFrame.pack(side=RIGHT, fill=BOTH)
+
+        # setup resetValues
+        self.setupResetValuesCmd(rtFrame)
+        
+        # setup AzEl Entry
+        self.setupAzEl(rtFrame)
+        self.setupRaDec(rtFrame)
+
+        self.setupAzElOffset(rtFrame)
+        self.setupTiltZero(rtFrame)
+        self.setupAzElZero(rtFrame)
+        self.setupMountOffset(rtFrame)
+        self.setupAperConst(rtFrame)
+        self.setupMountConst(rtFrame)
+        self.setupSelectAper(rtFrame)
+        
+        # setup Track Entry
+        self.setupTrack(rtFrame)
+
+        # setup Next Seq. Number Entry
+        self.setupNextSeqNo(rtFrame)
+
+        # setup SendCmd
+        self.setupSendCmd(rtFrame)
+        
+        # setup Stop Cmd
+        self.setupStopCmd(rtFrame)
+
+        # setup Stow Cmd
+        self.setupStowCmd(rtFrame)
+
+        # setup Update Weather Cmd
+        self.setupUpdateWeatherCmd(rtFrame)
+
+        # setup Sync Vax Cmd
+        self.setupSyncVaxCmd(rtFrame)
+
+        # setup updateUT1UTC Cmd
+        self.setupUpdateUT1UTC(rtFrame)
+
+        # setup ant checkbuttons
+        self.setupAnts(self)
+
+    def resetValues(self):
+        self.az.set(-999.)
+        self.el.set(-999.)
+        self.ra.set(-999.)
+        self.dec.set(-999.)
+        self.seqNo.set(-999)
+        self.azOff.set(-999.)
+        self.elOff.set(-999.)
+        self.azZero.set(-999.)
+        self.elZero.set(-999.)
+        self.mazOff.set(-999.)
+        self.melOff.set(-999.)
+        self.tiltZeroaf.set(-999.)
+        self.tiltZerolr.set(-999.)
+        self.pcazOff.set(-999.)
+        self.pcelOff.set(-999.)
+        self.pcSag.set(-999.)
+        self.pcm1.set(-999.)
+        self.pcm2.set(-999.)
+        self.pcm3.set(-999.)
+        self.pcm4.set(-999.)
+        self.pcm5.set(-999.)
+        self.aperture.set("None")
+        self.apertureSelect.set("None")
+    def setupAnts(self, parent):
+        print 'numAnts= ', self.numAnts
+        antFrame = Frame(parent, relief=GROOVE, bd=2)
+        antFrame.pack(side=LEFT, fill=BOTH)
+        self.allAntsSel = BooleanVar()
+        ant_cb = Checkbutton(antFrame,
+                             #fg='yellow', bg='black',
+                             #activebackground='black',
+                             #activeforeground='yellow',
+                             text='All Ants',
+                             variable=self.allAntsSel,
+                             command=self.selectAllAnts)
+        ant_cb.grid(row=0, sticky=W)
+        # define next two variables as lists
+        # Note: must use append() when doing it this way
+        self.antSel = [] # use to check if button is selected
+        self.rb = []     # really don't need to keep these around
+        for antIdx in range(0, self.numAnts):
+            self.antSel.append(BooleanVar())
+            self.rb.append(Checkbutton(antFrame,
+                                       #fg='yellow',bg='black',
+                                       #activebackground='black',
+                                       #activeforeground='yellow',
+                                       text='Ant %d' % (antIdx + 1),
+                                       variable=self.antSel[antIdx]))
+            self.rb[antIdx].grid(row=antIdx+1, sticky=W)
+        self.bgc = self.rb[0].cget('bg')
+        print "self.bgc= ", self.bgc
+
+    def selectAllAnts(self):
+        for antIdx in range(0, self.numAnts):
+            self.antSel[antIdx].set(self.allAntsSel.get())
+
+    def setupResetValuesCmd(self, parent):
+        send_fr = Frame(parent, relief=GROOVE, bd=2)
+        send_fr.pack(side=TOP, fill=BOTH)
+        b = Button(send_fr, text='Reset Values', command=self.resetValues)
+        b.grid(row=0, column=0)
+
+    def setupAzEl(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        az_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Az[deg]:')
+        az_l.grid(row=0,column=1)
+        az_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.az)
+        az_e.grid(row=0,column=2)
+        
+        el_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='El[deg]:')
+        el_l.grid(row=1,column=1)
+        el_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.el)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        el_e.grid(row=1,column=2)
+        #self.el_e.bind("<Return>", self.getDelay)
+
+    def setupRaDec(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        ra_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Ra[rad]:')
+        ra_l.grid(row=0,column=1)
+        ra_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.ra)
+        ra_e.grid(row=0,column=2)
+        
+        dec_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Dec[rad]:')
+        dec_l.grid(row=1,column=1)
+        dec_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.dec)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        dec_e.grid(row=1,column=2)
+        #self.el_e.bind("<Return>", self.getDelay)
+
+    def setupNextSeqNo(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        sn_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Next Seq. No:')
+        sn_l.grid(row=0,column=1)
+        sn_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.seqNo)
+        sn_e.grid(row=0,column=2)
+
+    def setupAzElZero(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        az_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='AzZero[deg]:')
+        az_l.grid(row=0,column=1)
+        az_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.azZero)
+        az_e.grid(row=0,column=2)
+        
+        el_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='ElZero[deg]:')
+        el_l.grid(row=1,column=1)
+        el_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.elZero)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        el_e.grid(row=1,column=2)
+        #self.el_e.bind("<Return>", self.getDelay)
+
+    def setupAzElOffset(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        az_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='AzOffset[arcmin]:')
+        az_l.grid(row=0,column=1)
+        az_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.azOff)
+        az_e.grid(row=0,column=2)
+        
+        el_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='ElOffset[arcmin]:')
+        el_l.grid(row=1,column=1)
+        el_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.elOff)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        el_e.grid(row=1,column=2)
+        #self.el_e.bind("<Return>", self.getDelay)
+
+    def setupTiltZero(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        az_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Tilt Aft/Forward[arcmin]:')
+        az_l.grid(row=0,column=1)
+        az_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.tiltZeroaf)
+        az_e.grid(row=0,column=2)
+        
+        el_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Tilt left/right[arcmin]:')
+        el_l.grid(row=1,column=1)
+        el_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.tiltZerolr)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        el_e.grid(row=1,column=2)
+        #self.el_e.bind("<Return>", self.getDelay)
+
+    def setupMountOffset(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        az_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Mount Az Offset[arcmin]:')
+        az_l.grid(row=0,column=1)
+        az_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.mazOff)
+        az_e.grid(row=0,column=2)
+        
+        el_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Mount El Offset[arcmin]:')
+        el_l.grid(row=1,column=1)
+        el_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.melOff)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        el_e.grid(row=1,column=2)
+        #self.el_e.bind("<Return>", self.getDelay)
+
+    def setupAperConst(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        az_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Aper. Point Az Offset[arcmin]:')
+        az_l.grid(row=0,column=1)
+        az_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.pcazOff)
+        az_e.grid(row=0,column=2)
+        
+        el_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Aper. Point El Offset[arcmin]:')
+        el_l.grid(row=1,column=1)
+        el_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.pcelOff)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        el_e.grid(row=1,column=2)
+        #self.el_e.bind("<Return>", self.getDelay)
+
+        sag_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Aper. Point Sag[arcmin]:')
+        sag_l.grid(row=2,column=1)
+        sag_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.pcSag)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        sag_e.grid(row=2,column=2)
+        aper_l = Label(delayFrame,
+                       #fg='yellow',bg='black',
+                       text='Aperture:')
+        aper_l.grid(row=3,column=1)
+        aper_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.aperture)
+        aper_e.grid(row=3,column=2)
+
+    def setupMountConst(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        m1_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Mount Point m1[deg]:')
+        m1_l.grid(row=0,column=1)
+        m1_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.pcm1)
+        m1_e.grid(row=0,column=2)
+        
+        m2_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Mount Point m2[deg]:')
+        m2_l.grid(row=1,column=1)
+        m2_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.pcm2)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        m2_e.grid(row=1,column=2)
+        #self.el_e.bind("<Return>", self.getDelay)
+
+        m3_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Mount Point m3[arcmin]:')
+        m3_l.grid(row=2,column=1)
+        m3_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.pcm3)
+        m3_e.grid(row=2,column=2)
+
+        m4_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Mount Point m4[arcmin]:')
+        m4_l.grid(row=3,column=1)
+        m4_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.pcm4)
+        m4_e.grid(row=3,column=2)
+        
+        m5_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Mount Point m5[arcmin]:')
+        m5_l.grid(row=4,column=1)
+        m5_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.pcm5)
+        m5_e.grid(row=4,column=2)
+
+    def setupSelectAper(self, parent):
+        delayFrame = Frame(parent, relief=GROOVE, bd=2)
+        delayFrame.pack(side=TOP, fill=BOTH)
+        aper_l = Label(delayFrame,
+                     #fg='yellow',bg='black',
+                     text='Select Aperture[]:')
+        aper_l.grid(row=0,column=1)
+        aper_e = Entry(delayFrame,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.apertureSelect)
+        aper_e.grid(row=0,column=2)
+
+    def setupTrack(self, parent):
+        track_fr = Frame(parent, relief=GROOVE, bd=2)
+        track_fr.pack(side=TOP, fill=BOTH)
+        tr_l = Label(track_fr,
+                     #fg='yellow',bg='black',
+                     text='Track Source:')
+        tr_l.grid(row=0,column=0)
+        tr_e = Entry(track_fr,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.source)
+        tr_e.grid(row=0, column=1)
+        # create master antenna field
+        master_l = Label(track_fr,
+                     #fg='yellow',bg='black',
+                     text='Master Ant No.:')
+        master_l.grid(row=1,column=0)
+        master_e = Entry(track_fr,
+                     fg='black', bg='white',
+                     relief='sunken',
+                     textvariable = self.masterAnt)
+        master_e.grid(row=1, column=1)
+
+    def setupSendCmd(self, parent):
+        send_fr = Frame(parent, relief=GROOVE, bd=2)
+        send_fr.pack(side=TOP, fill=BOTH)
+        b = Button(send_fr, text='Send Command', command=self.sendCmd)
+        b.grid(row=0, column=0)
+
+    def setupStowCmd(self, parent):
+        send_fr = Frame(parent, relief=GROOVE, bd=2)
+        send_fr.pack(side=TOP, fill=BOTH)
+        b = Button(send_fr, text='Stow', command=self.stowCmd)
+        b.grid(row=0, column=0)
+        
+    def setupStopCmd(self, parent):
+        send_fr = Frame(parent, relief=GROOVE, bd=2)
+        send_fr.pack(side=TOP, fill=BOTH)
+        b = Button(send_fr, text='Stop', command=self.stopCmd)
+        b.grid(row=0, column=0)
+
+    def setupUpdateWeatherCmd(self, parent):
+        send_fr = Frame(parent, relief=GROOVE, bd=2)
+        send_fr.pack(side=TOP, fill=BOTH)
+        b = Button(send_fr, text='Update Weather', command=self.updateWeatherCmd)
+        b.grid(row=0, column=0)
+
+    def setupSyncVaxCmd(self, parent):
+        send_fr = Frame(parent, relief=GROOVE, bd=2)
+        send_fr.pack(side=TOP, fill=BOTH)
+        b = Button(send_fr, text='Sync Vax', command=self.updateSyncVaxCmd)
+        b.grid(row=0, column=0)
+
+    def setupUpdateUT1UTCCmd(self, parent):
+        send_fr = Frame(parent, relief=GROOVE, bd=2)
+        send_fr.pack(side=TOP, fill=BOTH)
+        b = Button(send_fr, text='Update UT1-UTC', command=self.updateUT1UTCcmd)
+        b.grid(row=0, column=0)
+
+    def setupImr(self, parent):
+        imrFrame = Frame(parent, relief=GROOVE, bd=2)
+        imrFrame.pack(side=TOP, fill=BOTH)
+        b = Label(imrFrame,
+                  #fg='yellow',bg='black',
+                  text='IMR host:')
+        b.grid(row=0,column=1)
+        e = Entry(imrFrame,
+                  fg='black', bg='white',
+                  relief='sunken',
+                  textvariable = self.imrhost)
+        # note: one could write
+        # self.e = Entry(...).grid(..)
+        # which is ok, but then self.e.bind gives the following
+        # error:
+        # AttributeError: 'NoneType' object has no attribute 'bind'
+        e.grid(row=0,column=2)
+        
+    def sendCmd(self):
+
+        for antIdx in range(0, self.numAnts):
+            self.rb[antIdx].configure(bg=self.bgc, fg='black')
+        print '==========='
+        for antIdx in range(0, self.numAnts):
+            if self.antSel[antIdx].get():
+                print '***********'
+                #print 'in sendCmd'
+                #print 'state= ',    self.rb[antIdx].cget('state')
+                #print 'onvalue= ',  self.rb[antIdx].cget('onvalue')
+                #print 'offvalue= ', self.rb[antIdx].cget('offvalue')
+                #print 'r.antSel= ', self.antSel[antIdx].get()
+                if (antIdx + 1) == self.masterAnt.get():
+                    master = 'true'
+                else:
+                    master = 'false'
+                if self.source.get() != '':
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s src=%s ant=%d m=%s' % (self.imrhost.get(), self.source.get(), (antIdx + 1), master)
+                elif self.az.get() != -999.0:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s az=%f el=%f ant=%d m=%s' % (self.imrhost.get(), self.az.get(), self.el.get(), (antIdx + 1), master)
+                elif self.ra.get() != -999.0:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s ra=%f dec=%f ant=%d m=%s' % (self.imrhost.get(), self.ra.get(), self.dec.get(), (antIdx + 1), master)
+                elif self.seqNo.get() != -999:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s nextSeqNo=%d ant=%d m=%s' % (self.imrhost.get(), self.seqNo.get(), (antIdx + 1), master)
+                elif self.azOff.get() != -999.0:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s azOff=%f elOff=%f ant=%d m=%s' % (self.imrhost.get(), self.azOff.get(), self.elOff.get(), (antIdx + 1), master)
+                elif self.azZero.get() != -999.0:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s azZero=%f elZero=%f ant=%d m=%s' % (self.imrhost.get(), self.azZero.get(), self.elZero.get(), (antIdx + 1), master)
+                elif self.mazOff.get() != -999.0:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s mazOff=%f melOff=%f ant=%d m=%s' % (self.imrhost.get(), self.mazOff.get(), self.melOff.get(), (antIdx + 1), master)
+                elif self.tiltZeroaf.get() != -999.0:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s tiltZeroaf=%f tiltZerolr=%f ant=%d m=%s' % (self.imrhost.get(), self.tiltZeroaf.get(), self.tiltZerolr.get(), (antIdx + 1), master)
+                elif self.pcazOff.get() != -999.0:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s aperture=%s pcAzOff=%f pcElOff=%f pcSag=%f ant=%d m=%s' % (self.imrhost.get(), self.aperture.get(), self.pcazOff.get(), self.pcelOff.get(), self.pcSag.get(), (antIdx + 1), master)
+                elif self.pcm1.get() != -999.0:
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s pcm1=%f pcm2=%f pcm3=%f pcm4=%f pcm5=%f ant=%d m=%s' % (self.imrhost.get(), self.pcm1.get(), self.pcm2.get(), self.pcm3.get(), self.pcm4.get(), self.pcm5.get(), (antIdx + 1), master)
+                elif self.apertureSelect.get() != "None":
+                    cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s aperture=%s ant=%d m=%s' % (self.imrhost.get(), self.apertureSelect.get(), (antIdx + 1), master)
+                else:
+                    cmd = ''
+                print cmd
+                print os.system(cmd)
+                #self.rb[antIdx].configure(bg='black', fg='green')
+        print '==========='
+
+    def stopCmd(self):
+
+        for antIdx in range(0, self.numAnts):
+            self.rb[antIdx].configure(bg=self.bgc, fg='black')
+        print '==========='
+        for antIdx in range(0, self.numAnts):
+            if self.antSel[antIdx].get():
+                print '***********'
+                #print 'in sendCmd'
+                #print 'state= ',    self.rb[antIdx].cget('state')
+                #print 'onvalue= ',  self.rb[antIdx].cget('onvalue')
+                #print 'offvalue= ', self.rb[antIdx].cget('offvalue')
+                #print 'r.antSel= ', self.antSel[antIdx].get()
+                if (antIdx + 1) == self.masterAnt.get():
+                    master = 'true'
+                else:
+                    master = 'false'
+                cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s ant=%d m=%s stop=true' % (self.imrhost.get(), (antIdx + 1), master)
+                print cmd
+                print os.system(cmd)
+                #self.rb[antIdx].configure(bg='black', fg='green')
+        print '==========='
+
+    def stowCmd(self):
+
+        for antIdx in range(0, self.numAnts):
+            self.rb[antIdx].configure(bg=self.bgc, fg='black')
+        print '==========='
+        for antIdx in range(0, self.numAnts):
+            if self.antSel[antIdx].get():
+                print '***********'
+                #print 'in sendCmd'
+                #print 'state= ',    self.rb[antIdx].cget('state')
+                #print 'onvalue= ',  self.rb[antIdx].cget('onvalue')
+                #print 'offvalue= ', self.rb[antIdx].cget('offvalue')
+                #print 'r.antSel= ', self.antSel[antIdx].get()
+                if (antIdx + 1) == self.masterAnt.get():
+                    master = 'true'
+                else:
+                    master = 'false'
+                cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s ant=%d m=%s stow=true' % (self.imrhost.get(), (antIdx + 1), master)
+                print cmd
+                print os.system(cmd)
+                #self.rb[antIdx].configure(bg='black', fg='green')
+        print '==========='
+
+    def updateWeatherCmd(self):
+
+        for antIdx in range(0, self.numAnts):
+            self.rb[antIdx].configure(bg=self.bgc, fg='black')
+        print '==========='
+        for antIdx in range(0, self.numAnts):
+            if self.antSel[antIdx].get():
+                print '***********'
+                #print 'in sendCmd'
+                #print 'state= ',    self.rb[antIdx].cget('state')
+                #print 'onvalue= ',  self.rb[antIdx].cget('onvalue')
+                #print 'offvalue= ', self.rb[antIdx].cget('offvalue')
+                #print 'r.antSel= ', self.antSel[antIdx].get()
+                if (antIdx + 1) == self.masterAnt.get():
+                    master = 'true'
+                else:
+                    master = 'false'
+                cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s ant=%d m=%s uw=true' % (self.imrhost.get(), (antIdx + 1), master)
+                print cmd
+                print os.system(cmd)
+                #self.rb[antIdx].configure(bg='black', fg='green')
+        print '==========='
+
+    def updateSyncVaxCmd(self):
+
+        for antIdx in range(0, self.numAnts):
+            self.rb[antIdx].configure(bg=self.bgc, fg='black')
+        print '==========='
+        for antIdx in range(0, self.numAnts):
+            if self.antSel[antIdx].get():
+                print '***********'
+                #print 'in sendCmd'
+                #print 'state= ',    self.rb[antIdx].cget('state')
+                #print 'onvalue= ',  self.rb[antIdx].cget('onvalue')
+                #print 'offvalue= ', self.rb[antIdx].cget('offvalue')
+                #print 'r.antSel= ', self.antSel[antIdx].get()
+                if (antIdx + 1) == self.masterAnt.get():
+                    master = 'true'
+                else:
+                    master = 'false'
+                cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s ant=%d m=%s syncVax=true' % (self.imrhost.get(), (antIdx + 1), master)
+                print cmd
+                print os.system(cmd)
+                #self.rb[antIdx].configure(bg='black', fg='green')
+        print '==========='
+
+    def updateUT1UTCcmd(self):
+        for antIdx in range(0, self.numAnts):
+            self.rb[antIdx].configure(bg=self.bgc, fg='black')
+        print '==========='
+        for antIdx in range(0, self.numAnts):
+            if self.antSel[antIdx].get():
+                print '***********'
+                #print 'in sendCmd'
+                #print 'state= ',    self.rb[antIdx].cget('state')
+                #print 'onvalue= ',  self.rb[antIdx].cget('onvalue')
+                #print 'offvalue= ', self.rb[antIdx].cget('offvalue')
+                #print 'r.antSel= ', self.antSel[antIdx].get()
+                if (antIdx + 1) == self.masterAnt.get():
+                    master = 'true'
+                else:
+                    master = 'false'
+                cmd = 'carma/antenna/ovro/drives/Test/tOvroDriveControl imr=%s ant=%d m=%s updateUT1UTC=true' % (self.imrhost.get(), (antIdx + 1), master)
+                print cmd
+                print os.system(cmd)
+                #self.rb[antIdx].configure(bg='black', fg='green')
+        print '==========='
+        
+if __name__ == '__main__': AntCtrl().mainloop()

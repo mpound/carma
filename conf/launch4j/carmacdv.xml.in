@@ -1,0 +1,34 @@
+<launch4jConfig>
+  <dontWrapJar>false</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>@abs_top_builddir@/dist/lib/cdv.jar</jar>
+  <outfile>/home/iws/carmacdv.exe</outfile>
+  <errTitle>Bummer! Ask Ira Snyder. Email: iws@ovro.caltech.edu</errTitle>
+  <cmdLine></cmdLine>
+  <chdir></chdir>
+  <priority>normal</priority>
+  <downloadUrl>http://java.com/download</downloadUrl>
+  <supportUrl>http://www.mmarray.org</supportUrl>
+  <customProcName>false</customProcName>
+  <stayAlive>false</stayAlive>
+  <manifest></manifest>
+  <icon>@abs_top_builddir@/conf/launch4j/carma.ico</icon>
+  <jre>
+    <path></path>
+    <minVersion>1.5.0</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+  </jre>
+  <versionInfo>
+    <fileVersion>1.0.0.0</fileVersion>
+    <txtFileVersion>V1.0</txtFileVersion>
+    <fileDescription>CARMA Data Viewer</fileDescription>
+    <copyright>2005-2013 Combined Array for Research in Millimeter Wave Astronomy</copyright>
+    <productVersion>1.0.0.0</productVersion>
+    <txtProductVersion>1.0</txtProductVersion>
+    <productName>CARMA Data Viewer</productName>
+    <companyName>CARMA</companyName>
+    <internalName>cdv</internalName>
+    <originalFilename>carmacdv.exe</originalFilename>
+  </versionInfo>
+</launch4jConfig>

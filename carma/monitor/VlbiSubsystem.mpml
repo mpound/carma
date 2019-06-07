@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!--
+-  $Id: VlbiSubsystem.mpml,v 1.8 2012/09/26 23:23:41 iws Exp $
+-  VLBI subsystem
+-->
+  <Subsystem name="Vlbi" priority="normal" author="David MacMahon">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <!-- a short name for display purposes -->
+    <shortName>VLBI</shortName>
+
+    <!-- some tool tip text -->
+    <longName>VLBI Subsystem: an optional part of CARMA</longName>
+    <description>
+      A subsystem used when CARMA is in VLBI operation.
+      This subsystem will often be invalid when VLBI is not enabled.
+    </description>
+
+    <!-- Common file inclusions so that contents can be used later -->
+    <?common OnlineCommon.mpml?>
+    <?common CorrelatorCommon.mpml?>
+
+    <!--
+    -  Used as an overall monitor of VLBI system health.
+    -  When the system is powered off (which it will be most of the time)
+    -  this will become invalid.
+    -  Should be refreshed every frame.
+    -->
+    <CommonMonitorPoint ref="online" /> 
+
+    <Container name="Band" count="8">
+      <Container name="Control">
+
+        <!--
+        -  Should be refreshed every frame. System expects this MP which will
+        -  be used as a heartbeat for the I/O for this band.
+        -->
+        <CommonMonitorPoint ref="online" /> 
+
+        <MonitorPoint name="lastUpdated" type="absTime">
+          <shortName>lastUpdated</shortName>
+          <longName>Time of last update from control system</longName>
+          <description>
+            Time of most recent noise source status, downconverter settings, or
+            delay settings update from the control system.
+          </description>
+          <units>UTC</units>
+        </MonitorPoint>
+
+        <!-- Borrowed from CorrelatorHeader.mpml -->
+        <MonitorPoint name="bandNumber" type="int">
+          <shortName>AstroBand#</shortName>
+          <longName>The AstroBand Number</longName>
+          <units></units>
+          <description>The AstroBand Number</description>
+        </MonitorPoint>
+        <MonitorPoint name="sourceName" type="string">
+          <shortName>Source</shortName>
+          <longName>Source Name</longName>
+          <units></units>
+          <description>Source name</description>
+        </MonitorPoint>
+        <MonitorPoint name="centerFrequency" type="float">
+          <shortName>centerFrequency</shortName>
+          <units>MHz</units>
+          <description>Center Frequency</description>
+          <precision>1</precision>
+        </MonitorPoint>
+        <MonitorPoint name="dconFrequency" type="float">
+          <shortName>dconFrequency</shortName>
+          <units>MHz</units>
+          <description>Downconverter Frequency</description>
+          <precision>1</precision>
+        </MonitorPoint>
+        <MonitorPoint name="dconSideband" type="enum" >
+          <shortName>dconSideband</shortName>
+          <longName>Downconverter sideband</longName>
+          <description>Downconverter sideband</description>
+          <enum name="LSB">
+            <description>Lower-sideband</description>
+          </enum>
+          <enum name="USB">
+            <description>Upper-sideband</description>
+          </enum>
+        </MonitorPoint>
+        <MonitorPoint name="bdcEnabled" type="bool" >
+          <shortName>blockDcEnabled</shortName>
+          <longName>Block downconverter enabled</longName>
+          <description>
+            State of block downconverter, true means the BDC is enabled.
+          </description>
+        </MonitorPoint>
+        <MonitorPoint name="astroBandMode" type="enum" persistent="true">
+          <shortName>AstroBand Mode</shortName>
+          <longName>AstroBand configuration mode</longName>
+          <description>Configuration mode for a given
+            Astroband. The FPGAs have a distinct set configurations to load for
+            single polarization, full Stokes, or 23-station mode.  This 
+            monitor point enumerates those.
+          </description>
+          <enum name="SINGLEPOL"/>
+          <description>Single polarization mode, e.g. LL or RR</description>
+          <enum name="DUALPOL"/>
+          <description>Dual polarization mode, LL+RR</description>
+          <enum name="FULLPOL"/>
+          <description>Full-stokes mode, LL+RR+RL+LR</description>
+          <enum name="CARMA23"/>
+          <description>23-station mode </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="vlbiSeqNo" type="int">
+          <shortName>vlbiSeqNo </shortName>
+          <longName>Most recent VLBI command sequence number</longName>
+          <description> 
+            Most recent VLBI command sequence number.
+          </description>
+        </MonitorPoint>
+      </Container>
+
+      <CommonContainer ref="CorMonitorInterpSamps" name="InterpolatorSamples" count="&NUM_ASTRO_BAND_INPUTS;" />
+
+    </Container> <!-- End Band Container -->
+  </Subsystem>
+  <!-- vim: set ts=2 sts=2 sw=2 et: -->

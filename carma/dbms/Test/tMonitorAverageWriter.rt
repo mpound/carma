@@ -1,0 +1,127 @@
+#!/bin/sh
+
+usage() {
+    echo "usage: $0 [--help] [traceLevel=[7]] [logfile=[/dev/stdout]] [traceFile=[/dev/stdout]] [logdir=[<none>]] [email=[<none>]]"
+    echo 
+    echo "--help       print this message"
+    echo "traceLevel   the traceLevel to pass to monitorAverageWriter"
+    echo "logfile      log file for monitorAverageWriter"
+    echo "syslog       syslog parameter for monitorAverageWriter"
+    echo "traceFile    log file for trace messages from monitorAverageWriter"
+    echo "logdir       directory to stash imr logs"
+    echo "email        email address to send notification if failure"
+}
+
+logfile=/dev/stdout
+syslog=f
+traceFile=/dev/stdout
+traceLevel=7
+logdir=""
+email=""
+for x in $* ; do
+    case "$x" in
+        -h)
+        usage
+        exit 0
+        ;;
+        --help)
+        usage
+        exit 0
+        ;;
+        traceLevel=*) traceLevel=`echo $x | grep traceLevel | awk -F = '{print $2}'`
+        ;;
+        logfile=*) logfile=`echo $x | grep logfile | awk -F = '{print $2}'`
+        ;;
+        logdir=*) logdir=`echo $x | grep logdir | awk -F = '{print $2}'`
+        ;;
+        traceFile=*) traceFile=`echo $x | grep traceFile | awk -F = '{print $2}'`
+        ;;
+        syslog=*) syslog=`echo $x | grep syslog | awk -F = '{print $2}'`
+        ;;
+        email=*) email=`echo $x | grep email | awk -F = '{print $2}'`
+        ;;
+        *)
+        echo "$0: Unknown command line argument $x"
+        usage
+        exit 1
+    esac
+done
+
+
+
+
+# adding a hard limit on cpu usage to try to stop hung tbox builds
+ulimit -t 100
+
+# run monitor average writer for one minute
+
+. `dirname $0`/lib/functions.sh
+
+mkdir -p $topdir/imr
+imrxml=imr/`basename $0`.$USER.$$.conf.xml
+sed -e "s?/data/beren/dmehring/carma_build?$PWD?g" < conf/imr/mpDBWriterLocal.xml > conf/$imrxml
+
+echo "stopping any imr related processes from a previous run"
+cmd="scripts/rc.carma --nosu --file $imrxml --imr localhost stop"
+echo $cmd
+$cmd
+echo "starting imr and monitor processes"
+cmd="scripts/rc.carma --nosu --file $imrxml --imr localhost start"
+echo $cmd
+$cmd
+
+if [ $? -ne 0 ] ; then
+   cleanup
+   echo "failed to start imr/monitor services"
+   echo "This probably means the processes are running and are owned by someone else"
+   echo "so carma.rc stop failed"
+   echo "this is not considered a failure of this test"
+   pass
+   exit 0
+fi
+
+scripts/makeMPDataDirs $topdir > /dev/null
+
+if [ $? -ne 0 ] ; then
+   cleanup
+   echo "failed to make data dirs"
+   echo CARMA-TEST: FAIL carma/dbms `basename $prog`
+   scripts/rc.carma --nosu --file $imrxml --imr localhost stop
+   rm conf/$imrxml
+   exit 1
+fi
+createConfFiles
+
+# sleep a couple secs so newly started processes can quiet down and then 
+# do a top
+sleep 10
+# see if a monitor process is hogging the cpu at this point
+echo "below is the output from top, if one of the processes just started is consuming near 100% cpu, chances are monitorAverageWriter will hang"
+top n 1 b
+
+#cmd="bin/monitorAverageWriter imr=imr dbconffile=$dbmsconf traceLevel=$traceLevel logfile=$logfile traceFile=$traceFile frames=120 useDBMS=false syslog=$syslog"
+cmd="bin/monitorAverageWriter dbconffile=$dbmsconf traceLevel=$traceLevel logfile=$logfile traceFile=$traceFile frames=120 useDBMS=false syslog=$syslog"
+
+echo "Running $cmd"
+$cmd
+res=$?
+if [ "$logdir" != "" -a $res -ne 0 ] ; then
+  cp -rp $topdir/imr $logdir/.
+fi
+scripts/rc.carma --nosu --file $imrxml --imr localhost stop
+cleanup
+rm conf/$imrxml
+if [ $res -eq 0 ] ; then
+    pass
+    exit 0
+else
+    if [ "$email" != "" ] ; then
+        date > mail_log.$$
+        echo "on machine: $HOST" >> mail_log.$$
+        echo "as user: $USER" >> mail_log.$$
+        mail -s "monitorAverageWriter failure" $email < mail_log.$$
+        rm mail_log.$$
+    fi
+    echo CARMA-TEST: FAIL carma/dbms `basename $prog`
+    exit 1
+fi

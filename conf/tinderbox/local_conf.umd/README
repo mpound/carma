@@ -1,0 +1,26 @@
+
+All Carma tinderbox builds are defined in carma.buildcf.  New builds should
+be defined in this file in the BUILDS hash table.
+ 
+ To run on a client:
+
+ ./build_shellscript --buildcf ./carma.buildcf 
+                     --build <full, incremental, tools>
+		     --tree carma
+		     --mail-each-phase 
+
+ To install a new tinderbox client:
+
+ * Get the tinderbox tarball from cvs.mmarray.org:/sw/carma_pkg.unused
+   and unpack into /usr/local/tinderbox or wherever desired.
+
+ * Put the files in this directory in /usr/local/tinderbox/local_conf
+   and edit carma.buildcf, tools.sh, and the top of tinderbox.rc to reflect
+   local configuration.
+
+ $ cp tinderbox.rc /etc/init.d/tinderbox && chkconfig --add tinderbox
+ $ /etc/init.d/tinderbox start  # or reboot
+
+   
+
+Questions?  andy@ovro.caltech.edu, krauch@ovro.caltech.edu.

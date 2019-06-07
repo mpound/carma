@@ -1,0 +1,50 @@
+#!/bin/bash
+# vim: set ts=4 sts=4 sw=4 noet:
+
+# Run the script checker on all scripts for the current array.
+# Email the observers with the report.
+
+export SCRIPTPATH="/opt/rt/scripts/script-checker.cron"
+export STARTTIME="$(date "+%F %H:%M:%S %Z")"
+export OUTPUT="$(mktemp)"
+export HAVEFAIL="0"
+export EMAILADDRS="obs@mmarray.org"
+
+# $1: full path to the script to check
+checkone() {
+	local TEMPFILE="$(mktemp)"
+	/opt/rt/scripts/script-checker "$1" &> "$TEMPFILE"
+	if [[ "$?" -ne "0" ]]; then
+		HAVEFAIL="1"
+		echo -e '\n--------------------\n' >> "$OUTPUT"
+		cat "$TEMPFILE" >> "$OUTPUT"
+	fi
+
+	# remove the temporary file
+	rm -f "$TEMPFILE"
+}
+
+# check all scripts
+for i in /array/rt/scripts/currSci[12]/*.obs ; do
+	checkone "$i"
+done
+
+# if we detected some failures, send email
+if [[ "$HAVEFAIL" -ne "0" ]]; then
+	SUBJECT="Script Checker Failures for $STARTTIME"
+	mutt -F /dev/null -s "$SUBJECT" -- $EMAILADDRS <<- EOF
+The script-checker utility has reported the following failures during the run
+started at $STARTTIME. All scripts without errors are not reported.
+
+Please review the scripts and fix the errors, or contact the author of each
+and have them fix the bug themselves.
+
+Sent via automated script: $SCRIPTPATH
+
+Output of the /opt/rt/scripts/script-checker tool:
+`cat $OUTPUT`
+	EOF
+fi
+
+# clean up failure output file
+rm -f "$OUTPUT"

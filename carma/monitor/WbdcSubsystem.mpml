@@ -1,0 +1,270 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<Subsystem name="Wbdc" priority="normal" author="Andy Beard">
+    <description>
+       Downconverter subsystem for the wideband correlator
+    </description>
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <?common CanbusCommon.mpml?>
+    <?common DownconverterCommon.mpml?>
+    <?common QuadratureModulator.mpml?>
+    <?common LoMonitor.mpml?>
+    <?common NoiseSource.mpml?>
+    <?common TimestampCommon.mpml?>
+    <?common OnlineCommon.mpml?>
+
+    <CommonMonitorPoint ref="timestamp"/>
+    <CommonMonitorPoint ref="online"/>
+
+    <!-- ********************************** -->
+    <!-- CAN host specific monitor points.  -->
+    <!-- ********************************** -->
+    <Container name="Can" >
+        <CommonContainer ref="Host"/>
+        <CommonContainer ref="Bus" count="2"/>
+    </Container>
+
+    <!-- ********************************************  -->
+    <!-- Lo Monitor monitor definitions....            -->
+    <!-- ********************************************  -->
+    <Container name="LoMonitorContainer" >
+        <CommonMonitorPoint ref="state" />
+
+        <CommonContainer ref="LoMonitor"  />
+
+        <!-- Include common microprocessor monitor points -->
+        <CommonContainer ref="Xac"  />
+
+     </Container>
+
+    <!-- End of Lo Monitor monitor definitions         -->
+
+    <!-- ********************************************  -->
+    <!-- Noise Source monitor definitions....          -->
+    <!-- ********************************************  -->
+    <CommonContainer ref="NoiseSourceContainer" />
+    <!-- End Noise Source monitor definitions....      -->
+
+
+    <!-- ********************************************  -->
+    <!-- Quadrature Modulator monitor definitions....  -->
+    <!-- ********************************************  -->
+    <CommonContainer ref="QuadModContainer" count="&NUM_WBDC_INPUTS;"/>
+    <!-- End Quadrature Modulator monitor definitions....  -->
+
+    <!-- ********************************************  -->
+    <!-- Downconverter module monitor definitions....  -->
+    <!-- ********************************************  -->
+
+    <Container name="Band" count="&NUM_WBDC_BANDS;">
+      <description>
+         An IF band
+      </description>
+
+      <Container name="Input" count="&NUM_WBDC_INPUTS;" indexName="inputIndex"   >
+         <description>Antenna IF's are mapped to downconverter inputs
+         </description>
+
+        <CommonMonitorPoint ref="state" />
+
+        <CommonMonitorPoint ref="bandNo" />
+        <CommonMonitorPoint ref="inputNo" />
+        <CommonMonitorPoint ref="psys" />
+        <CommonMonitorPoint ref="psysAtten" />
+        <CommonMonitorPoint ref="ifOutPower" />
+        <CommonMonitorPoint ref="ifOutAtten" />
+        <CommonMonitorPoint ref="temp" />
+
+        <!-- Blanking frame monitor packet 1  -->
+        <MonitorPoint name="ps5vAnalog" type="float">
+          <shortName>+5V Analog</shortName>
+          <longName>Power supply +5V analog  </longName>
+          <description> +5V analog power supply voltage level
+          </description>
+          <units>V</units>
+          <warnLo>4.85</warnLo>
+          <warnHi>5.15</warnHi>
+          <errLo>4.75</errLo>
+          <errHi>5.25</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="psNeg5vAnalog" type="float">
+          <shortName>-5V Analog</shortName>
+          <longName>Power supply -5V analog </longName>
+          <description> -5V analog power supply voltage level
+          </description>
+          <units>V</units>
+          <warnHi>-4.85</warnHi>
+          <warnLo>-5.15</warnLo>
+          <errHi>-4.75</errHi>
+          <errLo>-5.25</errLo>
+        </MonitorPoint>
+        <MonitorPoint name="ps5vDigital" type="float" >
+          <shortName>+5V Digital</shortName>
+          <longName>Power supply +5V digital </longName>
+          <description> +5V digital power supply voltage level
+          </description>
+          <units>V</units>
+          <warnLo>4.85</warnLo>
+          <warnHi>5.15</warnHi>
+          <errLo>4.75</errLo>
+          <errHi>5.25</errHi>
+        </MonitorPoint>
+<!-- Uncomment if using API 131 -->
+        <MonitorPoint name="psysStat" type="enum" >
+          <shortName>psysStat</shortName>
+          <longName>Psys Status</longName>
+          <description>Psys attenuator control status</description>
+          <enum name="MANUAL">
+            <description>Idle/Manual control</description>
+          </enum>
+          <enum name="SETTING">
+            <description>Setting psys power level</description>
+          </enum>
+          <enum name="GOOD">
+            <description>Level good</description>
+          </enum>
+          <enum name="HIGH">
+            <description>Level too high</description>
+          </enum>
+          <enum name="LOW">
+            <description>Level too low</description>
+          </enum>
+          <enum name="UNUSED1">
+            <description>Not used</description>
+          </enum>
+          <enum name="UNUSED2">
+            <description>Not used</description>
+          </enum>
+          <enum name="UNUSED3">
+            <description>Not used</description>
+          </enum>
+          <enum name="UNUSED4">
+            <description>Not used</description>
+          </enum>
+        </MonitorPoint>
+
+<!-- Comment if using API 131
+        <MonitorPoint name="psysStat" type="enum" >
+          <shortName>psysStat</shortName>
+          <longName>Psys Status</longName>
+          <description>Psys attenuator control status</description>
+          <enum name="MANUAL">
+            <description>Manual control</description>
+          </enum>
+          <enum name="PRESET_BUSY">
+            <description>Preset routine busy</description>
+          </enum>
+          <enum name="PRESET_OK">
+            <description>Preset routine done (OK)</description>
+          </enum>
+          <enum name="PRESET_HIGH">
+            <description>Preset routine done (Input too high)</description>
+          </enum>
+          <enum name="PRESET_LOW">
+            <description>Preset routine done (Input too low)</description>
+          </enum>
+          <enum name="SET_BUSY">
+            <description>Set level routine busy</description>
+          </enum>
+          <enum name="SET_OK">
+            <description>Set level routine done (Input OK)</description>
+          </enum>
+          <enum name="SET_HIGH">
+            <description>Set level routine done (Input too high)</description>
+          </enum>
+          <enum name="SET_LOW">
+            <description>Set level routine done (Input too low)</description>
+          </enum>
+        </MonitorPoint>
+-->
+
+        <MonitorPoint name="ifOutStat" type="enum">
+          <shortName>ifOutStat</shortName>
+          <longName>IF Output Stat</longName>
+          <description>If output attenuator status</description>
+          <enum name="MANUAL">
+            <description>Manual control</description>
+          </enum>
+          <enum name="PRESET">
+            <description>Analog hardware closed loop active.
+                Preset IF output level</description>
+          </enum>
+          <enum name="SET">
+            <description>Analog hardware closed loop active.
+                Set IF output level</description>
+          </enum>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 4 -->
+        <MonitorPoint name="ps24v" type="float">
+          <shortName>+24V</shortName>
+          <longName>+24 Volt</longName>
+          <description>+24 volt power supply voltage</description>
+          <units>V</units>
+          <warnLo>20.0</warnLo>
+          <warnHi>28.0</warnHi>
+          <errLo>18.0</errLo>
+          <errHi>30.0</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps7v1" type="float">
+          <shortName>+7V #1</shortName>
+          <longName>+7 Volt #1</longName>
+          <description>+7 volt power supply #1 voltage</description>
+          <units>V</units>
+          <warnLo>6.75</warnLo>
+          <warnHi>7.25</warnHi>
+          <errLo>6.50</errLo>
+          <errHi>7.50</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps7v2" type="float">
+          <shortName>+7V #2</shortName>
+          <longName>+7 Volt #2</longName>
+          <description>+7 volt power supply #2 voltage</description>
+          <units>V</units>
+          <warnLo>6.75</warnLo>
+          <warnHi>7.25</warnHi>
+          <errLo>6.50</errLo>
+          <errHi>7.50</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps7v3" type="float">
+          <shortName>+7V #3</shortName>
+          <longName>+7 Volt #3 </longName>
+          <description>+7 volt power supply #3 voltage
+          </description>
+          <units>V</units>
+          <warnLo>6.75</warnLo>
+          <warnHi>7.25</warnHi>
+          <errLo>6.50</errLo>
+          <errHi>7.50</errHi>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 5 -->
+ <!-- Uncomment If using API 131 -->
+
+        <MonitorPoint name="rfAmp" type="enum">
+            <shortName>RF Amp</shortName>
+            <longName>RF Amplifier Status</longName>
+            <description>
+                Status of the RF amplifier.
+            </description>
+            <enum name="OFF"/>
+            <enum name="ON"/>
+            <errHi>OFF</errHi>
+        </MonitorPoint>
+
+<!-- Comment this out if using API 131
+        <CommonMonitorPoint ref="timeStat" />
+ -->
+
+       <!-- Include common microprocessor monitor points -->
+       <CommonContainer ref="Xac"  />
+
+      </Container>  <!-- End Input -->
+
+    </Container>  <!-- End Band -->
+
+</Subsystem>

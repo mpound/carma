@@ -1,0 +1,493 @@
+/**
+ * @file Carma SignalPathMapper control interface.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Erik Leitch </dl>
+ */
+#ifndef CARMA_SIGNALPATH_SIGNALPATHMAPPER_IDL
+#define CARMA_SIGNALPATH_SIGNALPATHMAPPER_IDL
+
+#include "carma/util/UserException.idl"
+
+// Include for CORBA sequence typedefs
+#include "carma/util/SeqTypedefs.idl"
+
+// Include for carma::downconverter::Polarization
+
+#include "carma/downconverter/spectral/BlockDownconverterControl.idl"
+
+// Include for CorrelatorType
+#include "carma/util/CorrelatorType.idl"
+
+// Include for SwitchPosition
+
+#include "carma/switchyard/SwitchyardControl.idl"
+
+// Include for polarization state
+
+#include "carma/antenna/common/PolarizationControl.idl"
+
+module carma {
+  module signalpath {
+
+    // Names under which this interface will be published
+
+    const string SIGNALPATHMAPPERCONTROL_NAME = "carma.signalpathmapper";
+
+    interface SignalPathMapperControl {
+
+      /**
+       * @brief enum to specify known configurations
+       */
+      enum SwitchyardConfiguration {
+        LL,
+        RR,
+        CARMA23,
+        FULLSTOKES,
+        DUALPOL,
+        MAXSENS_DUALPOL,
+        MAXSENS_CARMA23_LOWRES,
+        MAXSENS_CARMA23_MEDRES,
+        MAXSENS_CARMA23_HIGHRES,
+        MAXSENS_LL,
+        CMTEST,
+        LL_INTERIM
+      };
+
+      /**
+       * @brief enum to specify the polarization type
+       */
+      enum PolarizationType {
+        POL_NONE,
+        POL_LEFT,
+        POL_RIGHT
+      };
+
+      typedef sequence<PolarizationType> PolarizationSeq;
+
+      enum AntennaType {
+        ANT_NONE,
+        ANT_SZA,
+        ANT_BIMA,
+        ANT_OVRO
+      };
+
+      /**
+       * @brief struct to encapsulate a single antenna
+       */
+      struct Antenna {
+        unsigned short antNo;      // The antenna number corresponding to this input
+        AntennaType type;          // The type of this antenna
+        unsigned short walshColNo; // Walsh column number (1-32)
+        unsigned short subarrayNo; // The current subarray controlling this antenna
+      };
+
+      typedef sequence<Antenna> AntennaSeq;
+
+      /**
+       * @brief struct to encapsulate a single antenna IF
+       */
+      struct AntennaIF {
+        unsigned short antNo;     // The antenna number corresponding to this input
+        PolarizationType polType; // The polarization type of this antenna IF
+      };
+
+      /**
+       * @brief struct to encapsulate a single astro band
+       */
+      struct AstroBand {
+        unsigned short astroBandNo; // The astro band number
+      };
+
+      typedef sequence<AstroBand> AstroBandSeq;
+
+      /**
+       * @brief struct to encapsulate a single astro band input
+       */
+      struct AstroBandInput {
+        AstroBand aBand;        // The astro band corresponding to this input
+        unsigned short inputNo; // The astro band input number
+      };
+
+      typedef sequence<AstroBandInput> AstroBandInputSeq;
+
+      /**
+       * @brief struct to encapsulate a single correlator crate (SLCOR[1-8], WBCOR[1-8])
+       */
+      struct CorrelatorCrate {
+        carma::util::CorrelatorType type; // The type of this correlator
+        unsigned short crateNo;        // The crate number (e.g., the 1 of SLCOR1)
+      };
+
+      typedef sequence<CorrelatorCrate> CorrelatorCrateSeq;
+
+      /**
+       * @brief struct to encapsulate a single correlator band (SLCOR[1-8], WBCOR[1-16])
+       */
+      struct CorrelatorBand {
+        CorrelatorCrate crate; // The crate associated with this band
+        unsigned short bandNo; // The band number (e.g., the 16 of WBCOR16)
+      };
+
+      typedef sequence<CorrelatorBand> CorrelatorBandSeq;
+
+      /**
+       * @brief struct to encapsulate a single correlator crate input
+       */
+      struct CorrelatorCrateInput {
+        CorrelatorCrate crate;   // The crate corresponding to this input
+        unsigned short inputNo;  // The input number
+        AntennaIF antIF;         // The antenna IF corresponding to this input
+      };
+
+      typedef sequence<CorrelatorCrateInput> CorrelatorCrateInputSeq;
+
+      /**
+       * @brief struct to encapsulate a single correlator band input
+       */
+      struct CorrelatorBandInput {
+        CorrelatorBand band;       // The band corresponding to this input
+        unsigned short inputNo;	   // The input number
+        AntennaIF antIF;	   // The antenna IF corresponding to this input
+        AstroBandInput aBandInput; // The astroband input associated with this correlator band input
+      };
+
+      typedef sequence<CorrelatorBandInput> CorrelatorBandInputSeq;
+
+      /**
+       * @brief Struct for assignment of walsh columns to antennas
+       */
+      struct WalshColumnAssignment {
+        unsigned short antNo;      // Antenna number (1-23)
+        unsigned short walshColNo; // Walsh column number (1-32)
+      };
+
+      typedef sequence<WalshColumnAssignment> WalshColumnAssignmentSeq;
+
+      /**
+       * @brief Struct for returning block downconverter settings
+       */
+      struct BlockDownconverterSetting {
+        unsigned short bdcNo;      //  Block downconverter number (1-15)
+        unsigned short bandNo;     //  Block downconverter band number (1-8)
+        carma::downconverter::BlockDownconverterControl::Polarization bdcInputType; // Input selector for this band
+      };
+
+      typedef sequence<BlockDownconverterSetting> BlockDownconverterSettingSeq;
+
+      /**
+       * Initialize a cable map, specifying switchyard hardware connections
+       *
+       * @param fileName The name of the file containing the cable map
+       *
+       * @throw UserException if the file does not contain a valid
+       * mapping
+       */
+      void initializeCableMap(in string fileName)
+        raises (carma::util::UserException);
+
+      /**
+       * Load a new configuration from a file
+       *
+       * @param fileName The name of the file containing the configuration
+       * @param confName The name to assign to the configuration
+       * @param astroBandConfName The name of the astroband configuration to associate with this switchyard configuration
+       *
+       * @throw UserException if the file does not contain a valid
+       * configuration
+       */
+      void loadConfiguration(in string fileName, in string confName, in string astroBandConfName)
+        raises (carma::util::UserException);
+
+      /**
+       * Add/remove an antenna
+       *
+       * @param antNo      The antenna number to add/remove
+       * @param subarrayNo The subarray issuing this command
+       */
+      void addAntenna(in unsigned short antNo, in unsigned short subarrayNo)
+        raises (carma::util::UserException);
+
+      void removeAntenna(in unsigned short antNo, in unsigned short subarrayNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Add/remove a correlator
+       *
+       * @param antNo      The antenna number to add/remove
+       * @param subarrayNo The subarray issuing this command
+       */
+      void addCorrelator(in carma::util::CorrelatorType type, in unsigned short subarrayNo)
+        raises (carma::util::UserException);
+
+      void removeCorrelator(in carma::util::CorrelatorType type, in unsigned short subarrayNo)
+        raises (carma::util::UserException);
+
+
+      /**
+       * Configure an astro band
+       *
+       * @param bandNo   The Astroband number to configure
+       * @param confName The name of the configuration to assign to
+       *                 this astro band, e.g. that was specified to
+       *                 loadConfiguration.
+       * @param type     The correlator type owned by the caller
+       *
+       * @throw UserException if the configuration conflicts with
+       * another configured astro band, if the configuration is not
+       * possible, or if the caller is not allowed to modify the
+       * specified astro band
+       */
+      void configureAstroBand(in unsigned short astroBandNo, 
+                              in string confName,
+                              in unsigned short subarrayNo, 
+                              in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+      /**
+       * Check the validity of a configuration
+       */
+      void checkConfigurationValidity(in unsigned short astroBandNo, 
+                                      in string confName,
+                                      in unsigned short subarrayNo, 
+                                      in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+
+      /**
+       * Return the validity of a configuration
+       */
+      boolean configurationIsValid(in unsigned short astroBandNo,
+                                      in string confName,
+                                      in unsigned short subarrayNo, 
+                                      in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+
+      /**
+       * Clear an astro band configuration
+       *
+       * @param bandNo   The Astroband number to configure
+       * @param type     The correlator type owned by the caller
+       *
+       * @throw UserException if the caller is not allowed to clear
+       * this astro band
+       */
+      void clearAstroBandConfiguration(in unsigned short bandNo,
+                  in unsigned short subarrayNo, in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+
+      /**
+       * Set a walsh column explicitly for an antenna
+       *
+       * @param wca      The Walsh column assignemnt to make
+       *
+       * @throw UserException if walsh column assignment conflicts
+       * with current signalpath configuration
+       */
+      void assignWalshColumn(in SignalPathMapperControl::WalshColumnAssignment wca)
+        raises (carma::util::UserException);
+
+      /**
+       * Clear a walsh column assignment
+       *
+       * @param antNo The antenna number whose Walsh column we wish to clear
+       *
+       * @throw UserException only if an invalid antenna was specified
+       */
+      void clearWalshColumnAssignment(in unsigned short antNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query IF switch settings for the current configuration
+       */
+      carma::switchyard::SwitchPositionSeq getIFSwitchSettings(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query DC LO switch settings for the current configuration
+       */
+      carma::switchyard::SwitchPositionSeq getDCLOSwitchSettings(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query LO switch settings for the current configuration
+       */
+      carma::switchyard::SwitchPositionSeq getLOSwitchSettings(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query LL switch settings for the current configuration
+       */
+      carma::switchyard::SwitchPositionSeq getLLSwitchSettings(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query antennas associated with the requested astroband
+       *
+       * @param astroBandNo Astro band number
+       */
+      AntennaSeq getAntennas(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query polarizations associated with the requested astroband
+       *
+       * @param astroBandNo Astro band number
+       */
+      PolarizationSeq getPolarizations(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query block downconverter settings for the requested
+       * astroband
+       *
+       * @param astroBandNo Astro band number
+       */
+      BlockDownconverterSettingSeq getBdcSettings(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query the FPGA mode of a given astroband
+       *
+       * @param astroBandNo Astro band number
+       */
+      carma::util::CorrelatorFpgaModeType getFpgaMode(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query walsh function assignments.
+       *
+       * @param antNo Antenna to query, or 0 to query all
+       */
+      WalshColumnAssignmentSeq getWalshColumnAssignment(in unsigned short antNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Query active correlator bands managed by this correlator
+       *
+       * @param type Correlator type to query
+       */
+      CorrelatorBandSeq getActiveCorrelatorBands(in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+
+      /**
+       * Query active astrobands bands managed by this correlator
+       *
+       * @param type Correlator type to query
+       */
+      AstroBandSeq getActiveAstroBands(in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+
+      /**
+       * Query astrobands specified by this configuration
+       *
+       * @param confName   The configuration to check
+       * @param suabrrayNo Check only for bands this subarray is allowed to configure
+       * @param type       Correlator type to query
+       */
+      AstroBandSeq getAstroBandsForConfiguration(in string confName, in unsigned short subarrayNo, in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+
+      /**
+       * Query correlator bands associated with the requested astroBand
+       *
+       * @param astroBandNo The astroBandNo to query
+       */
+      CorrelatorBandSeq getCorrelatorBands(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * @return a sequence of correlator band numbers for the input
+       * Astroband.
+       * @param astroBandNo The astroBandNo to query
+       */
+      carma::util::SeqShort getCorrelatorBandNoSeq(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * @return a sequence of astro band numbers for the input
+       * correlator type
+       *
+       * @param type Correlator type to query
+       */
+      carma::util::SeqShort getActiveAstroBandNoSeq(in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+
+
+      /**
+       * Query correlator band input mapping
+       *
+       * @param band Correlator band to query
+       */
+      CorrelatorBandInputSeq getCorrelatorBandInputMap(in SignalPathMapperControl::CorrelatorBand band)
+        raises (carma::util::UserException);
+
+      /**
+       * Query active correlator crates managed by this correlator
+       *
+       * @param type Correlator type to query
+       */
+      CorrelatorCrateSeq getActiveCorrelatorCrates(in carma::util::CorrelatorType type)
+        raises (carma::util::UserException);
+
+      /**
+       * Query correlator crate input mapping
+       *
+       * @param crate Correlator crate to query
+       */
+      CorrelatorCrateInputSeq getCorrelatorCrateInputMap(in SignalPathMapperControl::CorrelatorCrate crate)
+        raises (carma::util::UserException);
+
+      /**
+       * Query whether or not a switch setting is allowed
+       *
+       * @param pos Switch setting to test
+       *
+       * Returns true if the switch setting does not conflict with any
+       * current astro band configuration
+       */
+      boolean canAssertSwitchPosition(in carma::switchyard::SwitchPosition pos)
+	raises (carma::util::UserException);
+
+      /**
+       * Return the configuration as a printable string
+       */
+      string queryConfiguration()
+        raises (carma::util::UserException);
+
+      /**
+       * Check that the hardware configuration succeeded by
+       * synchronizing with the monitor stream
+       * @param astroBandNo   The Astroband number to to query
+       */
+      void checkConfigurationSuccess(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      /**
+       * Get the switchyard configuration name for the input astroband number.
+       * @param astroBandNo   The Astroband number to to query
+       */
+      string getConfName(in unsigned short astroBandNo )
+        raises (carma::util::UserException);
+
+      /**
+       * @return the Astroband number to which the input correlator band
+       * is assigned, or -1 if unassigned.
+       *  @param corrBandNo The correlator band number to query
+       *  @param type The correlator type enum, e.g. CORR_SPECTRAL
+       */
+      short getAstroBandForCorrelatorBand(in unsigned short corrBandNo, in carma::util::CorrelatorType type )
+        raises (carma::util::UserException);
+
+      /**
+       * Query the correlator type for a given astroband.
+       * @param astroBandNo The Astroband number to configure
+       * @return The correlator type enum, e.g. util::CORR_SPECTRAL
+       */
+      carma::util::CorrelatorType getCorrTypeForAstroBand(in unsigned short astroBandNo )
+        raises (carma::util::UserException);
+      
+    }; // interface SignalPathMapperControl
+    
+  }; // module signalpath
+
+}; // module carma
+
+#endif

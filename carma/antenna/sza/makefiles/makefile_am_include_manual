@@ -1,0 +1,24 @@
+###############################################################################
+# Manually-created portion of the SZA makefile.   This will be concatenated 
+# with an auto-generated portion to form the complete SZA Makefile.am include
+# file.
+###############################################################################
+
+antenna_sza_la     = lib/libcarmasza.la
+antenna_sza_idl    = \
+	carma/antenna/sza/control/szaDriveControl.idl \
+	carma/antenna/sza/control/szaLOControl.idl
+antenna_sza_client = $(antenna_sza_idl:.idl=.h)      $(antenna_sza_idl:.idl=.cc)  
+antenna_sza_skel   = $(antenna_sza_idl:.idl=_skel.h) $(antenna_sza_idl:.idl=_skel.cc)  
+antenna_sza_built  = $(antenna_sza_skel)
+lib_libcarmasza_la_SOURCES = $(antenna_sza_built)
+lib_libcarmasza_la_LIBADD = \
+    $(client_la) \
+    $(monitor_la) \
+    $(canbus_la) \
+    $(services_la) \
+    $(antenna_common_la)
+BUILT_SOURCES  += $(antenna_sza_built)
+client_SOURCES += $(antenna_sza_client)
+
+###############################################################################

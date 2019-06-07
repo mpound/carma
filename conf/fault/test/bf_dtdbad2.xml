@@ -1,0 +1,8 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE dag SYSTEM "blankflag.dtd" [
+]>
+
+<dag type="blankflag">
+	<!-- unknown attribute - DTD validation should fail -->
+	<mp canon="Ovro1.online" bit="OFFLINE" bogus="attribute" />
+</dag>

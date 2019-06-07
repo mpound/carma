@@ -1,0 +1,30 @@
+# New cable map for interim:
+
+C[1-15]L:A  SW[2-30;2]:1
+C[16-23]L:A SW[31-38]:1
+
+C[1-7]L:B   SW[2-14;2]:2
+C[8-15]L:B  SW[31-38]:2
+
+C[1-7]L:C   SW[31-37]:3
+C[8-14]L:C  SW[2-14;2]:3
+C15L:C      SW38:3
+C[16-23]L:C SW[16-30;2]:3
+
+C[16-22]L:D SW[1-13;2]:2
+C23L:D      SW15:2
+
+C[1-15]R    SW[1-29;2]:4
+
+C[1-15]L:D  DIG[1-15]
+C[16-23]L:B DIG[16-23]
+
+# EML: We can't route the R signals to the new correlator, or the SPM will
+# throw an error for any configuration that tries to use them in the
+# existing correlators.  So commenting this out for now.
+
+#C[1-15]R    DIG[24-38]
+
+
+
+

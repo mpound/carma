@@ -1,0 +1,46 @@
+/**
+ * @file
+ * carma::antenna::ovro::FocusControl interface defintion.
+ *
+ * <l><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.4 $
+ * $Date: 2011/05/17 16:27:33 $
+ * $Id: ovroFocusControl.idl,v 1.4 2011/05/17 16:27:33 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_FOCUSCONTROL_IDL
+#define CARMA_ANTENNA_OVRO_FOCUSCONTROL_IDL
+
+#include "carma/antenna/common/FocusControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+/**
+ * OVRO antenna-specific focus control interface.
+ * This interface defines two additional methods which are specific to
+ * the 10-m secondary mirror CAN module.
+ */
+interface FocusControl : carma::antenna::common::FocusControl {
+
+    /**
+     * Cycle LVDT 12 V Power
+     */
+    void cycleLvdtPower() raises (carma::util::UserException);
+
+    /**
+     * Stop current mirror movement immediately and void any pending move
+     * commands.
+     */
+    void stopMotion() raises (carma::util::UserException);
+
+    /**
+     * Reset
+     */
+    void reset() raises (carma::util::UserException);
+}; // End FocusControl interface
+};};}; // End module carma::antenna::ovro
+#endif

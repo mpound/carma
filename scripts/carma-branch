@@ -1,0 +1,40 @@
+#!/bin/bash
+
+usage="
+Usage: $(basename $0) BRANCH_NAME [REF_TAG] [ROOT]
+       If given, REF_TAG must exist.
+       If NOT given, REF_TAG default to HEAD.
+       If NOT given, ROOT defaults to the contents of ./CVS/Root
+       (if it exists), or the CVSROOT from the environment.
+"
+
+if [ -z "${1}" ]
+then
+	echo "$usage" >&2
+	exit 1
+fi
+
+branch_name="${1//[ .]/_}"
+ref_tag="${2:-HEAD}"
+root="$3"
+
+if [ -z "${root}" ]
+then
+	if [ -r "./CVS/Root" ]
+	then
+		root="$(cat ./CVS/Root)"
+	elif [ -n "${CVSROOT}" ]
+	then
+		root="${CVSROOT}"
+	else
+		echo "No CVSROOT given or found." >&2
+		exit 1
+	fi
+fi
+
+echo "Creating branch '$branch_name'"
+echo "based on tag '$ref_tag'"
+echo "in CVS repository '$root'"
+set -x
+cvs -Q -d "${root}" rtag -r "${ref_tag}" "root-of-${branch_name}" carma && \
+cvs -Q -d "${root}" rtag -b -r "root-of-${branch_name}" "${branch_name}" carma

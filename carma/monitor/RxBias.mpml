@@ -1,0 +1,183 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- RxBias CAN device monitor point definitions.  The RxBias module -->
+<!-- is shared by 3.5m, 6m and 10m subsystems.                       -->
+<!-- Author: Doug Friedel                                            -->
+<!-- Author: Andrew Beard (Converted to common container)            -->
+<Common scope="global" author="Doug Friedel">
+    
+  <?common CanbusCommon.mpml?>
+
+  <Container name="RxBias" priority="vital">
+    <description>
+      Receiver registers
+    </description>
+
+    <CommonMonitorPoint ref="state" />
+
+    <MonitorPoint  name="drainSetVoltage30GHz" type="float" count="4">
+      <shortName>Drain Set Voltage 30GHz</shortName>
+      <description>
+        30-GHz drain set voltage. 
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+    
+    <MonitorPoint  name="drainCurrent30GHz" type="float" count="4">
+      <shortName>Drain Current 30GHz</shortName>
+      <description>
+        30-GHz drain current. 
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="gateVoltage30GHz" type="float" count="4">
+      <shortName>Gate Voltage 30GHz</shortName>
+      <description>
+        30-GHz gate voltage.
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="gateCurrent30GHz" type="float" count="4">
+      <shortName>Gate Current 30GHz</shortName>
+      <description>
+        30-GHz gate current.
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="ifAmpVoltage30GHz" type="float">
+      <shortName>IF Amp Voltage 30GHz</shortName>
+      <description>
+        30-GHz IF amp voltage.
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="ifAmpCurrent30GHz" type="float">
+      <shortName>IF Amp Current 30GHz</shortName>
+      <description>
+        30-GHz IF amp current.
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="mixerCurrent30GHz" type="float">
+      <shortName>Mixer Current 30GHz</shortName>
+      <description>
+        30-GHz mixer current.
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="ledCurrent30GHz" type="float">
+      <shortName>Led Current 30GHz</shortName>
+      <description>
+        30-GHz led current.
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+    
+    <MonitorPoint  name="boardTemperature" type="float">
+      <shortName>Board Temp</shortName>
+      <description>
+        Module board temperature.
+      </description>
+      <units>C</units>
+    </MonitorPoint>
+    
+    <MonitorPoint  name="pos24VAnalogVoltage" type="float">
+      <shortName>+24V Analog</shortName>
+      <description>
+        24V analog supply voltage. 
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="pos15VAnalogVoltage" type="float">
+      <shortName>+15V Analog</shortName>
+      <description>
+        15V analog supply voltage. 
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+    
+    <MonitorPoint  name="neg15VAnalogVoltage" type="float">
+      <shortName>-15V Analog</shortName>
+      <description>
+        Negative 15V analog supply voltage.
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+    
+    <MonitorPoint  name="pos5VAnalogVoltage" type="float">
+      <shortName>+5V Analog</shortName>
+      <description>
+        5V analog supply voltage. 
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="pos5VDigitalVoltage" type="float">
+      <shortName>+5V Digital</shortName>
+      <description>
+        5V digital supply voltage. 
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="neg5VDigitalVoltage" type="float">
+      <shortName>-5V Digital</shortName>
+      <description>
+        Negative 5V digital supply voltage. 
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="gateCurrent90GHz" type="float" count="4">
+      <shortName>Gate Current 90GHz</shortName>
+      <description>
+      
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="drainCurrent90GHz" type="float" count="2">
+      <shortName>Drain Current 90GHz</shortName>
+      <description>
+      
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+
+    <MonitorPoint  name="ifAmpDrainCurrent90GHz" type="float">
+      <shortName>IF Amp Drain Current 90GHz</shortName>
+      <description>
+      
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+    
+    <MonitorPoint  name="ifAmpGateCurrent90GHz" type="float">
+      <shortName>IF Amp Gate Current 90GHz</shortName>
+      <description>
+      
+      </description>
+      <units>mA</units>
+    </MonitorPoint>
+    
+    <MonitorPoint  name="drainSetVoltage90GHz" type="float" count="2">
+      <shortName>Drain Set Voltage 90GHz</shortName>
+      <description>
+        90-GHz amplifier drain set voltage. 
+      </description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <CommonContainer ref="Xac" />
+
+  </Container> 
+
+</Common>

@@ -1,0 +1,72 @@
+#ifndef CARMA_UTIL_CORRELATOR_TYPE_IDL
+#define CARMA_UTIL_CORRELATOR_TYPE_IDL
+ 
+/**
+ * @file
+ *
+ * Correlator type enumeration.
+ * $Id: CorrelatorType.idl,v 1.2 2014/06/03 19:45:34 mpound Exp $
+ *
+ *
+ */
+
+module carma {
+module util {
+
+  typedef unsigned long CorrelatorType;
+  const CorrelatorType CORR_NONE     = 0x0;
+  const CorrelatorType CORR_SPECTRAL = 0x1;
+  const CorrelatorType CORR_WIDEBAND = 0x2;
+  const CorrelatorType CORR_C3GMAX8  = 0x4;
+  const CorrelatorType CORR_C3GMAX23 = 0x8;
+// CORR_ALL is still useful in SignalPath code, so keep it.
+// But we do not map it to a fixed monitor::CorrDesignation value, 
+// because there is no use for monitor::CorrDesignation::ALL.  
+// You can still have a monitor::CorrDesignation of 0xF, it's just 
+// not called ALL.   If you need to operate on ALL correlators you
+// should be using CorrelatorType not monitor::CorrDesignation to 
+// distinguish.
+  const CorrelatorType CORR_ALL      = 0x1 | 0x2 | 0x4 | 0x8; //aka 0xF
+
+
+/**
+ *  Supported spectral correlator bandwidths. Due to the heterogeneous
+ *  hardware, not all correlator bands support every mode listed.
+ */
+enum CorrelatorBandWidthType {
+    CORR_BW_500MHZ,         ///< 500 MHz bandwidth.
+    CORR_BW_250MHZ,         ///< 250 MHz bandwidth.
+    CORR_BW_125MHZ,         ///< 125 MHz bandwidth.
+    CORR_BW_62MHZ,          ///< 62.5 MHz bandwidth.
+    CORR_BW_31MHZ,          ///< 31.25 MHz bandwidth.
+    CORR_BW_8MHZ,           ///< 7.8125 MHz bandwidth.
+    CORR_BW_2MHZ            ///< 1.953125 MHz bandwidth.
+};
+
+/**
+ *  Correlator number of bits.  Note that COBRA hardware
+ *  supports only 2-bit operation.
+ */
+enum CorrelatorBitType {
+    CORR_2BIT,    ///< 2-bit mode
+    CORR_3BIT,    ///< 3-bit mode
+    CORR_4BIT     ///< 4-bit mode
+};
+
+/**
+* FPGA configuration  modes.
+*/
+enum CorrelatorFpgaModeType {
+  CORR_SINGLEPOL,  ///< default, single polarization mode, e.g. LL or RR
+  CORR_DUALPOL,    ///< dual-polarization, LL and RR
+  CORR_FULLPOL,    ///< Full-stokes mode
+  CORR_CARMA23     ///< 23-station mode
+};
+
+
+
+}; // end util
+}; // end carma
+
+#endif  
+

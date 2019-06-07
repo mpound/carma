@@ -1,0 +1,15 @@
+#-----------------------------------------------------------------------
+# Current switchyard mapping for CARMA23 mode.  Maps L for all
+# antennas to pairs of SL correlator crates.  Maps BIMA antennas into
+# the wideband correlator
+#-----------------------------------------------------------------------
+
+C[1-15]L  SLCOR[1-7;2]:[1-15]
+C[16-23]L SLCOR[2-8;2]:[1-8]
+
+C[8-15]L WBCOR[1-8]:[1-8]
+C[8-15]L WBCOR[1-8]:[9-16]
+
+
+
+

@@ -1,0 +1,995 @@
+;;=======================================================================
+;; C++ Macros
+;;=======================================================================
+
+;;-----------------------------------------------------------------------
+;; Start a new C++ class
+;;-----------------------------------------------------------------------
+
+(defun start-class (classname namespace)
+  (interactive "sClass name: \nsNamespace: ")
+  (split-window-vertically)
+  (start-h classname namespace)
+  (other-window 1)
+  (start-cc classname namespace)
+  )
+
+;;-----------------------------------------------------------------------
+;; Start a new header file.
+;;-----------------------------------------------------------------------
+
+(defun start-h (classname namespace)
+  (interactive "sClass name: \nsNamespace: ")
+  (setq define_tag "0")
+  
+  (setq filename (concat classname ".h"))
+  (find-file filename)
+  (beginning-of-buffer)
+  
+  (insert "// $Id: emacs_macros,v 1.3 2011/07/21 23:05:22 abeard Exp $\n\n")
+
+  (insert "#ifndef ")
+  (insertDefineTag classname namespace)
+  (end-of-line)
+  
+  (insert "\n#define ")
+  (insertDefineTag classname namespace)
+  (end-of-line)
+  (insert "\n")
+  
+  (insertAuthorTag)
+  (insertNamespaceBrackets namespace)
+  
+  (insert "\n")
+  (forward-line -1)
+  
+  (insert "\nclass " classname " {")
+  (insert "\n\n}; // End class " classname)
+  (insert "\n")
+  (forward-line -2)
+  (insert "public:")
+  
+  ;; Insert a default constructor
+  
+  (insert-constructor classname)
+  
+  ;; Insert a default destructor
+  
+  (insert-destructor classname)
+  
+  (insert "\n\nprivate:")
+  (forward-line -1)
+  (end-of-buffer)
+  (insert "#endif // End #ifndef ")
+  (insertDefineTag classname namespace)
+  (tab-buffer)
+  (save-buffer)
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert a default constructor
+;;-----------------------------------------------------------------------
+
+(defun insert-constructor (classname)
+  (insert "\n\n/**")
+  (indent-for-tab-command)
+  (insert "\n* Constructor.")
+  (indent-for-tab-command)
+  (insert "\n*/")
+  (indent-for-tab-command)
+  (insert "\n" classname "();")
+  (indent-for-tab-command)
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert a default destructor
+;;-----------------------------------------------------------------------
+
+(defun insert-destructor (classname)
+  (insert "\n\n/**")
+  (indent-for-tab-command)
+  (insert "\n* Destructor.")
+  (indent-for-tab-command)
+  (insert "\n*/")
+  (indent-for-tab-command)
+  (insert "\nvirtual ~" classname "();")
+  (indent-for-tab-command)
+  )
+
+;;-----------------------------------------------------------------------
+;; Start a new .cc class file.
+;;-----------------------------------------------------------------------
+
+(defun start-cc (classname namespace)
+  (interactive "sClass name: \nsNamespace: ")
+  
+  (setq filename (concat classname ".cc"))
+  (find-file filename)
+  (beginning-of-buffer)
+  
+  (goto-char (point-min))
+  (insertIncludeFile classname namespace)
+  
+  (insert "\n\nusing namespace std;")
+  (insert "\n\nusing namespace " namespace ";")
+  
+  (insert "\n\n");
+  
+  
+  (insert "/**.......................................................................")
+  
+  (insert "\n * Constructor.")
+  
+  (insert "\n */")
+  
+  (insert "\n" classname "::" classname "() {}")
+  
+  
+  (insert "\n\n/**.......................................................................")
+  
+  (insert "\n * Destructor.")
+  
+  (insert "\n */")
+  
+  (insert "\n" classname "::~" classname "() {}")
+  (tab-buffer)
+  (save-buffer)
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert a header block with author information
+;;-----------------------------------------------------------------------
+
+(defun insertAuthorTag ()
+  (interactive)
+  (goto-char (point-min))
+  (re-search-forward "#define") (end-of-line)
+  (insert "\n\n/**\n * @file " (buffer-file-name))
+  (end-of-line) (re-search-backward "/") (forward-char 1)
+  (let ((beg (point))) (re-search-backward " ") (forward-char 1) (kill-region beg (point)))
+  (end-of-line)
+  
+  (insert "\n * \n * Tagged: ")
+  (date)
+  (end-of-line)
+  (insert "\n * \n * @version: $Revision: 1.3 $, $Date: 2011/07/21 23:05:22 $")
+  (end-of-line)
+  (insert "\n * \n * @author ")
+  (username)
+  (end-of-line)
+  (insert "\n */\n")
+)
+
+;;-----------------------------------------------------------------------
+;; Add nested namespace brackets
+;;-----------------------------------------------------------------------
+
+(defun insertNamespaceBrackets (namespace)
+  (interactive "sNamespace: ")	
+  
+  ;; Insert the namespace, and a special character after is, so we can
+  ;; tell when we've hit the end of the string
+  
+  (insert namespace) (insert "#\n") 
+  (forward-line -1)
+  (beginning-of-line)
+  
+  (let ((nested_level 1))
+    ;; Search forward for the first instance of a namespace separator
+    
+    (let ((beg (point)))
+      (let ((segstart (point)) (cont "true"))
+	
+	(re-search-forward "[:#]")
+	(backward-char 1)
+	
+	;; If we found one
+	
+	(while (equal cont "true")
+	  
+	  ;; If we are looking at a separator, search again on the
+	  ;; next go-round of the loop
+	  
+	  (if (looking-at "::")
+	      (progn
+		(setq cont "true")	)
+	    (progn
+	      (setq cont "false")
+	      (setq nested_level (- nested_level 1))
+	      )
+	    )
+	  
+	  ;; Capture the last fragment of the namespace
+	  
+	  (setq ns (delete-and-extract-region segstart (point)))    
+	  
+	  ;; And set the start of the next fragment
+	  
+	  (c-electric-delete-forward 2)
+	  (setq segstart (point))
+	  
+	  ;; If this is the first namespace, jump forward a line.  If
+	  ;; not, jump to the saved mark
+	  
+	  (forward-line nested_level)
+	  
+	  (beginning-of-line)
+	  (insert "namespace ") (insert ns) 
+	  (insert " {\n} // End namespace ") 
+	  (insert ns) (insert "\n")
+	  
+          (setq nested_level (+ nested_level 1))
+	  
+	  ;; Re-set the start of the current namespace fragment
+	  
+	  (if (equal cont "true")
+	      (progn
+		
+		;; Jump back to the saved mark and search again
+		
+		(goto-char segstart)
+		(re-search-forward "[:#]")
+		(backward-char 1))
+	    (progn
+	      
+	      ;; Else back up so we're in the middle of the last set
+	      ;; of brackets
+	      
+	      (forward-line -1))
+	    )
+	  )
+	)
+      )
+    )
+  )
+
+;;-----------------------------------------------------------------------
+;; Construct a tag out of the class name and namespace
+;;-----------------------------------------------------------------------
+
+(defun insertDefineTag (classname namespace)
+  (interactive "sClassname: \nsNamespace: ")	
+  
+  ;; Insert the namespace, and a special character after is, so we can
+  ;; tell when we've hit the end of the string
+  
+  (insert "\n") (insert namespace) (insert "::") (insert classname)
+  (insert "#")
+  (beginning-of-line)
+  
+  ;; Search for the first instance of a namespace separator
+  
+  (let ((beg (point)))
+    (let ((segstart (point)))
+      (re-search-forward "[:#]")
+      (backward-char 1)
+      
+      ;; If we found one, continue searching
+      
+      (while (looking-at "::")
+        (upcase-region segstart (point))
+        (c-electric-delete-forward 2)
+        (insert "_")
+	
+	;; Re-set the start of the current namespace fragment
+	
+        (setq segstart (point))
+        (re-search-forward "[:#]")
+        (backward-char 1)
+	)
+      
+      (upcase-region segstart (point))
+      (c-electric-delete-forward 1)
+      (insert "_H")
+      )
+    
+    (forward-line 0)
+    
+    (c-electric-backspace nil)
+    )
+  )
+
+;;-----------------------------------------------------------------------
+;; Construct an include file path out of class name and namespace
+;;-----------------------------------------------------------------------
+
+(defun insertIncludeFile (classname namespace)
+  (interactive "sClassname: \nsNamespace: ")	
+  
+  ;; Insert the namespace, and a special character after is, so we can
+  ;; tell when we've hit the end of the string
+  
+  (insert "\n") (insert "#include \"") (insert namespace) (insert "::") 
+  (insert classname) (insert "#")
+  (beginning-of-line) (forward-char 1)
+  
+  ;; Search for the first instance of a namespace separator
+  
+  (let ((beg (point)))
+    (let ((segstart (point)))
+      (re-search-forward "[:#]")
+      (backward-char 1)
+      
+      ;; If we found one, continue searching
+      
+      (while (looking-at "::")
+        (c-electric-delete-forward 2)
+        (insert "/")
+	
+	;; Re-set the start of the current namespace fragment
+	
+        (setq segstart (point))
+        (re-search-forward "[:#]")
+        (backward-char 1)
+	)
+      
+      (c-electric-delete-forward 1)
+      (insert ".h\"")
+      )
+    
+    (forward-line 0)
+
+    (c-electric-backspace nil)
+    )
+  (end-of-line)
+  )
+
+;;-----------------------------------------------------------------------
+;; Create a function to toggle comment styles between C and C++.  This
+;; will take a block of comments that looks like:
+;;
+;;  /**
+;;   * Comments.
+;;   * More comments.
+;;   */
+;;
+;; and turn it into something that looks like:
+;;
+;;  // Comments.
+;;  // More comments.
+;;
+;;-----------------------------------------------------------------------
+
+(defun tc ()
+  (interactive)
+  (re-search-forward "/+[/\\*]")
+  (forward-line 0)
+  (indent-for-tab-command)
+  
+  ;; If this is a new C++-style comment
+  
+  (if (looking-at "//")
+      
+      ;; TRUE block
+      
+      (progn 
+	(insert "/**\n")
+	(forward-line 0)
+	(indent-for-tab-command)
+	(while (looking-at "//")
+	  (c-electric-delete-forward 2)
+	  (insert "*")
+	  (forward-line 1)
+	  (forward-line 0)
+	  (indent-for-tab-command)
+	  )
+	(insert "*/")
+	(forward-line 0)
+	(indent-for-tab-command)) ;; End true block
+    
+    ;; FALSE block
+    
+    (progn
+      (if (looking-at "/\\*")
+	  (progn 
+	    (forward-line 0)
+	    (kill-line)
+	    (kill-line)
+	    (indent-for-tab-command)
+	    (insert "\n")
+	    (indent-for-tab-command)
+	    (while (looking-at "\\*")
+	      (c-electric-delete-forward 1)
+	      (insert "//")
+	      (forward-line 1)
+	      (forward-line 0)
+	      (indent-for-tab-command)
+	      ) ;; end while
+	    (forward-line -1)
+	    (forward-line 0)
+	    (kill-line)
+	    (forward-line -1)
+	    (c-fill-paragraph)
+	    ) ;; end progn
+	) ;; end if
+      ) ;; end progn for FALSE block
+    );; end if
+  ) ;; end function
+
+(define-key ctl-x-map "t" 'tc)
+
+;;-----------------------------------------------------------------------
+;; Add ... to C-style comments
+;;-----------------------------------------------------------------------
+
+(defun ad ()
+  (interactive)
+  (re-search-forward "/\\*")
+  (end-of-line)
+  (insert ".......................................................................")
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert a comment block at the head of a method
+;;-----------------------------------------------------------------------
+
+(defun ctext (comment_text)
+  (interactive "sComment text: ")
+  (insert "/** ")
+  (indent-for-tab-command)
+  (insert "\n * ")
+  (indent-for-tab-command)
+  (insert comment_text)
+  (indent-for-tab-command)
+  (insert "\n */")
+  (indent-for-tab-command)
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert a preprocessor block containing debugging text
+;;-----------------------------------------------------------------------
+
+(defun dtext (debug_text)
+  (interactive "sDebugging output text: ")
+  (insert "#ifdef DEBUG")
+  (indent-for-tab-command)
+  (insert "\ncout << \"" debug_text "\" << endl;")
+  (indent-for-tab-command)
+  (insert "\n #endif")
+  (indent-for-tab-command)
+  )
+
+;;=======================================================================
+;; JAVA
+;;=======================================================================
+
+;;------------------------------------------------------------------------
+;; Start a new Java file
+;;------------------------------------------------------------------------
+
+(defun start-java (classname packageName)
+  (interactive "sClass name: \nsPackage name: ")
+  (split-window-vertically)
+  (setq filename (concat classname ".java"))
+  (find-file filename)
+  (beginning-of-buffer)
+
+  (goto-char (point-min))
+  (insert "// $Id: emacs_macros,v 1.3 2011/07/21 23:05:22 abeard Exp $\n\n")
+  (insert "package " packageName ";\n\n")
+;;  (re-search-backward "package")
+;;  (upcase-word 1)
+;;  (insert ";\n\n")
+
+  (insert "\n/**\n * @file " classname ".h")
+  (insert "\n * \n * Started: ")
+  (date) (end-of-line)
+  (insert "\n * \n * @version $Revision: 1.3 $, $Date: 2011/07/21 23:05:22 $") (end-of-line)
+  (insert "\n * \n * @author ")
+  (username) (end-of-line)
+  (insert "\n */\n")
+
+;;  (forward-line -4)
+  (insert "public class " classname " {")
+  (insert "\n\n} // End class " classname)
+  (forward-line -1)
+;; Insert a default constructor
+
+  (insert-java-constructor classname)
+  (insert "/**\n")
+  (insert "     *  Static method for unit Testing.\n")
+  (insert "     */\n")
+  (insert "public static void main(String[] args) {\n")
+  (insert "}\n")
+  (forward-line -1)
+  (tab-buffer)
+)
+
+;;-----------------------------------------------------------------------
+;; Insert a default JAVA constructor
+;;-----------------------------------------------------------------------
+
+(defun insert-java-constructor (classname)
+  (insert "\n/**")
+  (insert "\n* Constructor.")
+  (insert "\n*/")
+  (insert "\npublic " classname "() {\n")
+  (insert "}\n")
+)
+
+;;=======================================================================
+;; Utility
+;;=======================================================================
+
+;;-----------------------------------------------------------------------
+;; Insert the current date at the cursor
+;;-----------------------------------------------------------------------
+
+(defun date ()
+  (interactive)
+  (shell-command "date" (point))
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert the time of last modification at the cursor
+;;-----------------------------------------------------------------------
+
+(defun moddate ()
+  (interactive)
+  (shell-command (concat "stat -c \"%y\" " (buffer-file-name)) (point))
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert the time of last change at the cursor
+;;-----------------------------------------------------------------------
+
+(defun changedate ()
+  (interactive)
+  (shell-command (concat "stat -c \"%z\" " (buffer-file-name)) (point))
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert the time of last access at the cursor
+;;-----------------------------------------------------------------------
+
+(defun accessdate ()
+  (interactive)
+  (shell-command (concat "stat -c \"%x\" " (buffer-file-name)) (point))
+  )
+
+;;-----------------------------------------------------------------------
+;; Insert a user name at the cursor location
+;;
+;; Note that this expects there to be a function at the system level
+;; called 'username'. 
+;;-----------------------------------------------------------------------
+
+(defun username ()
+  (interactive)
+  (shell-command "username" (point))
+  )
+
+;;-----------------------------------------------------------------------
+;; Function for printing a hex-formatted integer.  There's probably a
+;; way to do this in emacs, but I've just written a C++ printhex.cc
+;; which gets called at the system level.
+;;-----------------------------------------------------------------------
+
+(defun printhex (ivar)
+  (interactive "nInteger: ")
+  (shell-command (concat "printhex " (int-to-string ivar)) (point))
+  )
+
+;;-----------------------------------------------------------------------
+;; Create a function to tab every line in a buffer
+;;-----------------------------------------------------------------------
+
+(defun tab-buffer ()
+  (interactive)
+  (indent-region (point-min) (point-max) nil))
+
+;;-----------------------------------------------------------------------
+;; Remove a numbered line from a file
+;;-----------------------------------------------------------------------
+
+(defun remline (lineNo)
+  (interactive "nRemove line: ")	
+  (goto-char (point-min))
+  (forward-line lineNo)
+  (forward-line -1)
+  (beginning-of-line)
+  (kill-line)
+  (kill-line)
+  (save-buffer)
+  )
+
+;;-----------------------------------------------------------------------
+;; Macro to re-load this file
+;;-----------------------------------------------------------------------
+
+(defun reload ()
+  (interactive)
+  (load-file "emacs_macros")
+  )
+
+;;-----------------------------------------------------------------------
+;; Rick's function to move the cursor to the matching parenthesis
+;;-----------------------------------------------------------------------
+
+(defun match-paren (arg)
+ "Go to the matching parenthesis if on parenthesis, otherwise insert %.
+ (Like in VI editor).  Thanks Fernando Dobladez <ferd@bogus.example.com>"
+ (interactive "p")
+ (cond
+  ((looking-at "\\s\(") (forward-list 1) (backward-char 1))
+  ((looking-at "\\s\)") (forward-char 1) (backward-list 1))
+  ((looking-at "\\s\{") (forward-list 1) (backward-char 1))
+  ((looking-at "\\s\}") (forward-char 1) (backward-list 1))
+  (t (self-insert-command (or arg 1)))))
+
+;;-----------------------------------------------------------------------
+;; Map Ctl-p to reload this file
+;;-----------------------------------------------------------------------
+
+(define-key ctl-x-map "p" 'reload)
+
+;;-----------------------------------------------------------------------
+;; Map Ctl-x l to run the goto-line command
+;;-----------------------------------------------------------------------
+
+(define-key ctl-x-map "l" 'goto-line)
+
+;;-----------------------------------------------------------------------
+;; Map Ctl-x m to switch to C++ mode
+;;-----------------------------------------------------------------------
+
+(define-key ctl-x-map "m" 'c++-mode)
+
+;;=======================================================================
+;; Modes
+;;=======================================================================
+
+;; Set colorization for source code
+
+(require 'font-lock)
+(global-font-lock-mode t)
+(setq-default font-lock-maximum-size 10000000)
+
+;; Set up kumac mode
+
+(autoload 'kumac-mode "kumac-mode" "Mode for editing KUMAC files." t)
+(setq auto-mode-alist (cons (cons "\\.kumac$" 'kumac-mode) auto-mode-alist))
+
+;; Matlab mode
+
+(autoload 'matlab-mode "/usr/local/share/matlab" "Enter Matlab mode." t)
+(setq auto-mode-alist (cons '("\\.m$" . matlab-mode) auto-mode-alist))
+
+;;Force modes on some other files extensions
+
+(setq auto-mode-alist (cons (cons "\\.car$" 'fortran-mode) auto-mode-alist))
+(setq auto-mode-alist (cons (cons "\\.pov$" 'c-mode) auto-mode-alist))
+
+;; Play with C indentation style
+
+(defun my-c-mode-common-hook ()
+  ;; my customizations for all of c-mode and related modes
+
+  (c-set-offset 'substatement-open 0)
+
+  ;; other customizations can go here
+  )
+
+(add-hook 'c-mode-common-hook 'my-c-mode-common-hook)
+
+;;-----------------------------------------------------------------------
+;; Add std namespace to a file
+;;----------------------------------------------------------------------
+
+(defun std()
+  (interactive)
+  (beginning-of-buffer)	
+  (re-search-forward "using namespace") (beginning-of-line)
+  (insert "using namespace std;\n")
+  (save-buffer)
+  )
+
+;============================================================
+; Convert a side comment from /* */ format to //
+;============================================================
+
+(fset 'sc
+   [?\C-s ?/ ?* ?\C-m backspace ?/ ?\C-s ?* ?/ ?\C-m backspace backspace])
+
+;;============================================================
+;; HTML macros
+;;============================================================
+
+(defun cmd (commandName)
+  (interactive "sCommand name: ")
+  (insert "<a href=" commandName ".html>" commandName "</a>")
+  )
+
+;;-----------------------------------------------------------------------
+;; Convert a struct from struct to individual components
+;;-----------------------------------------------------------------------
+
+(defun deconstructStruct()
+  (interactive)
+
+;; Find the next struct
+
+  (re-search-forward "struct {")
+  (beginning-of-line)
+  (setq structStart (point))
+
+;; Get its name
+
+  (setq structName (getStructName))
+
+;; Return to the start of the struct definition
+
+  (goto-char structStart)
+
+;; Now iterate through its members
+
+  (kill-line)
+  (beginning-of-line)
+  (insert "case ") (insert structName) (insert ":")
+  (re-search-backward " ")
+  (upcase-word 1)
+  (end-of-line)
+  (insert "\n{")
+  (setq first "true")
+
+  (let ((nmember 1))
+    (let ((cont "true"))
+
+    ;; Search forward for the first instance of a namespace separator
+ 
+    (while (equal cont "true")
+	  
+      (re-search-forward ";")
+      (beginning-of-line)
+      (indent-for-tab-command)
+
+      ;; If we are looking at a separator, search again on the
+      ;; next go-round of the loop
+	  
+      (if (looking-at "}")
+        (progn
+	    (setq cont "false")	)
+        (progn
+
+          (setq cont "true")
+
+	  (setq start (point))
+
+	  (re-search-forward ";")
+	  (forward-char -1)
+	  (setq endMember (point))
+	  (re-search-backward " ")
+	  (forward-char 1)
+	  (setq startMember (point))
+
+	  (setq stop (point))
+	
+          (setq memberName (delete-and-extract-region startMember endMember))
+          (kill-region start stop)
+
+	  (if (equal first "true")
+	    (progn 
+	      (setq first "false") 
+              (insert "COUT(") (insert "\"Got a ") (insert structName) 
+	      (re-search-backward " ")
+	      (upcase-word 1)	
+              (insert " command: \" << std::endl \n")) 
+	  )
+
+	  (insert "<< ") (insert "\"  ") (insert memberName) (insert " = \" << ") (insert "msg->body.") (insert structName) (insert ".") (insert memberName) (insert " << std::endl")
+	  (c-electric-delete-forward 1)
+
+          (forward-line +1)
+	  (beginning-of-line)
+
+          )
+        )
+     )
+   )
+  )
+  (beginning-of-line)
+  (kill-line)
+  (forward-line -1)
+  (end-of-line)
+  (insert ");\n}\nbreak;")
+  (forward-line -2)
+  (end-of-line)
+  (setq beg (point))
+  (re-search-backward " <<")
+  (kill-region (point) beg)
+  (insert ");");
+  (forward-line +2)
+)
+
+;;-----------------------------------------------------------------------
+;; Map Ctl-x d to run deconstructStruct
+;;-----------------------------------------------------------------------
+
+(define-key ctl-x-map "d" 'deconstructStruct)
+
+;;------------------------------------------------------------
+;; Parse forward to the end of a struct decalaration and 
+;; its name.
+;;------------------------------------------------------------
+
+(defun getStructName()
+  (interactive)
+  (let ((beg (point)))
+    (re-search-forward "}")
+    (forward-char 1)
+    (setq segstart (point))
+    (re-search-forward ";")
+    (forward-char -1)
+    (setq segstop (point))
+    (delete-and-extract-region segstart segstop)
+  )
+)
+
+(defun tab-c++-and-save()
+  (interactive)
+  (c++-mode)
+  (tab-buffer)
+  (save-buffer)
+)
+
+;;============================================================
+;; CARMA-related functions
+;;============================================================
+
+;;------------------------------------------------------------
+;; Return the number of lines in a file
+;;------------------------------------------------------------
+
+(defun count-lines ()
+  (interactive)
+
+;; Initialize the line count to 0
+
+  (setq count 0)
+
+;; Jump to the end of the buffer and store the value of point as variable eob
+
+  (end-of-buffer)
+  (setq eob (point))
+
+;; Now initialize the line count to zero and forward-line until we hit
+;; the end of the buffer
+
+  (beginning-of-buffer)
+  (while (< (point) eob)
+    (setq count (1+ count))
+    (forward-line 1)
+  )
+
+  count
+)
+
+;;-----------------------------------------------------------------------
+;; Test function to call count-lines above
+;;-----------------------------------------------------------------------
+
+(defun testFn ()
+  (interactive)
+  (message "number of lines = %d" (count-lines))
+)
+
+;;-----------------------------------------------------------------------
+;; Take  file list and turn it into a Makefile.am-style variable
+;;-----------------------------------------------------------------------
+
+(defun makefile-entry (dirname)
+  (interactive "sDirectory name: ")
+
+  (setq libprefix (concat "libcarmaSza" (convert-to-carma-lib-prefix dirname)))
+
+  (setq libVarName         (concat "lib_" libprefix "_la"))
+  (setq libSrcVarName      (concat "lib_" libprefix "_la_SOURCES"))
+  (setq libCppflagsVarName (concat "lib_" libprefix "_la_CPPFLAGS"))
+  (setq libCxxflagsVarName (concat "lib_" libprefix "_la_CXXFLAGS"))
+
+;; Store the number of lines in the file
+
+  (setq nLine (count-lines))
+
+;; Now jump to the head of the file and begin insertion
+
+  (beginning-of-buffer)
+  (insert libVarName    " = lib/" libprefix ".la\n\n")
+  (insert "lib_LTLIBRARIES += $(" libVarName ")\n\n")
+  (insert libSrcVarName " = \\\n")
+
+;; Now iterate through the list of files, creating a Makefile.am-style list of source files
+
+  (setq iLine 0)
+  (while (< iLine nLine)
+    (insert "\t" "carma/antenna/sza/" dirname "/")
+    (end-of-line)
+    (setq iLine (1+ iLine))
+    (if (< iLine nLine)
+      (insert " \\")
+    )
+    (forward-line 1)
+
+  )
+
+;; Add a CXX and CPP flags variable for this library too
+
+  (insert "\n" libCxxflagsVarName " = -fPIC\n")
+  (insert "\n" libCppflagsVarName " = $(AM_CPPFLAGS) -DTOP=\"\\\"$(TOP)\"\\\" ")
+  (insert "-D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 ")
+  (insert "-DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 ")
+  (insert "-DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0 ")
+  (insert "-DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated\n")
+
+
+  (save-buffer)
+)
+
+;;-----------------------------------------------------------------------
+;; Take a directory specification (like ../antenna/corba) and convert
+;; to a library prefix suitable for use in CARMA Makefile.am directives
+;;-----------------------------------------------------------------------
+
+(defun convert-to-carma-lib-prefix (dirname)
+  (interactive "sDirectory name: ")
+  (message "dirname is: %s" dirname)
+
+  (end-of-buffer)
+  (insert "\n" dirname)
+  (beginning-of-line)
+
+;; Strip of any initial characters that aren't alphabetic
+
+  (setq begDel (point))
+  (re-search-forward "[a-z,A-Z]")
+  (backward-char 1)
+  (setq endDel (point))
+  (delete-and-extract-region begDel endDel)
+
+  (end-of-line)
+  (backward-char 1)
+
+  (if (looking-at "/")
+    (progn
+      (setq begDel (point))
+      (setq endDel (1+ begDel))
+      (delete-char 1)
+    )
+  )
+
+  (setq endOfString (point))
+
+;; Now replace any instance of '/' in a directory path
+
+  (beginning-of-line)
+
+;; Always capitalize the first character
+
+  (capitalize-region (point) endOfString)
+
+;; Now walk through the path, capitalizing any char after a slash
+
+  (while (< (point) (point-max))
+    (forward-char 1)
+    (if (looking-at "/")
+      (progn
+	  (delete-char 1)
+	  (capitalize-region (point) (point-max)))
+    )
+  )
+
+  (beginning-of-line)
+  (setq prefix (delete-and-extract-region (point) (point-max)))
+
+  (forward-line -1)
+  (end-of-line)
+  (delete-region (point) (point-max))
+  (save-buffer)
+
+  prefix
+)
+
+(defun myReplace (dirname)
+  (interactive "sDirectory name: ")
+  (message "Direcotry string is: %s" (convert-to-carma-lib-prefix dirname))
+)

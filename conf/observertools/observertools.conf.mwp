@@ -1,0 +1,15 @@
+# This on-site configuration file sets various directories used 
+# by the ProjectDatabaseManager
+
+# Root directory 
+top = /opt
+
+#dbxml directory
+dbDir = ${top}/pjdb
+
+# dbxml file name
+dbFile = projectDatabase.dbxml
+
+#local backup file
+dbBackup = ${dbDir}/dbBackup.dat
+

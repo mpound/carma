@@ -1,0 +1,32 @@
+/** @file
+ * Carma LoMonitor control interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.3 $
+ * $Date: 2011/05/17 16:27:46 $
+ * $Id: LoMonitorControl.idl,v 1.3 2011/05/17 16:27:46 iws Exp $
+ */
+#ifndef CARMA_DOWNCONVERTER_LOMONITORCONTROL_IDL
+#define CARMA_DOWNCONVERTER_LOMONITORCONTROL_IDL
+
+#include "carma/canbus/devices/DeviceControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module downconverter {
+
+/**
+ * Carma LoMonitor CAN module control interface.
+ */
+interface LoMonitorControl : carma::canbus::devices::DeviceControl {
+
+    /**
+     * Initialize the power meter
+     * @exception UserException on failure.
+     */
+    void initializePowerMeter() raises (carma::util::UserException);
+
+}; // End LoMonitorControl
+}; // End downconverter module
+}; // End carma module
+#endif

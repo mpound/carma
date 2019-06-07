@@ -1,0 +1,29 @@
+#ifndef _SWITCHSTATEIDL
+#define _SWITCHSTATEIDL
+
+module carma {
+  
+  module antenna {
+    
+    module common {
+      /**
+       * Generic switch state enumerator
+       *
+       * Currently used by the CryoControl interface and OptTelControl
+       * interface to turn devices on/off
+       *
+       * @see CryoControl
+       * @see OpticalTelControl
+       */
+      enum SwitchState {
+        ON,     /**< On */
+        OFF     /**< Off */
+      };
+
+    }; // End common module
+    
+  }; // End antenna module
+  
+}; // End carma module
+
+#endif

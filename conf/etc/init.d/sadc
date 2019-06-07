@@ -1,0 +1,84 @@
+#!/bin/bash
+#
+#	/etc/rc.d/init.d/sadc 
+#
+#	Continuously collect system statistics
+#
+# chkconfig: 235 99 1 
+# description: Regularly collect system statistics 
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+ARCH=`uname -m`
+
+if [ "$ARCH" == "x86_64" ]; then 
+    usr_lib=/usr/lib64
+else
+    usr_lib=/usr/lib
+fi
+
+sadc="$usr_lib/sa/sadc"
+
+[ -x $sadc ] || exit 1
+
+# Set sampling interval to 60 seconds
+sadc_args="60 -" 
+
+niceness="+19"
+
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+    echo -n $"Starting sadc: "
+    if [ -e /var/lock/subsys/sadc ]; then
+        PIDS=`pidofproc sadc`
+        if [ "$PIDS" == "" ]; then 
+            rm -f /var/lock/subsys/sadc 
+        else 
+            echo -n "service already running."
+            failure
+            echo
+            exit 1
+	    fi
+    fi
+    daemon $niceness $sadc $sadc_args \&
+    RETVAL=$?
+    if [ $RETVAL=="0" ]; then
+	success
+	if [ $(touch /var/lock/subsys/sadc) ]; then
+	    echo "FAIL"
+	    failure
+	    exit 1
+	fi
+    else
+	failure
+        exit 1
+    fi
+    echo
+    ;;
+  stop)
+    echo -n "Stopping sadc: "
+    killproc $sadc
+    RETVAL=$?
+    rm -f /var/lock/subsys/sadc
+    echo
+    ;;
+  restart|reload)
+    $0 stop
+    $0 start
+	;;
+  status)
+    status $sadc
+    ;;
+  *)
+	echo "Usage: $0 {start|stop|status|reload|restart}"
+	exit 1
+	;;
+esac
+
+
+exit $RETVAL 

@@ -1,0 +1,11 @@
+# device classes -- these are shell-style globs
+<sound>=/dev/dsp* /dev/audio* /dev/midi* \
+	/dev/mixer* /dev/sequencer* \
+	/dev/sound/* /dev/beep \
+	/dev/snd/* /dev/adsp*
+<v4l>=/dev/video* /dev/radio* /dev/winradio* /dev/vtx* /dev/vbi* \
+      /dev/video/*
+
+# permission definitions
+<console>  0600 <sound>      0660 root.prgrmrs
+<console>  0600 <v4l>        0600 root.prgrmrs

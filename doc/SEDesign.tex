@@ -1,0 +1,1844 @@
+% $Id: SEDesign.tex,v 1.13 2005/03/15 22:01:39 teuben Exp $
+
+% this document contains oddly placed comments like %$ to aid in emacs syntax highlighting
+
+\documentclass{article}
+\usepackage{epsfig}
+\usepackage{carma_memo}
+
+%
+%TODO:
+%Peter submitted the following list of action items after the meeting:
+
+%- new section 7 on Testing/Tinderbox                              9/26
+%- more details on runtime config, based on f2f and corba          9/26
+%- bugzilla/carma definition of products/components                9/26
+%- layout the /carma tree with different versions and tools        9/26
+%- branch CARMA (a good exercise of section 8) for new install     9/26
+%
+%- new section 5.4 on new package versions                         9/27
+%- new section 4.3 with usage case how to patch Releases           9/29
+
+
+
+
+\begin{document}
+
+% 
+\newcommand{\SEP}[1]{\setlength{\fboxsep}{#1pt}}
+\newsavebox{\Qbox}
+\newenvironment{Question}{\hspace*{.1in}%
+\begin{lrbox}{\Qbox}%
+\begin{minipage}[t]{4in}\it\sffamily}%
+{\end{minipage}%
+\end{lrbox}\vspace{6pt}\SEP{6}%
+\fbox{\usebox{\Qbox}}\vspace{6pt}\SEP{3}}
+% 
+%\begin{minipage}[t]{4in}\bfseries\large\sffamily}%
+
+
+\centerline{\Large {\bf Software Engineering Design}}
+\centerline{P.J. Teuben, N.S. Amarnath, \& M. W. Pound}
+\centerline{Version 1.1}
+\centerline{February 1, 2005} 
+
+\begin{abstract}
+
+This document describes all CARMA Software Engineering aspects
+(combining two earlier documents named {\it Coding} and
+{\it CarmaBuilding}) and Version 1.0 serves as the final CDR for the
+{\bf Software Engineering} package. Subsequent versions are updated
+to reflect some expected changed procedures.
+
+This document discusses how the code is organized, built, 
+tested, patched, documented, and maintained.  
+This also includes CVS practices, such as branching, versioning, 
+distribution, and the bug reporting system, etc.
+
+\end{abstract}
+
+
+
+\section{Introduction}
+
+CARMA software will be developed using object oriented languages (C++,
+Java), with some low level microprocessor code in C, and some
+legacy code in Fortran and C. Coding standards have been defined in
+order for developers to easily understand each others code accross the
+project. Documentation will be done using the automatic documentation
+extractor doxygen.  Distributed development of all source
+code will be done using CVS, though a fair number of support libraries
+will come from external packages not under our CVS control. An easy
+mechanism exists to install and maintain these packages.
+
+A standard environment is defined along with our software, such 
+as the OS version, compiler, libraries, build tools, to ensure a stable
+build. It is expected that we freeze these for a number of years.
+
+Currently this standard environment
+is Redhat9 linux, with the following annotations:
+
+\begin{itemize}
+
+\item
+kernel 2.4.20 (from {\tt kernel.org}, not RedHat),
+see also {\tt \$CARMA/conf/etc/kernelconfigs} 
+for {\tt .config} templates 
+and {\tt \$CARMA/conf/opt/kernel} 
+on update procedures.
+
+\item
+gnu compiler 3.2.2,
+see also {\tt \$CARMA/conf/opt/c++} 
+on update procedures.
+
+\item
+glibc 2.3.2. Here we rely on the vendor for critical updates.
+
+\item
+various development tools were used, but earlier (or later) 
+releases have not been checked how well they work.
+\begin{itemize}
+\item
+gnu make, version 3.79.1
+\item
+doxygen, version 1.2.14 (1.2.18 on rh9, 1.3.6 latest)
+\item autoconf, version 2.54 (old-style 2.13 still works)
+\end{itemize}
+
+\end{itemize}
+
+
+\section{Computer types}
+
+% A set of requirements were first extracted  ...
+
+The CARMA system will run mostly on Linux, and provide us with an
+environment to control the telescopes, do an observation, monitor and
+inspect data in real-time and even do some calibration/mapping
+afterwards (maybe even partial maps in real-time). 
+
+Although we will probably be running on mainly one architecture (Intel/AMD) 
+within the same operating system (Redhat-Linux), the build system must ensure
+that is trivial to build CARMA on a number of compiler/operating system
+combinations\footnote{arguably on e.g. solaris using their native compiler,
+or the free intel compiler on linux}
+The system will be {\bf configured}\footnote{this is not the {\tt autoconf}
+based one, but a CARMA configuration, details TBD}
+in a number of modes, as determined by 
+each {\bf type of computer}\footnote{see also Carma Software System Diagram,
+on\\ {\tt http://www.mmarray.org/project/system/CARMASoftwareSystem\_files/CARMASoftwareSystem\_frames.htm}}
+on the system:
+
+\begin{itemize}
+\item  
+one for the ACC (Array Control Computer), 
+\item 
+one for each AC (Antenna Computer), 
+possibly in the 3 different flavors, aptly named
+{\tt BIMA1..BIMA9, OVRO1..OVRO6, SZA1..SZA8}.
+\item
+eight for each CC (Correlator Computer). the SZA will initially
+have a different correlator from the OVRO/BIMA combination. 
+\item
+one for the DC (Downconverter Computer)
+\item
+one for the CIPC (Calibration and Integration Pipeline Computer)
+\item
+one for the DBC (Database Computer)
+\item
+one for the ARC (Archive Computer) 
+\item
+one for the LLC (Line Length Computer)
+\item
+one for the LRC (Lobe Rotator Computer)
+\item
+one for the EC (Environment Computer) handling weather related things
+\item
+several for the UIC (User Interface Computer). This is also the type
+in which we expect users can run on their private workstations/laptops
+at remote places, not just the site or valley floor. There will always
+be one ``master'' UIC which is in control of observing, the others
+can be observers, and viewing progress (cf. carma data viewer).
+
+\end{itemize}
+
+In addition, a number of hardware modules must be able to run
+in emulation mode, in order to test some of the run-time
+behavior of the system off-line for developers. 
+The system must also be able to be built in an incremental way, for
+example by inheriting most components from an existing build, and 
+only compiling a small number of components with for example debugging
+turned on.
+
+\newpage
+
+\section{Directory Structure}
+
+A typical CARMA code tree will look as follows.
+Directories preceded by a ({\tt *})
+are created during the build process.
+Directories marked with ({\tt **}) are used during the
+build process, but can be discarded aftwards.
+The directory structure in some
+sense resembles that of the familiar unix 
+{\tt /}, {\tt /opt} or {\tt /usr/local} type trees, in the 
+sense that tools like autoconf can use 
+{\tt --prefix=\$CARMA} (or {\tt --prefix=\$CARMA\_TOOLS})
+if they want to leave their libraries, binaries etc. within the
+CARMA tree. Given the number of configurations (read: types of computers)
+we may wind up with, this greatly simplifies keeping all needed software
+within one mountpoint on a disk (e.g. /carma).
+
+
+\footnotesize
+\begin{verbatim}
+$CARMA/                         # Root (module) name for Carma Software Toolkit %$
+    carma/                      # a large tree with all our (namespace carma::) code
+    trial/            ???       # a development tree (namespace carma::)
+        ...
+    conf/                       # configure (autoconf) related things
+        etc/                    # config files for the CARMA build system
+        opt/                    # simple example package codes
+            cppunit/
+            log4cpp
+            orbacus/
+	    ...
+    scripts/                    # will be in bin/ for use, may have .in versions?
+    doc/                        # our own documentation 
+
+*   lib/                        # libraries, shared libraries [created w/ install]
+*   bin/                        # binaries and scripts [created w/ install]   --help 
+*   include/                    # include files [copied from carma/ during install]
+*   jar/                        # java  ?? orbacus puts it all in lib
+*   man/                        # standard unix man pages
+*   html/                       # html tree, including doxygen 
+*   etc/                        # runtime configuration files
+*   var/                        # runtime locks, logfiles etc.
+*   tmp/                        # any tmp work script and programs can use
+**  opt/                        # optional external modules 
+        OB-4.1.2/                 # TBD during the configure stage
+        log4cpp-0.3.4b/
+        cppunit-1.8.0/
+        miriad/                 # (could also live else on /)
+        pgplot/                 # though pgplot also lives inside miriad
+	...
+
+$CARMA_PKG/                     # directory with all your external package tar balls 
+
+$CARMA_TOOLS/                   # directory with all the compiled external packages 
+
+\end{verbatim}
+\normalsize
+
+\newpage
+
+\section{Code Building}
+
+\subsection{Overview}
+
+The build system must be able to handle the various modes
+in which we will configure and use the CARMA code. We plan to do this during the
+final run-time configuration, 
+not the initial configuration and compiling. This has the advantage that any executable or
+library can in principle be used on any {\bf computer type} we have,
+but its behavior change willl depend on a run-time configuration.
+
+The build procedure is basically the following (the script \verb+conf/install_all+
+will normally be used with the appropriate options):
+
+\begin{enumerate}
+\item
+obtain the CARMA code, via CVS (CVS tags are used to get certain releases or branches)
+(``{\tt cvs co carma}'')
+\item
+configure the code and determine which alien packages were missing.
+\newline
+(``{\tt configure --with-PACKAGE-dir=DIR}'')
+\item
+install missing alien packages (each alien package is different, but
+basically something like``{\tt configure; make ; make install}'')
+\item
+compile all the carma libraries and executables, install all the documentation
+(``{\tt make all}'')
+\item
+configure the environment for the particular {\bf computer type} (and subtype) choosen
+\end{enumerate}
+
+Here are some examples how the {\tt install\_all} script can be used to
+build a system. Since currently only builds from CVS are possible, a CVSROOT
+environment variable is required (or use the {\tt cvsroot=} command line parameter).
+\begin{itemize}
+
+\item
+CARMA as well as CARMA\_TOOLS are installed in the same directory.
+This is not really recommended.
+
+\footnotesize\begin{verbatim}
+install_all carma=/home/carma carma_tools=/home/carma
+\end{verbatim}\normalsize
+
+\item
+CARMA\_TOOLS is installed, though a dummy CARMA environment is needed to do this. It can
+be discarded afterwards
+
+\footnotesize\begin{verbatim}
+install_all carma=/tmp/carma_tmp carma_tools=/home/carma_tools do_carma=0
+rm -rf carma_tmp
+\end{verbatim}\normalsize
+
+
+\item
+CARMA is installed, and a previously installed 
+CARMA\_TOOLS is used.
+
+\footnotesize\begin{verbatim}
+install_all carma=/home/carma carma_tools=/home/carma_tools do_tools=0
+\end{verbatim}\normalsize
+
+
+\end{itemize}
+
+Reconfiguring a computer to switch types is not foreseen, but it may very
+well happen that subtypes (e.g. computers in BIMA9 may be replaced, with maybe
+even one that was in OVRO6 or SZA8).
+
+It is proposed that all CARMA binaries accept the command line option
+{\tt --help} to present some form of reminder of what it does, and what
+the other command line options (if any) are. Those that use 
+{\tt carma::Program} class already get this for free, but a number
+of script and tools should adhere to the same uniform standard
+of supplying some minimal form of this type of {\it inline help}.
+
+\subsection{configure}
+
+We use GNU {\tt autoconf} to configure the CARMA tree for a particular
+setting of packages. For this we write a {\tt configure.in} file, with
+directives that a program  {\tt autoconf} will transform into a shell script
+{\tt configure}. This script will then investigate your environment for
+the presence/absence of things such as compiler features, packages, etc.etc.
+Based on this it will transform user written files such as 
+{\tt Makefile.in} into {\tt Makefile},  {\tt carma.h.in} into {\tt carma} etc.etc.
+such that all system dependant settings are determined, and a {\tt make} can now
+proceed.
+
+\footnotesize
+\begin{verbatim}
+% configure --help
+...
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+
+  --with-all-pkg=DIR      set a default directory prefix for all packages (none)
+  --with-carma-pkg=DIR    Directory where carma_pkg with tar balls is located
+  --with-pgplot-dir=DIR   Directory where PGPLOT was installed  (or use: $PGPLOT_DIR)
+  --with-orbacus-dir=DIR  Directory where ORBACUS was installed (or use: $ORBACUS_DIR)
+  ...
+
+  --with-carma=CARMA      re-use an existing $CARMA tree that is not this one to make CARMADEV
+
+  --with-debug            Turn debugging on (default is optimized)
+  --with-cppflags         extra C++ flags..
+  --with-cxxflags
+  --with-cflags
+  --with-ldflags
+
+  --with-doxygen
+
+  --enable-offline        no hardware connected, run in emulation mode where applicable
+
+\end{verbatim}
+\normalsize           %$
+
+
+The normal behavior of resolving the location of an alien package is, 
+from highest priority to lowest:
+\begin{enumerate}
+\item
+an option to configure, e.g. {\tt --with-orbacus-dir=/tmp/orbacus}
+\item
+an environment variable (left over from a previous CARMA, e.g. {\tt ORBACUS\_DIR})
+\item
+pass a global default option to configure, e.g. {\tt --with-all-pkg=/opt/carma\_pkg}
+\item
+a number of reasonable predefined search locations by autoconf,
+e.g. {\tt /usr/local/orbacus, /usr/orbacus, /home/orbacus}
+
+\end{enumerate}
+
+\subsection{Build process}
+
+After configuration and setting up the (shell) environment , the top level
+Makefile will hierarchicallly call all Makefile below, as determined
+by each Makefile. This means that on each (module) level, the owner of that
+Makefile must ensure that for example a ``{\tt make clean}'' command
+not only cleans what needs to be cleaned in the current directory, but also
+below. The follow standard makefile targets are used for
+this tree walk process:
+
+\begin{verbatim}
+  all         builds, in the correct order, the libs, bins, includes, and tests
+
+  libs        normally the first tree walk, where the libraries are built
+  bins        normally the second walk, building binaries
+  tests       compiles and runs all the tests
+  include     include files to be copied to CARMA/include
+  doc         any non-doxygen things n
+  clean       clean up files to ensure a clean rebuild
+\end{verbatim}
+
+Note that these also push their products (bin, lib, inc) into the respective
+locations, not just locally build them. There will be useful shortcuts for
+just local building.
+
+%NEW
+\subsection{Usage cases for patching releases}
+
+Given the CVS development of CARMA (see below) we will generally
+have a few versions of CARMA, of which one
+any can be {\it activated}. Assuming we
+have a generic {\tt /carma} mountpoint from which the CARMA system
+is loaded, the root of this tree might look as follows:
+
+
+\begin{verbatim}
+/carma/current->          a symlink to the current version (e.g. 1.2.1)
+      /1.2.0              Release right after the branch
+      /1.2.1              current Release  (i.e. CARMA=carma/1.2.1)
+
+      /1.2                Release HEAD (to test patch level updates)
+
+      /1.3.0              Development, first one after the branch
+      /1.3.1              Development, first (tagged) patch
+      /1.3.2              Development, second (tagged) patch
+
+      /cvs                Development HEAD, from which versions are branched/tagged
+
+      /tools              the default installed carma_tools
+
+\end{verbatim}
+
+\begin{enumerate}
+
+\item
+{\it Problem in the Development, not in the Release:}
+\newline
+This is probably the easiest case for developers, since observers are
+not directly affected.
+Presumably this also means the problem was in the HEAD of the Development,
+though that may have to be confirmed.
+If somehow a Development version was used for 
+critical observing, and the solution to the problem is
+known, a temporarey branch could be created for this that will be merged
+back into the HEAD later.
+
+\item
+{\it Problem in the Release, not in the Development:}
+\newline
+This is also a relatively easy case, but does affect observing
+directly. If the problem is due to something that
+had been fixed already in the Development, it ought to be backported to the
+Release, using CVS. The Release then needs to be tested and upgraded
+to the next patchlevel.
+In the above example the Release
+will become 1.2.2 and the Development stays where it is. 
+
+
+\item
+{\it Problem in the Release, as well as the Development:}
+\newline
+This is the more general and difficult case to handle. It affects
+both observing and development, and depending on the severity,
+different routes may be taken.
+In some sense, it is up to the
+acting engineer if they want to fix it in the Release or in the
+Development. For very serious problems one should consider fixing
+the Development, and branch a new Release, but if the Development
+was still too far away from a Release branch, the problem
+should be solved in the Release head, tested and incremented
+to 1.2.2 in the above example. The affected files should then
+be merged into the Development mainline, at which time their
+patch level can be incremented. 
+
+
+\end{enumerate}
+
+
+% As part of the tests, 
+
+\section{Alien Packages : CARMA\_PKG}
+
+We identified many already existing packages, most of them open
+source, that we will be using for CARMA.  We store them as
+(compressed) tar balls in a directory referred to as {\tt
+\$CARMA\_PKG}.  Examples of this are Orbacus, log4pp, PGPLOT, libwcs,
+etc.etc.  The build system will be able to automatically detect if
+they already are present on the system, and happily assume
+those. Since it is a fairly large (and still growing) collection, the
+build system prefers to place them in one common location referred to
+as {\tt \$CARMA\_TOOLS}.
+
+Currently used are:
+
+\begin{enumerate}
+
+\item
+{\tt c++}: gnu compiler suite (we designate a specific version to be working, currently 3.2.2)
+This in case your development machine does not have the correct version, and there
+is a compiler version conflict.
+\item
+{\tt orbacus}: CORBA/IDL (commercial)
+
+%  should we note here how IDL file names turn into CC files?
+
+\item
+{\tt notify}: CORBA notifications (commercial)
+
+\item
+{\tt log4cpp}: logging
+
+\item
+{\tt cppunit}: unit testing
+
+\item
+{\tt janz}: CAN bus drivers (commercial)
+
+\item
+{\tt gsl}: Gnu Scientific Library, for numerical work 
+
+\item
+{\tt db}: Berkeley db. needed by CORBA's notification services
+
+\item
+{\tt xerces-c}: XML library
+
+\item
+{\tt boost}: a set of peer-reviewed portable C++ source libraries. We 
+are starting to use {\it some} of this.
+
+% more to come ....
+
+%\item
+%{\tt }
+
+\end{enumerate}
+
+As mentioned before, the directory {\tt \$CARMA\_PKG}
+contains all the external packages we need to fully build CARMA
+from scratch, assuming a reasonably well populated linux box
+with development tool installed.
+This external package repository needs to be kept in sync with the
+master site (OVRO), for which we use
+use an rsync based script, {\tt CARMA/conf/carma-package-sync}.
+
+
+\footnotesize\begin{verbatim}
+   $CARMA/conf/carma-package-sync}.
+\end{verbatim}\normalsize    %$
+
+
+Two configuration files are currently used to control the location and availability
+of alien packages:
+
+\footnotesize
+\begin{verbatim}
+
+# File:    conf/etc/sites.dir
+#   SITE directory, with caching locations for packages
+#   see packages.dir for package information
+#
+# Columns:
+# 1: your site name
+# 2: FQDN
+# 3: carma_pkg root directory
+#
+#   this special one is the master, the rest are all slaves
+#   to be updated with rsync (or some mirroring tool of your choice)
+master  cvs.ovro.caltech.edu        /sw/carma_pkg
+#
+cdrom   localhost                   /mnt/cdrom
+home    localhost                   /home/carma_pkg
+ovro    cvs.ovro.caltech.edu        /sw/carma_pkg
+umd     grus.astro.umd.edu          /n/grus/carma_pkg
+uiuc    beren.ncsa.uiuc.edu         /appl/beren/carma_sw/carma_pkg
+bky     astro.berkeley.edu          /tmp/carma_pkg
+uchi    polestar.uchicago.edu       /tmp/carma_pkg
+
+# File:    conf/etc/packages.dir
+# Purpose: optional package configuration management
+#
+#   packagename  URLfmt   version       size-source (MB)  size-compile (MB)  size-install (MB)
+#
+blitz++  http://www.oonumerics.org/blitz/download/releases//blitz-%s.tar.gz       0.6   0   0     0
+cfitsio  ftp://heasarc.gsfc.nasa.gov/software/fitsio/c/cfitsio%s.tar.gz          2430   0   0     0
+pgplot   ftp://ftp.astro.caltech.edu/pub/pgplot/pgplot%s.tar.gz                   522   0   0     0
+wcstools ftp://cfa-ftp.harvard.edu/pub/gsc/WCSTools/wcstools-%s.tar.gz          3.1.3   0   0     0
+orbacus  carma://OB-%s.tar.gz                                                   4.1.2   3   313   82
+erit     carma://erit-%s.tar.gz                                                   x.y   0   0     0
+cxxtest  http://telia.dl.sourceforge.net/sourceforge/cxxtest/cxxtest-%s.tgz     2.8.0   0   0     0
+cppunit  http://telia.dl.sourceforge.net/sourceforge/cppunit/cppunit-%s.tar.gz  1.8.0   0   0     0
+log4cpp  http://telia.dl.sourceforge.net/sourceforge/log4cpp/log4cpp-%s.tar.gz  0.3.4b  0   0     0
+
+
+
+\end{verbatim} 
+\normalsize
+
+
+The build process treats these modules as "alien and hostile",
+i.e. we probably cannot expect them to be deeply integrated into our
+build process (and probably don't want to),
+and most of them will have to be pre-installed before
+you can fully configure and compile 'carma'. A simple 'build' procedure is
+to be available for those, and before carma is even built the
+functionality of these modules will be tested (e.g. if they link and
+run as expected).
+
+It may however be important that (some of) these modules can be compiled
+in a mode where tools such as debuggers, profilers and memory leak
+detectors can be used.
+
+The Carma Software Toolkit" lists a number of components, some of them
+are needed to compile and link carma code, others are useful tools to
+have around (e.g. the recently mentioned valgrind tool to find memory
+leaks in your code, and warn of uninitialized variables)
+
+\subsection{Package Synchronization}
+
+Since all sites must have a reasonably up-to-date {\tt \$CARMA\_PKG} directory,
+a script is available that can be used (even on a nighly basis) to keep
+your local site up to date with the master. See CARMA/conf/carma-package-sync
+for details.
+
+\subsection{Package Issues}
+
+
+\begin{itemize}
+
+\item some packages don't use our {.cc,h} extensions (xerces: .cpp   .hpp)
+
+\item some packages don't use -rpath, so we may have to use 
+LD\_LIBRARY\_PATH\footnote{See also the discussion on {\tt http://www.visi.com/~barr/ldpath.html}}
+(Examples:     orbacus, xerces). Some packages are now starting to come 
+out with the -with-rpath configure flag!
+
+\item some packages may also be available via CVS (e.g. miriad), though this
+is left open to the configuration which one to use. The build system only
+supports the (stable) tar ball types.
+
+\item it could be  argued not to depend on locally built packages, as subtle
+compiler and/or flag differences can lead to badly linked code. Use the one
+that was built by one of the CARMA builds.
+
+IDL generated code, what to do about that
+
+\item the file CARMA/opt/README exemplifies the steps needed if a new package
+is added to CARMA\_PKG.
+
+\end{itemize}
+
+\subsection{Adding a new package}
+
+Here's a recipe how to add new things to this tree, we'll take
+the example of adding the janz drivers (private to us, we can't share
+them with the world):
+
+\begin{itemize}
+
+\item
+first untar and install the package in /tmp and if they use
+configure, use {\tt --prefix=/tmp/junk} and inspect the
+structure of what is deposited in {\tt /tmp/junk} if this is
+something that can live inside of {\tt \$CARMA\_TOOLS}. Most of the
+time this will translate 1-on-1, but there are cases (see
+e.g. {\tt db}) where our install will add a little twist.
+ 
+\item
+create the tar ball, and put it in {\tt \$CARMA\_PKG},
+say {\tt janz-1.0.tar.gz}
+(the tar file should ideally create a directory with that version
+embedded in the name, e.g. {\tt janz-1.0})
+
+\item 
+add a line to {\tt conf/etc/packages.dir} ; 
+since it's "our private" probably looks
+like
+\begin{verbatim}
+        janz    carma://janz-%s.tar.gz          1.0    0 0 0
+\end{verbatim}
+  [don't worry about the last 3 digits for now]
+\newline
+Although by default we always read from  {\tt \$CARMA\_PKG},
+if it is a public package, it is useful to reference it in
+the printf-style format in the 2nd column, and the current version
+in the 3rd column.
+
+\item 
+create a directory
+{\tt conf/opt/janz}, put an install script in there, and optionally
+a {\tt Makefile}, but at least make the install script such that it will
+install from scratch. I have some thoughts how to allow all the
+install's listen to some configure items, so that using a common
+odd compiler will be standardized, etc.etc. but for now, you can use
+the model like i use for cppunit or so.
+
+\item                                                                                       
+test it out by typing
+\begin{verbatim}                                                                                       
+        install
+\end{verbatim}
+or
+\begin{verbatim}
+        make install
+\end{verbatim}
+  or whatever you come up with (some general recipe to be given still)
+
+\item                                                                                       
+add the appropriate line to the carma install script
+\begin{verbatim}                                                                                   
+        conf/install_all
+\end{verbatim}
+\item                                                                                       
+add some documentation to the Carma Software Toolkit page 
+\begin{verbatim}
+        doc/cst.html
+\end{verbatim}
+\end{itemize}
+
+%NEW
+\subsection{Testing new versions of a package}
+
+If a new version of a package has been released, it needs to be plugged
+into CARMA\_TOOLS. In general this will be a rare case, and we
+currently don't have a simple command to do this. 
+
+The normal
+procedure for a foreign package to be installed is
+\begin{verbatim}
+  cd $CARMA/conf/opt/PACKAGE
+  make all
+\end{verbatim} %$
+
+where the local package {\tt Makefile} has the appropriate defaults to
+install a particular version of that package.
+
+
+\section{Run time configuration}
+
+A directory {\tt \$CARMA/etc} is created during the installation
+process, in which the type of CARMA computer is encoded, and from
+which the software determines its run-time behavior. ???
+Nothing has been specified on this.
+
+%NEW
+\section{Nightly testing and Tinderbox}
+
+Nightly (and ``hourly'' and ``weekly'' where appropriate) 
+testing of CARMA occurs through a package called 
+tinderbox, and runs on {\tt tinderbox.ovro.caltech.edu}. It will
+build the software from scratch
+
+\newpage
+
+\section{CVS practices}
+
+Source code management is done with CVS.  
+Since CVS is not a replacement
+for communication, a number of important ground rules should be adhered
+to. Here are some tips and practices we like to follow:
+
+\begin{enumerate}
+\item
+The common CVS-based environment variables developers will need 
+probably will look something as follows:
+
+\footnotesize \begin{verbatim}
+
+	setenv CVSROOT     :ext:$USER@cvs.ovro.caltech.edu:/sw/cvscarma
+	setenv CVS_RSH     ssh
+	setenv CVS_EDITOR  micro-emacs
+\end{verbatim}  \normalsize   %$
+
+\item
+make sure your system clock is reasonably well up to date.  E.g.
+\footnotesize \begin{verbatim}
+        ntpdate -u ns1.umd.edu
+   or
+        rdate -s earth.astro.umd.edu
+\end{verbatim} \normalsize
+particularly for those who travel with laptops, there is some advantage
+of keeping your system time in UT, instead of some local timezone.
+\item
+We will use the main line for development, and branches for releases and private
+work. Tag names and Branch Tag names are controlled in the following way:
+ (cf. Figure ...):
+
+\begin{verbatim}
+  official branch tag names:         Release_1_4
+  official tag names:                Release_1_4_1     
+                                     Develop_1_3_19
+  private branch tag names:          teuben_2         
+\end{verbatim}
+with ``MAJOR\_MINOR'' only used for branch tag names, and 
+``MAJOR\_MINOR\_PATCH''  for tag names that represent stable versions
+along the branches.
+
+\item
+we will strive for a "stable" release every weekend, which is when a patch level
+can be potentially increased. When certain predetermined milestones are reached,
+a Release is branched off. See Table~\ref{t:timeline}.
+
+\item
+
+\end{enumerate}
+
+\subsection{Versioning}
+
+The proposed CVS versioning scheme for CARMA is the following:
+
+\begin{enumerate}
+\item
+we use a version numbering scheme MAJOR.MINOR.PATCH, e.g. 1.3.18
+If the MINOR is even, it's a {\bf Release}, if it's odd, it's the 
+(main line, HEAD) {\bf Development}. 
+The MAJOR signifies major milestones, as exemplified in
+Figure 1.
+\item
+There are 3 ways to test code: you can (CVS) branch the code, and merge
+back if the experiment was good. You can play in your own CVS sandbox,
+use a LocalMakefile, and tell nobody about it (or you could, but because
+of the LocalMakefile it will not be compiled by the system), or you
+could use {\tt trial/}.
+\item
+the CVS HEAD (main trunk) will compile and run as much as possible, 
+i.e. possibly unstable experiments should be done in branches,
+or just not committed.
+\item
+a nightly build will determine if the system is stable. ``hourly''
+builds are available through {\tt tinderbox.ovro.caltech.edu/tinderbox}.
+If the system is stable, the patch number is incremented, and
+tagged, e.g.:
+\footnotesize
+\begin{verbatim}
+
+      carma_set_version 1.3.19
+      cvs ci -m "new version" 
+      cvs tag Develop_1_3_19
+\end{verbatim}
+\normalsize
+
+   for incrementing version 1.3.18 to 1.3.19.
+
+\item
+When a stable "Develop" has reached the milestones\footnote{see Table 1}
+for a "Release",
+it will be branched and tagged as such. For example, suppose
+1.3.19 was deemed ok, the MINOR release number (3 in this case)
+is incremented 1 for a "even" release branch:
+
+\footnotesize
+\begin{verbatim}
+      cvs rtag -b Release_1_4 carma
+
+      cvs checkout -r Release_1_4  -d carma_1.4 carma
+      cd carma_1.4
+      carma_set_version  1.4.0
+      cvs ci -m "new Release 1.4" 
+      cvs tag Release_1_4_0
+
+      cvs checkout -d carma_1.5
+      cd carma_1.5
+      carma_set_version  1.5.0
+      cvs ci -m "new Develop 1.5" 
+      cvs tag Develop_1_5_0
+\end{verbatim}
+\normalsize            %$
+
+\item
+When changing the MAJOR release, we will change all CVS revision numbers.
+For example when we decide that the Develop 1.5.x series will not end
+in Release 1.6, but in Release 2.0 (with a starting Develop 2.1.0 version),
+we do, for example:\footnote{i guess it was never good to start with version 0.x}
+
+\footnotesize
+\begin{verbatim}
+       cvs tag Develop_1_5_38
+       cvs commit -r 2.0                  # reset CVS revision numbers to 2.0
+       cvs update -A -f -R                # remove sticky tags
+       cvs tag -b Release_2_0             # create the new branch
+       ...
+       carma_set_version 2.1.0            # back in main line
+       cvs ci ...
+       cvs tag Develop_2_1_0
+       ...
+\end{verbatim}
+\normalsize
+
+\item
+When you make a private branch for some experiment, which you expect to succeed
+and be merged back into the main line, the following may be a useful procedure
+
+\footnotesize\begin{verbatim}
+
+       cd $CARMA/someplace                 # <someplace> could be the root, or any branch
+       cvs tag -b exp1                     # create the branch with this tagname
+       cvs update -r exp1                  # switch current sandbox to the branched one
+       cvs tag my_exp1                     # tag the start of the branch (not really needed)
+\end{verbatim}\normalsize %$
+At this stage this branch can be commited and updated, as if it was a normal sandbox.
+
+Finally the merging will be done from the MAIN line, i.e.
+\footnotesize\begin{verbatim}
+this:
+        cvs checkout carma
+        cd carma
+        cvs update -j exp1
+\end{verbatim}\normalsize
+Now observe all the merging, and notice if there are any conflicts reported. These
+need to be cleared before the final commit (of this merge) is done to the mainline.
+You can also work within the same sandbox, and switch revisions using update:
+
+\footnotesize\begin{verbatim}
+or this:
+        cvs update -r HEAD                  # switch to the HEAD, or
+        cvs update -A                       # switch to the HEAD
+        cvs update -j exp1                  # merge in the branch (could see conflicts)
+        <edit>                              # take care of all conflicts
+\end{verbatim}\normalsize
+and in either way
+\footnotesize
+\begin{verbatim}
+        cvs commit
+\end{verbatim}
+\normalsize
+
+\footnotesize
+\begin{verbatim}
+--------------------------------------------------------------------------------
+>Phase 1:  Branch and Develop in the branch
+>------------------------------------------
+>
+>1% cvs rtag -b TAGNAME carma                do a repository tagged branch
+>2% cvs co -r TAGNAME -d carma_1 carma       check out as the branch
+>3% cd carma_1                               go there, and
+>4% conf/install_all ....                    install this version
+>5% source carma_start.csh                   activate it in your shell
+>...                                         edit and compile/test
+>6% cvs ci                                   check-in newly developed
+>7% cvs up                                   update from fellow branchers
+>
+>
+>Phase 2: Merge the branch from a fresh mainline
+>-----------------------------------------------
+>
+>11% cvs co -d carma_2 carma                 checkout the mainline
+>12% cd carma_2                              go there
+>13% cvs up -j TAGNAME                       merge the branched code
+>...                                         resolve conflicts
+>14% conf/install_all ....                   install it
+>...                                         confirm it all works
+>15% cvs ci                                  do the final check-in
+>16%                                         bless this as a release?
+>
+>
+>
+>comments:
+>
+>1. First note that I used the rtag command in 1% instead of the tag 
+>command (the latter can be used to tag subtrees of your module,
+>it seemed to me to default it to the whole repository makes more
+>sense).
+
+Both rtag and tag can tag/branch the whole tree or subtrees.
+There are pros and cons to tagging the whole tree.  These are often
+the corresponding cons and pros of tagging just a subtree.  Tagging
+the whole tree isolates you from all main line changes while you work
+on your branch.  That can be good, but you can't stay isloated
+forever.  I tend to find it easier to branch just the relevant
+subtree(s) so that I can keep the rest of the tree current.  That way
+I don't get any (or as many) big surprises when I merge back to the
+mainline.
+
+There are a couple of subtle differences between rtag and tag...
+                                                                                
+A) "cvs rtag" (without the -r option) tags/branches the HEAD whereas
+"cvs tag" tags/branches the revision your working copy is based on.
+Since most of us will probably branch from the HEAD (at least until we
+get into maintenance mode), this difference will probably be moot.
+                                                                                
+B) "cvs rtag" tags/branches modules whereas "cvs tag" tags/branches
+directories.  Directories are modules, but modules are not necessarily
+directories (modules can be defined in the CVSROOT/modules file).
+Since we don't really make use of the modules file (yet), this
+difference is also likely to be moot (for now).
+
+>2. As for naming conventions of the TAGNAME, I suggest the branch leader can
+>use his last name, with a numeric "version", Teuben_2 was my 2nd branch.
+>Namespace is important, once you've choosen a branch name, it's in your
+>CVSROOT forever (to be shared with other modules).
+
+This is where I have some very strong opinions about how certain
+things should be done...
+                                                                                
+Because CVS branches and tags share the same namespace (actually
+a branch name *is* a tag name), I recommend that we adopt and strictly
+adhere to a branch/tag naming convention that clearly distinguishes
+between branch tags and non-branch tags.  One way that I've done this
+in past projects is to append "-branch" to all branch names.  Another
+approach I've seen is to use all lower case for branch tags and all
+upper (or mixed) case for non-branch tags.  I don't care so much about
+which approach we adopt; I just care that we do adopt one.
+                                                                                
+Because CVS has no built-in symbolic way of refering to a branch's
+branch point, I recommend applying a "root-of-<branchname>" tag to the
+branch point before branching to make it easier to determine later
+what changes (if any) have been made on a branch.
+                                                                                
+I also recommend using "merge out" and "merge in" tags.  This makes it
+easier to do multiple merges (i.e. merge, develop, then merge again)
+from a branch.  It also makes for nice cvsgraph trees if a naming
+convention is followed.  For example, look at the purple "merge lines"
+in...
+                                                                                
+http://www.akhphd.au.dk/~bertho/cvsgraph/#example
+                                                                                
+I would prefer to use username instead of last name so it will match
+up with CVS "authors" (to make mental associations easier).
+                                                                                
+I prefer lower case for branches since it's easier to type.  Non-branch
+tags are not typed very often during development so I don't mind
+having them be upper or mixed case.
+                                                                                 
+>3. In 2% we then checkout a whole new tree, in that branch, in which
+>the development occurs. After all the branch developers agree things
+>look sunny (Andy helped me out by provided a branch tinderbox)
+
+While this is a valid approach, I find it easier to do "cvs up -r
+<branch-name>" in the branched subtree(s) of my local working copy.
+Having multiple working copies makes it too easy to create my own
+conflicts. :-)
+                                                                                
+>4. The merge has to occur from the mainline, so in 11% we first checkout
+>a fresh copy of carma (which we know is stable, since we keep our mainline
+>stable as much as possible). Before we install this (which we know works),
+>we merge in the branch in 13%. Pay particular attention to any 
+>conflicts. So perhaps a non-applying update should be done first:
+>
+>       12.5% cvs -n -q up -j TAGNAME
+>
+>to test how many conflicts, if any, there are. But remember, we're doing
+>this in a sandbox, so nothing is lost.  If things look good, go ahead
+>and install, followed by some fixes, after which the changes can now be
+>mass-checked in (15%).
+
+Here, too, I prefer to do the work in the same local working copy.
+When I want to merge the branch changes to the main line, I go to the
+relevant subtree and do "cvs up -A -j <branch-name>".  That updates
+the subtree to the mainline and merges in the changes from <branch-name>.
+Since the rest of my tree is already (i.e. has always been) on the
+mainline, I'm almost done :-).
+                                                                                
+I don't think the 12.5 step is really very useful.  If it shows
+that there are conflicts, so what?  We should not spend time trying to
+eliminate conflicts before we merge; instead we should spend time
+resolving conflicts after we merge (but before we commit, of course).
+Doing a "cvs -nq up" after the merge to see which files have/had
+conflicts would be more useful.  We should strive to minimize
+conflicts in the first place through good communication, but once we
+have them we should let the tool do its job.
+
+>5. This last stage of "integration" can be quite involved, and if you
+>don't check the compilation and tests properly, you may wind up with a
+>broken build after this last commit.
+
+By only branching the relevant subtree, the last stage of integration
+is minimized because you've been integrating with other mainline
+changes all along.  It is more of a "pay-as-you-go" approach vs a
+"pay-the-piper-later" approach.
+                                                                       
+                                                                                
+If the mainline build works in your local copy before you commit, the
+only thing I can think of that would break the build after you commit
+is if your local working copy is out of date.  This can happen without
+any branching/merging; we *always* need to be careful about that.
+
+>6. When this all has worked, the release should be tagged, and the VERSION
+>file should be incremented.
+
+While I agree that the new version of the formerly-branched-now-merged
+subtree should be tagged (with a "merge in" tag), I'm not convinced
+that the whole carma tree should be tagged and the VERSION file
+incremented.  IOW, just because changes were originally made on a
+branch rather than directly on the mainline, I don't think
+incrementing VERSION will always be warranted.
+
+--------------------------------------------------------------------------------
+\end{verbatim}
+\normalsize
+
+% -- better do this experiment again
+% QUESTION:  how does one know if a branch has been merged, and not do it again..... I was
+% able to mess it up by twice merging.....but with interference from the third branch
+
+% cvs -d :ext:teuben@harkless.ovro.caltech.edu:/sw/cvscarma co -r Teuben_1 -d carma_teuben_1 carma 
+
+
+\end{enumerate}
+
+\begin{figure}[htb!]
+\epsffile{branching.eps}
+\caption{Branching Model: Mainline (HEAD) in blue, dead-end Release branches in red,
+and experimental branches (dead-end of merged) in black. Branch tag name have two
+digits in them (major and minor version), normal tag names carry three digits
+(major, minor and  patch level)}
+\label{f:branching}
+\end{figure}
+
+
+\begin{table}[htbp]
+\begin{tabular}{|l|l|l|}\hline\hline
+Version:	   &   Milestones:					&	Time   \\
+\hline
+0.1		&	getting the directory structure right           &                \\
+0.2 Release	&	build and test infrastructure in place		&	dec 2002 \\
+0.3		&	command line interface, basic library elements  &               \\
+0.4 Release     &                                                       & \\
+0.5             & & \\
+0.6 Release     & & \\
+0.7             & & \\
+0.8 Release     & & \\
+0.9             & & \\
+& & \\
+\hline 
+1.0 Release	&	Basic array control  &  July 2003\\
+1.2 Release	&	 & \\
+1.4 Release	&	 & \\
+1.6 Release	&	 & \\
+& & \\
+\hline
+2.0 Release	&	SZA & \\
+& & \\
+\hline
+3.0 Release	&	BIMA  & \\
+& & \\
+\hline
+4.0 Release	&	CFL  & \\
+\hline
+\end{tabular}
+\caption{Example release timeline for CARMA with rough milestones (details TBD)}
+\label{t:timeline}
+\end{table}
+
+\section{Hardware Emulators}
+
+Since much code is developed off-site, we must be able to emulate certain
+pieces of the hardware in order to excersize as much of the software as possible.
+Little is determined how this is going to happen at this time. The weather system
+can be used to easily implement a functional emulator. We need a list of 
+the hardware components that are needed, and if they follow this simple model
+(simple client writing in shared memory).
+
+\section{Bug Reporting}
+
+A {\tt bugzilla} repository has been setup to handle bug reporting. All developers
+will have an account, and can setup setup products or components. See
+{\tt http://www.mmarray.org/bugzilla}.
+
+\subsection{Some notes on 'Products', 'Components', and bugs}
+
+'Products' are bugzilla's top level software structure.  'Products' may
+be comprised of one or more 'Components' but not other 'Products'.
+'Components' do not have subcomponents; its a two-level hierarchy.  In
+this sense, MS Office would be considered a 'Product' and Word and Excel
+would be considered 'Components' of MS Office.
+
+We will use one Product called {\bf Carma}, with each package a separate
+{\bf Component}. If relevant, each alien package can become a 
+Product.
+
+Regular bugzilla users, such as yourselves, can be granted permission 
+to edit 'Products' and 'Components'.  This is how bugzilla is currently
+configured.  I have not figured out a way to grant editing permissions
+for 'Products' only or 'Components' only. 
+
+You may create 'Products' and 'Components' as you see fit.  Products are
+owned by whomever creates the Product.  You may designate any valid 
+bugzilla user as the owner of a 'Component'.  (New 'Products' and 
+'Components' should show up immediately if your browser cache is kept 
+empty.)  Valid bugzilla users are identified by the email address they 
+use to log in.  I have not figured out a way to restrict ownership to 
+whomever creates the 'Component'.
+
+You may also create 'Components' for a 'Product' that someone else
+created.  I have not figured out a way to restrict 'Component' creation
+and editing permissions to whomever created the associated 'Product'.
+
+You may issue bugs against any 'Product' or 'Component'.  Once
+created, only the assignor and assignee of a bug may edit that bug.
+Only the assignor can remove a bug.
+
+*** 'Products' and 'Components' for which no bugs have been issued
+may be deleted by ANYONE. You may want to issue a dummy bug against
+newly created 'Products' or 'Components' to more permanently establish
+their existance. ***
+
+*** Nobody can delete a 'Product' or 'Component' for which bugs 
+remain unresolved. ***
+
+One alternative to the current configuration is to deny regular users 
+the permission to edit 'Products' and 'Components' altogether.  In that 
+case, users with sufficient bugzilla administrative permissions would 
+be responsible for the 'Products'/'Components' structure.  
+
+% TODO:
+% If anyone with Bugzilla experience has an idea about how to refine the
+% current permissions configuration or has a strong opinions about
+% ideal permissions configurations, please respond to the group.
+
+
+\section{Managing multiple platforms}
+
+We do not plan to add support to maintain multiple platforms
+within the same source tree. The CVS philosphy is that one simply
+checks out a new tree for this. This does however imply that given
+that multiple sandboxes will be present, the CARMA environment
+(this includes various configuration files and daemons that may be
+running) must be cleaned up gently to a zero state, and a new
+one started up.
+
+% CST: {\tt http://www.astro.umd.edu/$\tilde{\ }$teuben/carma}
+% better is to use
+% CST: \verb+http://www.astro.umd.edu/~teuben/carma+
+
+
+\section{Programming}
+
+\subsection{Programming Style Guidelines}
+
+We encourage programmers to follow some general programming 
+guidelines to give our code a consistent look and feel, and
+make it easy for anybody to maintain and upgrade the system.
+The full document of these guidelines is available in HTML form on\newline
+{\tt http://www.mmarray.org/workinggroups/computing/cppstyle.html}, \newline
+and covers
+C++ style guidelines, naming conventions for files, classes, variables etc.
+From here on we will refer to this as the {\it Style Guide}.
+The code review process (see below) is also supposed to help enforcing
+a reasonable degree of uniformity of the code.
+The specifics how documentation is added to the code is however
+covered below.
+
+Source code files in CARMA will use the following extensions:
+
+\footnotesize
+\begin{verbatim}
+       .cc              C++ code   (inlines are in .h files)
+       .c               legacy C code
+       .h               C or C++ headers  (also: extern "C" if needed)
+
+       .idl             Interface Definition Language
+       .java            Java code
+
+
+       .f               legacy fortran code (could also have .for)
+       .inc             fortran include file (could also have .h)
+
+\end{verbatim}
+\normalsize
+
+\subsection{Documention: DOXYGEN}
+
+Code will be documented using the {\tt doxygen} inline tag system [3],
+which will generate the online documentation that will be the main
+documentation center for programmers. Our file headers will thus
+be somewhat structured and contain the following items:
+\begin{itemize}
+\item \underline{CVS key tags:}  ({\tt \$key\$})
+\begin{itemize}
+\item[{\bf \$Id\$}]
+this is standard, and catches in one line the last CVS commit time, revision, 
+tagname, last person edited, etc.
+\item[{\bf \$CarmaCopyright\$}]
+we actually still have to define this :-)    
+\end{itemize}
+
+\item \underline{doxygen tags:}
+We will use the @ symbol
+(\verb+@tagname+, instead of \verb+\tagname+), and 
+especially note the following tags:
+\begin{itemize}
+\item[{\tt @author}]
+Full name of the person responsible for the code
+\item[{\tt  @reviewer}]
+The code reviewer, should eventually be there for all code
+\item[{\tt  @inspector}]
+Code inspector, only for critical code
+\item[{\tt @todo}]
+a list of things needed for final cleanup or future enhancements.
+Can also appear in the .cc files (perhaps even more likely).
+\end{itemize}
+
+\end{itemize}
+
+
+%
+%\begin{Question}
+%A separate document discusses proper doxygen tag in context of both
+%ICD (Interface Control Definition) and Implementation.
+%\end{Question}
+
+
+\begin{itemize}
+
+\item
+each class definition must have an associated documentation
+block summarizing the class as a whole block.  
+
+\item
+each public and protected function must have a documentation
+block.  Each block must use a {\tt @param} tag for each input parameter
+[even if it seems obvious].
+
+\item
+each documented function must use an {\tt @exception} 
+(or {\tt @throw}) tag for any exception that: 
+
+  \begin{itemize}
+  \item
+  is explicitly thrown by the function for any error that is 
+  possible during typical operation of the system.  This
+  excludes programmer errors.  It usually includes user errors,
+  function input errors, and system failures that could happen
+  from time to time.
+  \item
+  is documented with an {\tt @exception} tag for a another function
+  called by this function and is subsequently uncaught.  
+  [The rationale here is that the {\tt @exception} tag advises the user of 
+    problems they need to be prepared for.]
+
+  [April 30] See also Amar's exception proposal!
+  \end{itemize}
+  
+\item
+  use the brief mechanism, either explicitly with {\tt @brief} or
+  implicitly.  
+
+\item
+skip the use {\tt @return} only for accessor functions in which the
+return value is obvious from the function definition.  e.g.
+
+\footnotesize
+\begin{verbatim}
+
+      /**
+       * get the i-th antenna
+       * @param i  the index of the desired antenna
+       */
+      Antenna& getAntenna(unsigned int i);
+
+\end{verbatim}
+\normalsize
+
+
+\end{itemize}
+
+%
+%\begin{Question}
+%See the attached ``\verb+SillyAntenna{.h,cc}+''  for an example
+%of a class interface and implementation file
+%with the code style and documentation that we intend to use.
+%\end{Question}
+
+\subsection{Unit Testing} 
+
+A unit test should be written for each class or legacy API if we wrote
+a wrapper for it. {\tt CppUnit} has
+been choosen as the framework for testing our classes.
+For our legacy code a simple {\tt main()}
+can be defined, either in a separate source (preferred) or inline
+using {\tt \#ifdef TESTBED} (e.g. NEMO and MIRIAD). Such testing should
+occur inside subdirectories named {\tt Test} below the implementation
+modules. For us the purpose of a unit test is three fold:
+\begin{enumerate}
+\item ensure the class compiles and links (ok, trivial)
+\item be run through {\tt valgrind} to check if the code is leak free
+\item be run through {\tt gcov} to check if most code has been excersized
+% \item run it through {\tt gprof} to check performance (and/or {\tt cachegrind})
+\end{enumerate}
+
+
+%NEW
+\subsection{carma-runtest}
+
+It is strongly recommommended our classes are 'Unit Tested' with
+the cppunit toolkit. As a general rule they will output a string
+"OK" or "FAIL" to stdout/err.
+
+However, this is not the only type of testing that can occur. There
+are programs where the decision of PASS or FAIL is far more complex
+than checking for OK or FAIL as in the unit testing. A wrapper
+script that catches most of these cases , including Unit Testing,
+is called {\tt carma-test}. This script also
+spits out a slightly more verbose string
+that can be more reliably assembled (see e.g. the current output
+of the {\tt install-all} carma build script). 
+
+Basically {\tt carma-runtest} can run in two modes:
+\begin{enumerate}
+\item
+the output from the program has
+to match a string. This is useful for the simple cppunit type OK/FAIL
+math.
+
+\item
+client server setup and/or output has to match a file in more
+detail, see e.g. {\tt carma/util/Test/tProgram1.rt} or
+{\tt conf/opt/notify/notifyTest}
+
+\end{enumerate}
+
+\footnotesize\begin{verbatim}
+
+
+
+The syntax of calling {\tt carma-script} is either
+
+\footnotesize\begin{verbatim}
+   carma-runtest <label> "<one line output to grep>"  <executable> [optional args]
+\end{verbatim}\normalsize
+or
+\footnotesize\begin{verbatim}
+   carma-runtest <label> <output-file-with-output>    <executable> [optional args]
+\end{verbatim}\normalsize
+
+\subsection{Code Coverage}
+
+Although good commercial tools (e.g. {\tt purify} and {\tt TestCenter}) are available,
+we use the GNU compiler which comes with {\tt gcov}.
+This can be used quite effectively to evaluate code coverage. 
+Specifically, in {\tt gcov} the code is compiled with special flags
+{\tt -fprofile-arcs -ftest-coverage} (the Makefile's {\tt coverage} target
+will take care of this), after which {\tt gcov} can be run on any 
+.cc file to extract useful statistics. We consider the minimum fraction of all
+source code lines executed (the default in gcov) to be 75\%.
+\footnotesize
+\begin{verbatim}
+  info gcc gcov                  <-- good background information on gcov
+
+  make clean coverage            <== detailed syntax TBD
+  utLogger
+  gcov Logger.cc
+  gcov utLogger.cc
+\end{verbatim}
+\normalsize
+
+In addition, leak detectors such as {\tt valgrind} should be used to confirm 
+the unit test does not leak as the class is exercised. For high performance needs you
+can optionally use {\tt cachegrind} to evaluate your cache misses, or
+the standard Unix profiling techniques (gprof,...)
+\footnotesize
+\begin{verbatim}
+  make tests TESTS=utLogger       <== detailed syntax TBD
+  valgrind utLogger
+\end{verbatim}
+\normalsize
+
+
+\section{Peer Code Review}
+
+It is a common industry practice that code is reviewed and inspected,
+and we believe this will also be very beneficial for CARMA code.
+All code will be reviewed, though only critical code will also be
+inspected.
+
+After a programmer has finished the code (has been committed to
+CVS, compiles in the nightly compile suite, and has an associated
+functional unit test), the code is submitted for ``review'' to
+the Review Manager. For this the programmer has also assembled the output
+of {\tt valgrind} and {\tt gcov} on the unit test executable(s)
+into a file ``{\tt Review/}{\it ClassName}{\tt .review1}''
+\footnote{e.g. {\tt \$CARMA/carma/services/Review/Logger.review1}}.
+
+The Review Manager then assigns one or two reviewers
+to the code, giving the reviewer(s) a deadline to complete the review based
+on the LOC and the needs of dependent packages. The review results are
+passed back to the developer via CVS in the {\tt Review/} file(s).  
+The developer will make the required changes and resubmit for review (by the same
+reviewer) if need be. For critical code a code inspection will be added to the
+review, which requires the reviewer to have a more detailed look at the code
+itself. It is up to an agreement between developer and reviewer to allow
+the reviewer to add comment into the code via CVS, instead of using
+the {\tt Review/} file(s).
+
+The developer and reviewer should work out most code
+issues amongst themselves and then report to the Review Manager.
+If a code review results in a disagreement between
+developer and reviewer, another reviewer is added to break the tie. If
+that results in violent disagreement, the Review Manager will have
+to intervene.  
+The Review Manager is a rotating job, currently executed by Steve Scott.
+Progress of the review process is currently done by Colby Craybill, and
+will be available on the 
+web\footnote{\tt http://www.mmarray.org/workinggroups/computing/codeReviewStatus.html}.
+
+It is up to the discretion of the author of the code to request a re-review
+when sufficient code has been added or changed to request a new review.
+
+%
+%\begin{Question}
+%Q: as existing code is expanded, at some point a review
+%may be needed again. 
+%\end{Question}
+
+\newpage
+\subsection{Code submission checklist}
+
+In order for code to be submitted for review, the developer should prepare
+a few practical things (also check out the review and optional
+inspection checklist below of course):
+
+\begin{enumerate}
+\item
+  pass the NIGHTLY compile--and--run suite (``smoketest'') on ideally more than
+  one compiler/architecture (note: for Review Manager?).
+\item
+  The outcome of running {\tt valgrind} and {\tt gcov} on either the test
+  program(s) or unit test should be placed in a file 
+ {\tt Review/}{\it ClassName}{\tt .review1}.
+
+
+
+Also explicitly state which files belong to the review, normally just the two
+files {\it ClassName.\{h,cc\}}.
+
+\end{enumerate}
+
+\newpage
+\subsection{Code Review and Inspection checklist}
+
+Here is a summary of the steps the reviewer should consider in his report. Note
+that there are a few items at the end in case the Review includes a Code
+Inspection stage.
+
+\begin{enumerate}
+\item
+  Annotate your 
+  comments in a file {\tt Review/}{\it ClassName}{\tt .review}{\it N}, for each
+  review {\it N=1,2,3....}. The developer should have left notes on the outcome
+  of {\tt valgrind} and {\tt gcov} in the {\it N=1} file.
+
+\item
+ Does code adhere to the previously accepted design document?
+You should be able to do this by looking at the doxygen generated documentation,
+instead of looking at the individual .h or .cc file
+(with the right configuration, Doxygen will not show a
+link if a class is not documented).
+
+\item
+  Check the doxygen generated documentation (see also previous section):
+  \begin{enumerate}
+  \item
+    each class definition has an associated documentation
+    block summarizing the class as a whole block.  
+  \item
+    each public and protected function must have a documentation
+    block.  Each block must use a {\tt @param} tag for each input parameter
+    [even if it seems obvious].
+  \end{enumerate}
+\item
+  Does the code follow our {\it Style Guide}? Specifically 
+  the ones where we use the word {\bf must} occur in 27 out of 104 
+  cases:
+  \begin{enumerate}
+  \item
+    Naming Conventions  (Section 3: cases 1,2,3,5,8,12,15/25,28)
+  \item
+    Files (Section 4: cases 4,7,8,9,11,12)
+  \item
+    Statements (Section 5: cases 2,3,6,8,14,22,23,25,26,27)
+  \item
+    Layout and Comments (Section 6: cases 23,24,26)
+  \end{enumerate}
+  To paraphrase, the reviewer {\bf should} and {\bf can} also look 
+  at the remaining guidelines. Both the .h and .cc file(s) need to
+  be examined for this.
+
+
+%%%
+%------------------------------
+%After the review has passed, a code code inspection stage is highly
+%recommended, and  in fact mandatory for critical code.  Especially in
+%the beginning phases of the project programmers will likely learn
+%a lot from the practices of their peers, and aid us in achieving
+%a uniform code quality level. In addition, each new programmer in
+%the project should have his first few code submissions inspected.
+%Code inspection should be done by 2 people. Code inspection can
+%also argue about algorithms, although some of those details and for
+%example the choice of algorithm should probably have been discussed
+%on the mailing list before coding has commended.
+%------------------------------
+
+
+\item
+  includes a working unit test such that the class (or function set) 
+  can be exercised and passes the unit test as well as be 
+  reasonably leak free and have acceptable code coverage.
+Check the comments in the ``review'' file the developer left.
+
+\item [{\it Inspection Only}]
+  check for correctness of the code:
+  \begin{enumerate}
+  \item
+    w.r.t. design (what it does)
+  \item
+    w.r.t. design (how it does it)
+  \item
+    reliable/robust (if specified by the design)
+  \item
+    algorithm:
+    \begin{enumerate}
+    \item
+      if applicable, is the relevant Design Pattern [8] identified? 
+    \item
+      math correct?
+    \item
+      numerical correctness?
+    \item
+      choice of algorithm correct?
+    \item
+      proper code reuse, are the CARMA utils used where appropriate, is STL used ?
+    \end{enumerate}
+  \end{enumerate}
+\item
+  if you give thumbs up, add your name to {\tt @reviewer}, and 
+{\tt @inspector}, if applicable.
+\end{enumerate}
+
+It is expected code review to take around 1-2hr/100LOC.
+The command
+\begin{verbatim}
+  enscript -Ec -C -r2 code.cc -o junk.ps
+\end{verbatim}
+will pretty-print source code, add line numbers for eased communication, 
+and make lines over 80 characters wide (case \#XX) more obvious to the
+reviewer (or use -r1 and/or smaller font is you need a wider page)
+\begin{verbatim}
+  enscript -Ec -C -r1 -fCourier7 code.cc -o junk.ps
+\end{verbatim}
+The reviewer should not have to compile or run any code, though is free 
+(encouraged?) to try and excersize the compiler and Carma system with this code.
+ \newpage
+
+%\footnotesize
+%\verbatimfile{SillyAntenna.h}
+%\normalsize
+%\newpage
+
+
+\section*{Glossary}
+
+Here are some CARMA specific 
+entries\footnote{see also
+{\tt http://www.alma.nrao.edu/development/computing/docs/joint/draft/Glossary.htm}}
+\begin{itemize}
+
+\item[{\bf CARMA computer type}]
+CARMA computer type, one of ACC, AC, CC, DBC, LLC, LRC, EC, ARC or UIC! got that?
+
+\item[{\bf CARMA package}]
+independant piece of software that we often
+place in {\tt \$CARMA/opt} or somewhere else on the system.
+Examples are pgplot, Orbacus, log4cpp, ...  We keep a repository
+of their tar balls for re-installations in a directory
+{\tt \$CARMA\_PKG}.
+
+\item[{\bf CVS module}]
+used by CVS to designate 'root tree directories' in the
+CVS repositories. Examples are carma, miriad, nemo
+
+\end{itemize}
+
+\newpage
+
+\section*{Configure}
+
+Here is a checklist for modifications needed to keep the installation process
+running smoothly such that configure can detect most missing or configurable
+components:
+
+
+1. Suppose you are using a routine that is needed, but may not be in the
+library. Lets take the example where a file {\tt sqlext.h} was added to
+get access to some SQL code.
+
+e.g.
+\begin{verbatim}
+AC_CHECK_LIB(name,routine)   -- is <routine> in lib<name> ?
+AC_SEARCH_LIB(name,routine)  
+\end{verbatim}
+
+\newpage
+
+\section*{Installation Overview}
+
+Details on the installation of the CARMA software can be
+found elsewhere in this document, this page serves 
+as a cheat-sheet how to download and install CARMA from scratch:
+
+\begin{verbatim}
+
+# 1a) get the install script via CVS 
+
+setenv CVSROOT :ext:$USER@cvs.ovro.caltech.edu:/sw/cvscarma
+cvs co -d tmp carma/conf
+
+#     or via a URL
+
+wget http://www.astro.umd.edu/~teuben/carma/install_all
+chmod +x install_all
+
+
+# 2) if you don't have the carma_pkg, get it 'manually'
+
+setenv CARMA_PKG  ~/carma_pkg
+tmp/carma-package-sync
+
+# 3) install the tools and carma separately
+#  ahum, this still asssumes you have a carma_pkg 'somewhere'
+
+tmp/install_all carma=`pwd`/carma carma_tools=`pwd`/carma_tools
+
+\end{verbatim}   %$
+
+\bigskip
+
+\section*{Developers Checklist}
+
+\begin{itemize}
+
+\item
+an account on a linux redhat 9 (or similar, but with CAVEATS) computer
+
+\item
+get an account on box, as cvs.ovro.caltech.edu, for CVS (ssh) access
+
+\item
+create yourself a bugzilla account on  bugzilla.ovro.caltech.edu, 
+
+\item
+
+\end{itemize}
+
+\newpage
+
+
+%NEW
+\section*{Schedule to completion}
+
+In the current version of this document, this CDR requires a schedule to completion
+section:
+
+\section*{Overview}
+
+The initial S.E. writeup was completed by S. Scott on June 13, 2001. The PDR
+was discussed on ???. The CDR was discussed September 25, 2003, in which
+the previous documents were merged into this document and now also serves
+as an evolving work document to describe the S.E. aspects to the system.
+The document lives as {\tt doc/SEDesign.tex} in the CARMA tree.
+
+\newpage
+
+\section*{References}
+[1] {\it CARMA C++ Programming Style Guidelines} - Pound. Amarnath, Teuben
+\newline
+[2] {\tt http://www.stack.nl/$\tilde{\ }$dimitry/doxygen/commands.html}
+% Doxygen command set
+\newline
+[3] {\it GNU autoconf, automake, and libtool}  - Vaughan, Elliston, Tromey and Taylor
+(New Riders, 2001) - Chapter 14 and 15 (Writing Portable C and C++)
+\newline
+[4] {\it ICD/Doxygen} - Amarnath.
+\newline
+[5] {\it Software Engineering} - Ian Sommerville, 6th ed.  (2001, Addison-Wesley)
+\newline
+[6] {\it C++ Gotchas} - Stephen Dewhurst (2003, Addison-Wesley)
+\newline
+[7] Design Patterns  - ``gang of four''.
+\newline
+[8] The AIPS++ Quality Assurance Group ({\tt http://aips2.nrao.edu/docs/html/qag.html})
+\newline
+[9] 
+{\it Open Source Development with CVS} - Karl Fogel.
+(Coriolis press, 1999)
+\newline
+[10] 
+{\it GNU autoconf, automake, and libtool}  - Vaughan, Elliston, Tromey and Taylor
+(New Riders, 2001)
+\newline
+[11] 
+{\it GNU make} - Stallman and McGrath
+(FSF, 1998)
+\newline
+[12] 
+{\it LOFAR build document} - Ger van Diepen ,  Klaas Jan Wierenga.
+
+\end{document}
+
+
+coverage tools
+test harness - 
+
+\footnotesize\begin{verbatim}
+..
+\end{verbatim}\normalsize
+
+
+\subsection{Modifying an existing package}
+
+Since most alien packages are only available to use in ``tar-ball'' form,
+a patch can be cumbersome.
+
+The "CVS way" is to import the original package and make all of your
+modifications in CVS. Then do a cvs export of the repository at a
+certain moment in time (date, revision, tag) and package that exported
+directory. The advantage is that you have everything under version
+control and can see logs of who has worked on it, revert patches,
+branch, etc. 
+
+The "RPM way" is to have a pristing source of the original package,
+and then apply one or more patches to the original source. The
+advantage is that you can see precisely what has been modified in the
+patch files, and can potentially drop in a new version and patch that
+newer version.  1.
+
+      When doing the import of the original package, use a meaningful start tag, as in:
+
+$ cvs import -m "Initial import into CVS" foo dyork foo-version-2-0
+
+   2.
+
+      Use CVS as you would normally do for the development of the files.
+   3.
+
+      At packaging time, first tag the repository with a meaningful tag:
+
+$ cvs tag Release-2-1
+
+   4.
+
+      At packaging time, first extract a copy of the original version (if you do not have a tarball somewhere else):
+
+$ cvs export -r foo-version-2-0 -d foo-2.0 foo
+
+   5.
+
+      Use cvs rdiff to generate a patch file:
+
+$ cvs -d /home/cvsroot cvs rdiff -u -r foo-version-2-0 -r Release-2-1 foo > foo-2.0.patch.20010611
+
+   6.
+
+      Subsequent patches can be generated using the new tag as the first tag in the sequence. (i.e. "-r Release-2-1 -r Release-2-2")
+
+

@@ -1,0 +1,9 @@
+The International Earth Rotation and Reference Systems table of
+UT1-UTC corrections is more than 14 days old.  This is only a problem
+for high dynamic range projects, but should be corrected promptly. 
+Instructions for solving this problem are here: 
+
+http://cedarflat.mmarray.org/wiki/Alarms#Control.iersAge
+
+Anyone with the control password can install a new IERS table following
+the instructions above.

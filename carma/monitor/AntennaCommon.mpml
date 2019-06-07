@@ -1,0 +1,1298 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Monitor points that are common between all antennas -->
+
+<Common scope="global" author="Colby Gutierrez-Kraybill">
+
+<Container name="AntennaCommon" priority="vital">
+  <description>
+    This container holds monitor points which are common to all
+    CARMA antennas.  Its main purpose is to create and present a
+    common monitor interface which in turn can be used to control and track
+    the array in a homogenous fashion.
+  </description>
+
+  <MonitorPoint name="initialized" type="bool" >
+    <shortName>initialized</shortName>
+    <longName>initialized</longName>
+    <description>
+        Monitor point intended to be set by antenna and signalled by the control
+        system after an antenna has been initialized in a subarray.  This defaults
+        to false when an antenna is rebooted or antenna processes are restarted
+        indicating that initialization is required by bringing the antenna out
+        and back into the subarray.
+    </description>
+    <errHi>false</errHi>
+  </MonitorPoint>
+
+  <Container name="Drive">
+
+    <MonitorPoint name="sourcename" type="string">
+        <shortName>Source</shortName>
+        <longName>sourcename</longName>
+        <description>
+           Source name for ra/dec
+        </description>
+    </MonitorPoint>
+    <MonitorPoint name="rightAscension" type="double">
+        <shortName>RA</shortName>
+        <longName>RightAscension</longName>
+        <description>
+           Apparent right ascension
+        </description>
+        <precision>4</precision>
+        <units>rad</units>
+    </MonitorPoint>
+    <MonitorPoint name="declination" type="double">
+        <shortName>Dec</shortName>
+        <longName>Declination</longName>
+        <description>
+         Apparent declination
+        </description>
+        <precision>4</precision>
+        <units>rad</units>
+    </MonitorPoint>
+    <MonitorPoint name="errorSky" type="double">
+        <shortName>Sky Err</shortName>
+        <longName>ErrorSky</longName>
+        <description>
+            RMS of tracking error on the sky (as an arc on the sky).
+            This is the difference between the requested sky position
+            and the position reported by the encoders. This gets mapped
+            to the miriad axisrms for both az and el (!).
+        </description>
+        <precision>1</precision>
+        <units>arcsec</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="state" type="enum">
+      <shortName>Drive State</shortName>
+      <longName>Drive State</longName>
+      <description>
+        Drive system state
+      </description>
+      <enum name="TRACK">
+       <description>
+        Tracking - defined as two consecutive servo iterations with
+        the errorSky less than the trackTolerance.
+        This prevents being in the TRACK state for one iteration while
+        the antenna moves through zero during overshoot.
+        The same requirement applies when moving from any state to the
+        TRACK state, including when coming from CLOSE.
+       </description>
+      </enum>
+      <enum name="CLOSE">
+       <description>
+        Close to the source - the antenna is no longer slewing but is
+        trying to track the source within tolerance. If the antenna is in
+        TRACK and then falls outside the tolerance, it will go into this
+        state.
+       </description>
+      </enum>
+      <enum name="SLEW">
+       <description>
+        Slewing - going to a new source or to stow. On some antennas this
+        may also be used instead of CLOSE.
+       </description>
+      </enum>
+      <enum name="STOW">
+       <description>
+         Currently in stow position, defined to be AZ=180, EL=85.
+       </description>
+      </enum>
+      <enum name="SNOW">
+       <description>Currently minimizing snow buildup
+       </description>
+      </enum>
+      <enum name="STOP">
+       <description>Stopped, drive power off</description>
+      </enum>
+      <enum name="DISABLE">
+       <description>
+        Manually disabled at the antenna, or collision detected
+       </description>
+      </enum>
+      <enum name="HWLIMIT">
+       <description>Hardware azimuth or elevation limit</description>
+      </enum>
+      <enum name="SWLIMIT">
+       <description>Software azimuth or elevation limit</description>
+      </enum>
+      <enum name="ERROR">
+       <description>Error state (stalled or power problem)</description>
+      </enum>
+      <enum name="LOCAL">
+        <description>
+            Antenna is under local control (i.e. handpaddle).
+        </description>
+      </enum>
+      <enum name="SERVICE">
+        <description>
+            Antenna is in its service (maintenance) position.
+        </description>
+      </enum>
+      <enum name="TEST">
+        <description>Drive system is in a test mode.</description>
+      </enum>
+      <enum name="FATAL">
+        <description>A fatal error has been detected.</description>
+      </enum>
+
+      <warnHi>SERVICE</warnHi>
+      <errHi>ERROR</errHi>
+      <errHi>HWLIMIT</errHi>
+      <errHi>DISABLE</errHi>
+      <errHi>SWLIMIT</errHi>
+      <errHi>CLOSE</errHi>
+      <errHi>SLEW</errHi>
+      <errHi>SNOW</errHi>
+      <errHi>LOCAL</errHi>
+      <errHi>TEST</errHi>
+      <errHi>FATAL</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="safeState" type="enum" priority="vital">
+        <shortName>Safe State</shortName>
+        <longName>Safe State</longName>
+        <description>Collidability status of the antenna.</description>
+        <enum name="SAFE">
+            <description>
+                Antenna is in a safe position where it can not collide with
+                nearby antennas.
+            </description>
+        </enum>
+        <enum name="UNSAFE">
+            <description>
+                Antenna is in an unsafe position and is in danger of colliding
+                with nearby antennas.
+            </description>
+        </enum>
+        <errHi>UNSAFE</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="safeAzLow" type="float" priority="vital">
+      <shortName>Safe Az Low</shortName>
+      <longName>Safe Az Low Boundary</longName>
+      <description>The lower boundary of the safe range of azimuth
+       for collisionable antennas
+      </description>
+      <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="safeAzHigh" type="float" priority="vital">
+      <shortName>Safe Az High</shortName>
+      <longName>Safe Az High Boundary</longName>
+      <description>The upper boundary of the safe range of azimuth
+       for collisionable antennas
+      </description>
+      <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="safeElLow" type="float" priority="vital">
+      <shortName>Safe El Low</shortName>
+      <longName>Safe El Low Boundary</longName>
+      <description>The lower boundary of the safe range of azimuth
+       for collisionable antennas
+      </description>
+      <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="safeElHigh" type="float" priority="vital">
+      <shortName>Safe El High</shortName>
+      <longName>Safe El High Boundary</longName>
+      <description>The upper boundary of the safe range of azimuth
+       for collisionable antennas
+      </description>
+      <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="mode" type="enum">
+        <shortName>Drive Mode</shortName>
+        <longName>Drive Control Mode</longName>
+        <description> Commanded mode of drive system </description>
+        <enum name="AZEL">
+         <description>
+            Horizon coordinate system (azimuth and elevation) tracking.
+            On the OVRO antennas this is an active mode, continuously
+            tracking the requested azimuth and elevation.
+        </description>
+        </enum>
+        <enum name="EQUAT">
+         <description>
+            Equatorial coordinate system (ra/dec) tracking.
+         </description>
+        </enum>
+        <enum name="STOW">
+         <description>
+            Go to the stow position.
+            On the OVRO antennas this is a passive mode once the stow
+            position has been attained,
+            with the brakes on and the drive controllers off.
+        </description>
+        </enum>
+        <enum name="SNOW">
+         <description>Minimize snow buildup on antennas</description>
+        </enum>
+        <enum name="STOP" >
+         <description>
+            Stopped. On the OVRO antennas this is a passive mode,
+            with the brakes on and the drive controllers off.
+         </description>
+        </enum>
+        <enum name="TEST" >
+            <description>
+                Drive system is in testing mode for engineering purposes.
+                This may be because of an open servo loop or becaues the
+                drive module has been placed in engineering mode.
+            </description>
+        </enum>
+        <errHi>TEST</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="driveSeqNum" type="int" persistent="true">
+      <shortName>Drive Seq Num</shortName>
+      <longName>Drive command sequence number</longName>
+      <description>
+        Sequence number of the last completed drive command.
+      </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="driveSeqNumSuccess" type="bool">
+        <shortName>Drive Seq Num Success</shortName>
+        <longName>Drive sequence number success</longName>
+        <description>
+            Indicates the success of failure of the command associated with
+            the current sequence number.
+        </description>
+        <errHi>false</errHi>
+    </MonitorPoint>
+
+     <Container name="Track" >
+        <MonitorPoint name="requestedAzimuth" type="double">
+            <shortName>Req Az</shortName>
+            <longName>RequestedAzimuth</longName>
+            <description>
+                Requested azimuth; north=0.  This is the total requested
+                azimuth, including offsets.
+            </description>
+            <precision>4</precision>
+            <width>8</width>
+            <units>deg</units>
+        </MonitorPoint>
+        <MonitorPoint name="actualAzimuth" type="double">
+            <shortName>ActAz</shortName>
+            <longName>Actual azimuth</longName>
+            <description> Actual azimuth; north=0 </description>
+            <precision>4</precision>
+            <width>8</width>
+            <units>deg</units>
+        </MonitorPoint>
+        <MonitorPoint name="errorAzimuth" type="float">
+            <shortName>Az Err</shortName>
+            <longName>ErrorAzimuth</longName>
+            <description>
+                Error between the actual and requested azimuth;
+                coordinate, not arc
+            </description>
+            <precision>1</precision>
+            <units>asec</units>
+        </MonitorPoint>
+        <MonitorPoint name="errorAzimuthSky" type="float">
+            <shortName>AzSkyErr</shortName>
+            <longName>ErrorAzimuthSky</longName>
+            <description>
+                Error between the actual and requested azimuth;
+                arc on the sky, not encoder.
+                The warning limits are the same independent of
+                antenna type - this needs to be fixed.
+            </description>
+            <precision>1</precision>
+            <units>asec</units>
+            <warnHi>2.0</warnHi>
+            <warnLo>-2.0</warnLo>
+        </MonitorPoint>
+        <MonitorPoint name="azimuthRate" type="float">
+            <shortName>Az Rate</shortName>
+            <longName>AzimuthRate</longName>
+            <description>
+                Azimuth rate (on the encoder, not sky)
+            </description>
+            <precision>2</precision>
+            <units>deg/min</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="requestedElevation" type="double">
+            <shortName>Req El</shortName>
+            <longName>RequestedElevation</longName>
+            <description>
+                Requested elevation; horizon=0.  This is the total requested
+                elevation, including offsets.
+            </description>
+            <precision>4</precision>
+            <width>7</width>
+            <units>deg</units>
+        </MonitorPoint>
+        <MonitorPoint name="actualElevation" type="double">
+            <shortName>Act El</shortName>
+            <longName>Actual elevation</longName>
+            <description> Actual elevation; horizon=0 </description>
+            <precision>4</precision>
+            <width>7</width>
+            <units>deg</units>
+        </MonitorPoint>
+        <MonitorPoint name="errorElevation" type="float">
+            <shortName>El Err</shortName>
+            <longName>ErrorElevation</longName>
+            <description>
+                Error between the requested and actual elevation
+            </description>
+            <precision>1</precision>
+            <units>asec</units>
+            <warnHi>2.0</warnHi>
+            <warnLo>-2.0</warnLo>
+        </MonitorPoint>
+        <MonitorPoint name="elevationRate" type="float">
+            <shortName>El Rate</shortName>
+            <longName>ElevationRate</longName>
+            <description>
+                Elevation rate
+            </description>
+            <precision>2</precision>
+            <units>deg/min</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="wrapLogic" type="enum">
+          <shortName>Wrap Logic</shortName>
+          <longName>Wrap Logic</longName>
+          <description>
+            The azimuth drive can operate over more than a full circle,
+                and the wrap logic dictates how the ambiguities are resolved.
+            Direction are defined as viewed from above.
+          </description>
+          <enum name="ZERO">
+           <description>
+             Do not modify target position (no turns added).
+           </description>
+          </enum>
+          <enum name="ADD">
+           <description>
+            Add a turn to the target position (in AZ).
+           </description>
+          </enum>
+          <enum name="SUB">
+           <description>
+            Subtract a turn to the target position (in AZ).
+           </description>
+          </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="emergencyOff" type="enum">
+            <shortName>Emerg Off</shortName>
+            <longName>EmergencyOff</longName>
+            <description>
+              Drive power disrupted by one of the emergency switches.
+            </description>
+            <enum name="OK">
+             <description>Drive not disabled</description>
+            </enum>
+            <enum name="OFF">
+             <description>
+                Drives disabled by emergency cut off switch somewhere on antenna.
+             </description>
+            </enum>
+            <errHi>OFF</errHi>
+         </MonitorPoint>
+
+         <MonitorPoint name="manualSwitch" type="enum">
+            <shortName>Manual Switch</shortName>
+            <longName>Manual/Computer Control Switch</longName>
+            <description>
+                Drive controllers disabled by the computer/manual switch in
+                control box on the base of the antenna.
+            </description>
+            <enum name="OK">
+             <description>Drive not disabled</description>
+            </enum>
+            <enum name="MANUAL">
+             <description>
+                Drives disabled by computer/manual switch in mount base
+             </description>
+            </enum>
+            <errHi>MANUAL</errHi>
+        </MonitorPoint>
+
+      <MonitorPoint name="trackTolerance" type="float">
+          <shortName>Trk Tol</shortName>
+          <longName>TrackingTolerance</longName>
+          <description>
+              Tolerance for determining whether antenna mode is
+              TRACK/CLOSE/SLEW.
+          </description>
+          <precision>1</precision>
+          <units>arcsec</units>
+      </MonitorPoint>
+      
+    <MonitorPoint name="azimuthAxisState" type="enum">
+      <shortName>Az Drive State</shortName>
+      <longName>Az Drive State</longName>
+      <description>
+        Drive system azimuth axis state.
+        Uses azimuth sky error and trackTolerance to assign states 
+        of TRACK/CLOSE/SLEW.
+        These states are not used for blanking or flagging, but as an
+        indicator of the independent state of each axis. 
+      </description>
+      <enum name="TRACK">
+       <description>
+        The azimuth sky error is less than or equal to trackTolerance/2.
+       </description>
+      </enum>
+      <enum name="CLOSE">
+       <description>
+        The az sky error is greater than trackTolerance/2 and 
+        less than or equal to trackTolerance.
+       </description>
+      </enum>
+      <enum name="SLEW">
+       <description>
+        The az sky error is greater than trackTolerance.
+       </description>
+      </enum>
+      <enum name="IRRELEVANT">
+       <description>
+         The tracking error is irrelevant, which includes whenever the
+         drives state is STOW, STOP, DISABLE, ERROR, SERVICE, TEST, FATAL,
+         or LOCAL.
+       </description>
+      </enum>
+      <warnHi>CLOSE</warnHi>
+      <errHi>SLEW</errHi>
+    </MonitorPoint>
+      
+    <MonitorPoint name="elevationAxisState" type="enum">
+      <shortName>El Drive State</shortName>
+      <longName>El Drive State</longName>
+      <description>
+        Drive system elevation axis state
+        Uses elevation sky error and trackTolerance to assign states 
+        of TRACK/CLOSE/SLEW.
+        These states are not used for blanking or flagging, but as an
+        indicator of the independent state of each axis. 
+     </description>
+      <enum name="TRACK">
+       <description>
+        The el error is less than or equal to trackTolerance/2.
+       </description>
+      </enum>
+      <enum name="CLOSE">
+       <description>
+        The el error is greater than trackTolerance/2 and 
+        less than or equal to trackTolerance.
+       </description>
+      </enum>
+      <enum name="SLEW">
+       <description>
+        The el error is greater than trackTolerance.
+       </description>
+      </enum>
+      <enum name="IRRELEVANT">
+       <description>
+         When the tracking error is irrelevant, which includes whenever the
+         drives state is STOW, STOP, DISABLE, ERROR, SERVICE, TEST, FATAL,
+         or LOCAL.
+       </description>
+      </enum>
+      <warnHi>CLOSE</warnHi>
+      <errHi>SLEW</errHi>
+    </MonitorPoint>
+      
+    </Container> <!-- AntennaCommon.Drive.Track -->
+
+    <Container name="Point" >
+        <MonitorPoint name="offsetAz" type="double">
+          <shortName>Off Az</shortName>
+          <longName>Azimuth pointing offset</longName>
+          <description>Azimuth pointing offset as an arc, not a coordinate offset</description>
+          <precision>2</precision>
+          <units>arcmin</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="offsetEl" type="double">
+          <shortName>Off El</shortName>
+          <longName>Elevation pointing offset</longName>
+          <description>Elevation pointing offset in arcmin</description>
+          <precision>2</precision>
+          <units>arcmin</units>
+        </MonitorPoint>
+
+
+        <MonitorPoint name="mountOffsetAz" type="double">
+          <shortName>Mount Off Az</shortName>
+          <longName>Azimuth pointing offset</longName>
+          <description>Azimuth pointing offset as an arc, not a coordinate offset</description>
+          <precision>2</precision>
+          <units>arcmin</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="mountOffsetEl" type="double">
+          <shortName>Mount Off El</shortName>
+          <longName>Elevation pointing offset</longName>
+          <description>Elevation pointing offset in arcmin</description>
+          <precision>2</precision>
+          <units>arcmin</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="refraction" type="float">
+          <shortName>Refrac</shortName>
+          <longName>Refraction</longName>
+          <description>Refraction pointing correction</description>
+          <precision>2</precision>
+          <units>arcmin</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="refractionModel" type="enum">
+          <shortName>Refrac Model</shortName>
+          <longName>Refraction Model</longName>
+          <description>Refraction Model</description>
+          <enum name="OPTICAL"/>
+          <enum name="RADIO"/>
+        </MonitorPoint>
+
+        <MonitorPoint name="magnitude" type="float">
+            <shortName>Tilt Mag</shortName>
+            <longName>Tilt Magnitude</longName>
+            <description> Inclination of the azimuth axis from vertical </description>
+            <precision>2</precision>
+            <units>arcmin</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="direction" type="float">
+            <shortName>Tilt Dir</shortName>
+            <longName>Tilt Direction</longName>
+            <description> Direction of inclination of the azimuth axis from vertical, 0=north </description>
+            <precision>0</precision>
+            <units>deg</units>
+        </MonitorPoint>
+
+      <Container name="Constants">
+
+        <MonitorPoint name="coefChange" type="absTime">
+          <shortName>Coef Change</shortName>
+          <longName>Last Pointing Coefficient Change</longName>
+          <description>
+              Last time that pointing coefficients were changed for
+              this antenna
+          </description>
+          <units>absTime</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="selectedApert" type="enum">
+          <shortName>Selected Apert</shortName>
+          <longName>Selected Aperture</longName>
+          <description>
+            The aperture currently selected, implies pointing coefs
+            (collimation/sag terms) are being summed with the existing
+            pointing model coefs
+          </description>
+          <enum name="OPTICAL"/>   <!-- 0 -->
+          <enum name="RADIO1MM"/>  <!-- 1 -->
+          <enum name="RADIO3MM"/>  <!-- 2 -->
+          <enum name="RADIO1CM"/>  <!-- 3 -->
+        </MonitorPoint>
+
+        <Container name="ApertureCoefficients" count="4">
+
+
+            <MonitorPoint name="crossElCollErr" type="double">
+                <shortName>Cross El Err</shortName>
+                <longName>Cross Elevation Collimation Error</longName>
+                <description>
+                    Aperture pointing constant: cross elevation (orthogonal
+                    to elevation axis) collimation error.
+                </description>
+                <precision>2</precision>
+                <units>arcmin</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="elCollErr" type="double">
+                <shortName>El Err</shortName>
+                <longName>Elevation Collimation Error</longName>
+                <description>
+                    Aperture pointing constant: elevation collimation error.
+                </description>
+                <precision>2</precision>
+                <units>arcmin</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="sag" type="double">
+                <shortName>Sag</shortName>
+                <longName>Sag</longName>
+                <description>
+                    Radio beam pointing constant: sag, deltaEl=sag*cos(el)
+                </description>
+                <precision>2</precision>
+                <units>arcmin</units>
+            </MonitorPoint>
+
+        </Container>
+        <!-- AntennaCommon.Drive.Point.aperturePointingCoefficients -->
+
+      </Container> <!-- AntennaCommon.Drive.Point.Constants -->
+
+    </Container> <!-- AntennaCommon.Drive.Point -->
+
+        <Container name="Limit" >
+            <description>
+                Hardware and software limit conditions
+            </description>
+            <MonitorPoint name="azSwLimit" type="enum">
+                <shortName>Az Sw Limit</shortName>
+                <longName>Azimuth Software Limit</longName>
+                <description>Azimuth software limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="PLUSLIM">
+                 <description>
+                    Software azimuth limit exceeded in + direction
+                 </description>
+                </enum>
+                <enum name="MINUSLIM">
+                 <description>
+                    Software azimuth limit exceeded in - direction
+                 </description>
+                </enum>
+                 <errHi>PLUSLIM</errHi>
+                 <errHi>MINUSLIM</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="elSwLimit" type="enum">
+                <shortName>El Sw Limit</shortName>
+                <longName>ElevationSoftwareLimit</longName>
+                <description>Elevation software limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="PLUSLIM">
+                 <description>Software elevation limit exceeded in + direction</description>
+                </enum>
+                <enum name="MINUSLIM">
+                 <description>Software elevation limit exceeded in - direction</description>
+                </enum>
+                <errHi>PLUSLIM</errHi>
+                <errHi>MINUSLIM</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="azHwLimit" type="enum">
+                <shortName>Az HW Limit</shortName>
+                <longName>Azimuth Hardware Limit</longName>
+                <description>Azimuth hardware limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="PLUSLIM">
+                 <description>
+                    Hardware azimuth limit exceeded in + direction
+                 </description>
+                </enum>
+                <enum name="MINUSLIM">
+                 <description>
+                    Hardware azimuth limit exceeded in - direction
+                 </description>
+                </enum>
+                <errHi>PLUSLIM</errHi>
+                <errHi>MINUSLIM</errHi>
+            </MonitorPoint>
+            <MonitorPoint name="elHwLimit" type="enum">
+                <shortName>El HW Limit</shortName>
+                <longName>Elevation Hardware Limit</longName>
+                <description>Elevation hardware limits</description>
+                <enum name="OK">
+                 <description>No limits</description>
+                </enum>
+                <enum name="PLUSLIM">
+                 <description>Hardware elevation limit exceeded in + direction</description>
+                </enum>
+                <enum name="MINUSLIM">
+                 <description>Hardware elevation limit exceeded in - direction</description>
+                </enum>
+                <errHi>PLUSLIM</errHi>
+                <errHi>MINUSLIM</errHi>
+            </MonitorPoint>
+
+            <MonitorPoint name="azLowSwLimitVal" type="float"
+                      persistent="true" priority="dontarchive">
+                <shortName>Az Low Sw Limit Val</shortName>
+                <longName>Azimuth Low Software Limit Value</longName>
+                <description>Azimuth software low limit</description>
+                <precision>1</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="azHighSwLimitVal" type="float"
+                          persistent="true" priority="dontarchive">
+                <shortName>Az High Sw Limit Val</shortName>
+                <longName>Azimuth High Software Limit Value</longName>
+                <description>Azimuth software high limit</description>
+                <precision>1</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="azLowHwLimitVal" type="float"
+                          persistent="true" priority="dontarchive">
+                <shortName>Az Low HW Limit Val</shortName>
+                <longName>Azimuth Low Hardware Limit Value</longName>
+                <description>Azimuth hardware low limit</description>
+                <precision>1</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="azHighHwLimitVal" type="float"
+                          persistent="true" priority="dontarchive">
+                <shortName>Az High HW Limit Val</shortName>
+                <longName>Azimuth High Hardware Limit Value</longName>
+                <description>Azimuth hardware high limit</description>
+                <precision>1</precision>
+                <units>deg</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="elLowSwLimitVal" type="float"
+                          persistent="true" priority="dontarchive">
+                <shortName>El Low Sw Limit Val</shortName>
+                <longName>Elevation Software Limit Value</longName>
+                <description>Elevation software low limit</description>
+                <precision>1</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="elHighSwLimitVal" type="float"
+                          persistent="true" priority="dontarchive">
+                <shortName>ElHighSwLimitVal</shortName>
+                <longName>Elevation High Software Limit Value</longName>
+                <description>Elevation software high limit</description>
+                <precision>1</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="elLowHwLimitVal" type="float"
+                          persistent="true" priority="dontarchive">
+                <shortName>El Low HW Limit Val</shortName>
+                <longName>Elevation Low Hardware Limit Value</longName>
+                <description>Elevation hardware low limit</description>
+                <precision>1</precision>
+                <units>deg</units>
+            </MonitorPoint>
+            <MonitorPoint name="elHighHwLimitVal" type="float"
+                          persistent="true" priority="dontarchive">
+                <shortName>El High HW Limit Val</shortName>
+                <longName>Elevation High Hardware Limit Value</longName>
+                <description>Elevation hardware high limit</description>
+                <precision>1</precision>
+                <units>deg</units>
+            </MonitorPoint>
+
+        </Container> <!-- AntennaCommon.Drive.Limit -->
+  </Container> <!-- AntennaCommon.Drive -->
+
+
+  <Container name="LO">
+
+    <MonitorPoint name="oscFreq" type="double">
+      <shortName>Osc Freq</shortName>
+      <longName>OSC freq</longName>
+      <description>Requested first local oscillator freq </description>
+      <precision>3</precision>
+      <units>GHz</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="yigFreq" type="double">
+      <shortName>YIG Freq</shortName>
+      <longName>YIG freq</longName>
+      <description>Requested YIG freq</description>
+      <precision>3</precision>
+      <units>GHz</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="yigIFLevel" type="double">
+      <shortName>YIG IF Level</shortName>
+      <longName>YIG IF Level</longName>
+      <description>YIG IF Level</description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="yigError" type="double">
+      <shortName>YIG Error</shortName>
+      <longName>YIG Error Volts</longName>
+      <description>YIG lock error voltage</description>
+      <units>V</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="yigState" type="enum">
+      <shortName>YIG State</shortName>
+      <longName>YIG Oscillator Lock State</longName>
+      <description>
+        YIG can be in one of the following states:
+          LOCK: Locked.
+          SEARCH: Finding lock.
+          OPTIMIZING: Optimizing lock.
+          FAILED: Failed to lock YIG.
+      </description>
+      <enum name="LOCK" />
+      <enum name="SEARCH" />
+      <enum name="OPTIMIZING" />
+      <enum name="FAILED" />
+      <errHi>FAILED</errHi>
+      <warnHi>SEARCH</warnHi>
+      <warnHi>OPTIMIZING</warnHi>
+      <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="yigSweep" type="enum">
+    <shortName>YIG Sweep</shortName>
+      <longName>YIG Sweep</longName>
+      <description>YIG sweep turned on/off (hardware state)</description>
+      <units></units>
+      <enum name="ON"/>
+      <enum name="OFF"/>
+    </MonitorPoint>
+
+     <MonitorPoint name="loFreq" type="double">
+      <shortName>LO Freq</shortName>
+      <longName>LO Freq</longName>
+      <description>Requested first LO freq</description>
+      <precision>3</precision>
+      <units>GHz</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="loSweep" type="enum">
+      <shortName>LO Sweep</shortName>
+      <longName>LO Sweep</longName>
+      <description>First LO sweep turned on/off (hardware state)</description>
+      <units></units>
+      <enum name="ON"/>
+      <enum name="OFF"/>
+    </MonitorPoint>
+
+    <MonitorPoint name="loState" type="enum">
+      <shortName>LO State</shortName>
+      <longName>Local Oscillator State</longName>
+      <description>
+        Local Oscillator can be in one of the following states:
+      LOCK: Locked.
+      SEARCH: Finding lock.
+      OPTIMIZING:  Optimizing lock.
+      FAILED: Failed to lock LO.
+      </description>
+      <enum name="LOCK" />
+      <enum name="SEARCH" />
+      <enum name="OPTIMIZING" />
+      <enum name="FAILED" />
+      <errHi>SEARCH</errHi>
+      <errHi>OPTIMIZING</errHi>
+      <errHi>FAILED</errHi>
+      <units></units>
+    </MonitorPoint>
+  </Container> <!-- AntennaCommon.LO -->
+
+  <Container name="Receivers">
+    <MonitorPoint name="currentRx" type="enum" persistent="true">
+      <shortName>Current Rx</shortName>
+      <longName>Currently Selected Receiver</longName>
+      <description>Currently selected receiver can be RX1MM or RX3MM or RX1CM</description>
+      <enum name="RX1MM" />
+      <enum name="RX3MM" />
+      <enum name="RX1CM" />
+      <enum name="RXANY" />
+      <enum name="MOVING" />
+      <enum name="ERROR" >
+        <description>
+            An error has occurred.  Possible reasons for the error are that
+            either the RX selection is stuck or the IF switch is stuck.
+            Another possible error is that the current RX is in conflict
+            with the current IF switch position.
+        </description>
+      </enum>
+      <errHi>ERROR</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="rxState" type="enum" persistent="true">
+      <shortName>Rx State</shortName>
+      <longName>Receiver State</longName>
+        <description>
+            Indicates success or failure of receiver tuning and
+            reasons for failure.
+        </description>
+      <enum name="GOOD">
+        <description>Receiver is tuned.</description>
+      </enum>
+      <enum name="BAD">
+        <description>
+            Receiver tuning has failed for an unknown reason.
+        </description>
+      </enum>
+      <enum name="TUNE">
+        <description>
+            Receiver tuning is in progress.
+        </description>
+      </enum>
+      <enum name="YIG_BAD">
+        <description>YIG is not locked.</description>
+      </enum>
+      <enum name="GUNN_BAD">
+        <description>GUNN not locked.</description>
+      </enum>
+      <enum name="IFSEL_BAD">
+        <description>IF switch selection failed.</description>
+      </enum>
+      <enum name="RXSEL_BAD">
+        <description>RX selection failed.</description>
+      </enum>
+      <enum name="RX_BAD">
+        <description>Front end tuning failed.</description>
+      </enum>
+      <enum name="TERTIARY_BAD">
+        <description>A tertiary is not in the correct position</description>
+      </enum>
+      <enum name="OPTIMIZE"/>
+      <enum name="SEARCH"/>
+      <errHi>BAD</errHi>
+      <errHi>YIG_BAD</errHi>
+      <errHi>GUNN_BAD</errHi>
+      <errHi>IFSEL_BAD</errHi>
+      <errHi>RXSEL_BAD</errHi>
+      <errHi>RX_BAD</errHi>
+      <errHi>TERTIARY_BAD</errHi>
+      <warnHi>OPTIMIZE</warnHi>
+      <warnHi>SEARCH</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="rxTsysState" type="enum">
+      <shortName>Rx Tsys State</shortName>
+      <longName>Receiver Tsys State</longName>
+      <description>
+        Receiver Tsys state can be one of the following:
+      MEASURE: Measuring Tsys.
+      VALID: Valid.
+      INVALID: Invalid.
+      </description>
+      <units></units>
+      <enum name="MEASURE"/>
+      <enum name="VALID"/>
+      <enum name="INVALID"/>
+    </MonitorPoint>
+
+    <MonitorPoint name="rxTsys" type="short">
+      <shortName>RxTsys</shortName>
+      <longName>Receiver Tsys</longName>
+      <description>
+        Receiver Tsys computed from broadband total power measured
+        at the antenna preamplifier module
+      </description>
+      <precision>1</precision>
+      <units>K</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="rxOffsetAz" type="double">
+      <shortName>RxOffsetAz</shortName>
+      <longName>Receiver Offset in Azimuth</longName>
+      <description>
+        Receiver azimuth collimation offset from the mount
+      </description>
+      <precision>2</precision>
+      <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="rxOffsetEl" type="double">
+      <shortName>RxOffsetEl</shortName>
+      <longName>Receiver Offset in Elevation</longName>
+      <description>
+        Receiver elevation collimation offset from the mount
+      </description>
+      <precision>2</precision>
+      <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="compressorState" type="enum">
+      <shortName>Compressor State</shortName>
+      <longName>Compressor State</longName>
+      <description>
+      Compressor can be in one of the following states:
+        ON: On and operating normally.
+        OFF: Off.
+        FILL: Filling with He.
+        PURGE: Purging out He.
+      </description>
+      <units></units>
+      <enum name="ON"/>
+      <enum name="OFF"/>
+      <enum name="FILL"/>
+      <enum name="PURGE"/>
+      <errHi>OFF</errHi>
+      <warnHi>FILL</warnHi>
+      <warnHi>PURGE</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="dewarTemp" type="double">
+      <shortName>Dewar Temp</shortName>
+      <longName>Dewar Temperature</longName>
+      <description>
+        Dewar temperature, as close to receiver as possible
+      </description>
+      <precision>2</precision>
+      <units>K</units>
+      <errLo>1.0</errLo>
+      <errHi>30.0</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="tuneSeqNum" type="int" persistent="true">
+      <shortName>Tune Seq Num</shortName>
+      <longName> Tuning command sequence number</longName>
+      <description>
+        Sequence number of last completed tuning or IVcurve command
+      </description>
+    </MonitorPoint>
+  </Container> <!-- AntennaCommon.Receivers -->
+
+
+
+  <Container name="Location">
+
+    <MonitorPoint name="latitude" type="double">
+      <shortName>Lat</shortName>
+      <longName>Latitude</longName>
+      <description>Latitude of antenna</description>
+      <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="longitude" type="double">
+      <shortName>Long</shortName>
+      <longName>Longitude</longName>
+      <description>West longitude of antenna</description>
+      <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="altitude" type="double">
+      <shortName>Altitude</shortName>
+      <longName>Altitude</longName>
+      <description>Altitude of antenna phase center</description>
+      <units>meters</units>
+    </MonitorPoint>
+  </Container> <!-- AntennaCommon.Location -->
+
+  <Container name="OpticalTel">
+
+    <MonitorPoint name="sizeX" type="short">
+      <shortName>Size X</shortName>
+      <longName>Size X</longName>
+      <description>Size in pixels of X-Axis for image.</description>
+      <units>pixels</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="sizeY" type="short">
+      <shortName>Size Y</shortName>
+      <longName>Size Y</longName>
+      <description>Size in pixels of Y-Axis for image.</description>
+      <units>pixels</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="offsetX" type="short">
+        <shortName>Offset X</shortName>
+        <longName>X Offset In Pixels</longName>
+        <description>Cropping offset in X dimension</description>
+        <units>pixels</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="offsetY" type="short">
+        <shortName>Offset Y</shortName>
+        <longName>Y Offset In Pixels</longName>
+        <description>Cropping offset in Y dimension</description>
+        <units>pixels</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="azFov" type="float">
+        <shortName>Az FOV</shortName>
+        <longName>Azimuth Field Of View</longName>
+        <description>
+            Azimuth field of view in arcminutes corresponding to image x dim.
+        </description>
+        <units>arcmin</units>
+        <precision>2</precision>
+    </MonitorPoint>
+
+    <MonitorPoint name="elFov" type="float">
+        <shortName>El FOV</shortName>
+        <longName>Elevation Field Of View</longName>
+        <description>
+            Elevation field of view in arcminutes corresponding to image y dim.
+        </description>
+        <units>arcmin</units>
+        <precision>2</precision>
+    </MonitorPoint>
+
+    <MonitorPoint name="imageRotation" type="float">
+        <shortName>Rotation</shortName>
+        <longName>Image Rotation</longName>
+        <description>
+            Images are rotated in software to attempt to artificially align
+            the optical telescope mount with the az/el coordinate system.
+            This allows for faster convergence when pointing.
+        </description>
+        <units>deg</units>
+        <precision>1</precision>
+    </MonitorPoint>
+
+    <MonitorPoint name="cover" type="enum">
+      <shortName>Flap</shortName>
+      <longName>Flap Status</longName>
+      <description>Status of Optical Flap or lenscap, OPEN or CLOSED</description>
+      <units></units>
+      <enum name="OPEN"/>
+      <enum name="CLOSED"/>
+    </MonitorPoint>
+
+    <MonitorPoint name="centroidSeqNum" type="int">
+      <shortName>Centroid Seq Num</shortName>
+      <longName>Centroid command sequence number</longName>
+      <description>
+        Sequence number of last completed optical centroiding command
+      </description>
+    </MonitorPoint>
+
+  </Container> <!-- AntennaCommon.OpticalTel -->
+
+  <Container name="Optics">
+    <MonitorPoint name="polarization" type="enum">
+      <shortName>Pol State</shortName>
+      <longName>Polarization State</longName>
+      <description>
+        Receiver can be in one of these states:
+          MOVING: Wheel moving to new polarization position.
+          BAD: Wheel stuck, not in requested position
+          LCP: Left Circular Polarization.
+          RCP: Right Circular Polarization.
+          V: Vertical polarization.
+          H: Horizontal polarization.
+          CLEAR: Polarization plate is in a clear position or out of the way.
+       </description>
+      <units></units>
+      <enum name="MOVING"/>
+      <enum name="BAD"/>
+      <enum name="LCP"/>
+      <enum name="RCP"/>
+      <enum name="V"/>
+      <enum name="H"/>
+      <enum name="CLEAR"/>
+    </MonitorPoint>
+
+    <MonitorPoint name="opticsSeqNum" type="int" persistent="true">
+      <shortName>Optics Seq Num</shortName>
+      <longName>Optics  command sequence number</longName>
+      <description>
+        Sequence number of last completed optics command,
+        including polarizer, focus, or beam selector
+      </description>
+    </MonitorPoint>
+  </Container> <!-- AntennaCommon.Optics -->
+
+  <Container name="Calibrator">
+    <MonitorPoint name="calState" type="enum">
+      <shortName>Cal State</shortName>
+      <longName>Calwheel Position/State</longName>
+      <description>
+        The calibration wheel can be in the following states:
+          SKY: Sky load.
+          AMB: Ambient load.
+          FIXED: Fixed temperature load.
+          REFLEC: Reflector load.
+          MOVING: Moving wheel.
+          ERROR: Error state (stalled/power problem)
+              (see canapi for more error states)
+      </description>
+      <units></units>
+      <enum name="SKY"/>
+      <enum name="AMB"/>
+      <enum name="FIXED"/>
+      <enum name="REFLEC"/>
+      <enum name="MOVING"/>
+      <enum name="ERROR"/>
+      <errHi>MOVING</errHi>
+      <errHi>ERROR</errHi>
+    </MonitorPoint>
+    
+    <MonitorPoint name="calStateAcquired" type="bool">
+        <shortName>Cal State Acquired</shortName>
+        <longName>Requested Calibration State Acquired</longName>
+        <description>
+            True when the commanded calibration state has been acquired for
+            a minimum of one whole frame.
+        </description>
+        <errHi>false</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="skyTemp" type="float" persistent="true" >
+        <shortName>Sky Temp</shortName>
+        <longName>Sky Temperature</longName>
+        <description>Temperature for when calState is in position SKY</description>
+        <units>K</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="ambTemp" type="float" persistent="true">
+        <shortName>Amb Temp</shortName>
+        <longName>Ambient Temperature</longName>
+        <description>Temperature for when calState is in position AMB</description>
+        <units>K</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="fixedTemp" type="float" persistent="true">
+        <shortName>Fixed Temp</shortName>
+        <longName>Fixed Load Temperature</longName>
+        <description>Temperature for when calState is in position FIXED</description>
+        <units>K</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="partialTrans" type="float" persistent="true">
+        <shortName>Partial Trans</shortName>
+        <longName>Partial Transmission</longName>
+        <description>Transmission percentage for when calState is in position REFLEC</description>
+        <units>%</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="spillOver" type="float" persistent="true">
+        <shortName>Spillover</shortName>
+        <longName>Spillover</longName>
+        <description></description>
+        <units></units>
+    </MonitorPoint>
+
+    <MonitorPoint name="calSeqNum" type="int" persistent="true">
+      <shortName>Cal Seq Num</shortName>
+      <longName> Calibrator command sequence number</longName>
+      <description>
+        Sequence number of last completed calibrator command
+      </description>
+    </MonitorPoint>
+  </Container> <!-- AntennaCommon.Calibrator -->
+
+  <Container name="Secondary">
+    <MonitorPoint name="focusState" type="enum">
+      <shortName>Focus State</shortName>
+      <longName>Focus State</longName>
+      <description>
+        Z focus for secondary can be in one of the following states:
+        ACQUIRED: Good/Acquired.
+        MOVING: Moving the secondary.
+        FAILED: Unable to focus.
+      </description>
+      <units></units>
+      <enum name="ACQUIRED"/>
+      <enum name="MOVING"/>
+      <enum name="FAILED"/>
+      <errHi>MOVING</errHi>
+      <errHi>FAILED</errHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="focusZ" type="float">
+      <shortName>Focus Z</shortName>
+      <longName>FocusZ</longName>
+      <description>Z-axis Focus position in millimeters.</description>
+      <units>mm</units>
+    </MonitorPoint>
+  </Container> <!-- AntennaCommon.Secondary -->
+
+</Container> <!-- AntennaCommon -->
+</Common>
+

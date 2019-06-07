@@ -1,0 +1,61 @@
+/**
+ * @file
+ * 
+ * NearestInfo data structure definition.
+ * 
+ * @author Marc Pound
+ */
+#ifndef CARMA_CONTROL_NEAREST_INFO_IDL
+#define CARMA_CONTROL_NEAREST_INFO_IDL
+
+module carma {
+  module control {
+
+      /**
+       * Data on nearest neighbor to a source, 
+       * returned by an SubarrayControl::getNearest().
+       */
+      struct NearestInfo {
+          /** Source name */
+          string name;
+
+          /** Name of reference source (of which this source is the neighbor)*/
+          string reference;
+
+          /** distance between name and ref in degrees */
+          float distance;
+
+          /** azimuth of 'name' source at time of query, in degrees */
+          float azimuth;
+
+          /** elevation of 'name' source at time of query, in degrees */
+          float elevation;
+
+          /** 
+           * Brightness of 'name' source, mag or Jy depending on value
+           * of isOptical
+           */
+          float brightness;
+
+          /** 
+           * Indicates whether 'name' is optical or radio source.  If optical
+           * then units of brightness are magnitudes, if radio then units
+           * are Jansky 
+           */
+          boolean isOptical;
+
+          /**
+           * Time at which computation was made, MJD
+           */
+          double mjd;
+      };
+
+     /**
+      * @typedef
+      * Sequence of NearestInfo objects.
+      */
+     typedef sequence< NearestInfo > NearestInfoSeq;
+
+  }; // End module control
+}; // End module carma
+#endif

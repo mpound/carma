@@ -1,0 +1,4 @@
+A script has finished in a subarray - please schedule a new project
+immediately. See also:
+
+http://cedarflat.mmarray.org/wiki/Alarms#Control.SubarrayX.alarm

@@ -1,0 +1,18 @@
+#!/bin/bash
+# Script to automatically commit most recent state file to CVS from the RTS.
+
+DIR=/array/rt/state/current
+FILE=current.txt
+CVS=/usr/bin/cvs
+SSH=/usr/bin/ssh
+
+PATH=$DIR/$FILE
+
+# Check to see that file exists..
+if [[ -f $PATH ]]
+then 
+    cd $DIR
+    CVS_RSH=$SSH $CVS -n ci -m "Control restart automatic checkin." $FILE
+else
+    echo "$PATH doesn't exist." 
+fi

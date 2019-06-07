@@ -1,0 +1,16 @@
+The linker on Ubuntu 10.04 (gcc-4.4.3) gets this wrong. The source compiles
+fine with the extra static. That leads me to believe that the Ubuntu linker
+is linking with an incorrect variable, causing a crash.
+
+diff -Nrua units-1.80.orig/parse.y units-1.80/parse.y
+--- units-1.80.orig/parse.y	2002-05-02 18:05:43.000000000 -0700
++++ units-1.80/parse.y	2012-01-13 13:50:18.405942275 -0800
+@@ -30,7 +30,7 @@
+ #include "units.h"
+ 
+ 
+-int err;  /* value used by parser to store return values */
++static int err;  /* value used by parser to store return values */
+ 
+ #define CHECK if (err) { COMM->errorcode=err; YYABORT; }
+ 

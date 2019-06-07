@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "./bin/">
+    <!ENTITY RUN_DIR "./">
+    <!ENTITY DBMS "useDBMS=false">
+    <!ENTITY LOG "">
+]>
+
+<!-- Configuration for testing ovro antenna control classes.  -->
+<!-- $Id: ovroControlTest.xml,v 1.5 2013/04/09 22:48:04 abeard Exp $ -->
+
+<domain>
+
+    <oad hostname="localhost">
+        
+        <!-- Core Monitor -->
+        <server name="FrameCollator"
+                path="&BIN_DIR;/frameCollator"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; "  
+                system="monitor" />
+
+        <!-- Antenna -->
+        <server name="OvroFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=ovro1 delay=300 "
+                system="ovro"/>
+        
+        <server name="OvroCanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; ant=1 emulate=true simulate=true"  
+                system="ovro" />
+
+    </oad>
+
+</domain>

@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "./bin/">
+        <!ENTITY DEFAULT_DIR "/home/abeard/CARMA/build">
+        <!ENTITY EMULATE "true">
+        <!ENTITY ANT "1">
+        <!ENTITY TRACE "traceLevel=0 traceFile=syslog">
+        <!ENTITY DBMS "useDBMS=false">
+        <!ENTITY LOG "">
+]>
+
+<!-- 
+     Basic configuration for standalone testing of optical camera.
+
+     Note: the use of "localhost" is fine is this file for a single machine
+     but very hazardous in a multi-machine configuration.
+ -->
+
+<!-- @version -->
+<domain>
+ 
+    
+    <oad hostname="localhost">
+
+        <!-- Control -->
+        <server name="DelayEngineFSP" 
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &DBMS; subsystem=delayEngine"
+                system="interferometry"
+                critical="true"/>
+
+        <server name="Subarray1" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&DEFAULT_DIR;" 
+                args="runSAT=true &LOG; &DBMS;"
+                system="control"
+                critical="true" />
+
+        <server name="ControlFSP" 
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &DBMS; subsystem=control"
+                critical="false" />
+        
+        <!-- Monitor -->
+        <server name="FrameCollator" 
+                path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;" 
+                args="&DBMS; mode=final"/>
+
+        <!-- Process Monitor -->
+        <server name="ProcessMonitorFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &DBMS; subsystem=Imr delay=150" />
+
+        <server name="ProcessMonitor"
+                path="&BIN_DIR;/processMonitor"
+                directory="&DEFAULT_DIR;"
+                args="&LOG; &DBMS; file=/opt/rt/conf/imr/ovroLocal.xml writedelay=0.100" />
+
+        <!-- Ovro Antenna -->
+        <server name="FSPOvro&ANT;" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"
+                args="subsystem=Ovro&ANT; &DBMS;" />
+ 
+        <server name="Ovro&ANT;CanHost"
+                path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;" 
+                args="ant=&ANT; &TRACE; emulate=true simulate=true  &DBMS;"/>
+
+        <server name="Ovro&ANT;Camera"
+                path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;"
+                args="antenna=ovro&ANT; &DBMS;" />
+    </oad>
+
+</domain>
+    

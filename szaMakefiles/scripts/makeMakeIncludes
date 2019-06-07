@@ -1,0 +1,50 @@
+#!/bin/csh
+
+set carma = `pwd`
+set makefilePath = $carma/szaMakefiles/makefiles
+set scriptPath   = $carma/szaMakefiles/scripts
+
+#------------------------------------------------------------
+# Remove auto-generated include files
+#------------------------------------------------------------
+
+\rm $makefilePath/util/makefile_am_include_libs_auto
+\rm $makefilePath/antenna/makefile_am_include_libs_auto
+
+#------------------------------------------------------------
+# Now regenerate them
+#------------------------------------------------------------
+
+# Util libraries
+
+$scriptPath/makeFileList szaarrayutils   carma         szaarrayutils       util
+$scriptPath/makeFileList szaslalib       carma         szaslalib           util
+$scriptPath/makeFileList szautil         carma         szautil             util
+$scriptPath/makeFileList szapgutil       carma         szapgutil           util
+
+# Antenna libraries
+
+$scriptPath/makeFileList antenna_canbus  carma/antenna sza/antenna/canbus  antenna
+$scriptPath/makeFileList antenna_control carma/antenna sza/antenna/control antenna
+$scriptPath/makeFileList antenna_corba   carma/antenna sza/antenna/corba   antenna
+
+echo "" >> $makefilePath/util/makefile_am_include_szautil
+echo "lib_libcarmaSzautil_la_LIBADD = \\" >> $makefilePath/util/makefile_am_include_szautil
+echo "	lib/libcarmaSzaarrayutils.la \\"  >> $makefilePath/util/makefile_am_include_szautil
+echo "	lib/libcarmaSzaslalib.la \\"      >> $makefilePath/util/makefile_am_include_szautil
+echo "	lib/libcarmamonitor.la \\"        >> $makefilePath/util/makefile_am_include_szautil
+echo "	-lcurl \\"                        >> $makefilePath/util/makefile_am_include_szautil
+echo "	-lreadline \\"                    >> $makefilePath/util/makefile_am_include_szautil
+echo "	-lmir \\"                         >> $makefilePath/util/makefile_am_include_szautil
+echo "	-llzma"                           >> $makefilePath/util/makefile_am_include_szautil
+
+echo "" >> $makefilePath/util/makefile_am_include_szapgutil
+echo "lib_libcarmaSzapgutil_la_LIBADD = \\" >> $makefilePath/util/makefile_am_include_szapgutil
+echo "	lib/libcarmaSzautil.la \\"          >> $makefilePath/util/makefile_am_include_szapgutil
+echo "	-lcpgplot \\"                       >> $makefilePath/util/makefile_am_include_szapgutil
+echo "	-lpgplot"                           >> $makefilePath/util/makefile_am_include_szapgutil
+
+
+
+
+

@@ -1,0 +1,215 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Antenna IF CAN device monitor point definitions.  Antenna IF monitor   -->
+<!-- points are shared by BIMA, OVRO and SZA subsystems.                    -->
+<!-- Author: Andrew Beard                                                   -->
+<Common scope="global" author="Andrew Beard">
+
+    <Container name="AntennaIF">
+        <description>
+            The Antenna IF Module contains the antenna IF switch, the 
+            preamplifier module (PAM) and the laser transmitter module.  
+            Its main functions are to select the receiver, control the IF
+            level and monitor the correct functioning of the laser 
+            transmitter.
+        </description>
+
+	<MonitorPoint name="ifLog" type="string" persistent="true">
+	  <shortName>IF Log</shortName>
+	  <longName>IF Log</longName>
+	  <description>
+	    PAM IF Log string, providing idea of what's going on
+	  </description>
+	  <width>12</width>
+	</MonitorPoint>
+
+        <!-- Blanking frame monitor packet 1 -->
+        <MonitorPoint name="ifOutTotalPower" type="float" priority="useful" >
+            <shortName>If Out Power</shortName>
+            <longName>IF Total Power Output</longName>
+            <description>
+                IF total power monitor output, in mW, averaged over 
+                the last 0.5s.
+            </description>
+            <units>mW</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="pamTemp" type="float" >
+            <shortName>PAM Temp</shortName>
+            <longName>PAM Temperature</longName>
+            <description>
+                Preamplifier module physical temperature, in C.
+            </description>
+            <units>C</units>
+        </MonitorPoint>
+        
+        <!-- Blanking frame monitor packet 2 -->
+        <MonitorPoint name="attenSet" type="float" priority="vital">
+            <shortName>Atten Set</shortName>
+            <longName>Attenuator Setting</longName>
+            <description>
+                Nominal total attenuator setting at the time of sending
+                the frame, in dB. This is the sum of the input and output
+                attenuators and is the value that is set by the setAtten
+                command. The module splits this total into the input and
+                output attenuator settings.
+            </description>
+            <units>dB</units>
+            <precision>1</precision>
+        </MonitorPoint>
+
+        <MonitorPoint name="pamStat" type="enum" >
+            <shortName>Pam Status</shortName>
+            <longName>PAM Status</longName>
+            <enum name="VALID" />        <!-- 0x00 -->
+            <enum name="TOK_IFBLANK" >   <!-- 0x01 -->
+                <description>
+                    PAM temperature in range, attenuation changed during
+                    last blanking frame (data should be blanked).
+                </description>
+            </enum>
+            <enum name="TOK_IFHI">       <!-- 0x02 -->
+                <description>
+                    PAM temperature in range, IF level too high.
+                </description>
+            </enum>
+            <enum name="TOK_IFLO">       <!-- 0x03 -->
+                <description>
+                    PAM temperature in range, IF level too low.
+                </description>
+            </enum>
+            <enum name="TBAD">           <!-- 0x04 -->
+                <description>
+                    PAM temperature out of range.
+                </description>
+            </enum>
+            <enum name="TBAD_IFBLANK">   <!-- 0x05 -->
+                <description>
+                    PAM temperature out of range, attenuation changed during
+                    last blanking frame (data should be blanked).
+                </description>
+            </enum>
+            <enum name="TBAD_IFHI" >     <!-- 0x06 -->
+                <description>
+                    PAM temperature out of range, IF level too high.
+                </description>
+            </enum>
+            <enum name="TBAD_IFLO" >     <!-- 0x07 -->
+                <description>
+                    PAM temperature out of range, IF level too low.
+                </description>
+            </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="ifSwitchStat" type="enum" >
+            <shortName>IF Switch Status</shortName>
+            <longName>IF Switch Status</longName>
+            <description>
+                IF switch position.  These positions are currently 
+                mapped to-- POS1: 1-cm, POS2: 3-mm, POS3: 1-mm.
+            </description>
+            <enum name="CHANGED" >        <!-- 0x00 -->
+                <description>
+                    Changed position during last blanking frame (data should
+                    be blanked).
+                </description>
+            </enum>
+            <enum name="POS_1"/>          <!-- 0x01 -->
+            <enum name="POS_2"/>          <!-- 0x02 -->
+            <enum name="POS_3"/>          <!-- 0x03 -->
+            <enum name="POS_4"/>          <!-- 0x04 -->
+            <enum name="STUCK"/>          <!-- 0x05 -->
+        </MonitorPoint>
+
+        <MonitorPoint name="laserStat" type="enum">
+            <shortName>Laser Status</shortName>
+            <longName>Laser Status</longName>
+            <enum name="VALID"/>         <!-- 0x00 -->
+            <enum name="POWBAD" >        <!-- 0x01 -->
+                <description>
+                    Optical power out of range.
+                </description>
+            </enum>
+            <enum name="TBAD" >          <!-- 0x02 -->
+                <description>
+                    Laser out of temperature regulation.
+                </description>
+            </enum>
+            <enum name="TBAD_POWBAD" >   <!-- 0x03 -->
+                <description>
+                    Laser out of temperature regulation and optical power
+                    out of range.
+                </description>
+            </enum>
+        </MonitorPoint>
+
+        <MonitorPoint name="errorCount" type="byte" >
+            <shortName>Error Count</shortName>
+            <longName>Error Count</longName>
+            <description>
+                Count of errors logged during last blanking period.
+            </description>
+        </MonitorPoint>
+                    
+        <!-- Blanking frame monitor packet 3 -->
+        <MonitorPoint name="laserOpticalPower" type="float" >
+            <shortName>Laser Opt Power</shortName>
+            <longName>Laser Optical Power</longName>
+            <description>
+                Laser optical power monitor output according to laser diode
+                driver, in V.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="laserTemp" type="float" >
+            <shortName>Laser Temp</shortName>
+            <longName>Laser Temperature</longName>
+            <description>
+                Laser regulation error in V.  Very small when laser temperature
+                is being successfully regulated.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+        
+        <!-- Blanking frame monitor packet 4 -->
+        <MonitorPoint name="setInputAtten" type="float" >
+            <shortName>Input Atten</shortName>
+            <longName>Input Attenuation Settting</longName>
+            <description>
+                Current nominal input attenuator setting.
+            </description>
+            <units>dB</units>
+            <precision>1</precision>
+        </MonitorPoint>
+
+        <MonitorPoint name="setOutputAtten" type="float" >
+            <shortName>Output Atten</shortName>
+            <longName>Output Attenuation Setting</longName>
+            <description>
+                Current nominal output attenuator setting.
+            </description>
+            <units>dB</units>
+            <precision>1</precision>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 5 -->
+        <MonitorPoint name="laserIdTop" type="string" >
+            <shortName>Laser Id Top</shortName>
+            <longName>Laser ID Top Half</longName>
+            <description>
+                Top half of laser ID obtained from attached silicon serial
+                number (Dallas DS2401).
+            </description>
+        </MonitorPoint>
+        <MonitorPoint name="laserIdBot" type="string" >
+            <shortName>Laser Id Bot</shortName>
+            <longName>Laser ID Bottom Half</longName>
+            <description>
+                Bottom half of laser ID obtained from attached silicon 
+                serial number (Dallas DS2401).
+            </description>
+        </MonitorPoint>
+    </Container>
+</Common>

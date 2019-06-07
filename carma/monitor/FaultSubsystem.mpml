@@ -1,0 +1,318 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+<!-- Subsystem definition containing monitor points for fault system  -->
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="Fault" priority="normal">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <!-- Create reusable monitor points in the FaultSubsystem hierarchy -->
+    <Common scope="local">
+      <MonitorPoint name="errorPreference" type="enum" priority="useful">
+        <description>
+          This monitor point reflects the user preference for the pipeline's
+          interpretation of the fault system error bits.
+        </description>
+        <enum name="NONE">
+          <description>
+            The data will be neither blanked nor flagged. It will appear in
+            the MIRIAD dataset without any reason bits set.
+          </description>
+        </enum>
+        <enum name="BLANK">
+          <description>
+            The data will be not be added into the current integration. It will
+            not be present in the MIRIAD dataset. The appropriate bit will
+            be set in the MIRIAD dataset.
+          </description>
+        </enum>
+        <enum name="FLAG">
+          <description>
+            The data will be added into the current integration. It wil be
+            present in the MIRIAD dataset. The appropriate bit will be
+            set in the MIRIAD dataset, and this integration will be flagged.
+          </description>
+        </enum>
+      </MonitorPoint>
+    </Common>
+
+    <MonitorPoint name="cmsSyncStepLatency" type="float" priority="useful">
+        <shortName>cmsSyncStepLatency</shortName>
+        <description>
+          Time taken to sync the CARMA Monitor System object
+        </description>
+        <units>ms</units>
+        <errHi>10.0</errHi>
+        <warnHi>7.5</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="dagUpdStepLatency" type="float" priority="useful">
+        <shortName>dagUpdStepLatency</shortName>
+        <longName>dagUpdateStepLatency</longName>
+        <description>
+          Time taken to evaluate the Blank/Flag and Alarm DAGs. Broken out
+          times are available elsewhere in the FaultSubsystem.
+        </description>
+        <units>ms</units>
+        <errHi>50.0</errHi>
+        <warnHi>30.0</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="totalLatency" type="float" priority="useful">
+      <shortName>totalLatency</shortName>
+      <longName>totalLatency</longName>
+      <description>
+        Time taken for the complete fault system processing operation
+      </description>
+      <units>ms</units>
+      <errHi>50.0</errHi>
+      <warnHi>30.0</warnHi>
+    </MonitorPoint>
+
+    <MonitorPoint name="inputCmsFrameCount" type="int" priority="useful">
+        <shortName>inputCmsFrameCount</shortName>
+        <description>
+          Frame count of the input monitor system
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="updateCycleNo" type="int" priority="useful">
+        <shortName>updateCycleNo</shortName>
+        <description>
+          Cycle number of the update thread
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="droppedFrames" type="int" priority="useful">
+      <shortName>droppedFrames</shortName>
+      <longName>droppedFrames</longName>
+      <description>
+        Total number of frames missed by the fault system. These can
+        be due to the FrameCollator or any other upstream process which
+        can drop a monitor frame.
+      </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="exceptionCount" type="int">
+        <shortName>exceptionCount</shortName>
+        <longName>exceptionCount</longName>
+        <description>
+          Running count of exceptions encountered in the update thread
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="monSysFrameSize" type="float" priority="debug">
+        <shortName>monSysFrameSize</shortName>
+        <longName>monitorSystemFrameSize</longName>
+        <description>
+          Size of the monitor system frame
+        </description>
+        <units>KB</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="alarmOn" type="bool">
+        <shortName>alarmOn</shortName>
+        <longName>alarmOn</longName>
+        <description>
+            Is the alarm on
+        </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="alarmFile" type="string">
+      <description>
+        file path of the Alarm DAG currently in use
+      </description>
+      <width>80</width>
+    </MonitorPoint>
+
+    <MonitorPoint name="blankFlagFile" type="string">
+      <description>
+        file path of the Blank/Flag DAG currently in use
+      </description>
+      <width>80</width>
+    </MonitorPoint>
+
+    <MonitorPoint name="alarmConfigError" type="bool">
+      <description>
+        Is there an error in the alarm configuration file
+      </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="blankFlagConfigError" type="bool">
+      <description>
+        Is there an error in the blank/flag configuration file
+      </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="emailConfigError" type="bool">
+      <description>
+        Is there an error in the email configuration files
+      </description>
+    </MonitorPoint>
+
+    <!-- Alarm Evaluation Container -->
+    <Container name="Alarm">
+      <description>
+        Contains fault system monitor points which are specific to the alarm
+        evaluation step of the fault system.
+      </description>
+
+      <MonitorPoint name="updateLatency" type="float" priority="useful">
+          <shortName>updateLatency</shortName>
+          <longName>updateLatency</longName>
+          <description>
+              Time taken to update the alarm fault tree
+          </description>
+          <units>ms</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="noisyAlarmOn" type="bool">
+        <description>
+          Is the noisy alarm on (playing music)
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="silentAlarmOn" type="bool">
+        <description>
+          Is the silent alarm on (no music for this alarm type)
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="faultCount" type="int">
+        <description>
+          Total count of faults which are ringing the alarm
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="exceptionCount" type="int">
+          <shortName>exceptionCount</shortName>
+          <longName>exceptionCount</longName>
+          <description>
+              Running count of exceptions encountered in the update thread
+          </description>
+      </MonitorPoint>
+
+    </Container>
+
+    <!-- BlankFlag Evaluation Container -->
+    <Container name="BlankFlag">
+      <description>
+        Contains fault system monitor points which are specific to the
+        blank/flag evaluation step of the fault system.
+      </description>
+
+      <MonitorPoint name="updateLatency" type="float" priority="useful">
+        <shortName>updateLatency</shortName>
+        <longName>updateLatency</longName>
+        <description>
+          Time taken to update the blank/flag fault tree
+        </description>
+        <units>ms</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="faultCount" type="int">
+        <description>
+          Total count of faults which are causing blanking/flagging across the
+          entire system
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="exceptionCount" type="int">
+        <shortName>exceptionCount</shortName>
+        <longName>exceptionCount</longName>
+        <description>
+          Running count of exceptions encountered in the update thread
+        </description>
+      </MonitorPoint>
+
+    </Container>
+
+    <!-- Per-subarray transient state container -->
+    <Container name="Subarray" count="&NUM_SUBARRAYS;" priority="vital">
+
+        <description>
+            Contains fault system monitor points which are specific to a single subarray.
+            Carma fault system design supports 5 subarrays.
+        </description>
+
+        <MonitorPoint name="correlatorNoiseOn" type="bool" priority="useful">
+            <shortName>correlatorNoiseOn</shortName>
+            <longName>correlatorNoiseOn</longName>
+            <description>
+                The fault system is configured with the correlator noise source on
+                for this subarray.
+            </description>
+        </MonitorPoint>
+
+        <CommonMonitorPoint ref="errorPreference" name="driveErrorPreference" />
+        <CommonMonitorPoint ref="errorPreference" name="monitorErrorPreference" />
+        <CommonMonitorPoint ref="errorPreference" name="offlineErrorPreference" />
+        <CommonMonitorPoint ref="errorPreference" name="phaselockErrorPreference" />
+
+        <MonitorPoint name="alarmEnable" type="enum" priority="useful">
+          <shortName>alarmEnable</shortName>
+          <longName>alarmEnable</longName>
+          <description>
+            Is the per-subarray alarm enabled. This value is comprised using
+            both FaultSystem and AlarmSubsystem monitor points.
+
+            AlarmSubsystem Hardware Switch Disabled: HW_DISABLED
+            FaultSubsystem Software Switch Disabled: SW_DISABLED
+            FaultSubsystem Noisy Alarm is on: TRIGGERED
+            FaultSubsystem Silent Alarm is on: SILENT
+            All other cases: ENABLED
+          </description>
+          <enum name="HW_DISABLED">
+            <description>Alarm will not sound at all, period</description>
+          </enum>
+          <enum name="SW_DISABLED">
+            <description>
+              All alarms for this subarray are disabled, as defined by
+              the fault system alarm DAG
+            </description>
+          </enum>
+          <enum name="TRIGGERED">
+            <description>
+              The noisy alarm has been triggered. It is playing a sound for you.
+            </description>
+          </enum>
+          <enum name="SILENT">
+            <description>
+              The silent alarm has been triggered. An email may have been sent,
+              but the noise has not been played.
+            </description>
+          </enum>
+          <enum name="ENABLED">
+            <description>
+              The alarm will sound if a fault occurs.
+            </description>
+          </enum>
+
+          <!-- 
+               NOTE: these are set after the frame collator has performed
+               NOTE: thresholding, therefore the error statuses are set
+               NOTE: directly in the fault system code. Grep is your friend.
+          -->
+          <errHi>HW_DISABLED</errHi>
+          <errLo>HW_DISABLED</errLo>
+
+          <warnHi>SW_DISABLED</warnHi>
+          <warnLo>SW_DISABLED</warnLo>
+
+          <errHi>TRIGGERED</errHi>
+          <errLo>TRIGGERED</errLo>
+        </MonitorPoint>
+
+    </Container>
+
+    <!-- Blanking Container: all blank/flag information here -->
+    <Container name="Astroband" count="&NUM_ASTRO_BANDS;">
+      <Container name="Input" count="&NUM_ASTRO_BAND_INPUTS;">
+        <MonitorPoint type="byte" name="status" />
+      </Container>
+    </Container>
+
+</Subsystem>

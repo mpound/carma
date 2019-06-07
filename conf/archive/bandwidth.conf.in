@@ -1,0 +1,3 @@
+# Bandwidth limit (MB/sec = 8 Mb/sec)
+All	7:0:0-18:30:0	1.06
+All	18:30:0-7:0:0	1.06

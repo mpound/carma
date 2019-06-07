@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+<!-- $Id: tioga.xml,v 1.61 2014/06/30 18:54:47 scott Exp $ -->
+
+<!-- Include the domain dtd definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY TOP_DIR "/home/scott/CARMA/install">
+        <!ENTITY BIN_DIR "&TOP_DIR;/bin">
+        <!ENTITY DEFAULT_DIR "&TOP_DIR;">
+        <!ENTITY EMULATE "true">
+        <!ENTITY LOG "traceFile=syslog traceLevel=0">
+        <!ENTITY USE_DB "useDBMS=false">
+]>
+
+<!-- 
+        Configuration for Steve's desktop computer, but it is generic to any
+        single computer (run it with imr=localhost).  
+ -->
+
+<!-- @version -->
+<domain>
+ 
+    
+    <oad hostname="localhost">
+        <server name="controlFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=control"
+                startup-priority="&monitor;"/>
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; mode=raw, clearDelay=30" 
+                startup-priority="&monitor-core;"/>
+        <server name="loberotatorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=loberotator &LOG; &USE_DB;"  />
+        <server name="delayEngineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=delayEngine &LOG; &USE_DB;" />
+        <server name="ovro1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro1 &LOG; &USE_DB;" />
+        <server name="ovro2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro2 &LOG; &USE_DB;" />
+        <server name="ovro4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro4 &LOG; &USE_DB;" />
+
+        <server name="Subarray1" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true &LOG; &USE_DB; subarrayNo=1 " 
+                optargs="-ORBSvcConf &TOP_DIR;/conf/tao/fc.conf"
+                system="control"
+                startup-priority="&control;" />
+        <server name="Subarray2" path="&BIN_DIR;/subarrayControl"
+                directory="&DEFAULT_DIR;"  
+                args="runSAT=true &LOG; &USE_DB; subarrayNo=2" 
+                optargs="-ORBSvcConf &TOP_DIR;/conf/tao/fc.conf"  
+                system="control"
+                startup-priority="&control;" />
+        <server name="FaultSystem" path="&BIN_DIR;/faultSystem"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; runEmailService=false alarmFile=fault/test/alarm_good.xml blankFlagFile=fault/test/bf_good.xml outputCMS=intermediate"
+                startup-priority="&monitor-core;" />
+        <server name="ControlState" path="&BIN_DIR;/carmaControlState"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; statedir=/tmp nice=10"
+                critical="false" />
+
+        <server name="ProcessMonitorFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; subsystem=Imr delay=150"
+                system="monitor" critical="true" 
+                startup-priority="&monitor;"/>
+
+        <server name="ProcessMonitor" path="&BIN_DIR;/processMonitor"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; file=/home/scott/CARMA/install/conf/imr/tioga.xml  writedelay=0.100 poll=5"
+                system="monitor" critical="true" 
+                startup-priority="&subsystem-core;" />
+
+        <server name="signalPathFSP" path="&BIN_DIR;/frameScriberPublisher"
+	            directory="&DEFAULT_DIR;" 
+	            args="&LOG; &USE_DB;  subsystem=signalpath delay=145"
+                startup-priority="&monitor;" />
+    
+        <server name="SignalPathMapper" path="&BIN_DIR;/carmaSignalPathMapper"
+	            directory="&DEFAULT_DIR;" 
+                args="&LOG;"
+                startup-priority="&subsystem;"/>
+
+        <server name="LobeRotator" path="&BIN_DIR;/carmaLoberotatorHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=true sim=true &LOG; &USE_DB;" />
+
+        <server name="CanHostOvro1" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; ant=1 emulate=true simulate=true "/>
+        <server name="CanHostOvro2" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; ant=2 emulate=true simulate=true "/>
+        <server name="CanHostOvro4" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; ant=4 emulate=true simulate=true "/>                
+
+        <server name="OTovro2" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=ovro2 emulate=true"/>
+<!-- SZA Antennas 
+  The FSP delay is set to 350msec rather than the nominal 275msec to give
+  headroom in case there is an error on CANbus0. Currently this causes a 
+  transmission on CANbus1, which is unpopulated, resulting in an infinite
+  loop of errors using enough cpu time to delay the publishing of the
+  monitor data.
+-->
+
+        <server name="Sza3FSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=sza3 delay=350" 
+            startup-priority="&monitor;" />
+        <server name="Sza3Control" path="&BIN_DIR;/szaAntennaControl"
+            args="&LOG; antenna=2 simcanbus=t simpmac=t logd=/home/scott/szalog logf=c18 host=localhost ignorewraplogic=f" />
+        <server name="OTsza3" path="&BIN_DIR;/carmaOpticalTel"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; antenna=sza3 awdelay=0.15 emulate=true"/>
+                
+    </oad> 
+                
+    <!--               
+        <server name="sldcFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=sldc &LOG; &USE_DB;" />
+        <server name="slcBand1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  subsystem=CarmaSlcBand1" />
+                
+        <server name="SlcBand1" path="&BIN_DIR;/CorrelatorCarmaServer"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB;  b=1 p=19001 f=correlator/labcorrelator.conf  sim=correlator/labCarma15.ini hwtype=carma" />
+
+        <server name="Sldc" path="&BIN_DIR;/carmaSldcHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=true &LOG; &USE_DB;" />
+       
+    </oad>  
+    -->
+
+    <!--  
+    <oad hostname="canlab">
+        <server name="CanHostOvro6" path="&BIN_DIR;/ovroCanHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; ant=6 board=0 nofg=false"/>
+        
+    </oad>        
+    -->
+       
+</domain>
+    

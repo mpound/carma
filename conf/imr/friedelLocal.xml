@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain dtd definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+        <!ENTITY BIN_DIR "/scr/cymru/friedel/CARMA/carma_build/install/bin">
+        <!ENTITY DEFAULT_DIR "/scr/cymru/friedel/">
+        <!ENTITY CONF_DIR "/scr/cymru/friedel/CARMA/carma_build/install/conf/imr">
+        <!ENTITY EMULATE "true">
+        <!ENTITY LOG "traceFile=/scr/cymru/friedel/CARMA/logs/trace.log traceLevel=7 logfile=/scr/cymru/friedel/CARMA/logs/sys.log">
+        <!ENTITY USE_DB "useDBMS=false">
+]>
+
+
+<!-- 
+        Configuration for Doug's laptop computer, but it is generic to any
+        single computer (run it with imr=localhost). (Based on marcLocal.xml)  
+ -->
+
+<!-- @version -->
+<domain>
+ 
+    
+    <oad hostname="localhost">
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args="&LOG; &USE_DB; " />
+
+        <server name="projectDatabaseManagerFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; subsystem=projectdatabasemanager"/>
+        <server name="ProjectDatabaseManager" path="&BIN_DIR;/carmaProjectDatabaseManagerHost"
+                directory="&DEFAULT_DIR;" 
+                args="&LOG; &USE_DB; hostname=localhost database=test rt=false" />
+       </oad>  
+       
+</domain>
+    

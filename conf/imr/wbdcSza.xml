@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd">
+
+<!-- Configuration for the SZA acc, imr and the wbdc machine.
+     It runs the host and monitoring processes.
+ -->
+
+
+<!-- @version -->
+<domain>
+
+    <!-- The sza system 'acc' -->
+    <oad hostname="szanet.ovro.caltech.edu">
+        <server name="FrameCollator" 
+            path="/home/scott/carma/install/opti/bin/frameCollator"
+            args=""
+            directory="/home/scott"  />
+       <!--
+        <server name="CatchData" 
+            path="/home/scott/carma/install/opti/bin/frameCollator"
+            args=""
+            directory="/home/scott"  />
+        -->
+     </oad>
+    
+    <!-- Wideband downconverter -->
+    <oad hostname="dcon0">
+    
+        <server name="HostWbdc" 
+            path="/home/scott/carma/install/opti/bin/carmaWbdcHost"
+            args="board=0"
+            directory="/home/scott"  />
+        <server name="HostDelayEngine" 
+            path="/home/scott/carma/install/opti/bin/DelayEngine"
+            args="" 
+            directory="/home/szadaq" />
+
+<!-- *********************************************
+        <server name="HostLoberotator" 
+            path="/home/scott/carma/install/opti/bin/carmaLoberotatorHost"
+            args="board=1" 
+            directory="/home/szadaq" />
+-->
+        <!-- We need three instances of frameScriberPublisher running on this
+             machine.  One for each subsystem.  Note that each instance must
+             be registered with the IMR under a different name.          -->
+        <server name="FSPwbdc" 
+             path="/home/scott/carma/install/opti/bin/frameScriberPublisher"
+             args="subsystem=wbdc delay=300"
+             directory="/home/szadaq" />
+        <server name="FSPoberotator" 
+             path="/home/scott/carma/install/opti/bin/frameScriberPublisher"
+             args="subsystem=loberotator"
+             directory="/home/szadaq" />
+        <server name="FSPdelayEngine"
+            path="/home/scott/carma/install/opti/bin/frameScriberPublisher"
+            args="subsystem=delayengine"
+            directory="/home/szadaq" />
+            
+            
+        <server name="RemoteCanServer" 
+            path="/home/scott/carma/install/opti/bin/canOverIpServer"
+            directory="/home/szadaq" 
+            args=""  />
+    </oad>
+
+    
+</domain>
+    

@@ -1,0 +1,6 @@
+This alarm is commonly caused when the correlator has been configured
+incorrectly.
+
+Look here for help with this problem:
+http://cedarflat.mmarray.org/wiki/Alarms#CarmaSlcBandX.corMonitorHeader.commandStatus
+

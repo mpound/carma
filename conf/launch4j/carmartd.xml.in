@@ -1,0 +1,40 @@
+<launch4jConfig>
+  <dontWrapJar>false</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>@abs_top_builddir@/dist/lib/jrtd.jar</jar>
+  <outfile>/home/iws/carmartd.exe</outfile>
+  <errTitle>Bummer! Ask Marc Pound. Email: mpound@umd.edu</errTitle>
+  <cmdLine></cmdLine>
+  <chdir></chdir>
+  <priority>normal</priority>
+  <downloadUrl>http://java.com/download</downloadUrl>
+  <supportUrl>http://www.mmarray.org</supportUrl>
+  <customProcName>false</customProcName>
+  <stayAlive>false</stayAlive>
+  <manifest></manifest>
+  <icon>@abs_top_builddir@/conf/launch4j/carma.ico</icon>
+  <jre>
+    <path></path>
+    <minVersion>1.5.0</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+  </jre>
+  <splash>
+    <file>@abs_top_builddir@/conf/launch4j/carmasplash.bmp</file>
+    <waitForWindow>true</waitForWindow>
+    <timeout>60</timeout>
+    <timeoutErr>true</timeoutErr>
+  </splash>
+  <versionInfo>
+    <fileVersion>1.0.0.0</fileVersion>
+    <txtFileVersion>V1.0</txtFileVersion>
+    <fileDescription>Real time monitoring of CARMA array</fileDescription>
+    <copyright>2005-2013 Combined Array for Research in Millimeter Wave Astronomy</copyright>
+    <productVersion>1.0.0.0</productVersion>
+    <txtProductVersion>1.0</txtProductVersion>
+    <productName>CARMA Real Time Display</productName>
+    <companyName>CARMA</companyName>
+    <internalName>rtd</internalName>
+    <originalFilename>carmartd.exe</originalFilename>
+  </versionInfo>
+</launch4jConfig>

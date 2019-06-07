@@ -1,0 +1,98 @@
+/** @file
+ * carma::antenna::ovro::FrontEndControl interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.4 $
+ * $Date: 2011/05/17 16:27:33 $
+ * $Id: ovroFrontEndControl.idl,v 1.4 2011/05/17 16:27:33 iws Exp $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_ANTENNA_OVRO_FRONTENDCONTROL_IDL
+#define CARMA_ANTENNA_OVRO_FRONTENDCONTROL_IDL
+
+#include "carma/antenna/common/FrontEndControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module ovro {
+
+/**
+ * OVRO antenna-specific FrontEnd control interface.
+ * Ovro receiver systems have additional functionality which
+ * is not general enough to be included in the Common Antenna API.  That
+ * additional functionality is included here.
+ */
+interface FrontEndControl : carma::antenna::common::FrontEndControl {
+
+    /**
+     * Set LO attenuation.
+     * @param LO Attenuation in %
+     */
+    void setLoAttenuation(in float atten)
+        raises (carma::util::UserException);
+
+    /**
+     * Enumeration describing which current to use for Vgap measurement.
+     */
+    enum CurrentMode {
+        STORED,  /**< Use value stored in module. */
+        MESSAGE, /**< Use value specified in the getVgap method. */
+        IV_CURVE /**< Use value stored in the IV-Curve. */
+    };
+
+    /**
+     * Get Vgap
+     * Measures the junction gap voltage, which is reported in the blanking
+     * frames.  The LO attenuation is set to maximum during the measurement.
+     * The new value is reported in the blanking frame monitor packets.
+     * @param mode CurrentMode specifying which current to use.
+     * @param current Current to use for Vgap if mode == MESSAGE in mA.
+     */
+    void getVgap(in CurrentMode mode, in float current)
+        raises (carma::util::UserException);
+
+    /**
+     * Set Igap
+     * Sets the value of current to be used as the default for Vgap
+     * measurements.
+     * @param current Current to use for getVgap when mode == STORED in mA.
+     */
+    void setIgap(in float current)
+        raises (carma::util::UserException);
+
+    /**
+     * Vj Loop Modes
+     */
+    enum VjLoopMode {
+        VJ_CLOSED, /**< Continuous adjustment of Vj to set value. */
+        VJ_OPEN, /**< DAC is set to nominal value for mixer voltage. */
+        VJ_FINITE /**< A fixed number of iterations. */
+    };
+
+    /**
+     * Determine method for setting mixer voltage.
+     * @param mode VjLoopMode.
+     */
+    void setVjLoopMode(in VjLoopMode mode)
+        raises (carma::util::UserException);
+
+    /**
+     * Ij Loop Modes
+     */
+    enum IjLoopMode {
+        IJ_CLOSED, /**< Continous adjustment of Ij to set value. */
+        IJ_FINITE  /**< A fixed number of iterations. */
+    };
+
+    /**
+     * Set Ij loop mode.
+     * @param mode IjLoopMode.
+     */
+    void setIjLoopMode(in IjLoopMode mode)
+        raises (carma::util::UserException);
+
+}; // End FrontEndControl interface
+};};}; // End carma::antenna::ovro module
+#endif

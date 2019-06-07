@@ -1,0 +1,120 @@
+This is the Real Time System (RTS) software for CARMA.
+
+Installation of CARMA assumes you have a number of libraries and tools
+pre-installed in what we refer to as CARMA_TOOLS. Part of the reason
+is to isolate us from upstream modification that break our code. As
+both mature, packages may be added and removed from the CARMA_TOOLS
+and be natively present. This will be a moving target as linux
+distributions change. Although CARMA is only supported on linux/redhat
+flavors, some components are known to work under linux/debian flavors.
+
+Installation of CARMA_TOOLS is normally done infrequently, but is done
+via CARMA as the first step after having obtained CARMA via CVS.
+CARMA_TOOLS is installed from a set of (source) tar/zip files that
+live in CARMA_PKG.
+
+A fresh installation could look as follows, from a clean directory
+first install carmatools:
+
+  cvs -d :ext:$USER@cvs.ovro.caltech.edu:/sw/cvscarma co carma
+  carma/scripts/buildCarmaTools.in --help
+  carma/scripts/buildCarmaTools.in \
+   --prefix=`pwd`/tools \
+   --package=/home/carma_pkg \
+   --build=`pwd`/build-tools \
+   --makefiles=`pwd`/carma/conf/opt \
+   --java-home=$JAVA_HOME \
+   --no-cvs-update
+
+followed by building carma itself:
+
+  carma/scripts/buildInstall.in \
+   --top-of-tree=`pwd` \
+   --local --no-email -u teuben --no-comment \
+   --java-home=$JAVA_HOME \
+   --no-cvs-diff --no-cvs-update \
+   --carma-tools=/astromake/opt/carmatools \
+   --miriad-home=$MIR \
+   --rt-link=`pwd`/rt \
+   --no-syslog \
+   --verbose
+
+The buildInstall.in may fail if you have missing packages on your
+OS, for example on Debian/Ubuntu systems you may have to do:
+
+  sudo apt-get install build-essential tcsh libcurl3-dev libssl-dev
+  sudo apt-get install python-cheetah libvorbis-dev autoconf libltdl-dev
+  sudo apt-get install gfortran libreadline6-dev libbz2-dev libpng12-dev
+  sudo apt-get install sun-java6-jdk tk-dev libncurses5-dev autotools-dev
+  sudo apt-get install python-setuptools python-dev
+  sudo easy_install PyXML
+
+  (This list worked as of Ubuntu 10.04)
+
+(Marc's notes):
+
+For Ubuntu 11.x, sun-java6-jdk is replaced with openjdk, and you'll need
+a few other packages and tricks:
+
+sudo apt-get install python-tk tk tk-dev liblcms1 liblcms1-dev
+sudo apt-get install libtldl7 libltdl-dev libtool libvorbis-dev libx11-dev
+sudo apt-get install libssl-dev libreadline6 libreadline6-dev readline-common
+sudo apt-get install qt3-dev-tools qt4-dev-tools libncurses5-dev libcurl3-dev
+sudo apt-get install openjdk-6-jdk libpng12-dev libfreetype6-dev libsqlite3-dev
+sudo apt-get install libcairo2-dev libasound2-dev libicu-dev libbz2-dev
+sudo apt-get install doxygen libv4l-dev liblapack-pic liblapack-test liblapack-dev
+
+sudo ln -s /usr/include/libv4l1-videodev.h /usr/include/linux/videodev.h
+
+You will also need to add -fpermissive to DEFAULT_CXXFLAGS in buildInstall.in
+because of mutable declarations in DriveEngine.cc, and --copy-dt-needed-entries for the linker.
+
+(Ira's notes):
+
+Additional packages required as of Ubuntu 11.10:
+
+  sudo apt-get install libc6-i386 libc-dev-i386 unzip
+  sudo apt-get install libblas-dev liblapack-dev
+  sudo apt-get install bison flex libglib2.0-dev
+
+If you have errors about missing include linux/videodev.h, you should
+port the code to use newer video4linux2 interfaces. video4linux1 support
+has been removed from the Linux kernel. Alternatively, copy the correct
+/usr/include/libv4l1-videodev.h from RHEL5 and symlink appropriately.
+
+Ubuntu Compiler
+When using gcc-4.6 or higher, you MUST add the following to both your
+CFLAGS and CXXFLAGS variables when running configure (until all of the
+bugs in our source code and autotools setup are fixed):
+
+  -fpermissive -Wl,--copy-dt-needed-entries
+
+A better option is to install gcc-4.4 (Ubuntu 12.04) and make it the default compiler
+
+sudo apt-get install gcc-4.4 g++-4.4 g++-4.4-multilib gcc-4.4-multilib gfortran-4.4
+sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.4 100
+sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.6 50
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.4 100
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 50
+sudo update-alternatives --install /usr/bin/cpp cpp-bin /usr/bin/cpp-4.4 100
+sudo update-alternatives --install /usr/bin/cpp cpp-bin /usr/bin/cpp-4.6 50
+sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-4.4 100
+sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-4.6 50
+
+After these you can shortcut the lengthy buildInstall method and
+simply do
+
+  cd build
+  make
+  make install
+
+and iterate adding packages until success!?
+
+Finally, some space requirements guidelines: (2012)
+carma_pkg   1.5  GB
+carma_tools 1.9  GB
+carma       0.12 GB
+build       2.2  GB
+rt          0.6  GB
+            ---+
+SUM:        6.4  GB

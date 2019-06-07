@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- ************************************************************ -->
+<!-- ** Sza antenna subsystem monitor point definitions        ** -->
+<!-- **                                                        ** -->
+<!-- ** Don't change the Subsystem name, other components      ** -->
+<!-- ** count on this name!                                    ** -->
+<!-- ************************************************************ -->
+
+<Subsystem name="Sza" count="8" indexName="antennaNo" priority="normal">
+
+
+    <!-- ************************************************************ -->
+    <!-- ** Declare files we'll be drawing monitor points from     ** -->
+    <!-- ************************************************************ -->
+
+    <?common AntennaCommon.mpml?>
+    <?common AntennaIF.mpml?>
+    <?common CanbusCommon.mpml?>
+    <?common SzaSubsystemCommon.mpml?>
+    <?common Varactor.mpml?>
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <!-- ************************************************************ -->
+    <!-- ** Declare a common container called AntennaCommon        ** -->
+    <!-- ************************************************************ -->
+
+    <CommonContainer ref="AntennaCommon" />
+
+    <!-- ************************************************************ -->
+    <!-- ** A single monitor point encapsulating a timestamp **** -->
+    <!-- ************************************************************ -->
+
+    <MonitorPoint name="timestamp" type="absTime">
+      <shortName>Timestamp</shortName>
+      <units>UTC</units>
+      <description>
+         Time that packet data was completed/written
+      </description>
+    </MonitorPoint>
+
+    <!-- ************************************************************ -->
+    <!-- ** A single monitor point whose value is always true    **** -->
+    <!-- ************************************************************ -->
+
+    <?common OnlineCommon.mpml?>
+    <CommonMonitorPoint ref="online" />
+
+    <!-- ************************************************************ -->
+    <!-- **                   Antenna IF Module (PAM)              ** -->
+    <!-- ************************************************************ -->
+
+    <Container name="AntennaIfContainer" >
+    	<CommonMonitorPoint ref="state" />
+        <CommonContainer ref="AntennaIF"/>
+        <CommonContainer ref="Xac"/>
+    </Container>
+
+    <!-- ************************************************************ -->
+    <!-- **                   Varactor monitor points              ** -->
+    <!-- ************************************************************ -->
+  
+    <Container name="Gunn1cm">
+        <description>Dummy container for the varactor module.</description>
+        <CommonMonitorPoint ref="state" />
+        <CommonContainer ref="VaractorModule" name="Varactor"/>
+        <CommonContainer ref="Xac"/>
+    </Container>
+    
+    <CommonContainer ref="Frame"/>
+    <CommonContainer ref="Bias"/>
+    <CommonContainer ref="Caltert"/>
+    <CommonContainer ref="Ifmod"/>
+    <CommonContainer ref="Intmod"/>
+    <CommonContainer ref="Pmac"/>
+    <CommonContainer ref="Rx"/>
+    <CommonContainer ref="Thermal"/>
+    <CommonContainer ref="Tiltmeter"/>
+    <CommonContainer ref="Tracker"/>
+    <CommonContainer ref="Varactor"/>
+    <CommonContainer ref="Yig"/>
+
+</Subsystem>

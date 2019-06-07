@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd" [
+	<!ENTITY BIN_DIR "/home/mpound/src/carma/bin">
+	<!ENTITY DEFAULT_DIR "/home/mpound/src/carma">
+        <!ENTITY LOG "logfile=/var/carma/log/carma.log">
+]>
+
+<!-- Configuration for standalone testing all of carma on a single machine.
+     
+     Note: the use of "localhost" is fine is this file for a single machine
+     but very hazardous in a multi-machine configuration.
+ -->
+
+<!-- @version -->
+<domain>
+ 
+    
+    <oad hostname="localhost">
+              
+ 
+        <server name="FSPtest" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=test" />
+        <server name="FSPwbdc" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=wbdc delay=300"/>
+        <server name="FSPloberotator" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=loberotator" />
+        <server name="FSPdelayEngine" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=delayEngine" />
+        <server name="ovro1FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro1"/>
+        <server name="ovro2FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro2"/>
+        <server name="ovro3FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro3"/>
+        <server name="ovro4FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro4"/>
+        <server name="ovro5FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro5"/>
+        <server name="ovro6FSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&DEFAULT_DIR;" 
+                args="subsystem=ovro6"/>
+    
+        <server name="HostWbdc" path="&BIN_DIR;/carmaWbdcHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=true logfile=/var/log/carma"/>
+        <server name="HostLobeRotator" path="&BIN_DIR;/carmaLoberotatorHost"
+                directory="&DEFAULT_DIR;" 
+                args="emulate=true" />
+<!--
+        <server name="HostDelayEngine" path="&BIN_DIR;/DelayEngine"
+                directory="&DEFAULT_DIR;"   
+                args="emulate=true"/>
+-->
+        <server name="TestFeed" path="&BIN_DIR;/testMPwriterReader"
+                directory="&DEFAULT_DIR;"   
+                args="writeOnly=true "/>
+
+        <server name="DriveControlOvro1" path="&BIN_DIR;/ovroDriveControl"
+                directory="&DEFAULT_DIR;"  
+                args="ant=1 c=carma.ovro1.DriveControl"/>
+        <server name="DriveControlOvro2" path="&BIN_DIR;/ovroDriveControl"
+                directory="&DEFAULT_DIR;"  
+                args="ant=3 c=carma.ovro2.DriveControl"/>
+        <server name="DriveControlOvro3" path="&BIN_DIR;/ovroDriveControl"
+                directory="&DEFAULT_DIR;"  
+                args="ant=3 c=carma.ovro3.DriveControl"/>
+        <server name="DriveControlOvro4" path="&BIN_DIR;/ovroDriveControl"
+                directory="&DEFAULT_DIR;"  
+                args="ant=4 c=carma.ovro4.DriveControl"/>
+        <server name="DriveControlOvro5" path="&BIN_DIR;/ovroDriveControl"
+                directory="&DEFAULT_DIR;"  
+                args="ant=5 c=carma.ovro5.DriveControl"/>
+        <server name="DriveControlOvro6" path="&BIN_DIR;/ovroDriveControl"
+                directory="&DEFAULT_DIR;"  
+                args="ant=6 c=carma.ovro6.DriveControl"/>
+        <server name="RemoteCanServer" path="&BIN_DIR;/canOverIpServer"
+                directory="&DEFAULT_DIR;"   
+                args=""/>
+ 
+        <server name="FrameCollator" path="&BIN_DIR;/frameCollator"
+                directory="&DEFAULT_DIR;"  
+                args=""/>
+ 
+    </oad>
+
+     <!-- OVRO antenna receiver lab PXE Client -->
+    <!-- <oad hostname="ovrolab" -->
+        <!-- Add servers here -->
+    <!-- </oad> -->
+    
+    
+</domain>
+    

@@ -1,0 +1,52 @@
+
+$Id: Logger.review3,v 1.1 2003/07/24 18:13:01 mpound Exp $
+
+Review of Logger.cc, Logger.h, SyslogLayout.cc and FileLayout.cc
+Any comments in the files themselves are marked with //-REV-JCK
+
+1) Documentation
+  a) Adheres to design document (http://www.mmarray.org/Design document.
+  b) Doxygenated covers all classes and methods.
+
+  Examples of use and stylistic paths to follow would be extremely useful.
+  This is probably being covered elsewhere (Perhaps by Amar?).
+
+  Also, it would be useful to have had a guide for installing and setting
+  up both log4cpp and cppunit...
+
+  Result: PASS
+
+2) Style Guide
+
+  a) Naming: Looks OK.
+  b) Files: Correctly divided in easy to follow manner.
+  c) Statements: Look OK.
+  d) Layout and comments: Well formatted.
+
+  Result: PASS
+
+3) Working unit test, coverage, leak checks
+
+  a) Unit test: 100% coverage of SyslogLayout.cc, 94% of Logger.cc, 100% of FileLayout.cc
+     Would be good to see RemoteSyslogAppender() tested somehow...
+  b) No leaks detected.  No other error types detected.
+
+  Result: PASS
+
+4) Inspection
+
+  a) What it does: Yup, provides wrapper around log4cpp
+  b) How it does it: Does it well, per design document.
+  c) Robustness: Should be fine, relies on robustness of syslog, which is good..
+  d) Algorithm, Design Pattern, Maths, Numerical correctness, etc...
+     Yes, uses standard factory class design pattern, uses util time functions,
+     numerically fine, etc...
+
+  Comments on design: I still think it would be better to have name-value pairs
+    in the syslog message.  This will make changing how the syslog messages look
+    and are consumed much easier in the future.  i.e.:
+      message {level=WARN} {category=Logger} etc...
+
+  Result: PASS
+
+

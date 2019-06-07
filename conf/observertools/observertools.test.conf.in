@@ -1,0 +1,11 @@
+# This on-site configuration file sets various directories used 
+# by the ProjectDatabaseManager
+
+#dbxml directory
+dbDir = /tmp/testDb1
+
+# dbxml file name
+dbFile = testDb1.dbxml
+
+#local backup file
+dbBackup = ${dbDir}/dbBackup.dat

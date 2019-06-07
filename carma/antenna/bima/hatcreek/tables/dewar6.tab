@@ -1,0 +1,42 @@
+# dewar6.tab   29sep97
+
+cyl 5346, motor 5346
+
+rapid warmup heaters: crimp connections, power resistors
+2nd stage heater: mounted on aluminum plate filling unused
+	HEMT slot
+3rd stage heater: two 600 ohm pwr resistors in parallel,
+	one (on mixer B) with tab sheared off to fit; the ohter,
+    on mixer D, has 2 holes to screw into
+
+sensors: 47103, 402, 6726, 7398, 22574
+
+mixer B: 31-011-7, with separate bias tee with 100 ohms to gnd;
+	thick copper straps from both mixer and bias tee to spider
+simple pole pieces with 0.2" diam magnet
+HEMT #5
+at room temp, 1 mV = 17.0 uA
+
+mixer D: 31-015A-1; with built-in bias/matching network
+	(150 ohms?); device ?
+HEMT #19
+simple pole pieces with 0.24" diam magnet
+# at room temp, 1 mV = 21.15 uA
+at room temp 1 mV = 20.54 uA
+0.010 thick copper strap from block to spider; no heat
+	sinking of coax to IF
+
+-------------------------------------------------------
+01Oct97 - replaced sensor 5 with 22574 because mixer_D
+  was suspiciously cold (only a little warmer than 3rd stage)
+replaced junction in mixer D with wafer (?, ?)
+replaced HEMT 17 (oscillates?) with HEMT 19
+
+04Sep01 - replaced 4 flexible straps from stage_3 to propeller;
+  old straps were two nested 0.010" thick copper pieces with indium
+  gaskets underneath; new are single 0.020" thick copper pieces with
+  Apiezon N underneath; in the past, the mixers in this dewar have
+  been slow to cool down following a defrost
+- replaced all cryogenic wires with polyimide-insulated wires
+- repositioned mixer_B horn; it had been recessed about 1/8" too
+  far, so moved forward, also adjusted angle of block a little

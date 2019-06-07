@@ -1,0 +1,77 @@
+/** @file
+ * $Id: ClockControl.idl,v 1.11 2011/08/25 21:07:13 abeard Exp $
+ * 
+ * IDL for Master Clock Control API
+ * 
+ * $Author: abeard $
+ * Version: $Revision: 1.11 $
+ * $Date: 2011/08/25 21:07:13 $
+ * 
+ */
+
+#ifndef CARMA_CLOCK_CLOCKCONTROL_IDL
+#define CARMA_CLOCK_CLOCKCONTROL_IDL
+
+#include "carma/util/UserException.idl"
+#include "carma/canbus/devices/DeviceControl.idl"
+
+module carma {
+  module clock {
+    enum ppsModeType     {RBPRS10, GPSPPS, TENMHZPPS};
+    enum rbModeType      {FREE, GPS000424,
+                                GPS001648,
+                                GPS003336,
+                                GPS010712,
+                                GPS021424,
+                                GPS042848,
+                                GPS085736,
+                                GPS175502};
+    enum gpsSourceType   {GPSA, GPSB};
+    enum tenMHzSourceType    {INTERNAL, EXTERNAL};
+    enum walshSyncType {ENABLE, DISABLE};
+    enum delayRegister {REGISTER1, REGISTER2};
+
+    interface ClockControl : carma::canbus::devices::DeviceControl {
+
+      // set 1pps to come from GPS or Cs clock
+      void setPpsMode(in ppsModeType ppsMode)
+	raises (carma::util::UserException);
+
+      // set Rb oscillation mode
+      void setRbMode(in rbModeType rbMode)
+	raises (carma::util::UserException);
+
+      // set primary GPS
+      void setGpsSource(in gpsSourceType gpsSource)
+	raises (carma::util::UserException);
+
+      // set 10MHz continuous wave (CW) source
+      void set10MHzSource(in tenMHzSourceType tenMHzSource)
+	raises (carma::util::UserException);
+
+      // set heartbeat delay
+      void setHbDelay(in unsigned short delay, in delayRegister reg)
+	raises (carma::util::UserException);
+
+      // Resynchronizes 1pps hardware output with gps-derived 1pps
+      // signal
+      void resync10MHzGps(in walshSyncType walshSync)
+	raises (carma::util::UserException);
+
+      // reset PRS10 Rb Time Standard and Resynchronize to GPS
+      void resetRb()
+	raises (carma::util::UserException);
+      
+      // Initialize master clock
+      void initialize(in ppsModeType    ppsMode,
+		      in rbModeType     rbMode,
+		      in gpsSourceType  gpsSource,
+		      in tenMHzSourceType   tenMHzSource,
+		      in walshSyncType walshSync)
+	raises (carma::util::UserException);
+
+    }; // end ClockControl interface
+  }; // end clock module
+}; // end carma module
+
+#endif

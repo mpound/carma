@@ -1,0 +1,2676 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd" >
+
+<!-- Control Subsystem monitor point definitions
+
+- $Id: ControlSubsystem.mpml,v 1.181 2014/10/17 16:27:05 mpound Exp $
+- $Revision: 1.181 $
+- $Date: 2014/10/17 16:27:05 $
+-->
+
+
+
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="Control" priority="useful" extendFrom="Base"
+           author="N. S. Amarnath" >
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <!-- Retreive common definitions we'll need here -->
+    <?common ControlBandCommon.mpml?>
+    <?common ControlCorrelEnum.mpml?>
+    <?common AntCommandsCommon.mpml?>
+    <?common PointStatusCommon.mpml?>
+    <?common ObsblockCommon.mpml?>
+
+    <Common scope="local">
+      <!-- manual blank/flag/birdie for correlator issues -->
+      <Container name="ManualFlagSlot" persistent="true">
+        <description>
+          Common container which implements manually-input blank/flag/birdie
+          preference for arbitrary bands, inputs, or baselines in a correlator.
+          This is intended to handle bad correlator hardware.
+
+          This structure can have unused fields when blank/flag/birdie is
+          enabled for a part of the correlator data larger than a single
+          baseline. In that case, the unused portions will be filled with the
+          value 255.
+
+          For example, to blank all data coming from band 1 input 3, you would
+          use the following settings:
+
+          band = 1
+          input1 = 3
+          input2 = 255 (don't care)
+          preference = BLANK
+
+          Examples:
+          1) A band may produce bad data due to a dead power supply
+          2) A input may produce bad data due to a dead digitizer PLL chip
+          3) A baseline may produce bad data when an FPGA chip has a stuck bit
+        </description>
+
+        <MonitorPoint name="band" type="short">
+          <description>
+            The correlator band part of the band/input1/input2 tuple to
+            be blanked/flagged/birdie'd. This is in the hardware numbering
+            scheme, NOT in the astroband/astroinput numbering scheme.
+          </description>
+        </MonitorPoint>
+        <MonitorPoint name="input1" type="short">
+          <description>
+            The correlator input1 part of the band/input1/input2 tuple to
+            be blanked/flagged/birdie'd. This is in the hardware numbering
+            scheme, NOT in the astroband/astroinput numbering scheme.
+          </description>
+        </MonitorPoint>
+        <MonitorPoint name="input2" type="short">
+          <description>
+            The correlator input2 part of the band/input1/input2 tuple to
+            be blanked/flagged/birdie'd. This is in the hardware numbering
+            scheme, NOT in the astroband/astroinput numbering scheme.
+          </description>
+        </MonitorPoint>
+        <CommonMonitorPoint ref="ManualFlagPreference" name="preference" />
+      </Container>
+
+      <Container name="ManualFlagCorrelator">
+        <description>
+          Common container to hold manual blank/flag/birdie information
+          for an entire correlator.
+        </description>
+
+        <CommonContainer ref="ManualFlagSlot" name="Slot" count="32" />
+      </Container>
+    </Common>
+
+   <MonitorPoint name="stateChangeTimestamp" type="absTime"
+                 persistent="true" >
+      <shortName>State Timestamp</shortName>
+      <longName>State Change Timestamp</longName>
+      <description>
+         Timestamp of last state change.  State change triggers
+         the state restoration subsystem to tear off new persistent
+         copies of the system state (except when the restoration in
+         progress flag is set).
+      </description>
+   </MonitorPoint>
+
+   <MonitorPoint name="antPosFilename" type="string" persistent="true" >
+       <shortName>Antpos Filename</shortName>
+       <description>
+        Name of antpos file last used with the baselineSolutions command.
+       </description>
+   </MonitorPoint>
+
+   <MonitorPoint name="ut1utc" type="double" persistent="true" priority="vital">
+       <shortName>UT1-UTC</shortName>
+       <description>
+        Current interpolated UT1-UTC value in seconds from the IERS table.
+       </description>
+       <units>
+        seconds
+       </units>
+   </MonitorPoint>
+
+   <MonitorPoint name="iersAge" type="double" persistent="true" >
+       <shortName>IERS Table Age</shortName>
+       <description>
+        Age of the IERS table.  If the table is more than 28 days old,
+        a silent alarm is set (email to observers and Teuben).
+       </description>
+       <warnHi>14.0</warnHi>
+       <errHi>28.0</errHi>
+       <units>
+        days
+       </units>
+   </MonitorPoint>
+
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<!-- Monitor points and containers for each Subarray in CARMA -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+    <Container name="Subarray" count="&NUM_SUBARRAYS;" priority="vital">
+       <description>
+           Contains control points which are specific to a single subarray.
+           Carma control design supports 5 subarrays.
+       </description>
+
+<!-- ============================================================= -->
+<!-- Basic information about the subarray (name, state, etc) -->
+
+       <MonitorPoint name="restorationInProgress" type="bool"
+                     persistent="false">
+          <shortName>Restoring</shortName>
+          <longName>Restoration In Progress</longName>
+          <description>
+            Flag indicating if restoration of subarray or antenna state
+            is in progress.  This differentiates the setting of new parameters
+            from simply restoring existing parameters as the system calls
+            are the same.
+          </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="stateRestored" type="bool" persistent="true" >
+          <shortName>State Restored</shortName>
+          <longName>State Restored</longName>
+          <description>
+            Indicates if the control system state has been restored.
+            If subarrayControl crashes and spontaneously restarts itself
+            this monitor point will be false.
+          </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="timestamp" type="absTime" persistent="true">
+          <shortName>Timestamp</shortName>
+          <units>UTC</units>
+          <precision> 0 </precision>
+          <description>
+              Time that monitor packet data was completed/written
+          </description>
+       </MonitorPoint>
+
+       <Container name="ArrayReference" priority="vital" persistent="true">
+         <description>
+             Array reference position on the ground.
+         </description>
+
+         <MonitorPoint name="latitude" type="double" persistent="true"
+              priority="vital" >
+             <shortName>latitude</shortName>
+             <longName>Latitude
+             </longName>
+             <description>Reference point latitude.
+             </description>
+             <units>radians</units>
+             <precision>12</precision>
+             <width>14</width>
+         </MonitorPoint>
+
+         <MonitorPoint name="longitude" type="double" persistent="true"
+              priority="vital" >
+             <shortName>longitude</shortName>
+             <longName>Longitude
+             </longName>
+             <description>Reference point longitude (increasing to east).
+             </description>
+             <units>radians</units>
+             <precision>12</precision>
+             <width>15</width>
+         </MonitorPoint>
+
+         <MonitorPoint name="altitude" type="double" persistent="true"
+              priority="vital" >
+             <shortName>altitude</shortName>
+             <longName>Altitude
+             </longName>
+             <description>Reference point altitude.
+             </description>
+             <units>m</units>
+             <precision>5</precision>
+             <width>10</width>
+         </MonitorPoint>
+       </Container> <!-- End ArrayReference -->
+
+       <MonitorPoint name="controllerRunning" type="bool" persistent="false"
+              priority="dontarchive" >
+          <shortName>ControllerRunning</shortName>
+          <description>
+              Whether the subarray controller for this subarray is running.
+          </description>
+          <errLo>false</errLo>
+          <errHi>false</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="controllerInitialized" type="bool"
+              persistent="false" priority="dontarchive">
+          <shortName>ControllerInitialized</shortName>
+          <description>
+              Whether the subarray controller for this subarray is initialized.
+              If subarrayControl crashes and spontaneously restarts itself
+              this monitor point will be false.
+          </description>
+          <errLo>false</errLo>
+          <errHi>false</errHi>
+       </MonitorPoint>
+
+      <CommonMonitorPoint ref="correlatorDesignation" />
+
+       <MonitorPoint name="name" type="string" persistent="true"
+           priority="normal">
+          <shortName>Subarrayname</shortName>
+          <description> Subarray name </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="number" type="short" persistent="true"
+           priority="normal">
+          <shortName>SubarrayNumber</shortName>
+          <description> Subarray number, in the range [1,5] </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="hostname" type="string" persistent="true"
+           priority="normal">
+          <shortName>Hostname</shortName>
+          <description>
+                Name of host (FQDN) on which this subarray controller is running
+          </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="configName" type="string" persistent="true" >
+          <shortName>Config</shortName>
+          <shortName>Current Configuration Name</shortName>
+          <description>
+              Name of the current array configuration, e.g. 'B07a'.
+              The first character should be the physical configuration,
+              e.g. 'A'-'E'
+          </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="numberOfAntennas" type="int" persistent="true"
+           priority="vital">
+          <shortName>NumberOfAntennas</shortName>
+          <description>
+              Number of antennas assigned to this subarray.
+          </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="elevLimit" type="double" persistent="true"
+           priority="normal">
+          <shortName>ElevLimit</shortName>
+          <description>
+              Limiting elevation used to cull sources when using checker
+          </description>
+          <units>deg</units>
+       </MonitorPoint>
+
+       <MonitorPoint name="scriptName" type="string" persistent="true"
+           priority="vital">
+          <shortName>Script</shortName>
+          <description>
+              Name of the current or last run script
+          </description>
+          <width>35</width>
+       </MonitorPoint>
+
+       <MonitorPoint name="scriptState" type="enum" persistent="true"
+           priority="vital">
+          <shortName>ScriptStatus</shortName>
+          <description>
+              Status of the current or last run script
+          </description>
+          <enum name="RUNNING" />
+          <enum name="CRASHED" />
+          <errHi>CRASHED</errHi>
+          <enum name="COMPLETED" />
+          <warnHi>COMPLETED</warnHi>
+          <enum name="CANCELED" />
+          <warnHi>CANCELED</warnHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="alarm" type="enum" persistent="true"
+           priority="vital">
+          <shortName>Alarm</shortName>
+          <description>
+              Status of the user controlled alarm.
+              This is set by scripts and by user commands.
+          </description>
+          <enum name="ON" />
+          <enum name="OFF" />
+          <errHi>ON</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint name="userCatalog" type="string" persistent="true"
+           priority="dontarchive">
+          <shortName>UCat</shortName>
+          <description>
+              The user catalog to be searched for sources, NONE if no catalog.
+          </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="alarm1mm" type="enum" persistent="true"
+        priority="dontarchive">
+        <shortName>alarm1mm</shortName>
+        <description>
+          An alarm condition to alert observers about weather conditions
+          for 1mm observing. The ON state that indicates that conditions
+          have become good enough for 1 mm observing or have deteriorated
+          to the extent that the array should switch back to 3mm observing.
+          Observers should be able to tell from context which is which
+          as they should know at what frequency they are observing.
+          This monitor point can be set by scripts or by user commands.
+        </description>
+        <enum name="ON" />
+        <enum name="OFF" />
+        <errHi>ON</errHi>
+       </MonitorPoint>
+
+      <MonitorPoint name="trackTolerance" type="float" persistent="true"
+                    priority="useful">
+          <shortName>TrkTol</shortName>
+          <longName>TrackingTolerance</longName>
+          <description>
+            Tracking error tolerance (on sky error) for tracking state
+            to be TRACK. The tolerance is in beamwidths (full width,
+            half maximum).
+          </description>
+          <units>FWHM</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="trackRuntime" type="double" persistent="true"
+        priority="dontarchive">
+        <shortName>trackRuntime</shortName>
+        <description> The elapsed time since the start of the last track.
+         The startTrack() command is used to store a start time.
+        </description>
+        <precision>2</precision>
+        <units>hrs</units>
+       </MonitorPoint>
+
+      <CommonMonitorPoint ref="pointStatus"/>
+
+
+<!-- END Basic information about the subarray (name, state, etc) -->
+<!-- ============================================================= -->
+
+<!-- ============================================================= -->
+<!-- Thread Pool Statistics -->
+
+      <Container name="ThreadStats">
+        <description>
+          Statistics about the WorkerPool threads running inside the
+          SubarrayControl program.
+        </description>
+
+        <MonitorPoint name="frameExceptions" type="int">
+          <description>
+            Number of exceptions which happened during WorkRequest execution
+            during this 500ms frame.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalExceptions" type="int">
+          <description>
+            Number of exceptions which happened during WorkRequest execution
+            since the SubarrayControl process was started.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="instExecuteCount" type="int">
+          <description>
+            The instantaneous number of threads which are currently executing a
+            WorkRequest. This is the number of threads which are currently busy.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="instQueueCount" type="int">
+          <description>
+            The instantaneous number of WorkRequest tasks which are queued for
+            execution. This is the current length of the queue of pending tasks.
+          </description>
+        </MonitorPoint>
+
+        <!-- per-frame statistics on queueing -->
+        <MonitorPoint name="frameQueueCount" type="int">
+          <description>
+            The number of WorkRequest queued during this 500ms frame
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameQueueTimeMaxId" type="string">
+          <width>80</width>
+          <description>
+            The id of the WorkRequest which was present in the queue
+            (enqueue until start-of-execution) for the maximum period of time
+            during this 500ms frame.
+
+            Note that this only applies to tasks which have moved into the
+            start-of-execution state. Tasks which are still waiting in the queue
+            do not effect this value.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameQueueTimeMax" type="int">
+          <units>us</units>
+          <description>
+            The maximum number of microseconds a task was present in the queue
+            (enqueue until start-of-execution) during this 500ms frame.
+
+            Note that this only applies to tasks which have moved into the
+            start-of-execution state. Tasks which are still waiting in the queue
+            do not effect this value.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameQueueTimeMin" type="int">
+          <units>us</units>
+          <description>
+            The minimum number of microseconds a task was present in the queue
+            (enqueue until start-of-execution) during this 500ms frame.
+
+            Note that this only applies to tasks which have moved into the
+            start-of-execution state. Tasks which are still waiting in the queue
+            do not effect this value.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameQueueTimeAvg" type="int">
+          <units>us</units>
+          <description>
+            The average number of microseconds a task was present in the queue
+            (enqueue until start-of-execution) during this 500ms frame.
+
+            Note that this only applies to tasks which have moved into the
+            start-of-execution state. Tasks which are still waiting in the queue
+            do not effect this value.
+          </description>
+        </MonitorPoint>
+
+        <!-- all-time statistics on queueing -->
+        <MonitorPoint name="totalQueueCount" type="int">
+          <description>
+            The number of WorkRequest queued since the SubarrayControl process
+            was started.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalQueueTimeMaxId" type="string">
+          <width>80</width>
+          <description>
+            The id of the WorkRequest which was present in the queue
+            (enqueue until start-of-execution) for the maximum period of time
+            since the SubarrayControl process was started.
+
+            Note that this only applies to tasks which have moved into the
+            start-of-execution state. Tasks which are still waiting in the queue
+            do not effect this value.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalQueueTimeMax" type="int">
+          <units>us</units>
+          <description>
+            The maximum number of microseconds a task was present in the queue
+            (enqueue until start-of-execution) since the SubarrayControl process
+            was started.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalQueueTimeMin" type="int">
+          <units>us</units>
+          <description>
+            The minimum number of microseconds a task was present in the queue
+            (enqueue until start-of-execution) since the SubarrayControl process
+            was started.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalQueueTimeAvg" type="int">
+          <units>us</units>
+          <description>
+            The average number of microseconds a task was present in the queue
+            (enqueue until start-of-execution) since the SubarrayControl process
+            was started.
+          </description>
+        </MonitorPoint>
+
+        <!-- per-frame statistics on execution -->
+        <MonitorPoint name="frameExecuteCount" type="int">
+          <description>
+            The number of WorkRequest executed during this 500ms frame
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameExecuteTimeMaxId" type="string">
+          <width>80</width>
+          <description>
+            The id of the WorkRequest which was executing
+            (start-of-execution until end-of-execution) for the maximum period
+            of time during this 500ms frame.
+
+            Note that this only applies to tasks which have moved into the
+            end-of-execution state. Tasks which are still executing do not
+            effect this value.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameExecuteTimeMax" type="int">
+          <units>us</units>
+          <description>
+            The maximum number of microseconds a task was executing
+            (start-of-execution until end-of-execution) during this 500ms frame.
+
+            Note that this only applies to tasks which have moved into the
+            end-of-execution state. Tasks which are still executing do not
+            effect this value.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameExecuteTimeMin" type="int">
+          <units>us</units>
+          <description>
+            The minimum number of microseconds a task was executing
+            (start-of-execution until end-of-execution) during this 500ms frame.
+
+            Note that this only applies to tasks which have moved into the
+            end-of-execution state. Tasks which are still executing do not
+            effect this value.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="frameExecuteTimeAvg" type="int">
+          <units>us</units>
+          <description>
+            The average number of microseconds a task was executing
+            (start-of-execution until end-of-execution) during this 500ms frame.
+
+            Note that this only applies to tasks which have moved into the
+            end-of-execution state. Tasks which are still executing do not
+            effect this value.
+          </description>
+        </MonitorPoint>
+
+        <!-- all-time statistics on execution -->
+        <MonitorPoint name="totalExecuteCount" type="int">
+          <description>
+            The number of WorkRequest executed since the SubarrayControl process
+            was started.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalExecuteTimeMaxId" type="string">
+          <width>80</width>
+          <description>
+            The id of the WorkRequest which was executing
+            (start-of-execution until end-of-execution) for the maximum period
+            of time since the SubarrayControl process was started.
+
+            Note that this only applies to tasks which have moved into the
+            end-of-execution state. Tasks which are still executing do not
+            effect this value.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalExecuteTimeMax" type="int">
+          <units>us</units>
+          <description>
+            The maximum number of microseconds a task was executing
+            (start-of-execution until end-of-execution) since the
+            SubarrayControl process was started.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalExecuteTimeMin" type="int">
+          <units>us</units>
+          <description>
+            The minimum number of microseconds a task was executing
+            (start-of-execution until end-of-execution) since the
+            SubarrayControl process was started.
+          </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="totalExecuteTimeAvg" type="int">
+          <units>us</units>
+          <description>
+            The average number of microseconds a task was executing
+            (start-of-execution until end-of-execution) since the
+            SubarrayControl process was started.
+          </description>
+        </MonitorPoint>
+
+      </Container>
+
+
+<!-- ============================================================= -->
+<!-- Project Information -->
+        <MonitorPoint name="obsBlockId" type="string" persistent="true"
+           priority="vital">
+         <shortName>ObsBlockID</shortName>
+         <description>
+                Observing block ID, in the form
+                projectName.obsblock.subObsblock.trialNumber
+         </description>
+       </MonitorPoint>
+
+        <MonitorPoint name="project" type="string" persistent="true"
+           priority="vital">
+         <shortName>Project</shortName>
+         <description>Project name</description>
+       </MonitorPoint>
+
+<!-- END Project Information -->
+<!-- ============================================================= -->
+<!-- Reachability of DOs used by subarray -->
+    <Container name="Reachable" priority="verbose">
+        <description>
+            Contains flags for the connectivity of all DOs in the system.
+        </description>
+
+           <MonitorPoint name="alarm" type="bool" persistent="true">
+              <shortName>Alarm System</shortName>
+              <units></units>
+              <description>
+                 Whether the Alarm system DO is reachable from this subarray
+                 controller. If true, then Alarm system DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="dcLoSwitchyard" type="bool" persistent="true">
+               <shortName>2nd LO Switchyard</shortName>
+               <description>
+                   Whether the 2nd LO Switchyard DO is reachable from this 
+                   subarray.
+               </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="ifSwitchyard" type="bool" persistent="true">
+               <shortName>IF Switchyard</shortName>
+               <description>
+                   Whether the IF Switchyard DO is reachable from this subarray.
+               </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="sldcSystem" type="bool" persistent="true">
+              <shortName>SLDC System</shortName>
+              <units></units>
+              <description>
+                 Whether the Sldc system DO is reachable from this subarray
+                 controller. If true, then Sldc system DO is reachable.
+              </description>
+           </MonitorPoint>
+           <MonitorPoint name="sldcControl" type="bool" persistent="true">
+              <shortName>SldcControl</shortName>
+              <units></units>
+              <description>
+                 Whether the Sldc Control DO is reachable from this subarray
+                 controller. If true, then Sldc Control DO is reachable.
+              </description>
+           </MonitorPoint>
+           <MonitorPoint name="wbdcSystem" type="bool" persistent="true">
+              <shortName>WBDC System</shortName>
+              <units></units>
+              <description>
+                 Whether the Wbdc system DO is reachable from this subarray
+                 controller. If true, then Wbdc system DO is reachable.
+              </description>
+           </MonitorPoint>
+           <MonitorPoint name="wbdcControl" type="bool" persistent="true">
+              <shortName>WBDC Control</shortName>
+              <units></units>
+              <description>
+                 Whether the Wbdc Control DO is reachable from this subarray
+                 controller. If true, then Wbdc Control DO is reachable.
+              </description>
+           </MonitorPoint>
+           <MonitorPoint name="noiseSource" type="bool" persistent="true">
+              <shortName>Noise Source</shortName>
+              <units></units>
+              <description>
+                 Whether the Noise Source DO is reachable from this subarray
+                 controller. If true, then Noise Source DO is reachable.
+              </description>
+           </MonitorPoint>
+           <MonitorPoint name="quadMod" type="bool" persistent="true">
+              <shortName>Quad Mod</shortName>
+              <description>
+                 Whether the Quadrature Modulator DO is reachable from this
+                 subarray controller. If true, then Quadrature Modulator DO
+                 is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="blockDownconverter" type="bool" persistent="true">
+              <shortName>Block DC</shortName>
+              <description>
+                 Whether the Block Downconverter DO is reachable from this
+                 subarray controller. If true, then Block Downconverter DO
+                 is reachable.
+              </description>
+           </MonitorPoint>
+
+
+           <MonitorPoint name="loRef" type="bool" persistent="true">
+              <shortName>LO Ref</shortName>
+              <description>
+                 Whether the LO reference DO is reachable from this subarray
+                 controller. If true, then LO reference DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="loSwitchyard" type="bool" persistent="true">
+               <shortName>LO Switchyard</shortName>
+               <description>
+                   Whether the LO Switchyard DO is reachable from this subarray.
+               </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="loberotator" type="bool" persistent="true">
+              <shortName>Loberotator</shortName>
+              <description>
+                 Whether the loberotator DO is reachable from this subarray
+                 controller. If true, then loberotator DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="projectDatabaseManager" type="bool" persistent="true">
+              <shortName>PDM</shortName>
+              <description>
+                 Whether the ProjectDatabaseManager DO is reachable from this
+                 subarray controller. If true, then ProjectDatabaseManager DO
+                 is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="linelength" type="bool" persistent="true">
+              <shortName>Linelength</shortName>
+              <description>
+                    Connectivity state of the Linelength DO from this subarray
+                    controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="llSwitchyard" type="bool" persistent="true">
+               <shortName>LL Switchyard</shortName>
+               <description>
+                   Whether the LL Switchyard DO is reachable from this subarray.
+               </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="clock" type="bool" persistent="true">
+              <shortName>Clock</shortName>
+              <description>
+                    Connectivity state of the Clock DO from this subarray
+                    controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="fault" type="bool" persistent="true">
+              <shortName>Fault</shortName>
+              <description>
+                    Connectivity state of the fault system control DO from
+                    this subarray controller.
+                    If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="slPipeline" type="bool" persistent="true">
+              <shortName>SL Pipeline</shortName>
+              <description>
+                    Connectivity state of the SlPipeline DO from this subarray
+                    controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="wbPipeline" type="bool" persistent="true">
+              <shortName>WB Pipeline</shortName>
+              <description>
+                    Connectivity state of the WbPipeline DO from this subarray
+                    controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+           
+           <MonitorPoint name="c3gMax8Pipeline" type="bool" persistent="true">
+              <shortName>C3gMax8 Pipeline</shortName>
+              <shortName>C3gMax8 Pipeline Reachability</shortName>
+              <description>
+                    Connectivity state of the C3gMax8 Pipeline DO from this 
+                    subarray controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+           
+           <MonitorPoint name="c3gMax23Pipeline" type="bool" persistent="true">
+              <shortName>C3gMax23 Pipeline</shortName>
+              <shortName>C3gMax23 Pipeline Reachability</shortName>
+              <description>
+                    Connectivity state of the C3gMax23 Pipeline DO from this 
+                    subarray controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="wbcorBand" count="&NUM_WBDC_BANDS;" type="bool" persistent="true">
+              <shortName>WB Cor Band</shortName>
+              <description>
+                    Connectivity state of the Wideband control DO from this subarray
+                    controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="slcorBand" count="&NUM_SLDC_BANDS;" type="bool" persistent="true">
+              <shortName>SL Cor Band</shortName>
+              <description>
+                    Connectivity state of the Spectral Line control DO from this subarray
+                    controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="vlbiBand" count="8" type="bool" persistent="true">
+              <shortName>VLBI</shortName>
+              <description>
+                    Connectivity state of the VLBI band control DO from 
+                    this subarray controller. If true, then this DO 
+                    is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="carma3gMax8" count="1" type="bool" persistent="true">
+              <shortName>C3GMax8</shortName>
+              <description>
+                    Connectivity state of the CARMA 3G Max 8 control DO from this subarray
+                    controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="carma3gMax23" count="1" type="bool" persistent="true">
+              <shortName>C3GMax23</shortName>
+              <description>
+                    Connectivity state of the CARMA 3G Max 23 control DO from this subarray
+                    controller. If true, then this DO is reachable.
+              </description>
+           </MonitorPoint>
+
+           <MonitorPoint name="signalPath" type="bool" persistent="true">
+              <shortName>Signal Path Map</shortName>
+              <description>
+                    Connectivity state of the SignalPathMapper DO from
+                    this subarray controller. If true, then this DO is
+                    reachable.
+              </description>
+           </MonitorPoint>
+           <MonitorPoint name="corrDataRemapper" type="bool" persistent="true">
+              <shortName>Correlator Data Remapper</shortName>
+              <description>
+                    Connectivity state of the CorrDataRemapper DO from
+                    this subarray controller. If true, then this DO is
+                    reachable.
+              </description>
+           </MonitorPoint>
+         </Container>
+<!-- END Reachability of DOs used by subarray -->
+<!-- ============================================================= -->
+
+
+<!-- ============================================================= -->
+<!-- Source Information -->
+
+       <MonitorPoint name="source" type="string" persistent="true"
+                     priority="vital">
+          <shortName>Source</shortName>
+          <longName>Source Name</longName>
+          <description>
+            Current sourcename including pseudo sourcenames such as
+            NONE and NOISE.
+          </description>
+        </MonitorPoint>
+
+       <MonitorPoint name="phaseCenterRa" type="double" persistent="true"
+           priority="vital">
+         <shortName>Phase Center RA</shortName>
+         <description> Right ascension of the phase center in
+                       the mean equinox (i.e., J2000).
+                       This corresponds to the MIRIAD header variable 'ra'.
+         </description>
+         <units>radians</units>
+       </MonitorPoint>
+       <MonitorPoint name="phaseCenterDec" type="double" persistent="true"
+           priority="vital">
+         <shortName>Phase Center Dec</shortName>
+         <description>
+                Declination of the phase center in the mean equinox
+                (i.e., J2000). This corresponds to the MIRIAD header
+                variable 'dec'.
+        </description>
+         <units>radians</units>
+       </MonitorPoint>
+       <MonitorPoint name="phaseCenterAppRa" type="double" persistent="true"
+           priority="vital">
+         <shortName>Phase Cntr App RA</shortName>
+         <description>
+                Phase center apparent right ascension as
+                viewed from the array reference position. This value
+                is in the current equinox, includes any equatorial offsets,
+                and corresponds to the MIRIAD header variable 'obsra'.
+         </description>
+         <units>radians</units>
+       </MonitorPoint>
+       <MonitorPoint name="phaseCenterAppDec" type="double" persistent="true"
+           priority="vital">
+         <shortName>Phase Cntr App Dec</shortName>
+         <description>
+                Phase center apparent declination as viewed from
+                the array reference position. This value is in the
+                current equinox, includes any equatorial offsets,
+                and corresponds to the MIRIAD header variable 'obsdec'.
+         </description>
+         <units>radians</units>
+       </MonitorPoint>
+       <MonitorPoint name="meanEquinox" type="double" persistent="true"
+           priority="vital">
+         <shortName>Mean Equinox</shortName>
+         <description>
+              Mean equinox for the pointing and phase center. This is the
+              equinox used for the monitor points phaseCenterRa and
+              phaseCenterDec.
+         </description>
+         <units>year</units>
+       </MonitorPoint>
+       <MonitorPoint name="planetMajorAxis" type="double" persistent="true"
+           priority="vital">
+         <shortName>Pl Maj</shortName>
+         <description> Planet diameter major axis </description>
+         <units>arcsec</units>
+       </MonitorPoint>
+       <MonitorPoint name="planetMinorAxis" type="double" persistent="true"
+           priority="vital">
+         <shortName>Pl Min</shortName>
+         <description> Planet diameter minor axis </description>
+         <units>arcsec</units>
+       </MonitorPoint>
+       <MonitorPoint name="planetTemperature" type="double" persistent="true"
+           priority="vital">
+         <shortName>Pl Temp</shortName>
+         <description>
+               Planet brightness temperature (blackbody) at the observed
+               frequency.
+         </description>
+         <units>K</units>
+       </MonitorPoint>
+       <MonitorPoint name="planetAngle" type="double" persistent="true"
+           priority="vital">
+         <shortName>Pl Angle</shortName>
+         <description>
+               Planet major axis rotation angle with respect to RA/DEC.
+               See Astronomical Almanac Section E3.
+         </description>
+         <units>deg</units>
+       </MonitorPoint>
+
+    <MonitorPoint name="dopplerSource" type="string" persistent="true"
+           priority="vital">
+      <shortName>Dop Src</shortName>
+      <longName>Doppler tracking source</longName>
+      <description>
+            Source which is being use for Doppler tracking of the
+            local oscillator. It may be
+            different than the sky source being observed.
+      </description>
+    </MonitorPoint>
+
+       <MonitorPoint name="velocity" type="double" persistent="true"
+           priority="vital">
+         <shortName>Vel</shortName>
+         <description>
+                Systemic velocity of the doppler source in the given reference
+                frame, e.g. VLSR.
+         </description>
+         <units>km/s</units>
+         <precision>2</precision>
+       </MonitorPoint>
+
+       <MonitorPoint name="velFrame" type="enum" persistent="true"
+           priority="vital">
+         <shortName>Vel Frame</shortName>
+         <description>
+                The reference frame for the velocity.
+         </description>
+         <enum name="LSR"/>
+         <description>
+                Local standard of rest
+         </description>
+         <enum name="HELIO"/>
+         <description>
+                The sun
+         </description>
+         <enum name="OBSERV"/>
+         <description>
+                The observatory (specifically, the array center).
+                This is also known as Radial velocity.
+         </description>
+         <enum name="PLANET"/>
+         <description>
+                The planet currently being observed
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="velDef" type="enum" persistent="true"
+           priority="vital">
+         <shortName>Vel Def</shortName>
+         <description>
+                The definition of velocity used to define the doppler shift.
+         </description>
+         <enum name="RADIO"/>
+         <description>
+                The definition used by radio astronomers, where a velocity
+            change results in a frequency shift.
+         </description>
+         <enum name="OPTICAL"/>
+         <description>
+            The definition used by optical astronomers, where a velocity
+            change results in a wavelength shift.
+         </description>
+         <enum name="RELATIVISTIC"/>
+         <description>
+                Use the relativistic equation for the doppler. Use with extreme
+                caution as this is normally not used by astronomers.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="velObservatory" type="double" persistent="true"
+           priority="vital">
+         <shortName>Vel Radial</shortName>
+         <description>
+            The velocity of the observatory with respect to the Doppler
+            source, also called the radial velocity.
+            Used to compute LO frequency with the Doppler equation.
+         </description>
+         <units>km/s</units>
+         <precision>2</precision>
+       </MonitorPoint>
+
+<!-- END Source Information -->
+<!-- ============================================================= -->
+
+
+<!-- ============================================================= -->
+<!-- Tuning Information -->
+
+       <MonitorPoint name="harmonic" type="int" persistent="true"
+           priority="useful">
+         <shortName>Harmonic</shortName>
+         <description>
+              Harmonic multiplier of YIG to get to oscillator
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="loFreq" type="double" persistent="true"
+           priority="vital">
+          <shortName>1st LO</shortName>
+          <description>
+             Frequency of the first LO
+          </description>
+          <units>GHz</units>
+       </MonitorPoint>
+
+       <MonitorPoint name="oscFreq" type="double" persistent="true"
+           priority="useful">
+         <shortName>Osc Freq</shortName>
+         <description>
+              Oscillator frequency - may be multiplied by 3 to get to LOfreq.
+         </description>
+             <units>GHz</units>
+       </MonitorPoint>
+
+       <MonitorPoint name="refLoFreq" type="double" persistent="true"
+           priority="useful">
+         <shortName>LO Ref</shortName>
+         <description>
+              Frequency of the reference LO - this is the signal sent
+              from the control building to the antennas.
+         </description>
+             <units>GHz</units>
+             <precision>5</precision>
+       </MonitorPoint>
+
+       <MonitorPoint name="refLoNumber" type="int" persistent="true"
+           priority="useful">
+          <shortName>Ref LO Num</shortName>
+          <longName>referenceLOnumber</longName>
+          <description>
+             Number for the reference LO (synthesizer)
+          </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="yigFreq" type="double" persistent="true"
+           priority="useful">
+         <shortName>YIG Freq</shortName>
+         <description>
+              Commanded YIG frequency
+         </description>
+             <units>GHz</units>
+       </MonitorPoint>
+
+
+       <MonitorPoint name="skyFreq" type="double" persistent="true"
+           priority="vital">
+          <shortName>Sky Freq</shortName>
+          <description>
+             Doppler shift of the rest frequency input of the Freq command
+          </description>
+          <units>GHz</units>
+       </MonitorPoint>
+
+<!-- END Tuning Information -->
+<!-- ============================================================= -->
+
+
+<!-- ============================================================= -->
+<!-- Subarray commands -->
+
+      <Container name="Commands" priority="vital">
+        <description>
+            Only the parameters needed to restore the state of the subarray
+            are stored here. If the parameters from different commands are
+            not orthogonal (the order of the commands will cause the subarray
+            to have a different internal state) then a timestamp must be
+            included so that the commands can be played back in the
+            correct order.
+        </description>
+
+         <Container name="Track">
+            <description>
+               Subarray track command.  This track container contains
+               the source when track() is called with ants=0 (all antennas).
+               This is the only source name that should appear in MIRIAD data
+            </description>
+
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>Time this command was executed</description>
+            </MonitorPoint>
+
+            <MonitorPoint name="sourcename" type="string" persistent="true">
+                <shortName>Trk Src</shortName>
+                <longName>Sky tracking source</longName>
+                <description>
+                    The name of the source being tracked by antennas in this
+                    subarray. This may be different than the source used for
+                    Doppler tracking of the local oscillator.
+                </description>
+            </MonitorPoint>
+
+          </Container> <!-- End track command -->
+
+          <Container name="WindTrack">
+
+            <description>Subarray wind track command. </description>
+
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>Time this command was executed</description>
+            </MonitorPoint>
+          </Container>
+
+          <Container name="SnowTrack">
+
+            <description>Subarray wind track command. </description>
+
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>Time this command was executed</description>
+            </MonitorPoint>
+          </Container>
+
+          <CommonContainer ref="EquatOffset"/>
+          <CommonContainer ref="Move"/>
+          <CommonContainer ref="Stop"/>
+          <CommonContainer ref="Stow"/>
+
+          <Container name="PhaseCenterOffset" priority="vital">
+            <description>
+                Command to set the right ascension and declination
+                offsets for the subarray phase tracking center.
+            </description>
+
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>
+                 Time that command was executed.
+              </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="ra" type="float" persistent="true" priority="vital">
+                <shortName>dra</shortName>
+                <longName>RaOffset
+                </longName>
+                <description>
+                    Right ascension offset from nominal coordinate
+                    for the phase center. As an arc on the sky, not
+                    coordinate offset.  This is, for example, the RA
+                    offset used in mosaicking, and corresponds to
+                    the MIRIAD header variable 'dra'.
+                </description>
+                <units>arcmin</units>
+                <precision>2</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="dec" type="float" persistent="true">
+                <shortName>ddec</shortName>
+                <longName>DecOffset
+                </longName>
+                <description>
+                    Declination offset from nominal coordinate for
+                    the phase center. This is, for example, the DEC
+                    offset used in mosaicking, and corresponds to
+                    the MIRIAD header variable 'ddec'.
+                </description>
+                <units>arcmin</units>
+                <precision>2</precision>
+            </MonitorPoint>
+        </Container> <!-- End phaseCenterOffset command -->
+
+        <Container name="Freq" >
+            <description>
+                Command to set the first LO
+            </description>
+
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>
+                 Time that command was executed.
+              </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="restFreq" type="double" persistent="true">
+                <shortName>RestFreq</shortName>
+                <longName>FirstLORestFrequency</longName>
+                <description>
+                    Rest frequency used to setup the first LO.
+                </description>
+                <units>GHz</units>
+                <precision>6</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="ifFreq" type="double" persistent="true">
+                <shortName>IFfreq</shortName>
+                <longName>IFfrequency</longName>
+                <description>
+                    IF frequency that the rest frequency is mapped to after
+                    it is Doppler shifted.
+                </description>
+                <units>GHz</units>
+                <precision>6</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="sideband" type="enum" persistent="true">
+                <shortName>Sideband</shortName>
+                <longName>Sideband</longName>
+                <description>
+                    Sideband in which to place the rest frequency
+                </description>
+                <enum name="USB"/>
+                  <description>Upper sideband</description>
+                <enum name="LSB"/>
+                  <description>Upper sideband</description>
+            </MonitorPoint>
+
+        </Container> <!-- End phaseCenterOffset command -->
+
+      </Container>
+
+<!-- END Subarray commands -->
+<!-- ============================================================= -->
+      <MonitorPoint name="lastCommand" type="string" persistent="true"
+           priority="dontarchive" >
+        <description>
+             String representation of the last command issued to this subarray.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="comment" type="string" persistent="false"
+           priority="vital" >
+        <description>
+             A comment input by the observer via the comment() command.
+             This gets put into the MIRIAD history file.
+             Note this monitor point is NOT persistent, making it
+             easier to insert the monitor point into the history file
+             at the correct time index.  If you need a persistent
+             copy of this monitor point for display or query purposes, use
+             Control.SubarrayN.notice.
+        </description>
+      </MonitorPoint>
+
+<!-- NB could use this for lastCommand too? -->
+      <MonitorPoint name="notice" type="string" persistent="true"
+           priority="dontarchive" >
+        <description>
+             A persistent copy of the comment input by the observer via
+             the comment() command that can be, e.g., displayed in RTD windows.
+             This monitor point is for display/query only and is not archived.
+        </description>
+      </MonitorPoint>
+
+<!-- ============================================================= -->
+<!-- Subarray Script Variables                                     -->
+<!-- ============================================================= -->
+
+      <Container name="Script" priority="vital">
+        <description>
+          Container to hold all subarray script variables.
+          These are used by the obsdef python libraries to store script
+          state for easy restoration after a restart.
+        </description>
+
+        <!-- counts based on usage as of 2012-01-31 -->
+        <MonitorPoint name="scriptBool" type="bool" count="100" persistent="true" />
+        <MonitorPoint name="scriptDouble" type="double" count="32" persistent="true" />
+        <MonitorPoint name="scriptInt" type="int" count="32" persistent="true" />
+
+      </Container>
+
+<!-- ============================================================= -->
+<!-- END Subarray Script Variables                                 -->
+<!-- ============================================================= -->
+
+
+    </Container>
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<!-- END Subarray Container -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+
+
+<!-- ============================================================= -->
+<!-- Correlators -->
+    <Container name="SpectralLineCorrelator"  priority="vital">
+       <MonitorPoint name="numBands" type="int" persistent="true">
+         <shortName>NumBands</shortName>
+         <description>
+             Number of bands in this correlator
+         </description>
+       </MonitorPoint>
+       <MonitorPoint name="name" type="string" persistent="true">
+         <shortName>Name</shortName>
+         <description>
+             Correlator name (e.g. SpectralLine, Wideband)
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="modeDesc" type="string" persistent="true">
+         <shortName>mode</shortName>
+         <description>
+          String describing the correlator band set up. It will be a
+          concatenation of the individual bandwidths for one sideband
+          (the other sideband is necessarily identical), of the form
+          BW1-BW2-...-BWn.  For instance if the correlator bands are
+          BW1=500MHz, BW2=62MHz, BW3=8MHz, the string would be 500-62-8.
+          For missing bands, X will be used, e.g. 500-62-X.  This monitor
+          point will correspond to the MIRIAD header variable 'slcmode'.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="controllingSubarray" type="string" persistent="true">
+         <shortName>Controlling Subarray</shortName>
+         <description>
+         String indicating which subarray is controlling the correlator.
+         </description>
+       </MonitorPoint>
+
+       <CommonMonitorPoint ref = "obsBlockId" /> 	 
+       <CommonMonitorPoint ref = "project" /> 	 
+       <CommonContainer ref="Obsblock" />
+
+       <CommonMonitorPoint ref="correlatorDesignation" />
+
+       <Container name="SlcBand" count="&NUM_SLC_BANDS;"
+                  indexName="bandIndex" >
+         <CommonContainer ref="ControlBandPoints" />
+
+       </Container> <!-- End Band Container -->
+
+       <CommonContainer ref="ManualFlagCorrelator" name="ManualFlag" />
+    </Container> <!-- End SLCorrelators Container -->
+
+    <Container name="WidebandCorrelator"  priority="vital">
+       <MonitorPoint name="numBands" type="int" persistent="true">
+         <shortName>NumBands</shortName>
+         <description>
+                      Number of bands in this correlator
+         </description>
+       </MonitorPoint>
+       <MonitorPoint name="name" type="string" persistent="true">
+         <shortName>Name</shortName>
+         <description>
+                      Correlator name (SpectralLine, Wideband, C3gMax8, or C3gMax23)
+         </description>
+       </MonitorPoint>
+
+        <MonitorPoint name="modeDesc" type="string" persistent="true">
+         <shortName>mode</shortName>
+         <description>
+          String describing the correlator band set up. It will be a
+          concatenation of the individual band widths for one sideband (the
+          other sideband is necessarily identical), of the form
+          BW1-BW2-...-BWn.  For instance if the correlator bands are
+          BW1=500MHz, BW2=62MHz, BW3=8MHz, the string would be 500-62-8.
+          For missing bands, X will be used, e.g. 500-62-X.  This monitor
+          point will correspond to the MIRIAD header variable 'wbcmode'.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="controllingSubarray" type="string" persistent="true">         
+         <shortName>controllingSubarray</shortName>
+         <description>
+         String indicating which subarray is controlling the correlator.
+         </description>
+       </MonitorPoint>
+         
+       <CommonMonitorPoint ref = "obsBlockId" />
+       <CommonMonitorPoint ref = "project" />
+       <CommonContainer ref="Obsblock" />
+
+       <CommonMonitorPoint ref="correlatorDesignation" />
+
+       <Container name="WbcBand" count="&NUM_WBC_BANDS;" indexName="bandIndex" >
+         <CommonContainer ref="ControlBandPoints" />
+       </Container> <!-- End Band Container -->
+
+       <CommonContainer ref="ManualFlagCorrelator" name="ManualFlag" />
+    </Container>
+
+    <Container name="C3gMax8Correlator"  priority="vital">
+       <MonitorPoint name="numBands" type="int" persistent="true">
+         <shortName>NumBands</shortName>
+         <description>
+                      Number of bands in this correlator
+         </description>
+       </MonitorPoint>
+       <MonitorPoint name="name" type="string" persistent="true">
+         <shortName>Name</shortName>
+         <description>
+                      Correlator name
+         </description>
+       </MonitorPoint>
+
+        <MonitorPoint name="modeDesc" type="string" persistent="true">
+         <shortName>mode</shortName>
+         <description>
+          String describing the correlator band set up. It will be a
+          concatenation of the individual band widths for one sideband (the
+          other sideband is necessarily identical), of the form
+          BW1-BW2-...-BWn.  For instance if the correlator bands are
+          BW1=500MHz, BW2=62MHz, BW3=8MHz, the string would be 500-62-8.
+          For missing bands, X will be used, e.g. 500-62-X.  This monitor
+          point will correspond to the MIRIAD header variable 'wbcmode'.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="controllingSubarray" type="string" persistent="true">         
+         <shortName>controllingSubarray</shortName>
+         <description>
+         String indicating which subarray is controlling the correlator.
+         </description>
+       </MonitorPoint>
+         
+       <CommonMonitorPoint ref = "obsBlockId" />
+       <CommonMonitorPoint ref = "project" />
+       <CommonContainer ref="Obsblock" />
+
+       <CommonMonitorPoint ref="correlatorDesignation" />
+
+       <Container name="C3gMax8Band" count="&NUM_C3G_BANDS;" indexName="bandIndex" >
+         <CommonContainer ref="ControlBandPoints" />
+       </Container> <!-- End Band Container -->
+
+       <CommonContainer ref="ManualFlagCorrelator" name="ManualFlag" />
+    </Container>
+
+    <Container name="C3gMax23Correlator"  priority="vital">
+       <MonitorPoint name="numBands" type="int" persistent="true">
+         <shortName>NumBands</shortName>
+         <description>
+                      Number of bands in this correlator
+         </description>
+       </MonitorPoint>
+       <MonitorPoint name="name" type="string" persistent="true">
+         <shortName>Name</shortName>
+         <description>
+                      Correlator name
+         </description>
+       </MonitorPoint>
+
+        <MonitorPoint name="modeDesc" type="string" persistent="true">
+         <shortName>mode</shortName>
+         <description>
+          String describing the correlator band set up. It will be a
+          concatenation of the individual band widths for one sideband (the
+          other sideband is necessarily identical), of the form
+          BW1-BW2-...-BWn.  For instance if the correlator bands are
+          BW1=500MHz, BW2=62MHz, BW3=8MHz, the string would be 500-62-8.
+          For missing bands, X will be used, e.g. 500-62-X.  This monitor
+          point will correspond to the MIRIAD header variable 'wbcmode'.
+         </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="controllingSubarray" type="string" persistent="true">         
+         <shortName>controllingSubarray</shortName>
+         <description>
+         String indicating which subarray is controlling the correlator.
+         </description>
+       </MonitorPoint>
+         
+       <CommonMonitorPoint ref = "obsBlockId" />
+       <CommonMonitorPoint ref = "project" />
+       <CommonContainer ref="Obsblock" />
+
+       <CommonMonitorPoint ref="correlatorDesignation" />
+
+       <Container name="C3gMax23Band" count="&NUM_C3G_BANDS;" indexName="bandIndex" >
+         <CommonContainer ref="ControlBandPoints" />
+       </Container> <!-- End Band Container -->
+
+       <CommonContainer ref="ManualFlagCorrelator" name="ManualFlag" />
+    </Container>
+
+<!-- END Correlators -->
+<!-- ============================================================= -->
+
+
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<!-- Monitor points and containers for each antenna in CARMA             -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+    <Container name="Antenna" count="&NUM_ANTENNAS;" indexName="antennaIndex" >
+          <description>
+            Contains control and monitor points which are
+            antenna based, one set for each antenna.
+          </description>
+
+<!-- ============================================================= -->
+<!-- Antenna identification information -->
+       <MonitorPoint name="name" type="string" persistent="true" priority="vital">
+            <shortName>AntennaName</shortName>
+            <description>
+             Type qualified name of the antenna represented by this
+             antenna control container - for example, ovro1, bima5, sza6.
+            </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="carmaAntennaNumber" type="int" persistent="true" priority="vital">
+          <shortName>CarmaAntennaNumber</shortName>
+          <units></units>
+          <description>
+             CARMA or absolute Antenna number assigned to this antenna -
+             fixed for all time.
+          </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="subarrayName" type="string" persistent="true" priority="vital">
+          <shortName>SubarrayName</shortName>
+          <units></units>
+          <description>
+             Name of the subarray that controls this antenna.
+             One of \"sci1\", \"sci1\", \"eng1\",
+             \"eng2\" or \"offline\".
+          </description>
+       </MonitorPoint>
+
+      <MonitorPoint name="subarrayNumber" type="int" persistent="true" priority="vital">
+        <shortName>SubarrayNumber</shortName>
+        <description>
+             Number of the subarray that controls this antenna.
+             Subarray numbers start at 1.
+        </description>
+      </MonitorPoint>
+<!-- END Antenna identification information -->
+<!-- ============================================================= -->
+
+
+<!-- ============================================================= -->
+<!-- Reachability of the antenna control DOs used by control system -->
+        <Container name="AntennaReachable" priority="verbose">
+            <description>
+                Contains flags for the reachability of antenna control DOs
+                used by the control system
+            </description>
+
+            <MonitorPoint name="antenna" type="bool" persistent="true">
+                <shortName>Antenna</shortName>
+                <description>
+                    Whether the antenna control DO for this antenna
+                    is reachable from this subarray.
+                    If true, then the DO is reachable.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="calibrator" type="bool" persistent="true">
+                <shortName>Calibrator</shortName>
+                <description>
+                    Whether the calibrator control DO for this antenna
+                    is reachable from this subarray.
+                    If true, then the DO is reachable.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="cryo" type="bool" persistent="true">
+                <shortName>Cryo</shortName>
+                <description>
+                    Whether the cryo control DO for this antenna
+                    is reachable from this subarray.
+                    If true, then the DO is reachable.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="drive" type="bool" persistent="true">
+                <shortName>Drive</shortName>
+                <description>
+                    Whether the drive control DO for this antenna
+                    is reachable from this subarray controller.
+                    If true, then the DO is reachable.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="focus" type="bool" persistent="true">
+                <shortName>Focus</shortName>
+                <description>
+                    Whether the focus control DO for this antenna
+                    is reachable from this subarray.
+                    If true, then the DO is reachable.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="opticalTel" type="bool" persistent="true">
+                <shortName>OpticalTel</shortName>
+                <description>
+                    Whether the optical telescope control DO for this antenna
+                    is reachable from this subarray.
+                    If true, then the DO is reachable.
+                </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="rxSelector" type="bool" persistent="true">
+                <shortName>RxSelector</shortName>
+                <description>
+                    Whether the receiver selector control DO for this antenna
+                    is reachable from this subarray.
+                    If true, then the DO is reachable.
+                </description>
+            </MonitorPoint>
+        </Container>
+<!-- END Reachability of the antenna control DOs used by control system -->
+<!-- ============================================================= -->
+
+
+<!-- ============================================================= -->
+<!-- Antenna delay information -->
+
+      <MonitorPoint name="delayOffset3mmRx" type="float" persistent="true"
+           priority="vital">
+           <description>Per antenna delay offset for the 3mm rx
+                        configuration, polarization 1.
+           </description>
+           <units>ns</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="rxDelay3mmPol2" type="float" persistent="true"
+           priority="vital">
+           <description>
+              Per antenna delay difference between 3mm Pol2 and 3mm Pol1
+              receivers, in the sense Offset(3mm Pol2) - Offset(3mm Pol1).
+              This value will be added to the delayOffset3mmRx to form
+              the delay offset for the 3mm Pol2 path.
+              This value is adjusted with the 'delaydiff' command.
+           </description>
+           <units>ns</units>
+      </MonitorPoint>
+      <MonitorPoint name="rxDelay1mmPol1" type="float" persistent="true"
+           priority="vital">
+           <description>
+              Per antenna delay difference between 1mm Pol1 and 3mm Pol1
+              receivers, in the sense Offset(1mm Pol1) - Offset(3mm Pol1).
+              This value will be added to the delayOffset3mmRx to form
+              the delay offset for the 1mm Pol1 path.
+              This value is adjusted with the 'delaydiff' command.
+           </description>
+           <units>ns</units>
+      </MonitorPoint>
+      <MonitorPoint name="rxDelay1mmPol2" type="float" persistent="true"
+           priority="vital">
+           <description>
+              Per antenna delay difference between 1mm Pol2 and 3mm Pol1
+              receivers, in the sense Offset(1mm Pol2) - Offset(3mm Pol1).
+              This value will be added to the delayOffset3mmRx to form
+              the delay offset for the 1mm Pol2 path.
+              This value is adjusted with the 'delaydiff' command.
+           </description>
+           <units>ns</units>
+      </MonitorPoint>
+      <MonitorPoint name="rxDelay1cmPol1" type="float" persistent="true"
+           priority="vital">
+           <description>
+              Per antenna delay difference between 1cm Pol1 and 3mm Pol1
+              receivers, in the sense Offset(1cm Pol1) - Offset(3mm Pol1).
+              This value will be added to the delayOffset3mmRx to form
+              the delay offset for the 1cm Pol1 path.
+              This value is adjusted with the 'delaydiff' command.
+           </description>
+           <units>ns</units>
+      </MonitorPoint>
+      <MonitorPoint name="rxDelay1cmPol2" type="float" persistent="true"
+           priority="vital">
+           <description>
+              Per antenna delay difference between 1cm Pol2 and 3mm Pol1
+              receivers, in the sense Offset(1cm Pol2) - Offset(3mm Pol1).
+              This value will be added to the delayOffset3mmRx to form
+              the delay offset for the 1cm Pol2 path.
+              This value is adjusted with the 'delaydiff' command.
+           </description>
+           <units>ns</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="interpU" type="double" persistent="false"
+           priority="vital">
+           <description>The U coordinate in the J2000 system
+             interpolated on the frame timescale (half-second).
+           </description>
+           <units>m</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="interpV" type="double" persistent="false"
+           priority="vital">
+           <description>The V coordinate in the J2000 system
+             interpolated on the frame timescale (half-second).
+           </description>
+           <units>m</units>
+      </MonitorPoint>
+
+      <MonitorPoint name="interpW" type="double" persistent="false"
+           priority="vital">
+           <description>The W coordinate in the J2000 system
+             interpolated on the frame timescale (half-second).
+           </description>
+           <units>m</units>
+      </MonitorPoint>
+<!-- END Antenna delay information -->
+<!-- ============================================================= -->
+
+<!-- ============================================================= -->
+<!-- Antenna ground position information -->
+    <Container name="Location" priority="vital" >
+       <description>
+          Total absolute location of an antenna, including pad position
+          and any offsets.
+       </description>
+       <MonitorPoint name="latitude" type="double" persistent="true">
+         <shortName>Lat</shortName>
+         <longName>Latitude</longName>
+         <description>Latitude of antenna</description>
+         <units>radians</units>
+         <precision>12</precision>
+         <width>14</width>
+       </MonitorPoint>
+       <MonitorPoint name="longitude" type="double" persistent="true">
+         <shortName>Long</shortName>
+         <longName>Longitude</longName>
+         <description>East longitude of antenna</description>
+         <units>radians</units>
+        <precision>12</precision>
+        <width>15</width>
+       </MonitorPoint>
+       <MonitorPoint name="altitude" type="float" persistent="true">
+         <shortName>Altitude</shortName>
+         <longName>Altitude</longName>
+         <description>Altitude of phase center of antenna</description>
+         <units>m</units>
+         <precision>5</precision>
+         <width>10</width>
+       </MonitorPoint>
+    </Container>      <!-- End Location container -->
+
+    <Container name="AntennaOffset" priority="vital">
+    <description>
+    Offset of the phase center for an antenna.  This is a static
+    parameter that is factored out from the pad offset. For example,
+    the height of the different antenna types is carried here. This
+    is part of the baseline specification.
+    </description>
+
+    <MonitorPoint name="east" type="float" persistent="true">
+        <shortName>AntOff.E</shortName>
+        <longName>AntOffset.East</longName>
+        <description>East offset from nominal location.
+        </description>
+        <units>mm</units>
+        <precision>2</precision>
+        <width>9</width>
+    </MonitorPoint>
+
+    <MonitorPoint name="north" type="float" persistent="true">
+        <shortName>AntOff.N</shortName>
+        <longName>AntOffset.North</longName>
+        <description>North offset from nominal location.
+        </description>
+        <units>mm</units>
+        <precision>2</precision>
+        <width>9</width>
+    </MonitorPoint>
+
+    <MonitorPoint name="up" type="float" persistent="true">
+        <shortName>AntOff.U</shortName>
+        <longName>AntOffset.Up</longName>
+        <description>Altitude offset from nominal location.
+        </description>
+        <units>mm</units>
+        <precision>2</precision>
+        <width>9</width>
+    </MonitorPoint>
+    </Container> <!-- End AntennaOffset Container -->
+
+    <MonitorPoint name="padNumber" type="int"
+                    persistent="true" priority="vital">
+      <shortName>Pad</shortName>
+      <longName>Pad number</longName>
+      <description>
+        Pad number associated with this antenna. Number \"0\"
+        means no pad is associated.
+     </description>
+    </MonitorPoint>
+
+    <Container name="PadOffset" priority="vital">
+          <description>Specifies the  offset from pad nominal position for
+                 an antenna.
+          </description>
+    <MonitorPoint name="east" type="float" persistent="true">
+        <shortName>PadOff.E</shortName>
+        <longName>PadOffset.East</longName>
+        <description>East offset from nominal pad location
+        </description>
+        <units>mm</units>
+        <precision>2</precision>
+        <width>9</width>
+    </MonitorPoint>
+
+    <MonitorPoint name="north" type="float" persistent="true">
+        <shortName>PadOff.N</shortName>
+        <longName>PadOffset.North</longName>
+        <description>North offset from nominal pad location
+        </description>
+        <units>mm</units>
+        <precision>2</precision>
+        <width>9</width>
+    </MonitorPoint>
+
+    <MonitorPoint name="up" type="float" persistent="true">
+        <shortName>PadOff.U</shortName>
+        <longName>PadOffset.Up</longName>
+        <description>Altitude offset from nominal pad location
+        </description>
+        <units>mm</units>
+        <precision>2</precision>
+        <width>9</width>
+    </MonitorPoint>
+      </Container> <!-- End PadOffset Container -->
+
+    <Container name="TotalENU" priority="dontarchive">
+          <description>Specifies the ENU coordinates of the antenna
+                 with respect to the array reference location. These
+                 are convenience coordinates intended for display and
+                 do not carry extra information not contained in antenna
+                 longitude, latitude, and altitude. Thus they are not archived.
+          </description>
+    <MonitorPoint name="east" type="float" persistent="true">
+        <shortName>Total.E</shortName>
+        <longName>Total.East</longName>
+        <description>East offset from array reference location.
+        </description>
+        <units>m</units>
+        <precision>5</precision>
+        <width>11</width>
+    </MonitorPoint>
+
+    <MonitorPoint name="north" type="float" persistent="true">
+        <shortName>Total.N</shortName>
+        <longName>Total.North</longName>
+        <description>North offset from array reference location.
+        </description>
+        <units>m</units>
+        <precision>5</precision>
+        <width>11</width>
+    </MonitorPoint>
+
+    <MonitorPoint name="up" type="float" persistent="true">
+        <shortName>Total.U</shortName>
+        <longName>Total.Up</longName>
+        <description>Altitude offset from array reference location.
+        </description>
+        <units>m</units>
+        <precision>5</precision>
+        <width>11</width>
+    </MonitorPoint>
+    </Container> <!-- End TotalENU Container -->
+
+    <MonitorPoint name="axisNonintersection" type="float" persistent="true">
+        <shortName>axisNonX</shortName>
+        <longName>Non-intersection of Axes</longName>
+        <description>
+            Non-intersection of azimuth and elevation axes, in mm.
+            Introduces a baseline delay of cos(el)*axisNonX.
+        </description>
+        <units>mm</units>
+        <precision>2</precision>
+        <width>6</width>
+    </MonitorPoint>
+
+<!-- END Antenna ground position information -->
+<!-- ============================================================= -->
+
+<!-- ============================================================= -->
+<!-- Antenna miscellaneous information -->
+
+    <MonitorPoint name="azimuthOffset" type="float" persistent="true" priority="vital">
+    <shortName>offsetAz</shortName>
+    <longName>OffsetAz</longName>
+    <description>Azimuth offset as an arc on the sky</description>
+    <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elevationOffset" type="float" persistent="true" priority="vital">
+    <shortName>offsetEl</shortName>
+    <longName>OffsetEl</longName>
+    <description>Elevation offset</description>
+    <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="azimuthMountOffset" type="float" persistent="true"
+                  priority="vital">
+        <longName>Azimuth Mount Offset</longName>
+        <shortName>AzMountOffset</shortName>
+        <description>Azimuth mount offset as an arc on the sky</description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elevationMountOffset" type="float" persistent="true"
+                  priority="vital">
+        <longName>Elevation Mount Offset</longName>
+        <shortName>ElMountOffset</shortName>
+        <description>Elevation mount offset as an arc on the sky</description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <CommonMonitorPoint ref="correlatorDesignation" />
+
+     <MonitorPoint name="correlatorInputNumber" type="int" persistent="true" priority="useful">
+        <shortName>CorrelatorInputNumber</shortName>
+        <units></units>
+        <description>
+           Input number in the correlator
+        </description>
+     </MonitorPoint>
+
+     <MonitorPoint name="dcInput" type="int" persistent="true" priority="useful">
+       <shortName>DCinputNumber</shortName>
+       <description>
+            Number of the downconverter input mapped to this antenna.
+            Downconverter inputs start at 1, for spectral line and
+            16 for wideband. These are absolute input numbers.
+       </description>
+     </MonitorPoint>
+
+     <MonitorPoint name="diameter" type="float" persistent="true" priority="vital">
+       <shortName>Diameter</shortName>
+       <description>
+            Antenna diameter
+       </description>
+       <units>m</units>
+      </MonitorPoint>
+
+     <MonitorPoint name="IFchannel" type="int" persistent="true" priority="useful">
+       <shortName>IFchannelID</shortName>
+       <description>
+            Number of the IF channel mapped to this antenna.
+            IF channels start at 1.
+       </description>
+     </MonitorPoint>
+
+     <MonitorPoint name="sidebandRatio" type="float"
+                   persistent="true" priority="vital" >
+        <shortName>SidebandRatio</shortName>
+        <longName>SidebandGainRatio</longName>
+        <description>
+            Gain ratio of receiver upper sideband to lower sideband,
+            with the index the input number.
+            This is pure receiver gain and does not include any
+            atmospheric component.
+        </description>
+     </MonitorPoint>
+
+     <MonitorPoint name="jyperk" type="float" persistent="true" priority="vital">
+          <description>The antenna gain, used for amplitude calibration.
+          </description>
+          <units>Jy/K</units>
+     </MonitorPoint>
+
+     <MonitorPoint name="loberotatorChannel" type="int" persistent="true" priority="useful">
+       <shortName>LoberotatorChan</shortName>
+       <description>
+            Number of the Loberotator channel mapped to this antenna.
+            Loberotator channels start at 1.
+       </description>
+     </MonitorPoint>
+
+     <MonitorPoint name="loChannel" type="int" persistent="true" priority="useful">
+       <shortName>LOchan</shortName>
+       <description>
+            Number of the LO channel mapped to this antenna.
+            LO channels start at 1.
+       </description>
+     </MonitorPoint>
+
+      <!-- vital for the MIRIAD header, don't muck it up -->
+      <MonitorPoint name="pointRa" type="double" persistent="true"
+          priority="vital">
+        <shortName>PointRa</shortName>
+        <description>
+             Apparent right ascension of the antenna pointing
+        </description>
+        <units>radians</units>
+      </MonitorPoint>
+
+      <!-- vital for the MIRIAD header, don't muck it up -->
+      <MonitorPoint name="pointDec" type="double" persistent="true"
+          priority="vital">
+        <shortName>PointDec</shortName>
+        <description>
+             Apparent declination of the pointing center.
+        </description>
+        <units>radians</units>
+      </MonitorPoint>
+
+      <CommonMonitorPoint ref="pointStatus"/>
+
+      <MonitorPoint name="refAtten" type="int" persistent="true"
+                 priority="useful">
+        <shortName>RefAtten</shortName>
+        <longName>ReferenceLOatten</longName>
+        <description>Reference LO attenuation in the antenna</description>
+        <units>dB</units>
+      </MonitorPoint>
+
+     <MonitorPoint name="synth" type="int" persistent="true"
+           priority="useful">
+       <shortName>Synthesizer</shortName>
+       <description>
+            Number of the synthesizer associated with this antenna.
+            Synthesizer numbers are in the range [1,3].
+       </description>
+     </MonitorPoint>
+
+      <MonitorPoint name="trackMode" type="enum" persistent="true"
+           priority="useful">
+       <shortName>AntennaObsMode</shortName>
+       <units></units>
+       <description>
+         Antenna pointing mode, e.g. source or az/el mode.
+       </description>
+       <enum name="IDLE">
+       <description>
+         No source set - antenna is not pointing at anything
+         in particular.
+       </description>
+       </enum>
+       <enum name="SOURCE">
+       <description>
+         Tracking a named or RA/DEC specified source.
+       </description>
+       </enum>
+       <enum name="AZEL">
+       <description>
+         Pointing at an Az/El specified location.
+       </description>
+       </enum>
+     </MonitorPoint>
+
+    <MonitorPoint name="trackTolerance" type="float" persistent="true"
+           priority="useful">
+      <shortName>TrkTol</shortName>
+      <longName>TrackingTolerance</longName>
+      <description>
+    Tracking error tolerance (on sky error) for tracking state
+    to be TRACK. The tolerance is in beamwidths (full width,
+    half maximum).
+      </description>
+      <units>FWHM</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="azSafeLow" type="float" persistent="true">
+        <shortName>AzSafeLow</shortName>
+        <longName>Azimuth Safe Low</longName>
+        <description>Low value for azimuth safe range.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="azSafeHigh" type="float" persistent="true">
+        <shortName>AzSafeHigh</shortName>
+        <longName>Azimuth Safe High</longName>
+        <description>High value for azimuth safe range.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elSafeLow" type="float" persistent="true">
+        <shortName>ElSafeLow</shortName>
+        <longName>Elevation Safe Low</longName>
+        <description>Low value for elevation safe range.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elSafeHigh" type="float" persistent="true">
+        <shortName>ElSafeHigh</shortName>
+        <longName>Elevation Safe High</longName>
+        <description>High value for elevation safe range.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+     <MonitorPoint name="wvrDelay" type="float" persistent="true"
+           priority="vital">
+       <shortName>WVRdelay</shortName>
+       <longName>AtmosphericDelay
+       </longName>
+       <description>Atmospheric delay measured by water vapor
+                    radiometer associated with this antenna.
+       </description>
+       <units>ps</units>
+     </MonitorPoint>
+
+    <MonitorPoint name="aftForwardTiltZero" type="float" persistent="true">
+        <shortName>Tilt Zero (A-F)</shortName>
+        <longName>Tilt Zero Aft Forward</longName>
+        <description>
+            Tilt zero value along aft forward axis.
+        </description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="leftRightTiltZero" type="float" persistent="true">
+        <shortName>Tilt Zero (L-R)</shortName>
+        <longName>Tilt Zero Left Right</longName>
+        <description>
+            Tilt zero value along left right axis.
+        </description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <Container name="Aperture1mm" persistent="true">
+        <CommonContainer ref="PointingConstants"/>
+    </Container>
+
+    <Container name="Aperture3mm" persistent="true">
+        <CommonContainer ref="PointingConstants"/>
+    </Container>
+
+    <Container name="Aperture1cm" persistent="true">
+        <CommonContainer ref="PointingConstants"/>
+    </Container>
+
+    <Container name="ApertureOptical" persistent="true">
+        <CommonContainer ref="PointingConstants"/>
+    </Container>
+
+    <MonitorPoint name="focusX" type="float" persistent="true">
+        <shortName>Focus X</shortName>
+        <longName>Focus X</longName>
+        <description>Focus X axis position</description>
+        <units>mm</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="focusY" type="float" persistent="true">
+        <shortName>Focus Y</shortName>
+        <longName>Focus Y</longName>
+        <description>Focus Y axis position</description>
+        <units>mm</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="focusZ" type="float" persistent="true">
+        <shortName>Focus Z</shortName>
+        <longName>Focus Z</longName>
+        <description>Focus Z axis position for millimeter receivers</description>
+        <units>mm</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="ifAttenAmb" type="float" count="2" persistent="true">
+        <shortName>IF atten</shortName>
+        <longName>IF attenuation </longName>
+        <description>
+            IF attenuation from last power setting on ambient load.
+            There are two IF channels on all antennas except the 3.5m.
+        </description>
+        <units>db</units>
+        <precision>1</precision>
+        <errLo>8.0</errLo>
+    </MonitorPoint>
+
+    <MonitorPoint name="polarization" type="enum" persistent="true">
+        <shortName>Polarization</shortName>
+        <longName>Polarization</longName>
+        <enum name="HORIZONTAL"/>
+        <enum name="VERTICAL"/>
+        <enum name="RIGHT_CIRCULAR"/>
+        <enum name="LEFT_CIRCULAR"/>
+    </MonitorPoint>
+
+    <MonitorPoint name="cameraRotation" type="float" persistent="true">
+        <shortName>Rotation</shortName>
+        <longName>Camera Rotation</longName>
+        <description>
+            Optical telescope small scale (less than 90 degrees) rotation to
+            align image x-y axis with azimuth and elevation. A properly set
+            rotation will speed up convergence.
+        </description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="cameraAzFOV" type="float" persistent="true">
+        <shortName>Az FOV</shortName>
+        <longName>Camera Azimuth Field Of View</longName>
+        <description>
+            Optical camera azimuth field of view.  This sets the camera gain for
+            the azimuthal direction.
+        </description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="cameraElFOV" type="float" persistent="true">
+        <shortName>El FOV</shortName>
+        <longName>Camera Elevation Field Of View</longName>
+        <description>
+            Optical camera elevation field of view.  This sets the camera gain
+            for the elevation direction.
+        </description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <!-- The refLoFreq and harmonic MPs are duplicates of subarray MPs
+         that are created for convenience in RTD useage; hence dontachive -->
+    <MonitorPoint name="refLoFreq" type="double" persistent="true"
+           priority="dontarchive">
+      <shortName>LO Ref</shortName>
+      <description>
+              Frequency of the reference LO - this is the signal sent
+              from the control building to the antennas.
+      </description>
+      <units>GHz</units>
+      <precision>6</precision>
+    </MonitorPoint>
+    <MonitorPoint name="harmonic" type="int" persistent="true"
+           priority="dontarchive">
+      <shortName>Harmonic</shortName>
+      <description>
+              Harmonic multiplier of YIG to get to oscillator
+      </description>
+    </MonitorPoint>
+       
+<!-- END Antenna miscellaneous information -->
+<!-- ============================================================= -->
+
+<!-- ============================================================= -->
+<!-- Antenna control commands -->
+      <Container name="AntCommands" priority="useful">
+        <description>
+            Only the parameters needed to restore the state of the antenna
+            are stored here. If the parameters from different commands are
+            not orthogonal (the order of the commands will cause the subarray
+            to have a different internal state) then a timestamp must be
+            included so that the commands can be played back in the
+            correct order.
+        </description>
+
+         <CommonContainer ref="EquatOffset"/>
+         <CommonContainer ref="Move"/>
+         <CommonContainer ref="Stop"/>
+         <CommonContainer ref="Stow"/>
+
+         <Container name="TrackSingle">
+            <description>
+            Track command for individual antennas.  The subarray track()
+            command allows different antennas within the subarray to track
+            different sources. The trackSingle monitor points will be set
+            when track() is called with antenna parameter other than zero
+            (all ants). This command is purely for state restoration, its
+            source name should NEVER show up in the MIRIAD data. This source
+            name should always be the same as AntennaCommon.Drive.sourcename.
+            </description>
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>Time this command was executed</description>
+            </MonitorPoint>
+
+            <MonitorPoint name="sourcename" type="string" persistent="true">
+                <shortName>TrkSingleSrc</shortName>
+                <longName>Sky trackSingle source</longName>
+                <description>The name of the source being tracked by
+                 individual antennas while the subarray is doing something else.
+                 For instance, trackSingle is used in optical pointing.
+                 This source is usually different than
+                 the subarray track source and the Doppler track source.
+                </description>
+            </MonitorPoint>
+          </Container> <!-- End trackSingle command -->
+
+      </Container> <!-- End AntCommands container -->
+<!-- END Antenna control commands -->
+<!-- ============================================================= -->
+
+    </Container>
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<!-- End Antenna Container -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<!-- Monitor points and containers for each OVRO antenna in CARMA        -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<Container name="Ovro" count="&NUM_OVRO_ANTENNAS;" indexName="ovroIndex" >
+    <description>
+        Contains control and monitor points which are ovro antenna based.
+    </description>
+
+    <MonitorPoint name="azEncoderOffset" type="double" persistent="true">
+        <shortName>m1</shortName>
+        <longName>Azimuth Encoder Offset</longName>
+        <description>Pointing model azimuth encoder offset term.</description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elEncoderOffset" type="double" persistent="true">
+        <shortName>m2</shortName>
+        <longName>Elevation Encoder Offset</longName>
+        <description>Pointing model elevation encoder offset term.</description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="axisNonOrthogonality" type="double" persistent="true">
+        <shortName>m3</shortName>
+        <longName>Axis Non Orthogonality</longName>
+        <description>Pointing model axis non-orthogonality term.</description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="northSouthAzAxisVerticality" type="double"
+                  persistent="true">
+        <shortName>m4</shortName>
+        <longName>North South Azimuth Axis Verticality</longName>
+        <description>
+            Pointing model north south azimuth axis verticality term.
+        </description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="eastWestAzAxisVerticality" type="double"
+                  persistent="true">
+        <shortName>m5</shortName>
+        <longName>East West Azimuth Axis Verticality</longName>
+        <description>
+            Pointing model east-west azimuth axis verticality term.
+        </description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+</Container>
+
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<!-- Monitor points and containers for each BIMA antenna in CARMA        -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<Container name="Bima" count="&NUM_BIMA_ANTENNAS;" indexName="bimaIndex" >
+    <description>
+        Contains control and monitor points which are bima antenna based.
+    </description>
+
+    <MonitorPoint name="apc" type="double" count="10" persistent="true">
+        <shortName>apc</shortName>
+        <longName>Azimuth Pointing Coefficients</longName>
+        <description>
+            Pointing Coefficients used to correct azimuth pointing errors
+        </description>
+        <units>arcmin</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="epc" type="double" count="10" persistent="true">
+        <shortName>epc</shortName>
+        <longName>Elevation Pointing Coefficients</longName>
+        <description>
+            Pointing Coefficients used to correct elevation pointing errors
+        </description>
+        <units>arcmin</units>
+    </MonitorPoint>
+</Container>
+
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<!-- Monitor points and containers for each SZA antenna in CARMA        -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+
+<Container name="Sza" count="&NUM_SZA_ANTENNAS;" indexName="szaIndex" >
+    <description>
+        Contains control and monitor points which are sza-antenna based.
+    </description>
+
+    <MonitorPoint name="azEncoderCountsPerTurn" type="int" persistent="true">
+        <shortName>azEncoderCountsPerTurn</shortName>
+        <longName>Azimuth Encoder Calibration</longName>
+        <description>Az encoder counts per turn.</description>
+        <units>counts</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elEncoderCountsPerTurn" type="int" persistent="true">
+        <shortName>elEncoderCountsPerTurn</shortName>
+        <longName>Elevation Encoder Calibration</longName>
+        <description>El Encoder counts per turn.</description>
+        <units>counts</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="azMinEncoderCount" type="int" persistent="true">
+        <shortName>azMinEncoderCount</shortName>
+        <longName>Minimum Az encoder count</longName>
+        <description>Minimum Az encoder count.</description>
+        <units>counts</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="azMaxEncoderCount" type="int" persistent="true">
+        <shortName>azMaxEncoderCount</shortName>
+        <longName>Maximum Az encoder count</longName>
+        <description>Maximum Az encoder count.</description>
+        <units>counts</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elMinEncoderCount" type="int" persistent="true">
+        <shortName>elMinEncoderCount</shortName>
+        <longName>Minimum El encoder count</longName>
+        <description>Minimum El encoder count.</description>
+        <units>counts</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elMaxEncoderCount" type="int" persistent="true">
+        <shortName>elMaxEncoderCount</shortName>
+        <longName>Maximum El encoder count</longName>
+        <description>Maximum El encoder count.</description>
+        <units>counts</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="azEncoderZero" type="double" persistent="true">
+        <shortName>azEncoderZero</shortName>
+        <longName>AZ Encoder zero</longName>
+        <description>Azimuth encoder zero point.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elEncoderZero" type="double" persistent="true">
+        <shortName>elEncoderZero</shortName>
+        <longName>EL Encoder zero</longName>
+        <description>Elevation encoder zero point.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="haTilt" type="double" persistent="true">
+        <shortName>haTilt</shortName>
+        <longName>HA tilt</longName>
+        <description>Tilt in the HA direction.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="latTilt" type="double" persistent="true">
+        <shortName>latTilt</shortName>
+        <longName>LAT tilt</longName>
+        <description>Tilt in the LAT direction.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="elTilt" type="double" persistent="true">
+        <shortName>elTilt</shortName>
+        <longName>EL tilt</longName>
+        <description>Tilt in the EL direction.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="opticalXCollimation" type="double" persistent="true">
+        <shortName>opticalXCollimation</shortName>
+        <longName>Optical X Collimation</longName>
+        <description>Optical collimation angle, in the direction of a great circle passing through the beam, and orthogonal to the local meridian.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="opticalYCollimation" type="double" persistent="true">
+        <shortName>opticalYCollimation</shortName>
+        <longName>Optical Y Collimation</longName>
+        <description>Optical collimation angle, in the direction of a great circle passing through the beam and the zenith.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="opticalFlexureSin" type="double" persistent="true">
+        <shortName>opticalFlexureSin</shortName>
+        <longName>Optical flexure, sin coefficient</longName>
+        <description>Optical flexure coefficient of the sin(EL) term.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="opticalFlexureCos" type="double" persistent="true">
+        <shortName>opticalFlexureCos</shortName>
+        <longName>Optical flexure, cos coefficient</longName>
+        <description>Optical flexure coefficient of the cos(EL) term.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="radioXCollimation" type="double" persistent="true">
+        <shortName>radioXCollimation</shortName>
+        <longName>Radio X Collimation</longName>
+        <description>Radio collimation angle, in the direction of a great circle passing through the beam, and orthogonal to the local meridian.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="radioYCollimation" type="double" persistent="true">
+        <shortName>radioYCollimation</shortName>
+        <longName>Radio Y Collimation</longName>
+        <description>Radio collimation angle, in the direction of a great circle passing through the beam and the zenith.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="radioFlexureSin" type="double" persistent="true">
+        <shortName>radioFlexureSin</shortName>
+        <longName>Radio flexure, sine coefficient</longName>
+        <description>Radio flexure coefficient of the sin(EL) term.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+    <MonitorPoint name="radioFlexureCos" type="double" persistent="true">
+        <shortName>radioFlexureCos</shortName>
+        <longName>Radio flexure, cosine coefficient</longName>
+        <description>Radio flexure coefficient of the cos(EL) term.</description>
+        <units>deg</units>
+    </MonitorPoint>
+
+</Container>
+
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<!-- Monitor points for repeat tasks (RepTasks)                          -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  -->
+<Container name="RepTask" count="&NUM_REP_TASKS;" >
+    <description>
+        Contains monitor points necessary for implementing repeat tasks
+    </description>
+    <MonitorPoint name="taskName" type="string" persistent="true">
+        <shortName>TaskName</shortName>
+        <longName>Task name</longName>
+        <description>Name of the repetitive task</description>
+        <width>16</width>
+    </MonitorPoint>
+    <MonitorPoint name="timeLastDone" type="absTime" persistent="true">
+        <shortName>LastDone</shortName>
+        <longName>Time last done</longName>
+        <description>
+         The last time the task was completed, as an MJD
+        </description>
+        <precision>0</precision>
+        <width>16</width>
+    </MonitorPoint>
+    <MonitorPoint name="since" type="double" persistent="true">
+        <shortName>Since</shortName>
+        <longName>Time since last done</longName>
+        <description>
+            The time interval since the task was last completed
+        </description>
+        <units>days</units>
+        <precision>3</precision>
+    </MonitorPoint>
+    <MonitorPoint name="repeatInterval" type="double" persistent="true">
+        <shortName>RepeatInterval</shortName>
+        <longName>Repeat interval</longName>
+        <description>
+                The nominal interval at which the task should be repeated. 
+                This monitor point is advisory only and is not used by the code.
+        </description>
+        <units>days</units>
+        <precision>2</precision>
+        <width>5</width>
+    </MonitorPoint>
+    <MonitorPoint name="autoInterval" type="double" persistent="true">
+        <shortName>AutoInterval</shortName>
+        <longName>Auto interval</longName>
+        <description>
+         The time interval since the last run when the task should be
+         automatically repeated. Note that only some tasks are automatically
+         executed before this interval, usually as part of the queue program. 
+         The rest need to be executed manually.
+         This monitor point is advisory only and is not used by the code.
+        </description>
+        <units>days</units>
+        <precision>2</precision>
+        <width>5</width>
+    </MonitorPoint>
+    <MonitorPoint name="reminderInterval" type="double" persistent="true">
+        <shortName>RemindInterval</shortName>
+        <longName>Remind interval</longName>
+        <description>
+         The time interval since the last run that a reminder should be issued.
+         This is usually an email, and sometimes an alarm. The observer should
+         run the task as requested.
+        </description>
+        <units>days</units>
+        <precision>2</precision>
+        <width>5</width>
+    </MonitorPoint>
+    <MonitorPoint name="reminderReady" type="bool" persistent="true">
+        <shortName>ReminderReady</shortName>
+        <longName>Reminder Ready</longName>
+        <description>
+            Time to send a reminder.
+            If this is done, it is done by the fault system and can be 
+            an alarm or email. The fault system needs to be configured,
+            using this monitor point as a trigger.
+        </description>
+        <errHi>true</errHi>
+    </MonitorPoint>
+    <MonitorPoint name="autoReady" type="bool" persistent="true">
+        <shortName>AutoReady</shortName>
+        <longName>Auto Ready</longName>
+        <description>
+            Time to automatically execute the task.
+            Not all tasks are automatically executed, but this is the
+            the MP to use to trigger those that are.
+         </description>
+        <errHi>true</errHi>
+    </MonitorPoint>
+</Container>
+<MonitorPoint name="repTaskErrors" type="int" persistent="true">
+    <shortName>RepTaskErrs</shortName>
+    <longName>RepTask Errors</longName>
+    <description>
+        Counter for errors (exceptions thrown) when repetitive task times are
+        updated in the subarray control monitor system pre-writer.
+    </description>
+    <errHi>true</errHi>
+</MonitorPoint>
+
+</Subsystem>

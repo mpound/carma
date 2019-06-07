@@ -1,0 +1,140 @@
+\documentclass[preprint]{aastex}
+
+%
+% Greater than or approximately equal to and less than or
+% approximately equal to signs, using macros defined in PLAIN.TEX
+%
+\catcode`\@=11 \def\gapprox{\mathrel{\mathpalette\@versim>}}
+\def\lapprox{\mathrel{\mathpalette\@versim<}}
+\def\@versim#1#2{\lower2.9truept\vbox{\baselineskip0pt\lineskip0.5truept
+    \ialign{$\m@th#1\hfil##\hfil$\crcr#2\crcr\sim\crcr}}}
+\catcode`\@=12
+
+\begin{document}
+\title{Quick Reference for {\tt getMpFromDb}}
+\author{Chul Gwon}
+\slugcomment{Version \today}
+
+\section{Overview}
+{\tt getMpFromDb} (formerly known as {\tt carmaMonitorDataExtractor})
+is a command line utility to query monitor data that has been stored
+in the DBMS and print it to standard output. To use getMpFromDb on the
+production system, the keywords that will be essential will be {\tt
+mp}, {\tt start}, {\tt end}, and {\tt singletable}:
+
+\noindent {\tt mp} is used to set the search criteria for mointor
+points.  It can handle both wildcards and comma-separated monitor
+points.
+
+{\tt mp="Ovro*Xac*, Bima*, MasterClock.Host.*"}
+
+\noindent The keywords{\tt start} and {\tt end} specify the start and
+end time over which the search should occur.  They can be in any
+format that is allowed by the unix {\tt date} command.  These are
+essential for controlling the number of monitor points that are
+retrieved.  Not specifying a start and end time will try to retrieve
+everything, which will throw an exception on the production system
+because there are just too many entries.  {\tt start} and {\tt end}
+consist of a date and an time.  The format is defaulted to {\tt
+\%Y-\%b-\%d} for the date and HH:MM:SS for the time.
+
+{\tt start="2005-Feb-04 23:42:42" end="2005-Feb-04 23:42:44"}
+
+{\tt getMpFromDb} currently allows retrieved monitor data to be
+displayed two different ways: listing monitor points individually in a
+table, including all attributes, or listing monitor points together in
+a single table for a specified attribute.  Switching between the two
+displays is controlled by the {\tt singletable} keyword.  The default for
+this keyword is {\tt true}, all monitor points in a single table for a
+specified attribute (controlled by the {\tt attr} keyword and
+defaulted to {\tt "value"}). 
+
+\begin{verbatim}
+\%~>  bin/getMpFromDb mp="Master*V" start="2005-Feb-04 23:42:41" colwidth=10
+Time to execute set up queries 0.0300921
+Time to execute wide set up queries 2.89327e-06
+Time to execute wide  query 0.0024799
+
+
+Comparing the following Monitor Point value: 
+            Monitor Point Canonical Name     TagID
+       MasterClock.MasterClock.digital5V   1835074
+           MasterClock.MasterClock.ps24V   1835071
+           MasterClock.MasterClock.ps12V   1835072
+        MasterClock.MasterClock.analog5V   1835073
+
+     Date/Time (UTC)   1835074   1835071   1835072   1835073
+2005-Feb-04 23:42:42         5        24        12         5
+2005-Feb-04 23:42:42         5        24        12         5
+2005-Feb-04 23:42:42         5        24        12         5
+2005-Feb-04 23:42:43         5        24        12         5
+
+\end{verbatim}
+
+A user may also obtain separate tables for each individual monitor
+point by setting {\tt singletable} to {\tt false}
+
+\begin{verbatim}
+\%~> bin/getMpFromDb mp="Master*V" start="2005-Feb-04 23:42:41" singletable=false
+Time to execute set up queries 0.0295561
+Time to execute narrow queries 0.00333605
+Monitor Point: MasterClock.MasterClock.ps24V
+     Date/Time (UTC)     value        blankingFlag            validity    iSample
+2005-Feb-04 23:42:42        24        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:42        24        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:42        24        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:43        24        UNDETERMINED   VALID_NOT_CHECKED          0
+
+Monitor Point: MasterClock.MasterClock.ps12V
+     Date/Time (UTC)     value        blankingFlag            validity    iSample
+2005-Feb-04 23:42:42        12        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:42        12        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:42        12        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:43        12        UNDETERMINED   VALID_NOT_CHECKED          0
+
+Monitor Point: MasterClock.MasterClock.analog5V
+     Date/Time (UTC)     value        blankingFlag            validity    iSample
+2005-Feb-04 23:42:42         5        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:42         5        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:42         5        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:43         5        UNDETERMINED   VALID_NOT_CHECKED          0
+
+Monitor Point: MasterClock.MasterClock.digital5V
+     Date/Time (UTC)     value        blankingFlag            validity    iSample
+2005-Feb-04 23:42:42         5        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:42         5        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:42         5        UNDETERMINED   VALID_NOT_CHECKED          0
+2005-Feb-04 23:42:43         5        UNDETERMINED   VALID_NOT_CHECKED          0
+\end{verbatim}
+
+A summary of all keywords that are available to the user are as follows:
+\begin{itemize}
+ \item {{\tt conffile} ({\tt string}) an alternative DB configuration
+       file if you are running with a DBMS on your local machine}
+ \item{{\tt mp} ({\tt string}) search string for monitor points of
+        interest}
+ \item{{\tt start} ({\tt string}) start time for monitor point query}
+ \item{{\tt end} ({\tt string}) end time for monitor point query}
+ \item{{\tt format} ({\tt string}) format of the date to use in query}
+ \item{{\tt singletable} ({\tt boolean}) format for printing out monitor points}
+ \item{{\tt attr} ({\tt string}) attribute of the monitor points to display}
+ \item{{\tt multiwild} ({\tt string}) desired wildcard for
+        multi-character match}
+ \item{{\tt singlewild} ({\tt string}) desired wildcard for
+        single-character match}
+ \item{{\tt colwidth} ({\tt int}) width of columns}
+\end{itemize}
+
+In a local sandbox or other developmental environment, it may be
+necessary to specify the {\tt conffile} keyword, which points to the
+DBMS on your local system.  Column width may be controlled by using
+the {\tt colwidth} keyword.  This will change the widths of all
+columns except the date.  It is also possible (but not recommended) to
+change the characters used for multiple-character and single-character
+wildcards.  The defaults are currently {\tt *} and {\tt ?}
+respectively, but can be modified using the {\tt multiwild} and {\tt
+singlewild} keywords.
+
+\appendix
+\clearpage
+\end{document}

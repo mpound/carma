@@ -1,0 +1,9 @@
+# $Id: Calibration.tab,v 1.4 2007/12/07 00:46:20 colby Exp $
+#
+# Phase monitor antenna parameters for gathering calibration data
+#
+#|chan|offV   |cos  |sin  |scale|
+  0    0.0     0.00  0.00  1.0
+  1    0.0     0.00  0.00  1.0
+  2    0.0     0.00  0.00  1.0
+  3    0.0     0.00  0.00  1.0

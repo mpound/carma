@@ -1,0 +1,8 @@
+Review Files: DirectCan.h DirectCan.cc
+
+For details on which tests were ran for coverage and how, see
+README file in Test directory.
+
+gcov results: 66.67% of 39 source lines executed in file DirectCan.cc 
+ 
+ 

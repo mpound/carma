@@ -1,0 +1,72 @@
+#!/bin/bash
+# vim: set ts=4 sts=4 sw=4 noet:
+
+# get actual location of the script
+INPUT_PATH="$(/usr/bin/dirname "$0")"
+ABSPATH="$(/usr/bin/readlink -f "${INPUT_PATH}")"
+
+export TOOLS="@carma_tools@"
+export BUILD="$(/usr/bin/readlink -f "${ABSPATH}/..")"
+
+export PYTHONPATH="$BUILD/lib/python:$BUILD/scripts/python:$BUILD/scripts/python/observer:$BUILD/conf/pylint"
+export LD_LIBRARY_PATH="$TOOLS/lib"
+export PATH="$TOOLS/bin:$PATH"
+
+stderr() {
+	echo "$@" >&2
+}
+
+# Run pylint. Only output help text when errors were detected.
+#
+# $1: the filename to check
+# Exits when pylint fails.
+run_pylint() {
+	"$TOOLS/bin/pylint" --rcfile="$BUILD/conf/pylint/pylintrc" "$1" &> "$OUTPUT"
+	RET="$?"
+
+	if [[ "$RET" -ne 0 ]]; then
+		stderr "$1: FAIL"
+		stderr
+		stderr "Error Message Key:"
+		stderr "MESSAGE_TYPE: LINE_NUM:[OBJECT:] MESSAGE"
+		stderr
+		stderr "There are 5 kind of message types :"
+		stderr "* (C) convention, for programming standard violation"
+		stderr "* (R) refactor, for bad code smell"
+		stderr "* (W) warning, for python specific problems"
+		stderr "* (E) error, for much probably bugs in the code"
+		stderr "* (F) fatal, if an error occured which prevented pylint from doing further processing"
+		stderr
+		cat "$OUTPUT" >&2
+		exit "$RET"
+	fi
+}
+
+# Run the script checker helper. Only output help text when errors were detected.
+#
+# $1: the filename to check
+# Exits when the helper fails.
+run_helper() {
+	"$TOOLS/bin/python" "$BUILD/scripts/script-checker-helper" "$1" &> "$OUTPUT"
+	RET="$?"
+
+	if [[ "$RET" -ne 0 ]]; then
+		stderr "$1: FAIL"
+		stderr
+		cat "$OUTPUT" >&2
+		exit "$RET"
+	fi
+}
+
+# Create temporary file for program output. Delete it automatically on exit.
+OUTPUT="$(mktemp)"
+trap 'rm -f "$OUTPUT"' SIGHUP SIGINT SIGTERM EXIT
+
+# check files one at a time
+for filename in "$@"; do
+	run_pylint "$filename"
+	run_helper "$filename"
+
+	# success message
+	echo "$filename: PASS"
+done

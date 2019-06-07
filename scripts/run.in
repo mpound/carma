@@ -1,0 +1,150 @@
+#!/bin/sh
+
+# $Id: run.in,v 1.8 2004/08/04 20:35:05 scott Exp $
+# Script to start another script or program with correct carma environment.
+# See description below for details.
+# Author: Steve Scott
+
+
+function outputDescription {
+    echo "Script to run a carma program (binary or script) with the"
+    echo environment tailored to a specific installation or build.
+    echo The file run.in is the input to autoconf, which creates the file run.
+    echo If this script is executed with the argument -s, then it exports the
+    echo environment variables CARMA, CARMA_TOOLS, CARMA_CONF, and JAVA_HOME
+    echo  to the file \$CARMA/conf/carmaEnv.sh. If run is executed with -c 
+    echo then the environment is set in \$CARMA/conf/carmaEnv.csh.
+    echo If the script is exected without the above variables then the remainder
+    echo of the command line is executed in a shell with the above environment
+    echo variables set appropriately for the location of the build/install.
+    echo The path for the execution is prepended with CARMA/bin and 
+    echo CARMA/scripts while the LD_LIBRARY_PATH is set for carma tools.
+    echo This file **must** live one directory below the root of the build or
+    echo install directory as its location is used to determine the root.
+    echo Examples:
+    echo " prompt> run ls -l"
+    echo " prompt> run 'echo \$PATH'"
+    echo " prompt> /myBuild/scripts/run 'cd \$CARMA; ls bin'"
+}
+
+function outputVersion {
+    echo "Version:$Id: run.in,v 1.8 2004/08/04 20:35:05 scott Exp $" 
+}
+
+function outputUsage {
+    echo "run [--version] [--description] [--usage] [-s] [-c] [commmand line]" 
+}
+
+function outputHelp {
+    outputUsage
+    outputVersion
+    outputDescription
+}
+
+if [ "$1" = "--description" -o "$1" = "-d" ]; then
+    outputDescription
+    exit 0
+fi
+
+if [ "$1" = "--version" -o "$1" = "-v" ]; then
+    outputVersion
+    exit 0
+fi
+
+if [ "$1" = "--usage" -o "$1" = "-u" ]; then
+    outputUsage
+    exit 0
+fi
+
+if [ "$1" = "--help" -o "$1" = "-h" ]; then
+    outputHelp
+    exit 0
+fi
+
+#debugging
+DEBUG=0
+
+# Root of carma tools installation; a location specific to a given
+# build or install as defined during configure
+# Turned from a variable to an absolute path by autoconf substitution
+export CARMA_TOOLS=@carma_tools@
+
+# Environment for the root of java, selected during configure
+export JAVA_HOME=@java_home@
+
+# In case a script wants to see if it was started by this script
+export CARMA_RUN=yes
+
+# Figure out the root of the build/install directory
+# The assumption and requirement is that this script is located 
+# one level below the build/install root
+INPUT_PATH=`/usr/bin/dirname "$0"`
+# Fixes case where a relative path is given
+ABSPATH=`/bin/sh -c "cd ${INPUT_PATH} > /dev/null; pwd"`
+
+# Environment variable for the root of the build/install
+export CARMA=`/usr/bin/dirname $ABSPATH`
+
+# Environment for scripts to find config files
+export CARMA_CONF=${CARMA}/conf
+
+if [ $DEBUG = 1 ]; then
+    echo INPUT_PATH:$INPUT_PATH
+    echo ABSPATH:$ABSPATH
+    echo arg0:${0}
+    echo arg1:${1}
+    echo arg2:${2}
+    echo "Root of build/install tree(\$CARMA):${CARMA}"
+fi
+
+
+# Create the sh conf file if requested and then exit
+if [ "$1" = "-s" ]; then
+    mkdir -p ${CARMA_CONF}
+    FILE=${CARMA_CONF}/carmaEnv.sh
+    echo "export CARMA=${CARMA}" > ${FILE} 
+    echo "export CARMA_TOOLS=${CARMA_TOOLS}" >> ${FILE} 
+    echo "export CARMA_CONF=${CARMA_CONF}"   >> ${FILE} 
+    echo "export JAVA_HOME=${JAVA_HOME}"     >> ${FILE} 
+    echo "Created $FILE"
+    exit 0
+fi
+
+# Create the csh conf file if requested and then exit
+if [ "$1" = "-c" ]; then
+    mkdir -p ${CARMA_CONF}
+    FILE=${CARMA_CONF}/carmaEnv.csh
+    echo "setenv CARMA ${CARMA}" > ${FILE} 
+    echo "setenv CARMA_TOOLS ${CARMA_TOOLS}" >> ${FILE} 
+    echo "setenv CARMA_CONF  ${CARMA_CONF}"  >> ${FILE} 
+    echo "setenv JAVA_HOME   ${JAVA_HOME}"   >> ${FILE} 
+    echo "Created $FILE"
+    exit 0
+fi
+
+
+# Execute the command
+# The command line
+COMMAND_LINE=
+
+# Build up the command line
+while [ $# -gt 0 ]; do
+    COMMAND_LINE=${COMMAND_LINE}\ "$1"
+    shift
+done
+
+
+if [ $DEBUG = 1 ]; then
+    echo run command line:$COMMAND_LINE
+fi
+
+ 
+# Environment to find bins/scripts/libs if needed
+export PATH=${CARMA_TOOLS}/bin:${CARMA}/bin:${CARMA}/scripts:${PATH}
+export LD_LIBRARY_PATH=${CARMA_TOOLS}/lib:${CARMA}/lib:${LD_LIBRARY_PATH}
+   
+# OK, let's run it...
+/bin/sh -c "$COMMAND_LINE"
+
+exit 0
+

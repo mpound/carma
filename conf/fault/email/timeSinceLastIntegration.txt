@@ -1,0 +1,11 @@
+This alarm is triggered when the system has not made an integration in the
+last 14 minutes.  The most likely reason for this is that you need to
+schedule a project. However, if this error was triggered during a project,
+please see the wiki for additional information:
+
+http://cedarflat.mmarray.org/wiki/Alarms#Wbpipeline.IntegratorStageContainer.IntegratorStage.timeSinceLastIntegration
+http://cedarflat.mmarray.org/wiki/Alarms#Slpipeline.IntegratorStageContainer.IntegratorStage.timeSinceLastIntegration
+
+Look here for notes on how to schedule projects:
+
+http://cedarflat.mmarray.org/wiki/Scheduling_Projects

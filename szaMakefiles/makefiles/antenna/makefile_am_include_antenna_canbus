@@ -1,0 +1,31 @@
+lib_libcarmaSzaAntennaCanbus_la = lib/libcarmaSzaAntennaCanbus.la
+
+lib_LTLIBRARIES += $(lib_libcarmaSzaAntennaCanbus_la)
+
+lib_libcarmaSzaAntennaCanbus_la_SOURCES = \
+	carma/antenna/sza/antenna/canbus/BiasTunedGunn.cc \
+	carma/antenna/sza/antenna/canbus/CalTert.cc \
+	carma/antenna/sza/antenna/canbus/CalTertNew.cc \
+	carma/antenna/sza/antenna/canbus/CalTertOld.cc \
+	carma/antenna/sza/antenna/canbus/CanCommand.cc \
+	carma/antenna/sza/antenna/canbus/CanDevice.cc \
+	carma/antenna/sza/antenna/canbus/CanInstruction.cc \
+	carma/antenna/sza/antenna/canbus/CanMaster.cc \
+	carma/antenna/sza/antenna/canbus/CanMonitor.cc \
+	carma/antenna/sza/antenna/canbus/CanMonitorCondition.cc \
+	carma/antenna/sza/antenna/canbus/CanMonitorPoint.cc \
+	carma/antenna/sza/antenna/canbus/IFMod.cc \
+	carma/antenna/sza/antenna/canbus/IntMod.cc \
+	carma/antenna/sza/antenna/canbus/Oscillator.cc \
+	carma/antenna/sza/antenna/canbus/Receiver.cc \
+	carma/antenna/sza/antenna/canbus/RemoteCanMaster.cc \
+	carma/antenna/sza/antenna/canbus/SelectRxCommand.cc \
+	carma/antenna/sza/antenna/canbus/SetBiasCommand.cc \
+	carma/antenna/sza/antenna/canbus/Thermal.cc \
+	carma/antenna/sza/antenna/canbus/TiltMeter.cc \
+	carma/antenna/sza/antenna/canbus/VaractorTunedGunn.cc \
+	carma/antenna/sza/antenna/canbus/Yig.cc
+
+lib_libcarmaSzaAntennaCanbus_la_CXXFLAGS = -fPIC
+
+lib_libcarmaSzaAntennaCanbus_la_CPPFLAGS = $(AM_CPPFLAGS) -DTOP="\"$(TOP)"\" -D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 -DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 -DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0 -DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated

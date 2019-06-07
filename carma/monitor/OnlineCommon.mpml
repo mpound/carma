@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global">
+  <MonitorPoint name="online" type="bool">
+    <shortName>online</shortName>
+    <longName>subsystem online</longName>
+    <description>
+      An indication that monitor data for this subsystem is available and
+      working correctly. It will always be true if the processes are running.
+    </description>
+  </MonitorPoint>
+</Common>

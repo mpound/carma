@@ -1,0 +1,179 @@
+#!/bin/bash
+
+# $Id: rc.carma.in,v 1.20 2012/01/13 17:05:41 iws Exp $
+# Wrapper script to run the imrsetupNoSu as a specified user.
+# It is assumed that the imrsetupNoSu script lives in the same
+# directory as this script.
+# If not run as root or the specified user , you will be asked
+# for the user's password.
+#
+# Author: Steve Scott
+#
+
+
+# Define directory location of this script
+# Fixes case where a relative path is given
+INPUT_PATH=`/usr/bin/dirname "$0"`
+ABSPATH=`/bin/sh -c "cd ${INPUT_PATH} > /dev/null; pwd"`
+
+SCRIPT=${ABSPATH}/taoimrsetupNoSu
+
+
+function outputDescription {
+    cat - <<EOF
+Script to setup the imr, including all imr controlled programs,
+on both the imr and other machines. On the imr machine, the name and
+notification service are started. On other machines, a slave imr,
+called an Object Activation Deamon or OAD is run to manage processes.
+The carma programs that are started are specified in an xml file
+that usually lives in the conf/imr directory. This file must
+be specified as input to the script. You can disable
+starting of these programs with the --noapps flag, leaving only
+the imr, nameserver and notification server on the imr machine and
+the OAD on slave machines. Processes started by an IMR or OAD are 
+all children of the IMR/OAD and run with that user as process owner.
+This script does a setuser (su) command by default to user "control".
+However, by specifying --nosu, the script will be run as the current user.
+Or it will run as the user specified after the optional --user argument.
+If you are not root, you will prompted for the new user's password.
+This program should be run on the IMR host first, and then on all
+slave machines to get all programs going. Make sure that you have
+write access permissions to the directory where the IMR files will be
+placed (/var/carma/imr by default).
+Functionally, this script deals with the setuser aspect of things and
+then hands things off to the imrsetupNoSu script to do the real work.
+EOF
+}
+
+function outputVersion {
+    echo "Version:$Id: rc.carma.in,v 1.20 2012/01/13 17:05:41 iws Exp $" 
+}
+
+function outputUsage {
+    echo "rc.carma [--help] [--version] [--usage] [--description]"
+    echo "  [options] --file xmlconfigFile  Commands"
+    echo
+	echo "IMR Related Options:"
+	echo "   --imr IMRHOST[:IMRPORT] - IMR master is at IMRHOST[:IMRPORT]"
+	echo "   --oadhost HOSTNAME - local imr process will bind to IP"
+	echo "                        address associated with HOSTNAME"
+	echo "   --dir DIRECTORY - IMR files will be placed under DIRECTORY"
+	echo "   --noapps - don't start carma apps; just start notif and name services"
+	echo "   --noclean - don't clean out IMR directory containing log files"
+	echo "   --nosuballocdisable - do not disable the gcc suballocator"
+	echo "                         on dual cpumachines"
+	echo "   --force - set HOSTNAME to IMRHOST"
+	echo "             (deprecated; equivalent to '--oadhost IMRHOST')"
+	echo "   --debug - dump control variables"
+	echo "   --quiet - display no informational messages (default)"
+	echo "   --verbose - display lots of information messages"
+	echo
+	echo "   IMRHOST defaults value set in configure, which defaults to"
+    echo "       'localhost'; IMRPORT defaults to 20000"
+	echo '   HOSTNAME defaults to `hostname`' "($HOSTNAME)"
+	echo "   DIRECTORY defaults to '/var/carma/imr'"
+    echo
+    echo "UID Related Options:"
+    echo "   --nosu - does not do a setuser command; runs as current user"
+    echo "   --user username - user to su to; default=control" 
+    echo
+    echo "Commands:" 
+    echo "  start - starts IMR, Name and Notification Services and programs"
+    echo "             or OAD and programs only if imr running on another machine"
+    echo "  stop - stops IMR/OAD, Name and Notification Services, and programs"
+    echo "  restart - stops and starts"
+    echo "  status - checks to see if services are running"
+ }
+
+function outputHelp {
+    outputUsage
+    echo
+    outputVersion
+    echo
+    outputDescription
+}
+
+
+
+# --------------------------------------------------------
+
+#default username
+USERNAME=control
+
+#Default nosu control variable
+REQUEST_NOSU=0
+
+
+#Get all the command line options to pass on to the script
+
+# get list of arguments
+arglist=($*)
+numargs=$#
+options=
+
+# run through arguments for commands
+for (( i=$numargs; i+1; i=i-1 ));
+do
+    index=$((numargs-i))
+    maxindex=$((numargs-1))
+    arg=${arglist[$index]}
+    #echo numargs:$numargs  i:$i index:$index arg:$arg
+    case $arg in
+        --user)
+            if [ $index -eq $maxindex ]; then
+               echo Must supply user name after the --user keyword
+               exit $EXIT_FAILURE
+            fi
+            # Skip to the next argument to get the username
+            i=$((i-1))
+            index=$((index+1))
+            USERNAME=${arglist[$index]}
+            ;;
+        help | --help | -h)
+            outputHelp
+            exit $EXIT_SUCCESS
+            ;;
+        --version | -v)
+            outputVersion
+            exit $EXIT_SUCCESS
+            ;;
+        --usage | -u)
+            outputUsage
+            exit $EXIT_SUCCESS
+            ;;
+        --nosu | -n)
+            REQUEST_NOSU=1
+            ;;
+        *)
+            options="${options} $arg"
+            #echo "options $options"
+            ;;
+    esac
+done
+
+
+COMMAND_LINE="$SCRIPT $options"
+
+#echo ${COMMAND_LINE
+#COMMAND_LINE="who -m; echo ""; echo ${COMMAND_LINE}"
+
+whoami | /bin/grep $USERNAME  > /dev/null 
+IS_NOT_SPECIFIED_USER=($?)
+
+if [ $IS_NOT_SPECIFIED_USER -eq 1 -a $REQUEST_NOSU -eq 0 ]; then
+    DOSU=1
+else
+    DOSU=0
+fi
+
+if [ $DOSU -eq 1 ]; then
+    #echo su ${USERNAME -c "${COMMAND_LINE}"    
+    echo Doing su for ${USERNAME}
+    exec su $USERNAME -c "$COMMAND_LINE"
+else 
+    #echo Not doing su for ${USERNAME}
+    #echo ${COMMAND_LINE}
+    exec $COMMAND_LINE
+fi
+
+

@@ -1,0 +1,161 @@
+"""
+Script to test phase variation as a function of frequency.
+This script will take data while changing the sky frequency by
+changing the doppler velocity. It uses a special catalog that has
+many sources defined with the same position and different velocities
+(see velocitySteps.cat). The main parameters control the range and step size
+of the sampling.
+
+The key parameters are:
+  source: pick strongest source that is up
+  numturns: number of turns of phase to check using max ll diff (default=5)
+  phaseres: phase resolution in degrees (default=30)
+  
+All parameters are visible using the standard
+ run("phaseFreqTest", help=True)  
+ 
+$Id: phaseFreqTest.obs,v 1.7 2013/06/25 22:14:45 scott Exp $
+Author: Steve Scott
+"""
+
+import runCommand as rc
+
+# Clear all script variables
+commands.controlVariablesClear()
+
+# Add options to give observers flexibility on executing the script
+p = rc.Params()
+desc_autoll  = "Get max linelength diff from realtime linelengths for ants "
+desc_autoll += "in array. When this is True the maxlldiff parameter is ignored."
+desc_maxlldiff = "Max linelength difference (nsecs)"
+desc_numturns = "Number of turns of phase (max) to sample"
+desc_loops = "Number of loops over complete range"
+p.add("source",   default='3c273',  type=str,   description="Source name")
+p.add("autoll",   default=True, type=bool, description=desc_autoll)
+p.add("maxlldiff",default=1000.0,  type=float, description=desc_maxlldiff)
+p.add("numturns",default=5.0,  type=float, description=desc_numturns)
+p.add("phaseres", default=30,    type=float, description="Phase resolution for max linelength (degrees)")
+p.add("tint",     default=20.0,  type=float, description="Integration time (seconds)")
+p.add("reps",     default=1,     type=int, description="Number of reps in integration")
+p.add("tune",     default=True,  type=bool,  description="Tune the receivers?")
+p.add("freq",     default=100.0, type=float, description="LO frequency (GHz)", noneAllowed=True)
+p.add("loops",    default=1, type=int, description=desc_loops, noneAllowed=True)
+p.add("sim",      default=False, type=bool,  
+            description="Simulate: no PDB or pipeline")
+
+p.processInputParameters()
+
+
+
+# **********************************
+# END OF OPTIONS - START MAIN SCRIPT
+# **********************************
+
+sim = p.sim
+
+if not sim: newProject("ct010", "phaseFreqTest")
+elevlimit(10)
+source    = p.source
+maxlldiff = p.maxlldiff
+
+if sim:
+    ucat("/home/scott/velocitySteps.cat")
+else:
+    ucat("velocitySteps.cat")
+
+if p.autoll and (not sim) :
+    badll  = []
+    ll     = [] # Linelength values
+    ants   = currentAntennaNumbers()
+    if len(ants) == 0:
+        e = "Cannot do autoll option because there are no antennas in the array"
+        raise Exception, e
+    for a in ants:
+        try :
+            mp = "LineLength.LineLength%d" %a
+            l = queryDouble(mp, 3)
+            ll.append(l)
+        except:
+            badll.append(a)
+    if len(badll) > 0:
+        m = "Trouble getting linelength from ["
+        pre = ""
+        for b in badll:
+            m += "%sC%d" %(pre,b)
+            pre=","
+        m += "]; cannot do autoll!\n"
+        m += "Either remove bad antennas from array or set autoll=False "
+        m += "and set maxlldiff appropriately"
+        raise Exception, m
+    maxlldiff = max(ll)-min(ll)
+    minll    = ll[0]
+    minllant = ants[0]
+    for i in range(len(ll)):
+        if ll[i] < minll:
+            minll = ll[i]
+            minllant = ants[i]
+    print "USE C%d AS REFERENCE ANTENNA IN MIRIAD REDUCTION" %minllant        
+        
+
+#print "Maxlldiff:", maxlldiff
+
+track(source)
+intent(source, 'GB')
+if p.tune:
+    freq(p.freq, LSB, 0, "V+0.00")
+    configwideastroband()
+
+# Check that only one correlator is assigned
+mycorr = assignedCorrelator(subarrayNo)
+if ( mycorr == 'NONE' ) :
+    e = "This subarray has no correlators assigned. "
+    e += "Use addCorrelator(CORR_SPECTRAL) or addCorrelator(CORR_WIDEBAND) "
+    e += "to assign one"
+    raise Exception, e
+    
+deltaV = 300000*p.phaseres/(maxlldiff*p.freq*360) 
+deltaV = 0.01*round(deltaV*100)
+phaseres =  deltaV*(maxlldiff*p.freq*360)/300000.0
+# Estimated overhead per step, in seconds
+overhead = 6
+
+nSteps = int(round(p.numturns*360/phaseres))
+nSteps = 2*(nSteps/2)+1
+m = "Max linelength diff:%.1f nsec" %maxlldiff
+if p.autoll: m += "  (determined automatically from realtime linelengths)"
+print m
+print "Number turns, phase resolution: %.1f turns, %.1f degrees" \
+            %(p.numturns,p.phaseres)
+print "Velocity increment: %.2f km/sec" %deltaV
+print "Steps: %d(+/-%d)" %(nSteps, nSteps/2)
+print "Source: %s" %source
+print "Integration time/reps: %.1f/%d" %(p.tint, p.reps)
+print "Loops over entire range: %d" %(p.loops)
+t = p.loops*(p.tint*p.reps+overhead)*nSteps/60.0
+print "Estimated runtime: %.1f minutes" %t
+
+t0 = time.time()
+for l in range(p.loops):
+    count=0
+    for i in range(-nSteps/2, nSteps/2+1):
+        count += 1
+        if i == 0: postfix = "+0.00"
+        else:      postfix = "%+0.2f"  %(i*deltaV)
+        dopsource = "V" + postfix
+        f = doppler(dopsource)
+        #print "Freq:", f
+        m  = "Integ#%d of %d, dopplerSource=%s, freq=%f:" \
+                 %(count, nSteps, dopsource, f)
+        m += " %d reps of %.0f secs each" %(p.reps, p.tint)
+        print m
+        if not sim:  
+            integrate(p.tint, p.reps)
+
+# Reset project
+if not sim:
+    resetProject()
+    maint()
+    
+deltat = (time.time()-t0)/60.0 
+print "Script execution took %.1f minutes" %deltat
+   

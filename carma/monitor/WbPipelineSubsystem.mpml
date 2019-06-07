@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+
+<!-- $Id: WbPipelineSubsystem.mpml,v 1.60 2012/01/18 16:23:51 abeard Exp $ -->
+
+<!-- Wideband correlator pipeline subsystem monitor point definitions -->
+ 
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="WbPipeline" 
+           priority="debug" extendFrom="Base" > 
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <!-- NOTE: name of containers MUST start with a CAPITAL letter -->
+    <!-- This one wasted a good half of a day -->
+    <?common PipelineCommon.mpml?>
+
+    <?common PipelineStages.mpml?>
+
+    <CommonContainer ref="PipelineStatus"/>
+    
+    <CommonContainer ref="CatchDataStageContainer"/>
+    <CommonContainer ref="CoherenceStageContainer"/>
+    <CommonContainer ref="DecimatorStageContainer"/>
+    <CommonContainer ref="PassBandStageContainer"/>
+    <CommonContainer ref="TsysStageContainer"/>
+    <CommonContainer ref="BlankFlagStageContainer"/>
+    <CommonContainer ref="LinelengthStageContainer"/>
+    <CommonContainer ref="IFcorrectionStageContainer"/>
+    <CommonContainer ref="WvrStageContainer"/>
+    <CommonContainer ref="SelfCalIntegStageContainer"/>
+    <CommonContainer ref="CorrelatorPublisherContainer"/>
+    <CommonContainer ref="IntegratorStageContainer"/>
+    <CommonContainer ref="VisBrickStageContainer"/>
+    
+    <Container name="SelfCalUsbIntegContainer" count="&NUM_WBC_BANDS;">
+        <CommonContainer ref="SelfCal"/>
+    </Container>
+    
+    <Container name="SelfCalLsbIntegContainer" count="&NUM_WBC_BANDS;">
+        <CommonContainer ref="SelfCal"/>
+    </Container>
+
+    <Container name="CatchDataBandContainer" count="&NUM_WBC_BANDS;">
+        <description>
+            Container to hold common per-band catch data information.
+        </description>
+
+        <CommonContainer ref="CatchDataBand"/>
+    </Container>
+    
+    <Container name="DecimationBandContainer" count="&NUM_WBC_BANDS;">
+        <description>
+            Container to hold common per-band decimation information.
+        </description>
+
+        <CommonContainer ref="Decimation"/>
+    </Container>
+
+    <CommonContainer ref="LastIntegration" />
+
+</Subsystem>

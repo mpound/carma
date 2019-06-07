@@ -1,0 +1,82 @@
+//-REV-PJT
+
+Under carma/services i looked at the following files:
+
+FileLayout.cc 
+Logger.cc 
+Logger.h            minor typos without //-REV-PJT
+SyslogLayout.cc
+Test/LoggerTest.h
+Test/utLogger.cc
+
+General comments (these admittedly should have come up
+earlier in a review of design stage)
+
+-  I still feel that , looking at syslog(3) and finding
+   vsyslog with it's very useful va_list usage. Looking
+   at the MIRIAD experience where admittedly the language
+   (fortran) was not helping much, users constantly
+   get static information printed on the screen, with
+   C the situation was good with stdarg, but it seems
+   we are making a step backwards if we go back to only
+   allowing strings....
+
+- having fixed name member functions, instead of 
+  a priority level like syslog has, certainly gives
+  less flexibility. It's a nice feature (combined with
+  my previous comment) to be able to say
+
+	priority = SYSLOG_DEBUG;
+	...
+	if (operator_asleep) priority--;
+	...
+	myLogger.log(priority,"Antenna %d stuck at %g",i,z);
+
+  I realize you can always do (is that true?)
+
+	myLogger << priority << "Antenna " << i << " stuck at " << z;
+
+
+- much like (some) unix man pages, i'd like to see simple examples
+  of actual usage in the documentation. I don't find Logger() a very
+  easy class to use, and had to look at  the unit test to find out
+  a few things that were not obvious at all without studying the
+  Log4cpp class. Adding an example might alleviate that.
+  I realize that we don't encourage giving examples in the
+  Coding style / Doxygen document. Perhaps that should be ammended.
+
+
+- adherence to design document		
+	? N/A ? no design document available
+                                                                                
+- doxygen:
+	PASS, some minor suggestions made in the code (see //-REV-PJT)
+  - each class its own block
+	PASS
+  - each public and protected function its own block
+	PASS
+                                                                                
+- coding style guide:  PASS - made a few comments in the code
+  - naming conventions (Section 3: cases 3,4,5,9,13,16/26,29)			PASS
+  - files              (Section 4: cases 33,39,40,41,43,44)			PASS
+  - statements         (Section 5: cases 46,47,50,52,58,66,67,69,70,71)		PASS
+  - layout/comments    (Section 6: cases 99,100,102)				PASS
+  also try and look at the 'should' and 'can' items though
+                                                                                
+- unit test w/
+  - reasonable coverage		PASS
+  - leak free			PASS
+                                                                                
+- inspection			PASS
+  - code correctness
+    - what is does
+    - how it does it
+    - reliable/robust
+    - algorithm
+      - a pattern?
+      - math?
+      - numerical
+      - choice
+      - code reuse / STL / carma utils		PASS
+                                                                                
+                                                                                

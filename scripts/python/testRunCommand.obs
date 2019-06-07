@@ -1,0 +1,69 @@
+
+# Script to test processing of input for the run command
+#
+# @author Steve Scott
+# $Id: testRunCommand.obs,v 1.4 2009/06/12 17:39:09 scott Exp $
+#
+# $CarmaCopyright$
+
+#-------------------------- Help --------------------------
+""" Script to test the run command and the parameter  processing 
+available in the runCommand module. Note that this help text will
+be part of the help for the script. It must be the first statement
+in the file, before any imports.
+Here is a sample command line to run this script (note the inclusion
+of the restart keyword in the midst of all the wildcard ones):
+ run("testRunCommand", x=7.2, source="3c273", restart=True, 
+      ants=[3,4,7], docal=1, var=2, weird=["dd",4])
+
+"""
+#------------------------ End of Help ------------------------
+
+import runCommand as rc
+
+# ------------ Parameters -------------
+  # Define the parameter set
+p=rc.Params()
+  # Define the keywords and their constraints
+p.add("x", required=True, description="An extraordinary parameter")
+p.add("ants",   type=rc.antlist, default=True, description="Antenna to use")
+p.add("var",    type=float, noneAllowed=True, default=3.14159)
+p.add("source", type=str, required=True, noneAllowed=True)
+p.add("docal", bool, default=True)
+p.add("weird", type=None, description="Any type will work for this")
+
+  # This next line would over-ride the help text defined at the start of the file
+#p.help("This help text would now be the current help")
+
+  # Get the keyword/values that came from the run command
+  # If there are problems, the help and an error message will be printed and 
+  # an exception will be raised
+p.processInputParameters()
+# ------------ End parameters -------------
+
+  # Print out the help
+p.help() 
+
+  # Print out script name and parameters 
+print p.parameterString(keywordWidth=10)            
+
+  # Note how all the defined keywords are now attributes of Param,
+  # so the values are conveniently available to the script.
+print "x:",    p.x
+print "ants:", p.ants
+print "var:",  p.var
+
+  # Show some of the dictionaries and strings that are available
+print "Input:",      p.inputString()
+print "InputDict:",  p.inputDict()
+print "KV dict:",    p.keywordValueDict()
+print "KV pairs:",   p.keywordValueStringPairs()
+print "KV strings:", p.keywordValueStrings()
+print "KV strings:"
+for s in p.keywordValueStrings(): print "  "+s
+print "KV string:", p.keywordValueString()
+print "KV string:",  "\n   "+p.keywordValueString(" <=> ", "\n   ")
+
+print "scriptOptions:", scriptOptions
+
+

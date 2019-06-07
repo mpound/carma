@@ -1,0 +1,31 @@
+#-----------------------------------------------------------------------
+# This is the configuration file for 3mm receivers on the SZA antennas
+# This supersedes the internal initialization in the SZA antenna code,
+# and any changes to receivers or MMICSs should be reflected here
+#
+# Note that if you change something in this file, you don't have to restart the
+# antenna process to have it take effect.  From the SAC, you can type:
+#
+#   s = getObj('carma.sza1.Antenna')
+#   s.reloadBiasTables()
+#
+# (where 'sza1' should be replaced with the relevant antenna) 
+# to accomplish the same thing
+#
+#-----------------------------------------------------------------------
+#
+# units  | V     | V     | V     | V     | V     | V     | V     | V     |
+#			 	 		 			 
+#|name   |M1Vg1  |M1Vg2  |M1Vd   |M2Vg1  |M2Vg2  |M2Vd   |IFVg   |IFVd   |
+#|s      |r      |r      |r      |r      |r      |r      |r      |r      |
+rx1      0.175	 0.150	 1.080	 0.175	 0.200	 1.133	 -0.410	 2.390 	
+rx2      0.170	 0.170	 0.820	 0.300	 0.300   1.030	 -0.440  2.900
+rx3      0.225   0.200   0.450   0.225   0.225   1.325   -0.440  1.500
+rx4      0.175	 0.175   1.168   0.325   0.300   0.685   -0.410  1.245
+rx5      0.200   0.200   0.580   0.200   0.200   1.753   -0.439  2.929
+rx6      0.200   0.225   0.643   0.225   0.225   1.400   -0.440  1.500
+rx7      0.200   0.200   0.650   0.275   0.275   0.670   -0.410  1.650
+rx8      0.225   0.225   0.550   0.275   0.275   0.724   -0.440  2.890
+
+
+

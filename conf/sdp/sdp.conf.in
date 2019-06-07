@@ -1,0 +1,44 @@
+# This on-site configuration file sets various directories used
+# in writing, loading, and archiving of science data products.
+
+# Root directory
+top = /opt
+
+# Visbrick output directory
+visBrickDir = ${top}/visbrick
+
+# Science data products directory
+sdp = ${top}/sdp
+
+# Astronomical header output file directory
+astroHeaderDir = ${sdp}/astroheader
+
+# SZA miriad data output file directory
+szaDir = ${sdp}/sza
+
+# Science data format output directory
+scienceDataFormatDir = ${sdp}/sciencedata
+
+# Recycle directory
+recycleDir = ${sdp}/recycle
+
+# Data quality assessment directory
+qualityDir = ${sdp}/quality
+
+# Data quality last run directory
+qualityLastRunDir = ${qualityDir}/lastrun
+
+# Data quality products directory
+qualityProductsDir = ${qualityDir}/products
+
+# MIRIAD install root directory
+miriadDir = /array/miriad/cvs
+
+# tipper data directory
+tipperDir = /array/rt/TipperData
+
+# Use rsync to transfer input data(yes or no)
+useRsync = yes
+
+# remote host where data lives
+remoteHost = sdp.carma.pvt

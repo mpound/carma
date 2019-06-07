@@ -1,0 +1,122 @@
+#!/bin/bash
+# vim: set ts=4 sts=4 sw=4 et:
+#
+# Delete old carma and carmaTools builds.
+#
+# Builds are aged according to the timestamp in their directory name.
+# Tools are deleted after they are no longer used by any builds.
+#
+# Inputs: Minimum age of builds to delete in days.
+#
+# Author: Andy Beard
+# Author: Ira W. Snyder <iws@ovro.caltech.edu>
+
+stderr() {
+    echo -e "$@" >&2
+}
+
+# check that we have exactly one argument
+if [[ "$#" -ne "1" ]]; then
+    stderr "Usage: $0 <DAYS>"
+    exit 1
+fi
+
+maxage=$1
+current=$(readlink -f /opt/rt)
+installdir=$(dirname $current)
+now=$(date +%s)
+egreppattern='20[1-9][0-9]-[0-9]{2}-[0-9]{2}'
+
+echo "Looking for carma builds older than $maxage days to delete..."
+echo " Current build is $(basename $current)"
+
+# Calculate the build age in days
+#
+# Only accurate to within a single day
+#
+# $1: the path to the build
+buildage() {
+    local build="$1"
+    local builddate=$(echo "$build" | egrep -o "$egreppattern")
+    local buildsecs=$(date -d "$builddate" '+%s')
+    echo $(( ($now - $buildsecs) / 86400 ))
+}
+
+# Check each build to see if it is older than the maximum age specified
+for build in $installdir/UPDATE*; do
+    age=$(buildage $build)
+
+    # if this is the current build, go to the next iteration
+    [[ "$build" = "$current" ]] && continue
+
+    # if this build is younger than the cutoff, go to the next iteration
+    [[ $age -lt $maxage ]] && continue
+
+    echo " Deleting $(basename $build) which is $age days old."
+    rm -fr $build
+done
+
+# Now delete carmaTools for which builds no longer exist.
+echo
+echo "Looking for tools which are no longer used by any build..."
+
+# Build an array of each tools which is still in use
+testbinary="bin/cansniffer"
+alltools=()
+for build in $installdir/UPDATE*; do
+    # if the binary doesn't exist, go to the next iteration
+    if [[ ! -x "$build/$testbinary" ]]; then
+        echo " Build $(basename $build) does not contain $testbinary. Skip."
+        continue
+    fi
+
+    # find the tools version by grepping for libraries
+    toolsver=$(ldd "$build/$testbinary" | egrep -m1 -o "carmaTools-.*$egreppattern")
+
+    # no tools version was able to be found, go to the next iteration
+    if [[ -z "$toolsver" ]]; then
+        echo " Unable to determine tools version used by $(basename $build). Skip."
+        continue
+    fi
+
+    # add this tools version to the array
+    alltools+=($toolsver)
+done
+
+# Loop through each tools in existence
+# - if the tools is part of the alltools array, it is in use
+# - if the tools is newer than any part of the alltools array, it is in use
+# - otherwise delete the tools
+currenttools=$(readlink -f /opt/carmaTools)
+toolsdir=$(dirname "$currenttools")
+toolsused=0
+for tools in $toolsdir/carmaTools* ; do
+    # reset the fact that these tools are used
+    toolsused=0
+
+    # if this is not a directory, go to the next iteration
+    [[ ! -d "$tools" ]] && continue
+
+    # if this is the current tools, go to the next iteration
+    [[ "$tools" = "$currenttools" ]] && continue
+
+    # loop through all used tools looking for this one
+    for i in ${alltools[@]}; do
+        # this tools is in use directly
+        if [[ "$(basename "$tools")" = "$i" ]]; then
+            toolsused=1
+        fi
+
+        # this tools is newer than anything in alltools, it should not be deleted
+        if [[ "$toolsage" -lt "$(buildage $toolsdir/$i)" ]]; then
+            toolsused=1
+        fi
+    done
+
+    # if the tools are unused, remove them
+    if [[ "$toolsused" -eq "0" ]]; then
+        toolsage=$(buildage $tools)
+        echo " Deleting $(basename $tools) which is $toolsage days old."
+        rm -fr $tools
+    fi
+done

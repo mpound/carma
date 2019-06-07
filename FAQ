@@ -1,0 +1,10 @@
+
+Q) I ran 'autoconf' as the first step, and all i'm getting is this
+
+	autoconf: Undefined macros:
+	configure.in:5:AC_CONFIG_SRCDIR([carma.rc]) 
+	configure.in:82:AC_CONFIG_FILES(Makefile makedefs carma_start.sh carma_start.csh)
+
+
+A) Oops, that's a very old version of autoconf...., e.g. autoconf-2.13-7mdk on mdk80
+

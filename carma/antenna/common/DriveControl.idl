@@ -1,0 +1,478 @@
+/**
+ * @file
+ * IDL for the Drive subsystem interface.
+ *
+ * @author Erik Leitch
+ *
+ * $Id: DriveControl.idl,v 1.59 2014/05/05 21:40:36 scott Exp $
+ *
+ * $CarmaCopyright$
+ */
+
+#ifndef _DRIVEIDL
+#define _DRIVEIDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+    module antenna {
+        module common {
+
+    /**
+     * DriveControl DO Name
+     * This is the name that this DO will be published with on the nameserver.
+     * Keep in mind that it will be prefixed by carma.antennaTypeX where
+     * antennaType is ovro, bima or sza.
+     */
+    const string DRIVE_NAME = "Drive";
+
+    /**
+     * %Drive system control interface
+     *
+     * Quadratic interpolation is always used for equatorial coordinates,
+     * and may optionally be used for horizon coordinates.
+     * If the coefficients are updated every 800 seconds,
+     * the fastest comet, (Hyakutake), will have a position error of
+     * one arcsecond.
+     * The equatorial positions that are sent have a time tag and
+     * should be full apparent topocentric positions for the current
+     * location of the antenna, including equatorial offsets,
+     * ephemeris and proper motion, parallax, precession, nutation,
+     * polar motion, and diurnal and annual aberration.
+     * Only refraction is excluded.
+     * Horizon coordinate (azimuth and elevation) positions may also be used
+     * to point at terrestrial objects, like a pointing fiducial or
+     * transmitter.
+     * These positions will include any parallax.
+     * In all drive modes, the pointing model, aperture constants,
+     * and mount offsets are used as corrections to the encoder readings
+     * to get the actual position while the ra/dec and azel offsets are
+     * added to the requested position. The signs are such that a positive
+     * offset or model coefficient will increase the encoder reading for
+     * the affected axis.
+     * <p>
+     * All offsets take effect immediately, unless the drive is stopped or
+     * stowed, in which case they are just stored.
+     * <p>
+     * In the horizon coordinate system, azimuth is defined with zero to the
+     * north, increasing toward the east.
+     * <p>
+     * The drive system has an underlying construct of "drive mode" that is
+     * automatically changed by many of these commands.
+     * The drive modes are defined in the monitor system,
+     * and correspond to:
+     *
+     * <ul>
+     *  <li> equatorial (ra/dec)
+     *  <li> horizon (az/el)
+     *  <li> snowTrack
+     *  <li> stop
+     *  <li> stow
+     * </ul>
+     *
+     * <p>
+     * Many commands set a sequence number monitor point upon completion.
+     * These commands must also set an associated "driveSeqNumSuccess"
+     * boolean monitor point to indicate whether the command completed
+     * because of success (acquiring the position) or failure (the drive is
+     * disabled, local, etc).
+     */
+    interface DriveControl {
+
+    /**
+     * Enumerate apertures to use for selecting pointing models
+     */
+    enum Aperture {
+        OPTICAL,    /**< Optical telescopes. */
+        RADIO1MM,   /**< Radio 1 mm */
+        RADIO3MM,   /**< Radio 3 mm */
+        RADIO1CM    /**< Radio 1 cm */
+    };
+
+    /**
+     * Enumerate valid fixed positions for Stow
+     */
+    enum Position {
+        ZENITH,     /**< Pointed toward zenith */
+        SERVICE,    /**< A predefined service position */
+        SAFE        /**< A collision-free position - currently implemented
+                     *   as the safe range midpoint.
+                     *   @see DriveControl::setSafeRange
+                     */
+    };
+
+    /**
+     * The azimuth drive can operate over more than a full circle,
+     * and the wrap logic dictates how the ambiguities are resolved
+     * when requesting RA/Dec positions. The steps for converting
+     * an RA/Dec into an azimuth are:
+     * <UL>
+     *  <LI> Convert to az in range [0-360] degrees.
+     *  <LI> If az is outside the physical drive range,
+     *       add or subtract a turn to put it within range.
+     *  <LI> Check the AzWrapMode and add or subtract a turn as
+     *       requested, but only if the result is within the
+     *       physical range of the drive system.
+     * </UL>
+     */
+    enum AzWrapMode {
+        ZERO, /**< Don't add or subtract anything to the azimuth. */
+        ADD,  /**< Add a turn to azimuth if result is inside physical range. */
+        SUB   /**< Subtract turn from az if result is inside physical range. */
+    };
+
+    /**
+     * Time-Tagged Ra/Dec value.
+     */
+    struct RaDecEpoch
+    {
+        double mjd; /**< Modified Julian day number for the requested Ra/Dec */
+        double ra;  /**< Right Ascension (radians), 0 to 2 pi */
+        double dec; /**< Declination (radians), -pi to pi */
+    };
+
+    typedef sequence< RaDecEpoch, 3 > RaDecTriplet;
+
+   /**
+     * Go to a fixed position, such as vertical, safe or stow.
+     * After the stow position is achieved, disable the drive system.
+     * The drive system will automatically be re-energized when any
+     * command is given to go to a new position.
+     * For an OVRO %antenna, disabling the drives means turning off the
+     * controllers and applying the brakes. For a BIMA %antenna it means
+     * not emitting stepper motor pulses.
+     * @param position The requested fixed position
+     * @param seq Sequence number inserted into monitor system upon completion
+     * Also sets antennaCommon.driveSeqNumSuccess as true/false
+     * @see Position
+     * @see DriveControl::setSafeRange()
+     */
+    void stow( in DriveControl::Position pos, in unsigned long seq )
+        raises ( carma::util::UserException );
+
+    /**
+     * Stop the %antenna immediately.
+     * On the OVRO antennas, this means de-energizing the drive controllers
+     * and applying the brakes. For BIMA, this means not applying any
+     * stepper motor drive pulses.
+     *
+     * @todo what does this mean for SZA antennas?
+     */
+    void stop()
+        raises (carma::util::UserException);
+
+    /**
+     * Starts tracking to minimize snow accumulation on dish surface.
+     * Implementation uses wind direction sent with the weather commands.
+     * For ovro antennas tracking is done into the wind at a 60 degree
+     * offset from the wind vector.  Bima antennas track with their backs
+     * to the wind (opposite the wind vector).
+     */
+    void trackSnow()
+        raises (carma::util::UserException);
+
+    /**
+     * Starts tracking to minimize impact of heavy wind.
+     * Ovro antennas are stowed during a wind track and bima
+     * dishes track with their backs to the wind (opposite the wind vector).
+     */
+    void trackWind()
+        raises (carma::util::UserException);
+
+    /**
+     * Specify the absolute antenna location
+     * Used in the computation of az and el for celestial sources.
+     *
+     * @param longitude East longitude in radians, 0 to 2pi
+     *               (increasing from Greenwich toward the east)
+     * @param latitude  in radians, -pi to pi
+     * @param altitude  in meters above sea level
+     */
+    void setAntLocation(in double longitude, in double latitude,
+                in double altitude)
+        raises (carma::util::UserException);
+
+    /**
+     * Go to requested az/el, setting the drive to horizon (azel) mode.
+     * If the drive is in equatorial mode or stopped and a single axis
+     * is selected (@see setAz, setEl), then the current actual position
+     * of the non-selected axis is taken as the position to track
+     * for that axis.
+     * Azimuth is defined with zero as north, increasing to the east.
+     * Parallax for terrestrial sources (beacons or fiducials) should
+     * be included in the coordinates.
+     * @param az azimuth in degrees
+     * @param el elevation in degrees
+     * @param seq Sequence number inserted into monitor system upon completion
+     * Also sets antennaCommon.driveSeqNumSuccess as true/false
+     */
+    void setAzel( in double az, in double el, in unsigned long seq )
+        raises (carma::util::UserException);
+
+    /**
+     * Go to requested azimuth.
+     * Convenience method for direct control.
+     * @param az azimuth in degrees
+     * @param seq Sequence number inserted into monitor system upon completion
+     * Also sets antennaCommon.driveSeqNumSuccess as true/false
+     * @see setAzel
+     */
+    void setAz( in double az, in unsigned long seq )
+        raises (carma::util::UserException);
+
+    /**
+     * Go to requested elevation.
+     * Convenience method for direct control.
+     * @param el elevation in degrees
+     * @param seq Sequence number inserted into monitor system upon completion
+     * Also sets antennaCommon.driveSeqNumSuccess as true/false
+     * @see setAzel
+     */
+    void setEl( in double el, in unsigned long seq )
+        raises (carma::util::UserException);
+
+    /**
+     * Sets the maximum drive rate that can be requested by the
+     * drive system software.
+     * A temporary rate less than the full slew rate that is
+     * used to keep collidable antennas from moving
+     * too rapidly.
+     *
+     * @param azRate max rate in azimuth (degrees/sec).
+     *                This is an "on the sky" rate, not on the encoder
+     * @param elRate max rate in elevation (degrees/sec)
+     * @see setAzMaxRate, setElMaxRate
+     */
+    void setMaxRate(in float azRate, in float elRate)
+        raises (carma::util::UserException);
+
+    /**
+     * Sets the maximum azimuth drive rate that can be requested..
+     * @param azRate max rate in azimuth (degrees/sec).
+     *                This is an "on the sky" rate, not on the encoder
+     * @see setAzMaxRate
+     */
+    void setAzMaxRate(in float azRate)
+        raises (carma::util::UserException);
+
+    /**
+     * Sets the maximum elevation drive rate that can be requested..
+     * @param elRate max rate in elevation (degrees/sec)
+     * @see setMaxRate
+     */
+    void setElMaxRate(in float elRate)
+        raises (carma::util::UserException);
+
+    /**
+     * Set a new RA/Dec tracking position.
+     * An array of three time-tagged equatorial positions are stored and used
+     * as the basis for quadratic interpolation to obtain the current position.
+     *
+     * Use the updateRaDec method to update RA/Dec values.
+     *
+     * Positions are FK5 for the current epoch, with any proper motion applied.
+     * Precession, nutation, polar motion, aberration, parallax, and
+     * any equatorial offsets have also been applied.
+     * Refraction has not been applied.
+     * Automatically changes tracking mode to equatorial (ra/dec).
+     * The offsets set with setOffset are reset to zero.
+     * If the requested position is beyond the software limits then the
+     * antenna goes to the software limits and the appropriate designation
+     * is set in the monitor stream.
+     *
+     * @param source Source name for information purposes only.
+     * @param positionTriplet Sequence of three TimeTaggedRaDec values.
+     * @param azWrapMode azWrapMode, see AzWrapMode
+     * @param overTheTop whether to use an elevation greater than 90 degrees.
+     * This parameter is currently ignored and is included as a placeholder
+     * in case it is needed in the future.
+     * @param seq Sequence number inserted into monitor system upon completion
+     * Also sets antennaCommon.driveSeqNumSuccess as true/false
+     * @see updateRaDec, offset
+     */
+    void track( in string source,
+                in RaDecTriplet positionTriplet,
+                in DriveControl::AzWrapMode mode,
+                in boolean overTheTop,
+                in unsigned long seq)
+        raises (carma::util::UserException);
+
+    /**
+     * Update tracking with a new time-tagged Ra/Dec position.
+     * When a new update is received it replaces the oldest of the triplet
+     * values stored in memory.  This routine is for updates only, use
+     * track to start tracking a new source or position.
+     * @param TimeTaggedRaDec New RA/Dec value and corresponding timestamp.
+     * @see track
+     * @see track
+     */
+    void updateRaDec( in RaDecEpoch position,
+                      in DriveControl::AzWrapMode mode )
+        raises ( carma::util::UserException );
+
+    /**
+     * Update weather parameters.
+     * Used to compute refraction correction
+     * The dewpoint/relative humidity is redundant, but allows the antennas
+     * to use whichever they want.
+     * @param ambientTemp ambient temperature in Celsius (air temp at the
+     *                    antenna or weather station)
+     * @param barometricPressure in millibars
+     * @param relativeHumidity in percent (a number between 0 and 100)
+     * @param dewpointTemp in Celsius
+     * @param windSpeed in miles/hour
+     * @param windDirection direction wind is coming from, in degrees, with
+     *        north at 0, increasing to the east. This is *not* the direction
+     *        that the wind vector points, but the direction that a vane would
+     *        point and is the common weather definition
+     *
+     */
+    void updateWeather(in float ambientTemp, in float barometricPressure,
+             in float relativeHumidity,
+             in float dewpointTemp,
+             in float windSpeed,
+             in float windDirection)
+        raises (carma::util::UserException);
+
+    /**
+     * Az/El mount offsets.
+     *
+     * Slowly varying optics offsets with respect to the mount (collimation).
+     * These are set as the result of a pointing peak-up, etc.
+     * and may change on the time-scale of hours.
+     * These are redundant with some terms of the pointing model,
+     * but are exposed to conveniently track the delta's of these terms.
+     * These offsets are used in both equatorial and horizon modes.
+     * Behaves with the same sign as the setOffset() command.
+     *
+     * @param az azimuth offset on the sky (not encoder) (arcmin)
+     * @param el elevation offset (arcmin)
+     * @see setAzMountOffset, setElMountOffset
+     */
+    void setMountOffset(in double az, in double el, in unsigned long seq)
+        raises (carma::util::UserException);
+
+    /**
+     * Az mount offsets.
+     * @param az azimuth offset on the sky (not encoder) (arcmin)
+     * @see setMountOffset
+     */
+    void setAzMountOffset(in double az, in unsigned long seq)
+        raises (carma::util::UserException);
+
+    /**
+     * El mount offsets.
+     * @param el elevation offset (arcmin)
+     * @see setMountOffset
+     */
+    void setElMountOffset(in double el, in unsigned long seq)
+        raises (carma::util::UserException);
+
+    /**
+     * Az/El transient astronomical offsets.
+     *
+     * Horizon offsets used for engineering or astronomy.
+     * These offsets are used in both equatorial and horizon modes,
+     * and are set to zero when a new source is selected with track().
+     * The offset is <i>added</i> to the az/el from the setAzel() command
+     * or derived from the track() command.
+     *
+     * @param az azimuth offset  on the sky (not encoder) (arcmin),
+     *  interpreted as a collimation error
+     * @param el elevation offset (arcmin)
+     * @see setAzOffset, setElOffset, track
+     */
+    void setOffset(in double az, in double el, in unsigned long seq)
+        raises (carma::util::UserException);
+
+    /**
+     * Az transient astronomical offsets.
+     * Previous elevation offset is reused.
+     *
+     * @param az azimuth offset  on the sky (not encoder) (arcmin)
+     * @see setOffset
+     */
+    void setAzOffset(in double az, in unsigned long seq)
+        raises (carma::util::UserException);
+
+    /**
+     * El transient astronomical offsets.
+     * Previous azimuth offset is reused.
+     * @param el elevation offset (arcmin)
+     * @see setOffset
+     */
+    void setElOffset(in double el, in unsigned long seq)
+        raises (carma::util::UserException);
+
+    /**
+     * Sets aperature pointing constants.
+     * An aperture is a radio receiver beam or optical telescope.
+     * These constants represent a collimation error and a sag and
+     * their effect has the same sign as setOffset().
+     * In general all apertures offsets are relative to the mount model,
+     * with the exception of the 1mm aperture for the 6m & 10m antennas
+     * which are relative to the 3mm aperture because they are in a
+     * common dewar.
+     * @param aperture
+     * @param azOffset in arcmin, on the sky (collimation)
+     * @param elOffset in arcmin
+     * @param sag in arcmin. Elevation correction = sag*cosEl
+     */
+   void setAperturePointingConstants(
+       in DriveControl::Aperture ap,
+       in float azOffset, in float elOffset, in float sag)
+    raises (carma::util::UserException);
+
+   /**
+    * Sets the zero point for the tiltmeter
+    * @param aftForward aft/forward zero in arcmin
+    * @param leftRight left/right zero in arcmin
+    */
+   void setTiltmeterZero(in float aftForward, in float leftRight)
+    raises (carma::util::UserException);
+
+   /*
+    * Select aperture. Sets pointing constants and refraction.
+    * An aperture is a radio receiver beam or optical telescope.
+    * @param aperture for which to select pointing constants
+    */
+   void selectAperture(in DriveControl::Aperture ap)
+    raises (carma::util::UserException);
+
+   /*
+    * Set Tolerance for target aquisition.  This is specified in
+    * [arcsec] for this antenna.  An antenna indicates that it
+    * is "CLOSE" to the target once it has entered into the
+    * range of its target tolerance, and once it has settled into
+    * this range for 1-2 seconds, starts sending back the status
+    * of "TRACK".  The control system wrapper for this uses an input
+    * value in Half Power Beam Widths (full width half max) since they
+    * provide a frequency independent measure of tracking.
+    * @param tolerance tracking tolerance in arcsecs!
+    */
+   void setTolerance( in float toleranceInArcsecs )
+    raises (carma::util::UserException);
+
+  /**
+   * Set the azimuth and elevation ranges within which
+   * this antenna is safe from collisions with other antennas.
+   * Note: an invocation stow(SAFE) must throw an exception if valid safe
+   * ranges have not been set with this command beforehand.
+   * @param azLow - the low end of the safe azimuth range, in degrees.
+   * @param azHigh - the high end of the safe azimuth range, in degrees.
+   * @param elLow - the low end of the safe elevation range, in degrees.
+   * @param elHigh - the high end of the safe elevation range, in degrees.
+   * @see DriveControl::stow()
+   */
+   void setSafeRange( in float azLow, in float azHigh,
+                      in float elLow, in float elHigh )
+    raises (carma::util::UserException);
+
+    }; // End DriveControl interface
+
+}; // End module common
+}; // End module antenna
+}; // End module carma
+
+#endif  // _DRIVEIDL
+

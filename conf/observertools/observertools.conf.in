@@ -1,0 +1,61 @@
+# This on-site configuration file sets various directories used 
+# by the ProjectDatabaseManager
+
+# Root directory 
+top = /opt/sdp
+
+#dbxml directory
+dbDir = ${top}/projectDatabase
+
+# dbxml file name
+dbFile = projectDatabase.dbxml
+projectFile = project.dbxml
+obsblockFile = obsblock.dbxml
+subObsblockFile = subObsblock.dbxml
+trialFile = trial.dbxml
+
+#local backup file
+dbBackup = ${dbDir}/dbBackup.dat
+
+####
+# Should carmaProjectDatabaseManagerHost do replication? [default is no].
+replication = on
+
+# Hostname:<port> for the master.
+
+replicationMaster = sdp.mmarray.org:3110
+
+# If true, the master does not initiate connections to the clients.
+# [Default is true].
+# masteronlylistens=true
+ masteronlylistens=false
+
+# If true, set ack policy to ACK_NONE, otherwise ACK_ONE.
+# masteracksnone = false
+
+#  These two are set by both the master and client, but are mostly for the
+# master.
+# Keep log files around for at least this many hours. [Default is 4.]
+# The minimum and maximums this can be set to are 4 and 365*24 hours.
+# (Keep log files for at least a long weekend (5*24 hours).
+logfilemaxage = 120
+
+# Keep at least this many log files around. [Default is 32.]
+# The minimum and maximum this can be set to are 4 and 4096.
+#logfilemincount = 32
+logfilemincount = 16
+
+# This sets the rt flag and is only here to allow testing until
+# carma.xml gets changed. Default is no (or unused).
+#>enablert=yes
+
+# Hostname:<port> for the client.
+replicationClient1 = carma-server.astro.illinois.edu:3111
+
+# The directory where the client's database is stored. It overrides dbDir
+# above.
+replicationClientDir1 = /scr/carma-server/carma/carmaprojects/projectDatabase
+
+# how much logging should be done by the DBXML back end
+
+verboseLevel = 0

@@ -1,0 +1,158 @@
+#! /bin/csh -f
+#
+# OVRO pointing, this should be done in python....
+#
+# Note this helper script is called by runpoint!!!
+#
+# Created:   13-jul-2005		Peter Teuben
+# 
+#  $Id: run0,v 1.6 2005/10/21 01:05:21 teuben Exp $
+#
+
+set tmp=tmp$$
+set date=`date +%d%b%y`
+set point=./point
+set data=optical.data
+
+foreach _arg ($*)
+   set $_arg
+end
+
+# -----------------------------------------------------------------------
+# sanity checks
+
+if (! -e $data) then
+  echo "Data file $data does not exist"
+  exit 1
+endif
+
+
+# ----------------------------------------------------------------------
+# first run point to establish how many antennae we have data for
+
+$point << EOI > $tmp.0
+Y
+/null
+/null
+${date}:00:00:00.0
+${date}:23:59:59.9
+N     enter different times?
+N     limit UT range?
+N
+N
+N
+N
+N
+N
+N
+N
+N
+N
+EOI
+
+#-----------------------------------------------------------------------
+
+set ants=(`cat $tmp.0 | grep -a 'points found' | awk '{print $5}' | sed 's/AN#//'`)
+
+if ($#ants == 0) then
+  echo "No data found in $data for date=$date"
+  exit 1
+endif
+
+echo Found the following ants for date=${date}: $ants
+
+rm $tmp.0
+
+# -----------------------------------------------------------------------
+# Loop over each ant, run "point" only on that ant to extract the PGPLOT.PS file....
+#
+echo "            E1     E2     E3     E4     E5     O1     O2     O3     AZrms  ELrms"
+
+foreach ant ($ants)
+  set r=point.tmp.in
+  set head=()
+  set tail=()
+  foreach a ($ants)
+    if ($a < $ant) then
+      set head=($head $a)
+    else if ($a > $ant) then
+      set tail=($tail $a)
+    endif
+  end
+
+  # preamble  (
+  echo 'Y'                      > $r      # Analyze normal optical pointing file? 
+  echo "timeplot-$ant.ps/vps"    >> $r      # Enter Screen PGPLOT Device name
+  echo "azelplot-$ant.ps/vps"    >> $r      # Enter Hardcopy written to and PRINTed
+  echo "${date}:00:00:00.0"    >> $r      # Enter start time
+  echo "${date}:23:59:59.9"    >> $r      # Enter  stop time
+  echo "N"                     >> $r      # Do you want to enter different times? 
+  echo "N"                     >> $r      # Limit UT range?  
+
+
+  # number for ants to skip
+
+  if ($#head > 0) then
+    foreach i ($head)
+      echo N >> $r  # Analyze pointing data for this antenna and receiver?
+    end
+  endif
+
+  # do the selected ant
+  echo Y >> $r     # Analyze pointing data for this antenna and receiver?
+  echo N >> $r     # Remove "bad" data?
+  echo Y >> $r     # Fit to same terms as last time?
+  echo N >> $r     # Write coefficients to PNT_CONST.07SEP05
+  echo N >> $r     # List this data?
+  echo Y >> $r     # Send plots to screen?  
+  echo Y >> $r     # Make hardcopy of plots? (was: x)
+#  echo Y >> $r
+  echo N >> $r     # Try again on this antenna and receiver?
+
+  if ($#tail> 0) then
+    foreach i ($tail)
+      echo N >> $r      # Analyze pointing data for this antenna and receiver?
+    end
+  endif
+  echo N >> $r          # Start over again?  
+
+  $point < $r > run0-$ant.log
+  echo Ant=$ant
+  egrep -a '(New|Old)' point.log | grep -va pointing
+  mv point.log point-$ant.log
+
+end
+
+set last=$ants[$#ants]
+echo "Python snippets for subarrayInit.py: (ants=$ants)"
+echo ""
+echo 'Ovro_m_ = ['
+foreach ant ($ants)
+  set v=(`grep -a New point-$ant.log | grep -va pointing`)
+  echo -n "    [ $v[2], 0.0, $v[3], $v[4], $v[5]]"
+  if ($ant == $last) then
+    echo -n " "
+  else
+    echo -n ","
+  endif
+  echo ""
+end
+echo "]"
+
+echo 'OvroOptical_ = ['
+foreach ant ($ants)
+  set v=(`grep -a New point-$ant.log | grep -va pointing`)
+  echo -n "    [ $v[6], $v[7], $v[8]]"
+  if ($ant == $last) then
+    echo -n " "
+  else
+    echo -n ","
+  endif
+  echo ""
+end
+echo "]"
+
+echo "Results are now in: `pwd`"
+ls *-*.ps
+ls point-*.log
+

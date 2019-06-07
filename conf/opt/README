@@ -1,0 +1,6 @@
+These contain all the directories with directives to build
+CARMA_TOOLS from CARMA_PKG.
+See CARMA/scripts/carma-tools how they are built, and/or the
+CARMA/doc/carma_pkg_readme.txt for a description how this 
+works.
+

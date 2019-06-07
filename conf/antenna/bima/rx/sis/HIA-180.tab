@@ -1,0 +1,24 @@
+# HIA-180.tab
+# this mixer is used with James Lamb bias tee,
+#  which has 55 ohm resistor to gnd instead 
+#  of 100 ohms to gnd; thus currents are higher
+#
+# 9 jun 2010 - changed to use regular bias tee; reduced
+#  all currents from 200 to 140
+
+#|loGHz   |t    |v     |i    |dvm  |dvp  |
+#|r       |r    |r     |r    |r    |r    |
+  110.000  3.50  9.90   140.  -.5   +.5
+  110.000  4.50  9.90   140.  -.5   +.5
+
+   90.000  3.50  10.2   140.  -.5   +.5
+   90.000  4.50  10.2   140.  -.5   +.5
+
+   77.000  3.50  10.4   140.  -.5   +.5
+   77.000  4.50  10.4   140.  -.5   +.5
+
+# alternative tuning curve below indicated by temp = 0.
+
+    0.000  0.000 11.148 190.   0.    0.  # vgap, igap
+   85.000  0.000 10.4   140.   0.    0.
+  115.000  0.000 10.15  140.   0.    0.  

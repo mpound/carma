@@ -1,0 +1,30 @@
+#
+# $Id: drives.tab,v 1.21 2014/12/31 09:36:57 control Exp $
+#
+# Hard limits changed 10nov05
+# ellow 2:5.46 3:3.6 7:5.15 8:4.84 9:4.94 
+#
+# raw offsets change in terms of 157 counts per 1 deg.  They are
+# discontinuous every other degree, so if you move one, move it
+# by at least ~314 counts.
+#
+# 11/30/2012 - encoder cards were interchanged; C8 is jittering by 2 degrees in az at 0.5 and 1.5 degree intervals; I think
+#   the correct azoff is 11609, but am changing it just to 11705 now, which seems to avoid the problem - dick plambeck
+#
+# unit1 is a special entry for unit tests
+#
+# a1 is the berkeley lab system...
+#
+#|name |azslew|elslew|azdown|eldown|azramp|elramp|azoff|eloff |azlolim|azhilim|ellolim|elhilim|swslew|azaccellim|elaccellim|azslewmod|elslewmod|servogain|servowait|
+#|s    |i     |i     |d     |d     |i     |i     |i    |i     |d      |d      |d      |d      |b     |i         |i         |d        |d        |d        |d        |
+  a1    4095   4095   1.2    0.8    1300   1300   46380 -3039  -70.    430.    4.0    93.    false  500        500        .80       .80        0.5       0.08
+  bima1 4095   4095   1.2    0.8    1300   1300   46384 -3039  -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  bima2 4095   4095   1.2    0.8    1300   1300   11615 4358   -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  bima3 4095   4095   1.2    0.8    1600   1400   52153 26783  -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  bima4 4095   4095   1.2    0.8    1300   1300   42538 21798  -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  bima5 4095   4095   1.2    0.8    1300   1300   9330  -4103  -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  bima6 4095   4095   1.2    0.8    1300   1300   18673 47370  -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  bima7 4095   4095   1.2    0.8    1300   1300   13370 -10830 -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  bima8 4095   4095   1.2    0.8    1300   1300   29963 26437  -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  bima9 4095   4095   1.2    0.8    1300   1300   35170 -3293  -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08
+  unit1 4095   4095   1.2    0.8    1300   1300   35170 -3293  -70.    430.    4.0    93.    true   500        500        .80       .80        0.5       0.08

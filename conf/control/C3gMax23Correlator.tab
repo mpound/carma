@@ -1,0 +1,29 @@
+# Manual Blank/Flag/Birdie configuration file for the C3gMax23Correlator.
+#
+# This file is in standard CARMA table format. Descriptions of each individual
+# field follows.
+#
+# DO NOT TOUCH THE LINES BELOW, IT IS PART OF THE CARMA TABLE FORMAT!
+#|startdatetime       |enddatetime        |band |input1 |input2 |preference
+#|s                   |s                  |s    |s      |s      |s
+#
+# startdatetime - the datetime when this issue started (unused, provided for MIRIAD)
+# enddatetime - the datetime when this issue ended (unused, provided for MIRIAD)
+# band - the band with the issue (may be the "X" or "255" meaning "don't care")
+# input1 - the first input with the issue (may be "X" or "255" meaning "don't care")
+# input2 - the second input with the issue (may be "X" or "255" meaning "don't care")
+# preference - the blank/flag/birdie preference (only BLANK and FLAG are supported)
+#
+# To blank an entire band, you will specify "don't care" for the input1 and
+# input2 fields, which are unused. For example:
+# 2013MAY19:10:11:12   2013MAY20:13:14:15  9     X       X       BLANK
+#
+# To flag all baselines of a particular band and input, you will specify
+# "don't care" for the input2 field, which is unused. For example:
+# 2013MAY22:15:16:17   2013MAY23:19:20:21  5     4       X       FLAG
+#
+# To flag a baseline, you will fill in all fields. For example:
+# 2013MAY25:01:02:03   2013MAY25:04:05:06  10    1       2       FLAG
+#
+# To handle an ongoing hardware problem (a problem without a known end datetime)
+# use a date which is far in the future, for example, 2099Dec31:23:59:59.

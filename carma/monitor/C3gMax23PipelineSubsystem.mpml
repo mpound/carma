@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!DOCTYPE Subsystem SYSTEM "mpml.dtd">
+
+<!-- Spectral line correlator pipeline subsystem monitor point definitions -->
+ 
+<!-- Don't change the Subsystem name, other components count on this name! -->
+<Subsystem name="C3gMax23Pipeline" priority="normal" extendFrom="Base">
+
+    <?common MonitorStats.mpml?>
+    <CommonContainer ref="MonitorSubsystemStats" />
+
+    <!-- NOTE: name of containers MUST start with a CAPITAL letter -->
+    <?common PipelineCommon.mpml?>
+
+    <?common PipelineStages.mpml?>
+
+    <CommonContainer ref="PipelineStatus"/>
+
+    <CommonContainer ref="CatchDataStageContainer"/>
+    <CommonContainer ref="CoherenceStageContainer"/>
+    <CommonContainer ref="DecimatorStageContainer"/>
+    <CommonContainer ref="PassBandStageContainer"/>
+    <CommonContainer ref="TsysStageContainer"/>
+    <CommonContainer ref="BlankFlagStageContainer"/>
+    <CommonContainer ref="LinelengthStageContainer"/>
+    <CommonContainer ref="IFcorrectionStageContainer"/>
+    <CommonContainer ref="WvrStageContainer"/>
+    <CommonContainer ref="SelfCalIntegStageContainer"/>
+    <CommonContainer ref="CorrelatorPublisherContainer"/>
+    <CommonContainer ref="IntegratorStageContainer"/>
+    <CommonContainer ref="VisBrickStageContainer"/>
+
+    <Container name="SelfCalUsbIntegContainer" count="&NUM_SLC_BANDS;">
+        <CommonContainer ref="SelfCal"/>
+    </Container>
+    
+    <Container name="SelfCalLsbIntegContainer" count="&NUM_SLC_BANDS;">
+        <CommonContainer ref="SelfCal"/>
+    </Container>
+
+    <Container name="CatchDataBandContainer" count="&NUM_SLC_BANDS;">
+        <description>
+            Container to hold common per-band catch data information.
+        </description>
+
+        <CommonContainer ref="CatchDataBand"/>
+
+    </Container>
+
+    <Container name="DecimationBandContainer" count="&NUM_SLC_BANDS;">
+        <description>
+            Container to hold common per-band decimation information.
+        </description>
+
+        <CommonContainer ref="Decimation"/>
+    </Container>
+
+    <CommonContainer ref="LastIntegration" />
+
+</Subsystem>

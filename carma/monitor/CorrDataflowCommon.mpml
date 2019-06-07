@@ -1,0 +1,112 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global">
+       <MonitorPoint type="int" name="bandNo">
+           <description>
+             Correlator band number associated with the received 
+             correlator data.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="astrobandNo">
+           <description>
+             AstroBand number to associate with the correlator data.
+           </description>
+       </MonitorPoint>
+
+
+       <MonitorPoint type="bool" name="bandValidity">
+           <description>
+             Validity of the received correlator data.
+           </description>
+           <errHi>false</errHi>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="consecutiveErrors">
+           <description>
+             Consecutive band error count (number of times invalid band data bave been received).
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="consecutiveDroppedFrames" type="int" >
+            <description>
+            Number of frames in a row that have been dropped, typically for late data.
+            </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="seqNo">
+           <description>
+             Sequence number
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="numInputs">
+           <description>
+             Number of correlator inputs in received data.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="numValidBaselines">
+           <description>
+             Number of valid baselines in received data.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="numInvalidBaselines">
+           <description>
+             Number of invalid baselines in received data.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="string" name="controlHost">
+           <description>
+             Name of the control host.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="controlPort">
+           <description>
+             Port of control host
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="string" name="controlObject">
+           <description>
+             Name of the direct object which dispatches commands
+             to the correlator library code via CobraControlClient.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="string" name="eventChannel">
+           <description>
+             Name of the event channel on which the data will be published to CorrDataRemapper.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="receivedTime" type="absTime" >
+            <description>
+            Time at which the data were received from correlator by CorrDataUpdater or from CorrDataUpdater by CorrDataRemapper.
+            </description>
+       </MonitorPoint>
+
+       <MonitorPoint name="publishedTime" type="absTime" >
+            <description>
+            Time at which the data were published to CorrDataRemapper or to catchData.
+            </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="string" name="publishedObject">
+           <description>
+             Name of the direct object on which these data will be 
+             published for the catchData process.
+           </description>
+       </MonitorPoint>
+
+       <MonitorPoint type="int" name="numConjugated">
+           <description>
+             Number of baselines conjugated by the remapper for a given band.
+           </description>
+       </MonitorPoint>
+   
+</Common>

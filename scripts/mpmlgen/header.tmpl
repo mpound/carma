@@ -1,0 +1,947 @@
+#from MPMLUtils import empty, monitorpoint_typename, fix_scope, commonreference_scope
+#from MPMLUtils import reference_accessorname, reference_instancename
+#from MPMLUtils import uppercase_first, lowercase_first
+
+################################################################################
+## Renderer Notes
+################################################################################
+##
+## === SCOPE NOTES ===
+##
+## You do not need to render references with specific scopes. The C++
+## compiler always uses the "closest" scope that matches to find the object's
+## type.
+##
+## For example, suppose you have these types:
+## carma::monitor::EncoderContainer
+## carma::monitor::AntennaSubsystem
+## carma::monitor::AntennaSubsystem::EncoderContainer
+##
+## If you create an AntennaSubsystem member of type EncoderContainer, the C++
+## compiler will use the carma::monitor::AntennaSubsystem::EncoderContainer
+## class. It is closest in scope.
+##
+## Therefore, the MPML code generator does not worry itself trying to put
+## proper scope rules on every class: that is too much work, and the C++
+## compiler already handles it perfectly.
+##
+## === EXTENSION CLASS NOTES ===
+##
+## The extension classes have some strange rules which you should be aware
+## of. The scope rules in a structure like the following are not immediately
+## clear without some thought.
+##
+## <Subsystem name="Test" extendFrom="Base">
+##   <Container name="Cont" extendFrom="Base" />
+## </Subsystem>
+##
+## In this case, the following classes are generated:
+## TestSubsystem.h		TestSubsystemBase : public MonitorSubsystem
+## TestSubsystem.h		TestSubsystemBase::ContBase : public MonitorContainer
+##
+## The TestSubsystemBase class constructor instantiates an un-scoped instance
+## of the Cont class. Note that the instance is of the the extended class type,
+## not the unextended ContBase class.
+##
+## Therefore, when generating the TestSubsystemExt.h header and source files,
+## we must give the extended Cont class TestSubsystemBase:: scope.
+##
+## TestSubsystemExt.h	TestSubsystem : public TestSubsystemBase
+## TestSubsystemExt.h	TestSubsystemBase::Cont : public ContBase
+##
+
+################################################################################
+## MonitorPoint Template
+################################################################################
+
+#def mp_definition_helper($mp, $accessorname, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#set typename = $monitorpoint_typename($mp.name, $mp.type)
+#if count > 1
+	std::vector<${scope}${typename} *> ${accessorname}_;
+#else
+	${scope}${typename} *${accessorname}_;
+#end if
+#end def
+
+#def get_mp_definition($mp)
+#set accessorname = $lowercase_first($mp.name)
+$mp_definition_helper($mp, $accessorname, $mp.count)#slurp
+#end def
+
+#def get_commonmp_definition($reference)
+#set mp = $reference.real_reference_object
+#set accessorname = $reference_accessorname($reference)
+#set scope = $commonreference_scope($reference)
+$mp_definition_helper($mp, $accessorname, $reference.count, $scope)#slurp
+#end def
+
+#def mp_accessor_helper($mp, $accessorname, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#set typename = $monitorpoint_typename($mp.name, $mp.type)
+#set funcname = 'getNum' + $uppercase_first($accessorname)
+#if $count > 1
+	/**
+	 * Access an element from the array of enclosed $typename
+	 * monitor points.
+	 *
+	 * This container contains $count monitor points.
+	 *
+	 * @param i the index of the desired element in the array.
+	 */
+	${scope}${typename}& ${accessorname}(int i) const { return *${accessorname}_.at(i); }
+
+	/**
+	 * Return the number of $typename monitor point elements available
+	 */
+	int ${funcname}() const { return $count; }
+#else
+	/**
+	 * Access the enclosed $typename monitor point
+	 */
+	${scope}${typename}& ${accessorname}() const { return *${accessorname}_; }
+#end if
+#end def
+
+#def get_commonmp_accessor($reference)
+#set mp = $reference.real_reference_object
+#set accessorname = $reference_accessorname($reference)
+#set scope = $commonreference_scope($reference)
+$mp_accessor_helper($mp, $accessorname, $reference.count, $scope)#slurp
+#end def
+
+## Function to get a MonitorPoint accessor
+##
+## This function takes a MonitorPointInternal object and gets the accessor
+## for it.
+#def get_mp_accessor($mp)
+#set accessorname = $lowercase_first($mp.name)
+$mp_accessor_helper($mp, $accessorname, $mp.count)#slurp
+#end def
+
+## Get the forward declaration for a monitor point enum
+#def get_mp_fwdec($mp)
+#if $mp.type == 'enum'
+#set typename = $monitorpoint_typename($mp.name, $mp.type)
+	class $typename;
+#end if
+#end def
+
+## Get an MonitorPointEnum specialized class
+#def get_mpenum_class($mp, $scope=None)
+#if $mp.type != 'enum'
+#return
+#end if
+#set scope = fix_scope($scope)
+#set typename = $monitorpoint_typename($mp.name, $mp.type)
+#set countname = $mp.name.upper() + "_COUNT"
+#set enumtype = $mp.name.upper()
+/**
+ * A specialized Enumeration class for the $mp.name monitor point.
+ */
+class ${scope}${typename} : public MonitorPointEnum {
+public:
+	/**
+	 * supported $mp.name values
+	 */
+	enum ${enumtype} {
+#if $mp.bitmask == 'true'
+		/**
+		 * No bits set
+		 */
+		NONE = 0,
+#end if
+#for $i in $range($len($mp.enums))
+#set $ev = $mp.enums[$i]
+#if $ev.description
+
+		/**
+		 * $ev.description
+		 */
+#end if
+#if $mp.bitmask == 'true'
+		$ev.name = (1 << $i),
+#else
+		$ev.name = $i,
+#end if
+#end for
+	};
+
+	/**
+	 * the total number of legal values
+	 */
+	static const short ${countname} = $len($mp.enums);
+
+	/**
+	 * Constructor
+	 *
+	 * @param name monitor point name
+	 */
+	${typename}(const std::string& name);
+
+	/**
+	 * Destructor
+	 *
+	 * Nothing fancy here - the dynamic storage is managed elsewhere
+	 */
+	virtual ~${typename}();
+
+	/**
+	 * Get the current enumerated value
+	 *
+	 * @param sampleIndex sample index (0 is first sample)
+	 */
+	${enumtype} getValue(int sampleIndex = 0) const {
+		return static_cast<${enumtype}>(MonitorPointEnum::getValue(sampleIndex));
+	}
+
+	/**
+	 * Set the current enumerated value
+	 *
+	 * @param v the enumerated value to set
+	 * @param sampleIndex the sample index (0 is first sample)
+	 */
+	void setValue(${enumtype} v, int sampleIndex = 0) const {
+		MonitorPointEnum::setValue(v, sampleIndex);
+	}
+
+	/**
+	 * Get the average of all the values
+	 *
+	 * In this case, this attempts to return the most common value.
+	 */
+	${enumtype} getAve() const {
+		return static_cast<${enumtype}>(getAveLong());
+	}
+
+	/**
+	 * Return a value as a string
+	 *
+	 * @param sampleIndex sample index (0 is first sample)
+	 */
+	std::string getValueToString(int sampleIndex = 0) const;
+
+	/**
+	 * Return a value as a string
+	 */
+	std::string getAverageToString() const;
+
+	/**
+	 * Return a string representation for a ${enumtype} value
+	 * @param v the value to convert
+	 */
+	static std::string valueToString(${enumtype} v);
+
+	/**
+	 * Return a string representation for an integer interpreted as
+	 * a ${enumtype} value
+	 *
+	 * @param v the integer to convert
+	 */
+	std::string convertToString(int v) const;
+};
+#end def
+
+################################################################################
+## Local Common Support
+################################################################################
+
+#def get_common_fwdec($common)
+#for $c in $common.containers
+$get_container_fwdec($c)#slurp
+#end for
+#for $mp in $common.monitorpoints
+$get_mp_fwdec($mp)#slurp
+#end for
+#end def
+
+################################################################################
+## Helpers for common tasks
+################################################################################
+
+#def get_subobject_fwdec($obj)
+#if (len($obj.containers) + len($obj.monitorpoints)) > 0
+
+	// Containers and monitor point extensions defined as inner classes
+#for $c in $obj.containers
+$get_container_fwdec($c)#slurp
+#end for
+#for $mp in $obj.monitorpoints
+$get_mp_fwdec($mp)#slurp
+#end for
+#end if
+#end def
+
+#def get_subobject_accessor($obj)
+#if len($obj.containers) > 0
+
+	// Container Accessors:
+#for $c in $obj.containers
+$get_container_accessor($c)
+#end for
+#end if
+#if len($obj.monitorpoints) > 0
+
+	// Monitor Point Accessors:
+#for $mp in $obj.monitorpoints
+$get_mp_accessor($mp)
+#end for
+#end if
+#if len($obj.commoncontainer_refs) > 0
+
+	// Common Container Accessors:
+#for $ref in $obj.commoncontainer_refs
+$get_commoncontainer_accessor($ref)
+#end for
+#end if
+#if len($obj.commonmonitorpoint_refs) > 0
+
+	// Common Monitor Point Accessors:
+#for $ref in $obj.commonmonitorpoint_refs
+$get_commonmp_accessor($ref)
+#end for
+#end if
+#end def
+
+#def get_subobject_definition($obj)
+#if len($obj.containers) > 0
+
+	// Containers
+#for $c in $obj.containers
+$get_container_definition($c)#slurp
+#end for
+#end if
+#if len($obj.monitorpoints) > 0
+
+	// Monitor Points
+#for $mp in $obj.monitorpoints
+$get_mp_definition($mp)#slurp
+#end for
+#end if
+#if len($obj.commoncontainer_refs) > 0
+
+	// Common Containers
+#for $ref in $obj.commoncontainer_refs
+$get_commoncontainer_definition($ref)#slurp
+#end for
+#end if
+#if len($obj.commonmonitorpoint_refs) > 0
+
+	// Common Monitor Points
+#for $ref in $obj.commonmonitorpoint_refs
+$get_commonmp_definition($ref)#slurp
+#end for
+#end if
+#end def
+
+################################################################################
+## MonitorContainer Template
+################################################################################
+
+#def get_containerext_class($container, $scope=None)
+#set scope = $fix_scope($scope)
+#set indexName = $container.indexName
+#set classname = $container.name
+#set extendname = $container.name + $container.extendFrom
+#set isCommon = $container.isLocalCommon or $container.isGlobalCommon
+#if not $empty($container.extendFrom)
+/**
+ * The container for the $container.name logical collection
+ */
+class $scope$classname : public $extendname {
+public:
+#if $container.count <= 1 or $isCommon is True
+
+	/**
+	 * Constructor
+	 *
+	 * @param name the instance name of the container (for use by references)
+	 */
+	${classname}(const std::string &name="$classname");
+#end if
+#if $container.count > 1 or $isCommon is True
+
+	/**
+	 * Constructor
+	 *
+#if $isCommon is True
+	 * This is a re-usable container, and therefore we must support both indexed
+	 * and non-indexed use. Therefore we have two constructors.
+#else
+	 * This is an indexed device in which an array of $container.count
+	 * instances will be created, each with an index in the range [1, $container.count]
+	 * associated with it.
+#end if
+	 *
+	 * @param $indexName the index to associate with this instance
+	 * @param name the instance name of the container (for use by references)
+	 */
+	${classname}(ushort $indexName, const std::string &name="$classname");
+#end if
+
+	/**
+	 * Destructor
+	 */
+	virtual ~${classname}();
+
+	// add new or overriding method declarations here
+
+};
+#end if
+## when generating common containers, the subcontainers must
+## have the correct scope
+#if $container.isGlobalCommon is True
+#set scope = $extendname
+#end if
+#for $c in $container.containers
+$get_containerext_class($c, $scope)#slurp
+#end for
+#end def
+
+## Get a Container class definition
+##
+## @container: the container to render
+## @scope: the scope at which to render this class
+##
+#def get_container_class($container, $scope=None)
+#set scope = $fix_scope($scope)
+#set classname = $container.name + $container.extendFrom
+#set indexName = $container.indexName
+#set indexFunc = 'get' + $uppercase_first($indexName)
+#set isCommon = $container.isLocalCommon or $container.isGlobalCommon
+#if $isCommon is True
+/**
+ * A re-usable container for the $container.name logical collection
+ */
+#else
+/**
+ * The container for the $container.name logical collection
+ */
+#end if
+class ${scope}${classname} : public carma::monitor::MonitorContainer {
+public:
+#if $container.count <= 1 or $isCommon is True
+
+	/**
+	 * Constructor
+	 *
+	 * @param name the instance name of the container (for use by references)
+	 */
+	${classname}(const std::string &name="$classname");
+#end if
+#if $container.count > 1 or $isCommon is True
+
+	/**
+	 * Constructor
+	 *
+#if $isCommon is True
+	 * This is a re-usable container, and therefore we must support both indexed
+	 * and non-indexed use. Therefore we have two constructors.
+#else
+	 * This is an indexed device in which an array of $container.count
+	 * instances will be created, each with an index in the range [1, $container.count]
+	 * associated with it.
+#end if
+	 *
+	 * @param $indexName the index to associate with this instance
+	 * @param name the instance name of the container (for use by references)
+	 */
+	${classname}(ushort $indexName, const std::string &name="$classname");
+#end if
+
+	/**
+	 * Destructor
+	 */
+	virtual ~${classname}();
+#if $container.count > 1 or $isCommon is True
+
+	/**
+	 * Get the index of this container
+	 *
+	 * Return the 1-based index of this Device instance. This function reflects
+	 * the fact that this class represents an element in an array of subsystems.
+	 * This functions is not normally used by clients of this class; rather it is
+	 * used during construction of the subsystem tree to set PhysicalDevice
+	 * attributes.
+	 */
+	int ${indexFunc}() const { return ${indexName}_; }
+#end if
+#if $container.isGlobalCommon is True
+$get_subobject_fwdec($container)#slurp
+#end if
+$get_subobject_accessor($container)#slurp
+
+protected:
+
+	/**
+	 * set the attributes of the monitor points held directly by
+	 * this container
+	 */
+	void setLocalMonitorPointAttributes();
+#if $container.count > 1 or $isCommon is True
+
+	/* store the index */
+	int ${indexName}_;
+#end if
+$get_subobject_definition($container)#slurp
+};
+
+## when generating common containers, the subcontainers must
+## have the correct scope
+#if $container.isGlobalCommon is True
+#set scope = $classname
+#end if
+
+## Get any children monitor point enum classes too
+#for $mp in $container.monitorpoints
+$get_mpenum_class($mp, $scope)#slurp
+#end for
+
+## Get any children container classes too
+#for $c in $container.containers
+$get_container_class($c, $scope)#slurp
+#end for
+#end def
+
+## Get the forward declarations for a container, recursively
+##
+## This must be recursive, because we want to keep all containers at the
+## top level of a subsystem, even if they are defined inside a container.
+## This it to make the class hierarchy simpler.
+#def get_container_fwdec($container)
+	class $container.name;
+#if not $empty($container.extendFrom)
+	class ${container.name}${container.extendFrom};
+#end if
+## recurse through the containers
+#for $c in $container.containers
+$get_container_fwdec($c)#slurp
+#end for
+## recurse through the monitor point enums
+#for $mp in $container.monitorpoints
+$get_mp_fwdec($mp)#slurp
+#end for
+#end def
+
+#def container_definition_helper($typename, $accessorname, $count, $scope=None)
+#set scope = $fix_scope($scope)
+#if $count > 1
+	std::vector<${scope}${typename} *> ${accessorname}_;
+#else
+	${scope}${typename} *${accessorname}_;
+#end if
+#end def
+
+#def get_commoncontainer_definition($reference)
+#set typename = $reference.ref
+#set accessorname = $reference_accessorname($reference)
+#set scope = $commonreference_scope($reference)
+$container_definition_helper($typename, $accessorname, $reference.count, $scope)#slurp
+#end def
+
+#def get_container_definition($container)
+#set typename = $container.name
+#set accessorname = $lowercase_first($container.name)
+$container_definition_helper($typename, $accessorname, $container.count)#slurp
+#end def
+
+#def container_accessor_helper($typename, $accessorname, $count, $scope=None)
+#set scope = fix_scope($scope)
+#if $count > 1
+	/**
+	 * Access an element from the array of enclosed $typename devices
+	 *
+	 * This container contains $count $typename devices.
+	 *
+	 * @param i the 0-based index of the desired element in the array.
+	 */
+	${scope}${typename}& ${accessorname}(int i) const { return *${accessorname}_.at(i); }
+
+	/**
+	 * Return the number of $typename devices enclosed in this container
+	 *
+	 * This is hard-coded to return $count
+	 */
+	static int ${accessorname}Count() { return $count; }
+#else
+	/**
+	 * Access the enclosed $typename container
+	 */
+	${scope}${typename}& ${accessorname}() const { return *${accessorname}_; }
+#end if
+#end def
+
+#def get_commoncontainer_accessor($reference)
+#set typename = $reference.ref
+#set accessorname = $reference_accessorname($reference)
+#set scope = $commonreference_scope($reference)
+$container_accessor_helper($typename, $accessorname, $reference.count, $scope)#slurp
+#end def
+
+#def get_container_accessor($container)
+#set typename = $container.name
+#set accessorname = $lowercase_first($container.name)
+$container_accessor_helper($typename, $accessorname, $container.count)#slurp
+#end def
+
+################################################################################
+## MonitorSubsystem Template
+################################################################################
+
+#def get_subsystemext_class($subsystem)
+#set classname = $subsystem.name + 'Subsystem'
+#set extendname = $subsystem.name + 'Subsystem' + $subsystem.extendFrom
+#set indexName = $subsystem.indexName
+#set indexFunc = 'get' + $uppercase_first($indexName)
+#set $ifndef = '#ifndef'
+#set $define = '#define'
+#set $endif = '#endif'
+#set $include = '#include'
+#set $headerprotect = 'CARMA_MONITOR_' + $classname.upper() + 'EXT_H'
+$ifndef $headerprotect
+$define $headerprotect
+
+/**
+ *
+ * @file
+ *
+ * Semi hand-forged extentions to the auto-generated classes for the
+ * $subsystem.name subsystem. This file was originally created by
+ * $generator, then modified manually by the author.
+ *
+ * @author: $subsystem.author
+ *
+#raw
+ * $CarmaCopyright$
+#end raw
+ *
+ */
+
+$include <carma/monitor/${classname}.h>
+
+namespace carma {
+namespace monitor {
+
+namespace CM = carma::monitor;
+#if not $empty($subsystem.extendFrom)
+
+/**
+ * @brief The monitor system for the $subsystem.name subsystem
+ */
+class $classname : public $extendname {
+public:
+
+#if $subsystem.count > 1
+	/**
+	 * Constructor
+	 *
+	 * This is an indexed subsystem in which an array of $subsystem.count
+	 * instances will be created, each with an index in the range [1, $subsystem.count]
+	 * associated with it.
+	 *
+	 * @param $indexName the index to associate with this instance
+	 * @param buffer pointer to system frame storage: NULL within subsystem
+	 */
+	${classname}(ushort $indexName, SystemFrameBuffer * const buffer = NULL);
+#else
+	/**
+	 * Constructor
+	 * @param buffer pointer to system frame storage: NULL within subsystem
+	 */
+	${classname}(SystemFrameBuffer * const buffer = NULL);
+#end if
+
+	/**
+	 * Destructor
+	 */
+	virtual ~${classname}();
+
+	// add new or overriding method declarations here
+
+};
+#end if
+
+#for $c in $subsystem.containers
+$get_containerext_class($c, $extendname)#slurp
+#end for
+
+} // namespace monitor
+} // namespace carma
+
+$endif // $headerprotect
+#end def
+
+#def get_subsystem_class($subsystem)
+#set classname = $subsystem.name + 'Subsystem' + $subsystem.extendFrom
+#set indexName = $subsystem.indexName
+#set indexFunc = 'get' + $uppercase_first($indexName)
+#set $ifndef = '#ifndef'
+#set $define = '#define'
+#set $endif = '#endif'
+#set $headerprotect = 'CARMA_MONITOR_' + $classname.upper() + '_H'
+$ifndef $headerprotect
+$define $headerprotect
+
+/**
+ * Warning: this code has been generated by $generator, do not edit
+ *
+ * @file
+ *
+ * Automatically generated classes defining the monitor point hierarchy
+ * for the $subsystem.name subsystem.
+ *
+ * @author: $subsystem.author
+ *
+#raw
+ * $CarmaCopyright$
+#end raw
+ *
+ */
+
+#raw
+#include <string>
+#include <vector>
+
+#include <carma/monitor/MonitorSystem.h>
+#include <carma/monitor/monitorPointSpecializations.h>
+#include <carma/monitor/PhysicalDevice.h>
+#end raw
+#if len($handler.required_headers) > 0
+
+// Common Headers
+#for $header in $handler.required_headers
+#set include = '#include'
+$include <carma/monitor/$header>
+#end for
+#end if
+
+namespace carma {
+namespace monitor {
+
+namespace CM = carma::monitor;
+
+/**
+ * @brief The monitor system for the $subsystem.name subsystem
+ */
+class $classname : public carma::monitor::MonitorSubsystem {
+public:
+
+	/**
+	 * Maximum number of monitor points
+	 */
+	static const long MAX_MONITOR_POINTS = $subsystem.maxpoints;
+
+	/**
+	 * Maximum number of monitor samples
+	 */
+	static const long MAX_SAMPLES = $subsystem.maxsamples;
+
+	/**
+	 * Number of subsystem instances possible
+	 */
+	static const long COUNT = $subsystem.count;
+
+#if $subsystem.count > 1
+	/**
+	 * Constructor
+	 *
+	 * This is an indexed subsystem in which an array of $subsystem.count
+	 * instances will be created, each with an index in the range [1, $subsystem.count]
+	 * associated with it.
+	 *
+	 * @param $indexName the index to associate with this instance
+	 * @param buffer pointer to system frame storage: NULL within subsystem
+	 */
+	${classname}(ushort $indexName, SystemFrameBuffer * const buffer = NULL);
+#else
+	/**
+	 * Constructor
+	 * @param buffer pointer to system frame storage: NULL within subsystem
+	 */
+	${classname}(SystemFrameBuffer * const buffer = NULL);
+#end if
+
+	/**
+	 * Destructor
+	 */
+	virtual ~${classname}();
+
+	/**
+	 * Create the subsystem hierarchy. The implementation here is empty.
+	 */
+	virtual void createHierarchy();
+#if $subsystem.count > 1
+
+	/**
+	 * Return the 1-based index of this subsystem instance.
+	 *
+	 * This function reflects the fact that this class represents an element in
+	 * an array of subsystems. This function is not normally used by clients of
+	 * this class; rather it is used during construction of the subsystem tree
+	 * to set PhysicalDevice attributes.
+	 */
+	int ${indexFunc}() const { return ${indexName}_; }
+#end if
+
+	/**
+	 * return the LOCATION associated with this subsystem instance
+	 */
+	PhysicalDevice::LOCATION getLocation() const { return PhysicalDevice::NOLOCATION; }
+$get_subobject_fwdec($subsystem)#slurp
+#if len($subsystem.commons) > 0
+
+	// Local common containers and monitor point extensions defined as inner classes
+#for $common in $subsystem.commons
+$get_common_fwdec($common)#slurp
+#end for
+#end if
+$get_subobject_accessor($subsystem)#slurp
+
+protected:
+
+	/**
+	 * set the attributes for the monitor points held directly by
+	 * this container
+	 */
+	void setLocalMonitorPointAttributes();
+#if $subsystem.count > 1
+
+	int ${indexName}_;
+#end if
+$get_subobject_definition($subsystem)#slurp
+};
+
+#for $mp in $subsystem.monitorpoints
+$get_mpenum_class($mp, $classname)#slurp
+#end for
+
+#for $c in $subsystem.containers
+$get_container_class($c, $classname)#slurp
+#end for
+
+#for $common in $subsystem.commons
+#for $mp in $common.monitorpoints
+$get_mpenum_class($mp, $classname)#slurp
+#end for
+
+#for $c in $common.containers
+$get_container_class($c, $classname)#slurp
+#end for
+#end for
+
+} // namespace monitor
+} // namespace carma
+
+$endif // $headerprotect
+#end def
+
+################################################################################
+## Common Template
+################################################################################
+
+#def get_common_class($common)
+#set $include = '#include'
+#set $ifndef = '#ifndef'
+#set $define = '#define'
+#set $endif = '#endif'
+#set $splitname = os.path.splitext($srcfilename)[0]
+#set $headerprotect = 'CARMA_MONITOR_' + $splitname.upper() + '_H'
+/**
+ * Warning: this code has been generated by $generator, do not edit
+ *
+ * @file
+ *
+ * Automatically generated classes defining global, reusable monitor point
+ * components.
+ *
+ * @author: $common.author
+ *
+#raw
+ * $CarmaCopyright$
+#end raw
+ *
+ */
+
+$ifndef $headerprotect
+$define $headerprotect
+
+#raw
+#include <string>
+#include <vector>
+
+#include <carma/monitor/MonitorSystem.h>
+#include <carma/monitor/monitorPointSpecializations.h>
+#include <carma/monitor/PhysicalDevice.h>
+#end raw
+#if len($handler.required_headers) > 0
+
+// Common Headers
+#for $header in $handler.required_headers
+#set include = '#include'
+$include <carma/monitor/$header>
+#end for
+#end if
+
+namespace carma {
+namespace monitor {
+
+namespace CM = carma::monitor;
+
+#for $c in $common.containers
+$get_container_class($c, None)#slurp
+#end for
+
+#for $mp in $common.monitorpoints
+$get_mpenum_class($mp, None)#slurp
+#end for
+
+} // namespace monitor
+} // namespace carma
+
+$endif // $headerprotect
+#end def
+
+#def get_commonext_class($common)
+#set $ifndef = '#ifndef'
+#set $define = '#define'
+#set $endif = '#endif'
+#set $include = '#include'
+#set $splitname = os.path.splitext($srcfilename)[0]
+#set $headerprotect = 'CARMA_MONITOR_' + $splitname.upper() + 'EXT_H'
+/**
+ *
+ * @file
+ *
+ * Semi hand-forged extentions to the auto-generated classes for the
+ * $splitname common classes. The file was originally created by
+ * $generator, then modified manually by the author.
+ *
+ * @author: $common.author
+ *
+#raw
+ * $CarmaCopyright$
+#end raw
+ *
+ */
+
+$ifndef $headerprotect
+$define $headerprotect
+
+$include <carma/monitor/${splitname}.h>
+
+namespace carma {
+namespace monitor {
+
+namespace CM = carma::monitor;
+
+#for $c in $common.containers
+$get_containerext_class($c, None)#slurp
+#end for
+
+} // namespace monitor
+} // namespace carma
+
+$endif // $headerprotect
+#end def
+
+## vim: set ts=4 sts=4 sw=4 noet:

@@ -1,0 +1,56 @@
+#!/bin/sh
+#
+# @version $Id: tsdpFiller.rt,v 1.1 2006/11/30 20:10:30 akemball Exp $
+#
+# Wrapper for SDP filler integration test 
+#
+# Based closely on test scripts used in dbms sub-system)
+#
+
+echo "**** `basename $0` ****"
+
+# Define exit code
+exitStatus=0
+
+# Load utility functions
+. `dirname $0`/lib/functions.sh
+
+# Create conf files needed for test
+createConfFiles
+
+# Make the test directories
+makeTestDirs
+
+# Unpack the test data
+slcorrel=$topdir/sdp/astroheader/SLCorrelIntegrated
+cmd="cp `dirname $0`/astrohdr_test.xml.gz $slcorrel"
+$cmd
+cmd="gunzip -f $slcorrel/astrohdr_test.xml.gz"
+$cmd
+cmd="cp `dirname $0`/visBrickData_435945919.gz $topdir/visbrick"
+$cmd
+cmd="gunzip -f $topdir/visbrick/visBrickData_435945919.gz"
+$cmd
+
+# Fill the data
+cmd="bin/sdpFiller sdpconffile=$sdpconf infile=$slcorrel/astrohdr_test.xml outfile=$topdir/sdp/sciencedata/test.mir"
+echo $cmd
+$cmd
+
+# Check test completion and output file size
+exitStatus=$?
+filename=$topdir/sdp/sciencedata/test.mir/visdata
+filesize=$(stat -c%s "$filename")
+if [ $filesize -lt 100000 ] ; then
+    exitStatus=1
+fi
+
+# Return test status
+if [ $exitStatus -ne 0 ] ; then
+    fail
+else
+    pass
+fi
+
+
+

@@ -1,0 +1,279 @@
+#!/bin/sh
+#
+# @author Dave Mehringer
+# @version $Id: tDBConnection.rt,v 1.24 2011/08/21 04:11:03 scott Exp $
+#
+# This script is a wrapper for the DBConnection test suite
+# and should be run from the top of the build tree.
+
+usage() {
+    echo "$0 [-n] [-h] [traceLevel=[0]] [logfile=[default carma logfile]]"
+    echo "   -h print this message and exit"
+    echo "   -n do not remove the test database area on exit"
+    echo "   traceLevel traceLevel to use"
+    echo "   logfile file which to log output from CARMA apps"
+}
+
+echo "**** $0 ****"
+
+exitStatus=0
+logfile=""
+
+traceLevel=0
+clean=1
+
+for x in $* ; do
+    case "$x" in
+        -h)
+        usage
+        exit 0
+        ;;
+        -n)
+        clean=0
+        ;;
+        traceLevel=*) traceLevel=`echo $x | grep traceLevel | awk -F = '{print $2}'`
+        ;;
+        logfile=*) logfile=`echo $x | grep logfile | awk -F = '{print $2}'`
+        logfile="logfile=$logfile"
+        ;;
+        *)
+        echo "$0: Unknown command line argument $x"
+        usage
+        exit 1
+    esac
+done
+
+. `dirname $0`/lib/functions.sh
+
+# override fail() in functions.sh
+#fail() {
+#    shutdownMySQL
+#    if [ $clean -gt 0 ] ; then
+#        sleep 4
+#        cleanup
+##        \rm -rf $topdir
+#    fi
+#    echo "CARMA-TEST: FAIL carma/dbms `basename $prog`"
+#    exit 1
+#}
+
+# override conffile assignments
+
+#topdir=/tmp/carma_tests
+#testarea=$topdir/dbmsTest/mysql_data
+
+mkdir -p $testarea
+if [ $? -ne 0 ] ; then
+    echo "Unable to create test area $testarea"
+    fail
+fi
+
+#mysqlconf="conf/dbms/mysql.test.conf"
+#dbmsconf="conf/dbms/dbms.test.conf"
+#odbcconf="conf/dbms/odbc.test.ini"
+
+# clean indicates that conffiles should be removed which we don't want
+# to do for this test
+#clean=0
+
+createConfFiles
+shutdownMySQL 1
+
+makeTestDirs
+
+echo "Database and supporting files are in $testarea"
+socket=`grep socket $mysqlconf | tail -1 | awk -F= '{print $2}'`
+echo "Local mysql connections are via unix socket $socket"
+initializeMySQL
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+startMySQL
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+#setDBPrivileges
+#if [ $? -ne 0 ] ; then
+#    fail
+#fi
+
+createDB
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+#createDBTables
+#if [ $? -ne 0 ] ; then
+#    fail
+#fi
+
+$mysql --defaults-file=$mysqlconf -u $user -e "SHOW TABLES" $db
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+
+
+# load TestSubsystem table (we do this so that the Subsystems, Locations, and
+# Devices tables are populated which is necessary for the next command to
+# succeed)
+echo "Loading configuration data from the Test subsystem"
+srcdir=`grep "^srcdir =" Makefile | awk '{print $3}'`
+mpmlfileori="$srcdir/carma/monitor/TestSubsystem.mpml"
+mpmlfilecommonori="$srcdir/carma/monitor/CanbusCommon.mpml"
+mpmlfile="$topdir/TestSubsystem.mpml"
+dtd=$srcdir/carma/monitor/mpml.dtd
+cp $mpmlfileori $mpmlfile
+cp $mpmlfilecommonori $topdir
+cp $dtd $topdir
+
+scripts/monitorConfigurationLoader -oldmode conffile=$dbmsconf \
+    mpml=$mpmlfile traceLevel=$traceLevel $logfile
+if [ $? -ne 0 ] ; then
+    echo 'monitor config data loading failed'
+    fail
+fi
+
+table=MonitorConfigChangeableParms
+count=`mysql --defaults-file=$mysqlconf \
+    -e "SELECT count(*) from $table" -u carmauser carma`
+count=`echo $count | awk '{print $2}'`
+echo "Number of rows in the $table table is $count"
+if [ $count -eq 0 ] ; then
+    echo "The $table table is empty; loading of the Test subsystem must have failed"
+    fail
+fi
+
+
+$mysql --defaults-file=$mysqlconf -u $user -e "SELECT * FROM Validities" $db
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+$mysql --defaults-file=$mysqlconf -u $user -e "SELECT * FROM BlankingFlags" $db
+if [ $? -ne 0 ] ; then
+    fail
+fi
+$mysql --defaults-file=$mysqlconf -u $user -e "SELECT * \
+    FROM MonitorPointDataTypes" $db
+if [ $? -ne 0 ] ; then
+    fail
+fi
+$mysql --defaults-file=$mysqlconf -u $user -e "SELECT * \
+    FROM MonitorPointTypes" $db
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+
+# this next bit mangles the mpml file a bit so that all of it won't load 
+# properly and is meant to check that transactions are working properly
+
+cmd="scripts/mpmlgen/mpmlgen -L $topdir/tmp.mpml $mpmlfile"
+$cmd
+if [ $? -ne 0 ] ; then
+  echo "Error running $cmd"
+  fail
+fi
+
+# mangle units which are not allowed to be modified
+sed -e 's/<units>MHz/<units>GHz/g' < $mpmlfile > $topdir/tmp2.mpml
+j=`diff $mpmlfile $topdir/tmp2.mpml |wc -l`
+if [ $j -ne 4 ] ; then
+   echo "Location1: $mpmlfile has changed in a way which will not allow this"
+   echo "test to run properly; the test code probably needs to be modified"
+   fail
+fi
+
+scripts/monitorConfigurationLoader -oldmode conffile=$dbmsconf \
+    mpml=$topdir/tmp2.mpml traceLevel=$traceLevel $logfile
+if [ $? -eq 0 ] ; then
+   echo "Loading of monitor subsystem passed when it should have failed"
+   fail
+else
+   echo "Loading of monitor subsystem failed as it should in this case"
+fi
+
+# Add a second allowable change to the previous unit change,
+# after the unit change. The unit change should still fail, providing proof
+# that the earlier transaction was rolled back
+sed -e 's/<units>MHz/<units>GHz/g' < $mpmlfile > $topdir/tmp2.mpml
+sed -e 's/random/chaotic/g' < $topdir/tmp2.mpml > $topdir/tmp3.mpml
+j=`diff $topdir/tmp2.mpml $topdir/tmp3.mpml | wc -l`
+# Two lines changed will create 8 lines of diff
+if [ $j -ne 8 ] ; then
+   echo "Location2: $mpmlfile has changed in a way which will not allow this"
+   echo "test to run properly, the test code probably needs to be modified"
+   fail
+fi
+
+scripts/monitorConfigurationLoader -oldmode conffile=$dbmsconf \
+    mpml=$topdir/tmp3.mpml traceLevel=$traceLevel $logfile
+if [ $? -eq 0 ] ; then
+   echo "Loading of monitor subsystem passed when it should have failed"
+   fail
+else
+   echo "Loading of monitor subsystem failed as it should in this case"
+fi
+
+newcount=`mysql --defaults-file=$mysqlconf \
+    -e "SELECT count(*) from $table" -u carmauser carma`
+newcount=`echo $newcount | awk '{print $2}'`
+
+echo "Number of rows in $table is $newcount; "
+echo "it should be $count if transactions are working correctly."
+
+if [ $count -ne $newcount ] ; then
+    exitStatus=1
+fi
+
+# this command inserts a row which is necessary to test exception throwing
+# in dbmsTest
+#$mysql --defaults-file=$mysqlconf -u $user -e "INSERT INTO \
+#    MonitorConfigStaticParms (tagID, subsysID, name, units, datatype, \
+#    monitorPointType, isPersistent, isSpectrum) VALUES (524287, 7, \
+#    'my.favorite.monitor.point', 'm/s', 5, 1, 1,0)" $db
+#if [ $? -ne 0 ] ; then
+#    echo "INSERT failed"
+#    fail
+#fi
+
+# used by DBConnectionTest
+#CARMA_DBMSTESTCONF=conf/$dbmsconf; export CARMA_DBMSTESTCONF
+CARMA_MONITOR_TESTSUBSYSTEM_MPML="$topdir/TestSubsystem.mpml"
+# export CARMA_MONITOR_TESTSUBSYSTEM_MPML
+cmd="scripts/mpmlgen/mpmlgen -L $CARMA_MONITOR_TESTSUBSYSTEM_MPML $mpmlfile"
+echo "Creating mpml file for use by carma/dbms/Test/dbmsTest"
+echo "$cmd"
+$cmd
+
+carma/dbms/Test/dbmsTest traceLevel=$traceLevel $logfile \
+    conffile=conf/$dbmsconf mpmlfile=$CARMA_MONITOR_TESTSUBSYSTEM_MPML \
+    testdbffio=true testconnection=true
+if [ $? -ne 0 ] ; then
+    echo "Error occurred when running the test suite"
+    fail
+fi
+
+#$mysql --defaults-file=$mysqlconf -e "show table status" -u carmauser carma
+$mysql --defaults-file=$mysqlconf -e "show engines" -u carmauser carma
+#$mysql --defaults-file=$mysqlconf -e "show variables like '%inno%'" -u carmauser
+#$mysql --defaults-file=$mysqlconf -e "show plugins" -u carmauser
+
+shutdownMySQL
+sleep 4
+if [ $clean -gt 0 ] ; then
+#    rm -rf $topdir
+    echo "Doing cleanup"
+    cleanup
+fi
+
+
+if [ $exitStatus -eq 0 ] ; then
+    pass
+    exit 0
+else
+    quickFail
+fi

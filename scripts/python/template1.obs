@@ -1,0 +1,288 @@
+# Template observing script
+# Based on: ScienceTemplate27Sep06.py
+#
+# @author John Carpenter
+# $Id: template1.obs,v 1.1 2007/03/08 21:29:37 jmc Exp $
+#
+#   History
+#   2006-Nov-30: JMC    First draft
+#   2006-Dec-21: JMC    Major functionality now in place
+#   2007-Jan-13: JMC    Added obslock as a user-variable
+#   2007-Jan-16  JMC    Added option to support Doppler tracking for each 
+#                       source in the "sources" list.
+#   2007-Jan-24  JMC    Added maximum pointing separation and subObsblock
+#
+import obsdef as od
+from tuneOvroRx import *
+
+"""
+Contact person for project cxxxx
+     Name        :
+     Email       :
+     Office phone:
+     Home   phone:
+
+--------------------------------------------------------------------------------
+Instructions for the observers:
+--------------------------------------------------------------------------------
+
+Source : s255
+RA     : 06:10:00.00
+Dec    : +18:00:00.00
+
+Rise/Set LST times for source/phase-calibrator at elevation of 30.0 degrees
+          Source       Rise        Set
+            s255    01:47:40   10:32:20  --- Up for 8.7 hours
+        0530+135    01:21:16   09:40:36  --- Phase calibrator
+"""
+
+# ----------------------- OPTIONS SPECIFIED BY THE PI ------------------------
+# Project information
+emailAddress = 'jmc@astro.caltech.edu' # e.g. 'user@astro.university.edu'
+projectCode  = 'cx029'   # Assigned project code
+obsblock     = 'g35'     # Name of obslock listed on proposal
+subObsblock  = None      # Optional. Used to name the data file.
+
+# Tuning information
+#molecule     = '12CO(1-0)' # Molecular line
+#fline        = linefreq(molecule) # Alternate way to specify line frequency
+fline        = 95.00     # [GHz] Line rest frequency
+sideband     = LSB       # Sideband for first LO (LSB or USB)
+IFfreq       = 2.15      # [GHz] IF frequency
+
+# Correlator configuration
+configband(1, BW62, fline+0.5)
+configband(2, BW62, fline)
+configband(3, BW62, fline-1.1)
+
+# Correlator configuration for calibrators.
+# reconfig: Sets correlator configuration for calibration observations
+#     None            : same as for science targets
+#     od.CORR_BW500LO6: 500 MHz, non-overlapping bands in BIMA IF
+#     od.CORR_BW500LO : 500 MHz, non-overlapping bands (not recommended)
+#     od.CORR_BW500   : change bands to 500 MHz without changing IF
+# hybrid:   Correlator configurations to calibrate band offsets (see FAQ page!).
+#           Needed only if all bands have width < 500 MHz.
+reconfigCorr = None
+hybrid       = None
+#hybrid = [ [BW500, BW62,  BW62],  [BW62, BW500, BW62] ]
+
+# Catalog containing source name and coordinates
+sourceCatalog = None
+
+# Names for phase calibrators and science targets.
+# Enter multiple sources as, e.g., sources = ['ABAur', 'GMAur']
+phaseCal = '2232+117'
+sources  = '3c454.3'
+
+# Set various times
+time = {
+    'source'   :  15.0, # [minutes] Integration time per cycle **per pointing**
+    'phase'    :   5.0, # [minutes] Phase calibrator integration time per cycle
+    'pb'       :  15.0, # [minutes] passband calibrator integration time
+    'flux'     :   5.0, # [minutes] Flux calibrator integration time
+    'noise'    :   0.2, # [minutes] Integration time with noise source
+    'record'   :  30.0, # [seconds] Record length for each integration
+    'tsys'     :  10.0, # [minutes] How often to take Tsys measurements
+    'pointing' :   2.0, # [hours]   How frequently to perform radio pointing
+    'fluxcal'  :   2.0, # [hours]   How frequently to perform flux calibration
+    'hybrid'   :   5.0, # [minutes] Integration time for hybrid correlator modes
+   }
+
+# Parameters for mosaics only
+mosaic = {
+    'mosaic'     : False, # True -> make a mosaic; False -> do not make mosaic
+    'startpos'   :     1, # Starting position in file
+    'nPhase'     :     0, # Number of fields to observe between phase cal
+                          # observations. 0 -> Observe all fields.
+    'arcminUnits':  True, # If True, offsets are in arcminutes. If False,
+                          # offsets are in units of the Nyquist sampling rate
+                          # of the large antenna in the subarray
+    'offsetFile' :  None, # Offset data file (e.g. 'm51_mosaic.dat')
+    'offsets'    :  None, # List containing the offsets.
+                          # This can be used instead of offsetFile.
+                          # e.g. [ [-0.5,0.5], [0.5,-0.5], [-0.5,-0.5]]
+  }
+
+# Flux limits for calibrators. Unless the list of "preferred" calibrators is
+# set below, the script will choose passband and pointing calibrators that
+# are brighter than the following limits. The units are in Janskys.
+fluxLimits = {
+    'pointing'  :  4.0,
+    'passband'  :  4.0,
+   }
+
+# Indicate, True or False, which primary flux calibrators are ok to use.
+# Add sources to the list as needed.
+fluxSources = {
+    'jupiter'  : False,
+    'mars'     : True,
+    'neptune'  : True,
+    'uranus'   : True,
+    'mercury'  : False,
+    'mwc349'   : True,
+   }
+
+# Parameters controlling flux calibration
+fluxParams = {
+    'nfluxTrack'   : 1,     # Number of primary flux calibrators to observe in track
+    'nfluxCycle'   : None,  # Number of primary flux calibrators to observe per cycle
+    'dupFluxcal'   : True,  # OK to duplicate primary flux cal sources?
+    'doSecondary'  : True,  # Observe secondary calibrator
+    'doBoth'       : False, # Observe both secondary and primary calibrators
+   }
+doFluxMiddle = False # OK to observe flux cal in middle of phase/source cycle?
+
+# Preferred sources for pointing, passband, and flux calibration.
+# None -> use calibrator closest to the science target.
+# Enter multiple sources as, e.g., 'passband' : ['3c279','3c273']
+preferred = {
+    'pointing' : None,
+    'passband' : None,
+    'fluxcal'  : None,
+    'fluxsec'  : None,
+   }
+
+# Elevation limit (degrees) to observe flux/passband calibrators
+# Maximum separation (degrees) between pointing source and target source
+elLimitCal = 30.0
+maxPointingSep = 50.0
+
+# Tracking threshold. Data are flagged if track error is larger than this.
+trackingThreshold = 0.1   # tracking threshold in beamwidths
+
+# Indicate, True or False, which observations should be obtained.
+var = {'point'   : False, # Point up
+       'source'  : True,  # Cycle between source and phase calibrator
+       'pb'      : True,  # Observe passband calibrator
+       'flux'    : True,  # Observe flux calibrator
+       'email'   : True,  # Send email indicating track has started/stopped
+      }
+# ----------------------- END OF PI SPECIFIED OPTIONS --------------------------
+
+
+
+# -----------------------     MAIN PART OF SCRIPT     --------------------------
+
+# Initialize system
+od.initializeTrack(var, sources, phaseCal, time, mosaic, 
+                   projectCode, sourceCatalog, trackingThreshold, preferred, 
+                   elLimitCal, restart=restartScript, scriptName=scriptName, 
+                   scriptOptions=scriptOptions, obsblock=obsblock,
+                   subObsblock=subObsblock, maxPointingSep=maxPointingSep,
+                   fluxParams=fluxParams)
+
+
+# Check that sources are in the current catalogs
+od.trackMessage('Verifying source names')
+od.checkSources(sources, indent=1)
+od.checkSources(phaseCal, phase=True, indent=1)
+od.checkSources(preferred, key=False, indent=1)
+od.checkSources(fluxSources, indent=1)
+
+
+# Tune receivers
+if var['tune']:
+    od.trackMessage("Tuning freq=" + str("%.3f" % fline) + " GHz, " + 
+          str(sideband)  + ", IFfreq=" + str("%.3f" % IFfreq) + " GHz")
+    freq(fline, sideband, IFfreq, od.getSourceName(sources,n=1))
+    tuneOvroRx(freqSetup()[2])   # freqSetup()[2] gets the LO frequency
+
+
+# Set the correlator configuration for calibrations observations if it is
+# different from the science observations.
+checkbands()
+configCal = None
+if reconfigCorr <> None:
+    od.trackMessage('Determining correlator configuration for calibrator observations')
+    configCal = od.setCorrCal(reconfigCorr)
+
+
+# Send email indicating track has started.
+# fullScriptName and scriptOptions are set in run().
+if var['email'] and emailAddress <> None: 
+    od.sendEmail(projectCode, emailAddress, fullScriptName, scriptOptions,
+                 start=True, restart=restartScript)
+
+
+# Observe noise source [time['recNoise'] is set in od.initializeTrack()]
+od.observeNoise(time['noise'], time['recNoise'])
+
+
+# Radio pointing
+if var['point']:
+    if var['pntstart']:
+        od.doPoint(time=time, preferred=var['pntname'], ref=sources,
+                   reconfig=configCal, minFlux=fluxLimits['pointing'],
+                   el=var['elcal'], maxsep=var['pntsep'])
+    else: 
+        od.trackMessage("Skipping radio pointing at start of track",
+                        timestamp=True)
+
+
+# Flux calibration
+if var['flux'] and var['fluxstart'] and not od.finishedFluxcal():
+    od.doFluxcal(fluxSources, time, preferred=var['fluxname'],
+                 el=var['elcal'], ref=sources, reconfig=configCal,
+                 fluxParams=fluxParams, preferredSecondary=var['fluxsec'])
+
+
+# Passband
+if var['pb'] and var['pbstart'] and not od.finishedPassband():
+    od.doPassband(time, preferred=var['pbname'], minFlux=fluxLimits['passband'],
+                  ref=sources, reconfig=configCal, hybrid=hybrid,
+                  el=var['elcal'])
+
+
+# Observe passband calibrator until source and first phase calibrator are up
+pname, tstart, tstop = od.getPhaseCal(phaseCal)
+waitingForSource = True
+while waitingForSource:
+    dt = od.timeRemaining(source=sources, phase=pname, 
+                    lsttime=od.getLstStartCycle(tstart), toRise=True)
+    if dt > 0:
+        od.trackMessage('Waiting for source to rise - observing passband for ' 
+                        + od.dtString(dt))
+        ok = od.doPassband(time, lststop=tstart, preferred=var['pbname'],
+                           ref=sources, reconfig=configCal, el=var['elcal'])
+        if not ok: waitingForSource = False
+    else:
+       waitingForSource = False
+
+
+# Cycle between source and phase calibrator.
+if var['source']:
+    od.doSourcesPhasecal(var, sources, phaseCal, time,
+                         fluxSources=fluxSources, doFlux=doFluxMiddle,
+                         mosaic=mosaic, reconfig=configCal, hybrid=hybrid,
+                         minFluxPointing=fluxLimits['pointing'], 
+                         fluxParams=fluxParams)
+
+
+# Passband observations
+if var['pb'] and not od.finishedPassband():
+    od.doPassband(time, preferred=var['pbname'], ref=sources, 
+                  reconfig=configCal, hybrid=hybrid, 
+                  minFlux=fluxLimits['passband'], el=var['elcal'])
+
+
+# Flux calibration
+if var['flux'] and not od.finishedFluxcal():
+    od.doFluxcal(fluxSources, time, preferred=var['fluxname'],
+                 el=var['elcal'], ref=sources, reconfig=configCal,
+                 fluxParams=fluxParams, preferredSecondary=var['fluxsec'])
+
+
+# Print track summary
+od.trackSummary()
+
+
+# Send email indicating track is finished
+if var['email']: 
+    od.sendEmail(projectCode, emailAddress, fullScriptName, scriptOptions,
+                 msg=od.getTrackHistory())
+
+
+# Done
+if var['reset']: resetProject()
+if var['alarm']: alarmon();

@@ -1,0 +1,89 @@
+$Id: ui.notes,v 1.2 2014/03/10 16:33:39 iws Exp $
+
+Notes on some aspects of the UI that might be useful (CSG - 01/18/06)
+
+TODO:
+- still need to allow for filters in the monitor point searches.
+details on filters can be found incarma/dbms/MonitorDataQueryManager.h/.cc
+
+
+SETTING UP RTD SERVERS
+
+     1. To set up an RTD server that will display monitor information:
+     
+     Java-side
+     - nothing
+     
+     C++-side
+     - create a server file in carma/ui/rtd/windows (look at rtdtemplate.cc
+       as a guide) 
+     - add line in carma/ui/rtd/common/CarmaDisplay.cc in
+       CarmaWindows::load() and CarmaDisplay::makeMenu()
+     - add entry in Makefile.am
+    
+     2. To set up an RTD GUI and server that passes through information
+     OTHER than data from the monitor stream, do the following (took this
+     from Marc's notes, so he should be able to fill in possible gaps):
+     
+     Java-side
+     - Create a [GUIName]Display.java file in carma/ui/jrtd/rtd (see MpBrowserDisplay.java)
+       - be sure to choose a unique tagName_ (mpf for Monitor Point Filter)
+       - modify processUpd(...) after retVal check to process the string
+         from the server ( will look like "| Field1 | Field2 | ... | FieldN |"
+       - did nothing to processSpecial(...) or sendFilter(...), just
+         cut/pasted from LogBrowserDisplay.java
+       - modified actionPerformed(...) to call sendFilter
+     - Add a new character to DisplaySetup.java and Start.java
+       - DisplaySetup.java: add to "if (doubleCheck(token ...))" line)
+       - Start.java: add "if (startString.equals(...))" line
+     		add case to switch statement
+     
+     C++-side
+     - create child class of CarmaDisplay (look at MpDisplay.cc)
+       - make sure setType call corresponds to character in DisplaySetup.java
+       - make sure std::cout calls uses correct tag in isValidFilter call
+         - two places: for <tag>OK</tag> and <tag>BAD</tag>
+     - create rtd server (look at rtddbmsmp.cc)
+       - filter passed through will come out ALL LOWER CASE unless modified
+         in RtDisplay::serveData()
+     - add rtd server to CarmaDisplay.cc
+ 
+
+
+TROUBLESHOOTING:
+     Some notes on things to check if the RTD isn't working properly:
+     
+     If the CARMA login screen comes up:
+     - confirm that acc.ovro.caltech.edu is pingable from your location
+     - ssh to acc.ovro.caltech.edu (via dana, since acc is not directly
+       ssh-able) and check to see if rtdmaster is running
+     
+     If you try to open MpSearch and you get an error:
+     - if it mentions DBConnection, check to make sure mysqld is running on
+       database.ovro.caltech.edu
+     
+     If MpSearch opens without an error but nothing is being retrieved:
+     - make sure there's something in the DBMS
+       - ssh to database.ovro.caltech.edu (via dana)
+       - make sure LD_LIBRARY_PATH includes /opt/carmaTools/lib
+       - run "/opt/carmaTools/bin/mysql --defaults-file=/opt/rt/conf/dbms/mysql.conf
+               -u carmauser -A carma"
+         - call:    
+     
+           mysql> show tables like "FrameNumeric%";
+     
+           which should return the tables containing the half-second
+           frames.  if you're using minute, sl, wb averages, then search
+           for tables like "Minute%"
+     
+         - if that returns a non-zero set, then find the tagID for the
+           monitor point you're interested in (conf/monitor/canonicalNamesToTagIDs.conf) and call 
+     
+           mysql> select * from FrameNumericMonitorData_XXX_XXX where tagID=??? limit 50;
+     
+           where XXX are numbers from the "show tables" search and ??? is
+           from the canonicalNamesToTagIDs.conf file.  "limit 50" just
+           controls it so you don't get blasted by hundreds of entries.
+     
+     
+         - if all this looks okay, then it might be time to open up the code

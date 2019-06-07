@@ -1,0 +1,79 @@
+/** @file
+ * Carma Block Downconverter control interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.4 $
+ * $Date: 2011/05/17 16:27:48 $
+ * $Id: BlockDownconverterControl.idl,v 1.4 2011/05/17 16:27:48 iws Exp $
+ */
+#ifndef CARMA_DOWNCONVERTER_BLOCKDOWNCONVERTERCONTROL_IDL
+#define CARMA_DOWNCONVERTER_BLOCKDOWNCONVERTERCONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module downconverter {
+
+    /**
+     * Carma Block Downconvrter CAN module control interface.
+     */
+    interface BlockDownconverterControl {
+
+        /**
+         * Block band selector.
+         */
+        enum Block {
+            UPPER, /**< Upper IF block corresponding to 5-9 GHz. */
+            LOWER  /**< Lower IF block corresponding to 1-5 GHz. */
+        };
+
+        /**
+         * Polarization input selector.
+         */
+        enum Polarization {
+            POLARIZATION_1, /**< First polarization input selector. */
+            POLARIZATION_2  /**< Second polarization input selector. */
+        };
+
+        /**
+         * Set UPPER or LOWER block and polarization for a single output band.
+         * @param blockSelector Block value.
+         * @param polarization Polarization value.
+         * @param bandNo Band number from 0-NumBands. Zero means all bands.
+         * @throw UserException On error.
+         */
+        void setBlockAndPolarization( in Block blockSelector,
+                                      in Polarization polarizationSelector,
+                                      in unsigned short bandNo )
+            raises ( carma::util::UserException );
+
+        /**
+         * Set UPPER or LOWER block for a single output band.
+         * @param blockSelector Block value.
+         * @param bandNo Band number from 0-NumBands. Zero means all bands.
+         * @throw UserException On error.
+         */
+        void setBlock( in Block blockSelector,
+                       in unsigned short bandNo )
+            raises ( carma::util::UserException );
+
+        /**
+         * Set polarization and UPPER or LOWER block for a single output band.
+         * @param blockSelector Block value.
+         * @param polarization Polarization value.
+         * @param bandNo Band number from 0-NumBands. Zero means all bands.
+         * @throw UserException On error.
+         */
+        void setPolarization( in Polarization polarizationSelector,
+                              in unsigned short bandNo )
+            raises ( carma::util::UserException );
+
+        /**
+         * Reset module via software 'reset' command.
+         */
+        void reset( ) raises ( carma::util::UserException );
+
+    }; // interface BlockDownconverterControl
+};}; // module carma::downconverter
+
+#endif

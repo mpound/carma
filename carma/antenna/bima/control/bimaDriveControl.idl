@@ -1,0 +1,44 @@
+/*
+ *
+ * $Id: bimaDriveControl.idl,v 1.6 2011/05/17 16:27:29 iws Exp $
+ *
+ */
+#ifndef CARMA_ANTENNA_BIMA_CONTROL_BIMADRIVECONTROL_IDL
+#define CARMA_ANTENNA_BIMA_CONTROL_BIMADRIVECONTROL_IDL
+
+#include "carma/antenna/common/DriveControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module bima {
+module control {
+
+/**
+ * BIMA antenna-specific drive control interface.
+ */
+interface DriveControl : carma::antenna::common::DriveControl {
+
+  const unsigned short CoefficientCount = 10;
+  typedef sequence<double, CoefficientCount> sequence_double;
+
+  /**
+   * Sets pointing model coefficients.  A pointing model consists of two
+   * equations: one for an azimuth offeset and one for an elevation offset.
+   * Each equation can has a set of coefficients that are derived by
+   * fitting observed data to the equations.
+   *
+   * @param dazCoefs A sequence of coefficients for use with the pointing
+   *                 model's azimuth offset equation.
+   *
+   * @param delCoefs A sequence of coefficients for use with the pointing
+   *                 model's elevation offset equation.
+   *
+   */
+  void setPointingModelCoefs( in sequence_double dazCoefSeq,
+                              in sequence_double delCoefSeq )
+    raises ( carma::util::UserException );
+
+}; // End DriveControl interface
+};};};}; // End carma::antenna::bima::control module
+#endif

@@ -1,0 +1,128 @@
+#
+# $Id: email.tab,v 1.59 2014/09/15 16:35:01 iws Exp $
+#
+# vim: set ts=4 sts=4 sw=4 et:
+#
+# DESCRIPTION OF COLUMNS
+#
+# 1) the regex column
+# This is an POSIX extended regular expression which will be matched against
+# all monitor points causing faults (ringing the alarm) in the system. If in
+# doubt, use ".*" (dot star) to match "any number of any character".
+#
+# 2) the file column
+# This is a template email message body which will become the email text. Extra
+# information such as monitor point and timestamp are added automatically. It
+# is HIGHLY RECOMMENDED to keep lines shorter than 75 characters.
+#
+# 3) the address column
+# This is the email address to which the email will be sent.
+#
+# 4) the stop column
+# This will stop processing for the given regular expression. This allows you
+# to send email to multiple recipients, stopping processing only for the last
+# one.
+#
+# 5) the hysteresis column
+# This is the timeout in seconds which must expire before another copy of the email will
+# be sent. Any monitor point which matches the regular expression will cause
+# the hysteresis to be reset. Therefore, all monitor points which match the
+# regular expression must be "good" (non-fault) for the entire hysteresis
+# period before another email will be sent.
+#
+# NOTES ON OPERATION
+#
+# For each faulting monitor point (as seen in the RTD "Alarm Faults" page),
+# this list is processed top-down. If the fault matches the regular expression
+# AND stop == true, then we will go on to the next monitor point in the loop.
+#
+# Like this:
+#
+# for (each fault monitor point) {
+#     if (matches(mp, regex) && stop == true)
+#           continue;
+# }
+#
+# EXAMPLE
+#
+# === send email to three people ===
+#
+# Sldc.*ifOutPower fault/email/bradifoutpower.txt   brad@ovro.caltech.edu   false   600
+# Sldc.*ifOutPower fault/email/jamesifoutpower.txt  lamb@ovro.caltech.edu   false   600
+# Sldc.*ifOutPower fault/email/obsifoutpower.txt    rtsalarm@mmarray.org    true    600
+#
+#
+# Don't forget to add your email text file to Makefile.am nobase_conf_DATA
+# so that it gets copied to the install tree.  make check will fail if
+# you don't do this ( bin/checkFaultSystemEmail ).
+#
+#
+# LEAVE THE FOLLOWING COLUMNS ALONE
+#
+# They are required for the carma::services::Table code to function correctly.
+#
+#|regex                                    |file                                   |address             |stop   |hysteresis     |
+#|s                                        |s                                      |s                   |b      |i              |
+# .*scriptState                             fault/email/script.txt                  rtsalarm@mmarray.org true    60
+#
+
+Control.Antenna.*ifAttenAmb1                fault/email/cmrxPower.txt               hardware@mmarray.org true    600
+Control.Subarray.*alarm                     fault/email/alarm.txt                   obs@mmarray.org      true    600
+Control.Subarray1.alarm1mm                  fault/email/alarm1mm.txt                obs@mmarray.org      true    600
+Control.Subarray.*scriptState               fault/email/scriptState.txt             obs@mmarray.org      true    600
+LineLength.initialized.*                    fault/email/linelength-init.txt         obs@mmarray.org      true    600
+LineLength.PhaseRms.*                       fault/email/linelength.txt              rtsalarm@mmarray.org true    600
+CarmaSlcBand.*received                      fault/email/slReceived.txt              iws@mmarray.org      false   600
+CarmaSlcBand.*received                      fault/email/slReceived.txt              dwh@mmarray.org      false   600
+CarmaSlcBand.*received                      fault/email/slReceived.txt              obs@mmarray.org      true    600
+CarmaSlcBand.*commandStatus                 fault/email/slCommandStatus.txt         iws@mmarray.org      false   600
+CarmaSlcBand.*commandStatus                 fault/email/slCommandStatus.txt         dwh@mmarray.org      false   600
+CarmaSlcBand.*commandStatus                 fault/email/slCommandStatus.txt         obs@mmarray.org      true    600
+Sldc.Band.*Input.*ifOutPower                fault/email/slIfOutPower.txt            rtsalarm@mmarray.org true    600
+Wbdc.Band.*Input.*ifOutPower                fault/email/wbIfOutPower.txt            rtsalarm@mmarray.org true    600
+Sza.*tertPosError                           fault/email/szatert.txt                 rtsalarm@mmarray.org true    600
+Bima.*BimaSpecific.Dewar.psupply            fault/email/bimapsupply.txt             mwh@mmarray.org      false   600
+Bima.*BimaSpecific.Dewar.psupply            fault/email/bimapsupply.txt             rtsalarm@mmarray.org true    600
+Bima.*BimaSpecific.Dewar.stage3             fault/email/bimastage3.txt              mwh@mmarray.org      false   600
+Bima.*BimaSpecific.Dewar.stage3             fault/email/bimastage3.txt              rtsalarm@mmarray.org true    600
+Ovro.*Secondary.*Limit.*                    fault/email/ovroSecondaryLimit.txt      rtsalarm@mmarray.org true    600
+Ovro.*EnvironmentalMonitor.sidecabTemp      fault/email/ovroSidecabTemp.txt         rtsalarm@mmarray.org true    600
+Ovro.*EnvironmentalMonitor.sidecabDoorOpen  fault/email/ovroSidecabDoor.txt         rtsalarm@mmarray.org true    600
+Ovro.*EnvironmentalMonitor.teepeeDoorOpen   fault/email/ovroTeepeeDoor.txt          rtsalarm@mmarray.org true    600
+Ovro.*Drive.System.azOverlapSwitchFail      fault/email/ovroOverlap.txt             scott@mmarray.org    false   600
+Ovro.*Drive.System.azOverlapSwitchFail      fault/email/ovroOverlap.txt             rtsalarm@mmarray.org true    600
+Ovro.*Drive.System.impossibleRate           fault/email/ovroImpossibleRate.txt      scott@mmarray.org    false   600
+Ovro.*Drive.System.impossibleRate           fault/email/ovroImpossibleRate.txt      rtsalarm@mmarray.org true    600
+Ovro.*Drive.System.forbiddenAz              fault/email/ovroForbiddenAz.txt         scott@mmarray.org    false   600
+Ovro.*Drive.System.forbiddenAz              fault/email/ovroForbiddenAz.txt         rtsalarm@mmarray.org true    600
+Ovro.*Drive.DriveModule.*OverTemp           fault/email/ovroOverTemp.txt            rpl@mmarray.org      false   600
+Ovro.*Drive.DriveModule.*OverTemp           fault/email/ovroOverTemp.txt            rtsalarm@mmarray.org true    600
+LoRef.LoRefDistributionBox.*synthFreqErr    fault/email/loref_synthfreqerr.txt      rtsalarm@mmarray.org true    600
+SlPipeline.*noData                          fault/email/pipelinenodata.txt          obs@mmarray.org      false   600
+SlPipeline.*noData                          fault/email/pipelinenodata.txt          rts@ovro.caltech.edu true    600
+WbPipeline.*noData                          fault/email/pipelinenodata.txt          obs@mmarray.org      false   600
+WbPipeline.*noData                          fault/email/pipelinenodata.txt          rts@ovro.caltech.edu true    600
+.*Pipeline.*timeSinceLastIntegration        fault/email/timeSinceLastIntegration.txt obs@mmarray.org     true    60
+.*\.online                                  fault/email/online.txt                  rtsalarm@mmarray.org true    600
+.*AntennaCommon.initialized                 fault/email/initialized.txt             rtsalarm@mmarray.org true    600
+Imr.numNotRunningCriticalServers            fault/email/criticalservers.txt         obs@mmarray.org      false   600
+Imr.numNotRunningCriticalServers            fault/email/criticalservers.txt         rts@mmarray.org      true    600
+Control.iersAge                             fault/email/iersage.txt                 rts@ovro.caltech.edu false   86400
+Control.iersAge                             fault/email/iersage.txt                 teuben@astro.umd.edu true    86400
+Dataflow.SdpFiller.errorState               fault/email/filler.txt                  rts@mmarray.org      true    600
+Bima.*BimaSpecific.Telemetry.frames         fault/email/bimaTelemetryFrames.txt     rts@mmarray.org      false   60
+Bima.*BimaSpecific.Telemetry.frames         fault/email/bimaTelemetryFrames.txt     rtsalarm@mmarray.org true    60
+Sza.*Intmod.lockStatus10MHz                 fault/email/szaIntmod10MHz.txt          rtsalarm@mmarray.org true    60
+Astro.Antenna.*MaxCoherence                 fault/email/MaxCoherence.txt            obs@mmarray.org      false   1800
+Astro.Antenna.*MaxCoherence                 fault/email/MaxCoherence.txt            eml@astro.caltech.edu true   1800
+SlPipeline.CatchDataBandContainer.*CatchDataBand.duplicateRecordsCaught fault/email/dupRecords.txt rts@mmarray.org true 600 
+Control.RepTask1.reminderReady              fault/email/Sci1TiltReminder.txt        volgenau@mmarray.org false   1800
+Control.RepTask1.reminderReady              fault/email/Sci1TiltReminder.txt        obs@mmarray.org      true    1800
+Control.RepTask2.reminderReady              fault/email/Sci2TiltReminder.txt        volgenau@mmarray.org false   1800
+Control.RepTask2.reminderReady              fault/email/Sci2TiltReminder.txt        obs@mmarray.org      true    1800
+SystemStatus.*Generator.*currentTemperature fault/email/gentemp.txt                 corrtemp@mmarray.org true    180
+MasterClock.*                               fault/email/masterclock.txt             hardware@mmarray.org false   600
+MasterClock.*                               fault/email/masterclock.txt             rtsalarm@mmarray.org true    600
+
+# KEEP THIS AT THE BOTTOM: it is a generic catch-all message!
+.*                                          fault/email/generic.txt                 obs@mmarray.org      true    600

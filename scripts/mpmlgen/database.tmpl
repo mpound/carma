@@ -1,0 +1,202 @@
+#from MPMLUtils import empty, reference_accessorname, reference_instancename
+#attr INDENT_STR = '\t'
+#attr gindent = ''
+
+################################################################################
+## Indentation Helpers
+################################################################################
+
+#def increase_indent()
+#silent $setattr(self, 'gindent', $gindent + $INDENT_STR)
+#end def
+
+#def decrease_indent()
+#silent $setattr(self, 'gindent', $gindent[:-1])
+#end def
+
+################################################################################
+## Generic Functions
+################################################################################
+
+#def obj_element($obj, $element)
+#if not $empty($getattr($obj, $element))
+$gindent<$element>$getattr($obj, $element)</$element>
+#end if
+#end def
+
+#def obj_multielement($obj, $element)
+#for $val in $getattr($obj, $element)
+$gindent<$element>$val</$element>
+#end for
+#end def
+
+#def obj_attrs($obj, $attrs)
+#for $attr in $attrs
+#set attrval = $getattr($obj, $attr)
+#set render = True
+## fixup count attribute
+#if $attr == 'count' and $attrval <= 1
+#set render = False
+#end if
+## fixup indexName attribute
+#if $attr == 'indexName' and $attrval == 'index'
+#set render = False
+#end if
+## fixup priority attribute
+#if $attr == 'priority'
+#set attrval = $attrval.replace('MonitorComponent::', '').lower()
+#if $attrval == 'default'
+#set render = False
+#end if
+#end if
+## fixup author attribute
+#if $attr == 'author' and $attrval == 'not specified'
+#set render = False
+#end if
+## fixup sampling attribute
+#if $attr == 'sampling' and $attrval <= 1
+#set render = False
+#end if
+## fixup generic attributes
+#if $empty($attrval)
+#set render = False
+#end if
+## render the attribute if requested
+#if render is True
+ $attr="$attrval"#slurp
+#end if
+#end for
+#end def
+
+#def subobject_xml($obj)
+## monitorpoints
+#if $hasattr($obj, 'monitorpoints')
+#for $mp in $obj.monitorpoints
+$mp_xml($mp)#slurp
+#end for
+#end if
+## containers
+#if $hasattr($obj, 'containers')
+#for $c in $obj.containers
+$container_xml($c)#slurp
+#end for
+#end if
+## common monitorpoint refs
+#if $hasattr($obj, 'commonmonitorpoint_refs')
+#for $ref in $obj.commonmonitorpoint_refs
+$commonmp_xml($ref)#slurp
+#end for
+#end if
+## common container refs
+#if $hasattr($obj, 'commoncontainer_refs')
+#for $ref in $obj.commoncontainer_refs
+$commoncontainer_xml($ref)#slurp
+#end for
+#end if
+#end def
+
+################################################################################
+## MonitorPoint Template
+################################################################################
+
+#def mp_enums($mp)
+#for $enum in $mp.enums
+#if $empty($enum.description)
+$gindent<enum name="$enum.name" />
+#else
+$gindent<enum name="$enum.name">
+$increase_indent()#slurp
+$gindent<description>$enum.description</description>
+$decrease_indent()#slurp
+$gindent</enum>
+#end if
+#end for
+#end def
+
+#def mp_xml_helper($mp, $instancename, $count)
+#set attrs = ('type', 'priority', 'author', 'sampling', 'persistent', 'update', 'spectrum')
+
+$gindent<MonitorPoint#slurp
+ name="$instancename"#slurp
+#if $count > 1
+ count="$count"#slurp
+#end if
+$obj_attrs($mp, $attrs)>
+$increase_indent()#slurp
+$obj_element($mp, 'shortName')#slurp
+$obj_element($mp, 'longName')#slurp
+$obj_element($mp, 'description')#slurp
+$obj_element($mp, 'units')#slurp
+$obj_element($mp, 'width')#slurp
+$obj_element($mp, 'precision')#slurp
+$obj_element($mp, 'integrate')#slurp
+$mp_enums($mp)#slurp
+$obj_multielement($mp, 'errHi')#slurp
+$obj_multielement($mp, 'errLo')#slurp
+$obj_multielement($mp, 'warnHi')#slurp
+$obj_multielement($mp, 'warnLo')#slurp
+$decrease_indent()#slurp
+$gindent</MonitorPoint>
+#end def
+
+#def mp_xml($mp)
+$mp_xml_helper($mp, $mp.name, $mp.count)#slurp
+#end def
+
+#def commonmp_xml($ref)
+#set mp = $ref.real_reference_object
+#set instancename = $reference_instancename($ref)
+#set count = $ref.count
+$mp_xml_helper($mp, $instancename, $count)#slurp
+#end def
+
+################################################################################
+## Container Template
+################################################################################
+
+#def container_xml_helper($container, $instancename, $count)
+#set attrs = ('priority', 'persistent', 'indexName', 'extendFrom')
+
+$gindent<Container#slurp
+ name="$instancename"#slurp
+#if $count > 1
+ count="$count"#slurp
+#end if
+$obj_attrs($container, $attrs)>
+$increase_indent()#slurp
+$obj_element($container, 'shortName')#slurp
+$obj_element($container, 'longName')#slurp
+$obj_element($container, 'description')#slurp
+$subobject_xml($container)#slurp
+$decrease_indent()#slurp
+$gindent</Container>
+#end def
+
+#def container_xml($container)
+$container_xml_helper($container, $container.name, $container.count)#slurp
+#end def
+
+#def commoncontainer_xml($ref)
+#set container = $ref.real_reference_object
+#set instancename = $reference_instancename($ref)
+#set count = $ref.count
+$container_xml_helper($container, $instancename, $count)#slurp
+#end def
+
+################################################################################
+## Subsystem Template
+################################################################################
+
+#def subsystem_xml($subsystem)
+#set attrs = ('name', 'priority', 'author', 'count', 'persistent', 'indexName', 'extendFrom', 'maxpoints', 'maxsamples')
+<?xml version="1.0" encoding="UTF-8"?>
+<Subsystem$obj_attrs($subsystem, $attrs)>
+$increase_indent()#slurp
+$obj_element($subsystem, 'shortName')#slurp
+$obj_element($subsystem, 'longName')#slurp
+$obj_element($subsystem, 'description')#slurp
+$subobject_xml($subsystem)#slurp
+$decrease_indent()#slurp
+</Subsystem>
+#end def
+

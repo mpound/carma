@@ -1,0 +1,34 @@
+
+/**
+ * @file
+ * 
+ * Pad offset data structure definition.
+ * @see SubarrayControl::convertBaseline
+ * 
+ * @author Marc Pound
+ */
+#ifndef CARMA_CONTROL_PAD_OFFSET_IDL
+#define CARMA_CONTROL_PAD_OFFSET_IDL
+
+module carma {
+  module control {
+
+      /**
+       * Data returned by an SubarrayControl::convertBaseline method
+       */
+      struct PadOffsets {
+          /** East offset in millimeters */
+          double      east;
+          /** North offset in millimeters */
+          double      north;
+          /** Up offset in millimeters */
+          double      up;
+          /** Subarray antenna number */
+          short       antNo;
+          /** Pad number (sanity check) */
+          short       padNo;
+      }; 
+
+  }; // End module control
+}; // End module carma
+#endif

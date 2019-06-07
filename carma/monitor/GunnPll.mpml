@@ -1,0 +1,392 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Bias Tuned Gunn PLL monitor point definitions.  The 1MM and 3MM Gunn    -->
+<!-- modules share the same API and hence monitor points.                    -->
+<!-- Author: Andrew Beard                                                    -->
+<!-- $Id: GunnPll.mpml,v 1.18 2012/08/28 17:45:20 abeard Exp $                                                                  -->
+
+<Common scope="global" author="Andrew Beard">
+
+    <Container name="GunnPll" >
+        <description>
+        Gunn Oscillator Pll CAN module.
+        </description>
+
+        <MonitorPoint name="lockState" type="enum">
+            <shortName>Phase</shortName>
+            <longName>Phase Lock State</longName>
+            <description>Current state of the phase lock state machine</description>
+            <enum name="UNLOCKED" />    <!-- 0x00 -->
+            <enum name="WAIT_TUNER" >   <!-- 0x01 -->
+                <description>Not locked - waiting for tuner</description>
+            </enum>
+            <enum name="WAIT_BCKSHRT" > <!-- 0x02 -->
+                <description>Not locked - waiting for backshort</description>
+            </enum>
+            <enum name="WAIT_ATTEN" >   <!-- 0x03 -->
+                <description>Not locked - waiting for attenuator</description>
+            </enum>
+            <enum name="SEARCHING" />   <!-- 0x04 -->
+            <enum name="REDUCING" >     <!-- 0x05 -->
+                <description>Not locked - reducing error voltage</description>
+            </enum>
+            <enum name="ADJUSTING" >    <!-- 0x06 -->
+                <description>Not locked - adjusting loop gain</description>
+            </enum>
+            <enum name="LOCKED" />      <!-- 0x07 -->
+            <enum name="HOMING" >       <!-- 0x08 -->
+                <description>Homing tuning actuator</description>
+            </enum>
+            <enum name="RELOCKING" >   <!-- 0x09 -->
+                <description>
+                    Relocking (waits for a few seconds before attempting
+                    to relock in case loss of lock is due to change in 
+                    synthesizer frequency).
+                </description>
+            </enum>
+            <errHi>UNLOCKED</errHi>
+            <warnHi>WAIT_TUNER</warnHi>
+            <warnHi>WAIT_BCKSHRT</warnHi>
+            <warnHi>WAIT_ATTEN</warnHi>
+            <warnHi>SEARCHING</warnHi>
+            <warnHi>REDUCING</warnHi>
+            <warnHi>ADJUSTING</warnHi>
+            <warnHi>HOMING</warnHi>
+            <warnHi>RELOCKING</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="lockBit" type="enum">
+            <shortName>HW Lock</shortName>
+            <longName>Hardware Lock Bit</longName>
+            <description>
+                The hardware lock indication from the PLL module
+            </description>
+            <enum name="UNLOCKED" />  <!-- 0x00 -->
+            <enum name="LOCKED" />    <!-- 0x01 -->
+            <errHi>UNLOCKED</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="gunnFreq" type="float">
+            <shortName>Gunn Freq</shortName>
+            <longName>Gunn Frequency</longName>
+            <description>
+                Gunn operating frequency determined from the tuning actuator
+                setting.
+            </description>
+            <units>GHz</units>
+        </MonitorPoint>
+        
+        <MonitorPoint name="dataStat" type="enum">
+            <shortName>Data</shortName>
+            <longName>Data Valid</longName>
+            <description>
+                Whether module state could have corrupted visibility data in 
+                the last frame (0.5s).
+            </description>
+            <enum name="INVALID" /> <!-- 0x00 -->
+            <enum name="VALID" />   <!-- 0x01 -->
+            <errHi>INVALID</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="refStat" type="enum">
+            <shortName>Reference</shortName>
+            <longName>Reference Level Status</longName>
+            <description>
+                Monitors the 50MHz reference into the PLL module.
+            </description>
+            <enum name="LEVEL_LOW" />  <!-- 0x00 -->
+            <enum name="LEVEL_OK" />   <!-- 0x01 -->
+            <errHi>LEVEL_LOW</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="freqRange" type="enum" >
+            <shortName>Set Freq</shortName>
+            <longName>Frequency Status</longName>
+            <description>Applies to the last set frequency command</description>
+            <enum name="IN_RANGE" />
+            <enum name="TOO_LOW" />
+            <enum name="TOO_HIGH" />
+            <warnHi>TOO_LOW</warnHi>
+            <warnHi>TOO_HIGH</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="multiplier" type="int" >
+            <shortName>Multiplier</shortName>
+            <longName>Gunn to LO multiplier</longName>
+            <description>
+                Multiplier from Gunn frequency to LO frequency
+            </description>
+        </MonitorPoint>
+        <MonitorPoint name="gunnVoltage" type="float" >
+            <shortName>Set Voltage</shortName>
+            <longName>Set Voltage</longName>
+            <description>
+                Gunn operating voltage set point.
+            </description>
+            <units>V</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="gunnCurrent" type="int">
+            <shortName>Gunn Current</shortName>
+            <longName>Gunn Current</longName>
+            <description>Gunn current</description>
+            <units>mA</units>
+            <warnLo>30</warnLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="loopGain" type="float">
+            <shortName>Loop Gain</shortName>
+            <longName>Loop Gain</longName>
+            <description>Phase lock loop gain</description>
+            <units>%</units>
+            <precision>1</precision>
+        </MonitorPoint>
+
+        <MonitorPoint name="tunerPos" type="int">
+            <shortName>Tuner Pos</shortName>
+            <longName>Tuner Position</longName>
+            <description>Current Gunn tuner position</description>
+            <units>micro-steps</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="backshortPos" type="int">
+            <shortName>Backshort Pos</shortName>
+            <longName>Backshort Position</longName>
+            <description>Current Gunn backshort position</description>
+            <units>micro-steps</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="attenPos" type="int">
+            <shortName>Atten Pos</shortName>
+            <longName>Attenuator Position</longName>
+            <description>Current LO attenuator position</description>
+            <units>micro-steps</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="vError" type="short">
+            <shortName>V Error</shortName>
+            <longName>Voltage Error</longName>
+            <description>Error voltage</description>
+            <units>mV</units>
+            <warnLo>-600</warnLo>
+            <warnHi>600</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ifLevel" type="short">
+            <shortName>IF Level</shortName>
+            <longName>IF Level</longName>
+            <description>IF level voltage</description>
+            <units>mV</units>
+            <warnLo>700</warnLo>
+        </MonitorPoint>
+
+        <MonitorPoint name="noiseMeterV" type="int">
+            <shortName>Noise Meter V</shortName>
+            <longName>Noise Meter Voltage</longName>
+            <description>Noise meter voltage</description>
+            <units>mV</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="crowbarState" type="enum">
+            <shortName>Crowbar</shortName>
+            <longName>Crowbar State</longName>
+            <description>State of Gunn crowbar protection</description>
+            <enum name="NORMAL">
+                <description>Gunn operating properly</description>
+            </enum>
+            <enum name="CROWBARRED">
+                <description>The crowbar circuit is active</description>
+            </enum>
+            <enum name="RESETTING">
+                <description>
+                    Cycling Gunn bias to reset crowbar circuit
+                </description>
+            </enum>
+            <enum name="DISABLED">
+                <description>
+                    Maximum number of resets reached
+                </description>
+            </enum>
+            <errHi>CROWBARRED</errHi>
+            <errHi>RESETTING</errHi>
+            <errHi>DISABLED</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="crowbarCount" type="int" >
+            <shortName>Crowbar Count</shortName>
+            <longName>Crowbar Count</longName>
+            <description>
+                The number of times the crowbar circuit has been reset.
+            </description>
+            <warnHi>1</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="gunnStat" type="enum">
+            <shortName>Gunn</shortName>
+            <longName>Gunn Status</longName>
+            <description>Gunn on/off status</description>
+            <enum name="OFF" /> <!-- 0x00 -->
+            <enum name="ON" />  <!-- 0x01 -->
+            <warnHi>OFF</warnHi> <!-- Not always an error - just beware -->
+        </MonitorPoint>
+
+        <MonitorPoint name="sweepStat" type="enum">
+            <shortName>Sweep</shortName>
+            <longName>Sweep Status</longName>
+            <description>The status of the PLL sweep</description>
+            <enum name="OFF" />  <!-- 0x00 -->
+            <enum name="ON" />   <!-- 0x01 -->
+            <warnHi>OFF</warnHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ifMonStat" type="enum" >
+            <shortName>IF Mon</shortName>
+            <enum name="OFF" /> <!-- 0x00 -->
+            <enum name="ON" /> <!-- 0x01 -->
+        </MonitorPoint>
+
+        <MonitorPoint name="autoRelockStat" type="enum">
+            <shortName>Auto Relock</shortName>
+            <longName>Auto-Relock Status</longName>
+            <description>
+                Status of the hardware sweep.  This is on by default (when the
+                module is reset), but may be turned off or on manually.
+            </description>
+            <enum name="OFF" />     <!-- 0x00 -->
+            <enum name="ON" />      <!-- 0x01 -->
+        </MonitorPoint>
+
+        <MonitorPoint name="relockCount" type="byte">
+            <shortName>Relocks</shortName>
+            <longName>Relock Count</longName>
+            <description>
+                Number of times the Gunn has tried to relock.  If a new 
+                frequency command is sent the relock count is reset to zero.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="nZabers" type="byte" >
+            <shortName>Num Zabers</shortName>
+            <longName>Number of Zabers</longName>
+            <description>Count of Zaber actuators detected</description>
+        </MonitorPoint>
+
+        <MonitorPoint name="allZabers" type="bool" >
+            <shortName>All Zabers</shortName>
+            <longName>All Zabers Detected</longName>
+            <description>
+                Indicates if all expected Zabers have been detected.
+            </description>
+            <warnHi>false</warnHi>
+        </MonitorPoint>
+        
+        <MonitorPoint name="calTblState" type="enum">
+            <shortName>Cal Table</shortName>
+            <longName>Calibration Table Status</longName>
+            <description>Current status of the calibration table</description>
+            <enum name="VALID" />
+            <enum name="INVALID" />
+            <errHi>INVALID</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="gunnId" type="int" >
+            <shortName>Gunn ID</shortName>
+            <longName>Gunn Identifier</longName>
+            <description>
+                Unique identifier for bias-tuned gunn module.
+            </description>
+        </MonitorPoint>
+
+        <MonitorPoint name="calDate" type="string" >
+            <shortName>Cal Date</shortName>
+            <longName>Calibration Date</longName>
+            <description>
+                Month day and year module was calibrated.
+            </description>
+            <width>9</width>
+        </MonitorPoint>
+
+        <MonitorPoint name="temp" type="float">
+            <shortName>Temperature</shortName>
+            <longName>Module Temperature</longName>
+            <description>Module temperature</description>
+            <units>C</units>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps24v" type="float">
+            <shortName>+24V</shortName>
+            <longName>Power Supply 24 V</longName>
+            <description>24V PSU voltage</description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps5vDigital" type="float">
+            <shortName>+5V Digital</shortName>
+            <longName>Power Supply 5 V Digital</longName>
+            <description>5V digital PSU voltage</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps15vAnalog" type="float">
+            <shortName>+15V Analog</shortName>
+            <longName>Power Supply 15 V Analog</longName>
+            <description>15V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>14.5</warnLo>
+            <warnHi>15.5</warnHi>
+            <errLo>14.0</errLo>
+            <errHi>16.0</errHi>
+        </MonitorPoint>
+
+        <MonitorPoint name="ps12vAnalog" type="float">
+            <shortName>+12V Analog</shortName>
+            <longName>Power Supply 12 V Analog</longName>
+            <description>12V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>11.5</warnLo>
+            <warnHi>12.5</warnHi>
+            <errLo>11.0</errLo>
+            <errHi>13.0</errHi>
+        </MonitorPoint>
+        
+        <MonitorPoint name="ps5vAnalog" type="float">
+            <shortName>+5V Analog</shortName>
+            <longName>Power Supply 5 V Analog</longName>
+            <description>5V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+        
+        <MonitorPoint name="psNeg12vAnalog" type="float">
+            <shortName>-12V Analog</shortName>
+            <longName>Power Supply Negative 12 V Analog</longName>
+            <description>-12V analog PSU voltage</description>
+            <units>V</units>
+            <warnLo>-12.5</warnLo>
+            <warnHi>-11.5</warnHi>
+            <errLo>-13.0</errLo>
+            <errHi>-11.0</errHi>
+        </MonitorPoint>
+        
+        <MonitorPoint name="ps6vAnalog" type="float">
+            <shortName>+6V Analog</shortName>
+            <longName>Power Supply 6 V Analog</longName>
+            <description>6V analog PSU voltage</description>
+            <units>V</units>
+        </MonitorPoint>
+            
+    </Container>
+
+</Common>

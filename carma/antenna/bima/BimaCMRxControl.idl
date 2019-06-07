@@ -1,0 +1,35 @@
+/**
+ *
+ * IDL for bima Rx Control, inherits from antenna::common::RxControl
+ *
+ * @autor Douglas N Friedel
+ */
+#ifndef CARMA_ANTENNA_BIMA_CONTROL_BIMACMRXCONTROL_IDL
+#define CARMA_ANTENNA_BIMA_CONTROL_BIMACMRXCONTROL_IDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+module antenna {
+module bima {
+
+/**
+ * BIMA antenna-specific RxControl interface.
+ */
+
+  interface CMRxControl {
+
+    void setDrainVoltage( in short biasNo, in double voltage )
+      raises ( carma::util::UserException );
+
+    void setDrainCurrent( in short biasNo, in double current )
+      raises ( carma::util::UserException );
+
+    void setIFCurrent( in double current )
+      raises ( carma::util::UserException );
+  };
+};
+};
+};
+
+#endif

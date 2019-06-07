@@ -1,0 +1,5 @@
+The linelength system is reporting noisy data. Instructions on how to fix
+this problem are here:
+
+http://cedarflat.mmarray.org/wiki/Alarms#Linelength.PhaseRms
+

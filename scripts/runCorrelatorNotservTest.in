@@ -1,0 +1,125 @@
+#!/bin/sh
+
+
+if [ ! -d correlatorNotservTest ]; then
+    mkdir correlatorNotservTest
+fi
+
+function start {
+    if [ -z "$IMRHOST" ]; then
+	IMRHOST=`hostname`
+    fi
+    echo "IMR set to "$IMRHOST
+
+    top b >& correlatorNotservTest/top.log &
+    echo $! > correlatorNotservTest/pids
+    sleep 1
+
+    carma/correlator/obsRecord2/Test/notifyMultiPushConsumer channelName=Pipeline proxyName=pipelineConsumer imr=$IMRHOST nConsumers=16 >& correlatorNotservTest/consumer.log &
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=16 channelName=Pipeline0 proxyName=Pipeline0  imr=$IMRHOST  >& correlatorNotservTest/Pipeline0.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=1 channelName=Pipeline1 proxyName=Pipeline1  imr=$IMRHOST  >& correlatorNotservTest/Pipeline1.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=2 channelName=Pipeline2 proxyName=Pipeline2  imr=$IMRHOST  >& correlatorNotservTest/Pipeline2.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=3 channelName=Pipeline3 proxyName=Pipeline3  imr=$IMRHOST  >& correlatorNotservTest/Pipeline3.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=4 channelName=Pipeline4 proxyName=Pipeline4  imr=$IMRHOST  >& correlatorNotservTest/Pipeline4.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=5 channelName=Pipeline5 proxyName=Pipeline5  imr=$IMRHOST  >& correlatorNotservTest/Pipeline5.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=6 channelName=Pipeline6 proxyName=Pipeline6  imr=$IMRHOST  >& correlatorNotservTest/Pipeline6.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=7 channelName=Pipeline7 proxyName=Pipeline7  imr=$IMRHOST  >& correlatorNotservTest/Pipeline7.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=8 channelName=Pipeline8 proxyName=Pipeline8  imr=$IMRHOST  >& correlatorNotservTest/Pipeline8.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=9 channelName=Pipeline9 proxyName=Pipeline9  imr=$IMRHOST  >& correlatorNotservTest/Pipeline9.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=10 channelName=Pipeline10 proxyName=Pipeline10  imr=$IMRHOST  >& correlatorNotservTest/Pipeline10.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=11 channelName=Pipeline11 proxyName=Pipeline11  imr=$IMRHOST  >& correlatorNotservTest/Pipeline11.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=12 channelName=Pipeline12 proxyName=Pipeline12  imr=$IMRHOST  >& correlatorNotservTest/Pipeline12.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=13 channelName=Pipeline13 proxyName=Pipeline13  imr=$IMRHOST  >& correlatorNotservTest/Pipeline13.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=14 channelName=Pipeline14 proxyName=Pipeline14  imr=$IMRHOST  >& correlatorNotservTest/Pipeline14.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+    carma/correlator/obsRecord2/Test/notifyPipelineSupplier supplierId=15 channelName=Pipeline15 proxyName=Pipeline15  imr=$IMRHOST  >& correlatorNotservTest/Pipeline15.log&
+    echo $! >> correlatorNotservTest/pids
+    sleep 2s
+}
+
+
+function stop {
+    for pid in `cat correlatorNotservTest/pids`
+    do
+        echo $pid
+	kill -9 $pid
+    done
+}
+
+
+function callOptions {
+    case "$1" in
+	--imrhost)
+	    IMRHOST=$2
+	    ;;
+    esac
+}
+
+function callCommand {
+    case "$1" in
+	start)
+	    start
+	    ;;
+	stop)
+	    stop
+	    ;;
+	usage)
+	    echo ""
+	    echo "Usage: $0 [--imrhost imrhost] {start|stop}"
+	    ;;
+	*)
+	    return 0;
+	    ;;
+    esac
+}    
+
+# get list of arguments
+argList=($*)
+
+if [ $# == 0 ]; then
+  callCommand "usage"
+fi
+
+# run through arguments to check for options
+for (( i=$#-1; i+1; i=i-1 ));
+do
+    callOptions "${argList[$i]}" "${argList[$i+1]}"
+done
+
+# run through arguments for commands
+for (( i=$#; i+1; i=i-1 ));
+do
+    callCommand "${argList[$i]}"
+done

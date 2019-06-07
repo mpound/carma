@@ -1,0 +1,437 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE dag SYSTEM "alarm.dtd" [
+	<!ENTITY SCI1 "1">
+	<!ENTITY SCI2 "2">
+	<!ENTITY SLCBANDS "8">
+	<!-- 2012-02-13: wbcband16 offline indefinitely due to hardware failure -->
+	<!ENTITY WBCBANDS "15">
+	<!ENTITY SLCINPUTS "15">
+	<!ENTITY WBCINPUTS "8">
+]>
+
+<dag type="alarmoutput" alarm_after="10.0" sound="default">
+
+	<mp canon="Imr.numNotRunningCriticalServers" alarm_after="45.0" />
+
+	<!-- Alarm if the hardware state of the system does not match the requested astroband configuration -->
+	<mp canon="SignalPath.Mapping.hardwareConfValid" alarm_after="600.0" />
+
+	<!-- Critical overtemperature alarms -->
+	<mp canon="SystemStatus.Places.CorrelatorRoom.currentTemperature" alarm_after="60.0" />
+	<mp canon="SystemStatus.Places.ComputerRoomCF.RoomTemp.currentTemperature" alarm_after="60.0" />
+	<mp canon="SystemStatus.Places.GeneratorBldg1.currentTemperature" alarm_after="60.0" />
+	<mp canon="SystemStatus.Places.GeneratorBldg2.currentTemperature" alarm_after="60.0" />
+
+	<!-- Alarms specific to Subarray 1 (AKA Sci1) -->
+	<attrs_scope alarm_prefix="sci1">
+		<transient cond="alarmEnableSubarray" subarray="&SCI1;">
+			<mp canon="Control.Subarray1.alarm" />
+			<mp canon="Control.Subarray1.scriptState" />
+			<mp canon="Control.Subarray1.controllerInitialized" />
+			<mp canon="SlPipeline.IntegratorStageContainer.IntegratorStage.timeSinceLastIntegration" alarm_after="780.0" />
+			<mp canon="SlPipeline.IntegratorStageContainer.IntegratorStage.noData" alarm_after="30.0" />
+			<mp canon="SlPipeline.VisBrickStageContainer.VisBrickStage.fileError" alarm_after="30.0" />
+
+			<!-- 1mm weather alarm -->
+			<mp canon="Control.Subarray1.alarm1mm" />
+
+			<!-- CARMA Spectral Line Correlator -->
+			<range var="bandNoVar" first="1" last="&SLCBANDS;">
+
+				<!-- valid configuration for all bands -->
+				<mp canon="Control.SpectralLineCorrelator.SlcBand(bandNoVar).ControlBandPoints.configuration" alarm_after="240.0" />
+
+				<mp canon="SlPipeline.CatchDataBandContainer(bandNoVar).CatchDataBand.duplicateRecordsCaught"/>
+
+				<!-- check that the band is online first -->
+				<mp canon="CarmaSlcBand(bandNoVar).online" alarm_after="30.0">
+
+					<!-- failure of a command to the boards -->
+					<mp canon="CarmaSlcBand(bandNoVar).commandStatus" alarm_after="30.0" />
+
+					<!-- for each digitizer -->
+					<range var="digNoVar" first="1" last="8">
+						<mp canon="CarmaSlcBand(bandNoVar).Digitizer(digNoVar).received" alarm_after="30.0">
+							<mp canon="CarmaSlcBand(bandNoVar).Digitizer(digNoVar).Power.PowerFailureReason" alarm_after="30.0" />
+							<mp canon="CarmaSlcBand(bandNoVar).Digitizer(digNoVar).Temperature.TemperatureStatus" alarm_after="30.0" />
+						</mp>
+					</range>
+
+					<!-- for each correlator -->
+					<range var="corrNoVar" first="1" last="7">
+						<mp canon="CarmaSlcBand(bandNoVar).Correlator(corrNoVar).received" alarm_after="30.0">
+							<mp canon="CarmaSlcBand(bandNoVar).Correlator(corrNoVar).Power.PowerFailureReason"  alarm_after="30.0"/>
+							<mp canon="CarmaSlcBand(bandNoVar).Correlator(corrNoVar).Temperature.TemperatureStatus" alarm_after="30.0" />
+						</mp>
+					</range>
+				</mp>
+			</range>
+
+			<!-- CARMA Spectral Line Downconverter -->
+
+			<!-- check that the dcon machine is producing data -->
+			<mp canon="Sldc.online">
+
+				<!--
+					 Check each dcon band + input
+
+					 - the band + input must be connected to any antenna
+					 - the correlator band must be in the same subarray as the antenna
+				-->
+				<range var="bandNoVar" first="1" last="&SLCBANDS;">
+					<range var="inputNoVar" first="1" last="&SLCINPUTS;">
+						<varmap_scope var="antNo" canon="SignalPath.Mapping.SlcBand(bandNoVar).Input(inputNoVar).antennaNo">
+						<varmap_scope var="corrSubarrayNo" canon="SignalPath.Mapping.SlcBand(bandNoVar).subarrayNo">
+							<if canon="Control.Antenna(antNo).subarrayNumber" val="(corrSubarrayNo)">
+								<!-- ignore for a while to avoid transient effects due to tuning -->
+								<mp canon="Sldc.Band(bandNoVar).Input(inputNoVar).ifOutPower" alarm_after="300.0" />
+							</if>
+						</varmap_scope>
+						</varmap_scope>
+					</range>
+				</range>
+			</mp>
+
+			<!-- LoReference -->
+			<mp canon="LoRef.LoRefDistributionBox1.synthFreqErr" alarm_after="120.0" />
+		</transient>
+	</attrs_scope>
+
+	<!-- Alarms specific to Subarray 2 (AKA Sci2) -->
+	<attrs_scope alarm_prefix="sci2">
+		<transient cond="alarmEnableSubarray" subarray="&SCI2;">
+			<mp canon="Control.Subarray2.alarm" />
+			<mp canon="Control.Subarray2.scriptState" />
+			<mp canon="Control.Subarray2.controllerInitialized" />
+			<mp canon="WbPipeline.IntegratorStageContainer.IntegratorStage.timeSinceLastIntegration" alarm_after="780.0" />
+			<mp canon="WbPipeline.IntegratorStageContainer.IntegratorStage.noData" alarm_after="30.0" />
+			<mp canon="WbPipeline.VisBrickStageContainer.VisBrickStage.fileError" alarm_after="30.0" />
+
+			<!-- COBRA Wideband Correlator -->
+			<range var="bandNoVar" first="1" last="&WBCBANDS;">
+
+				<!-- valid configuration for all bands -->
+				<mp canon="Control.WidebandCorrelator.WbcBand(bandNoVar).ControlBandPoints.configuration" alarm_after="240.0" />
+
+				<!-- check that the band is online first -->
+				<mp canon="WbcBand(bandNoVar).online" alarm_after="30.0">
+
+					<!-- for each digitizer -->
+					<range var="digNoVar" first="1" last="4">
+						<attrs_scope canon_begin="WbcBand(bandNoVar).Digitizer(digNoVar)." alarm_after="30.0">
+							<mp canon_last="digATemperature" />
+							<mp canon_last="digBTemperature" />
+							<mp canon_last="fpga1Temperature" />
+							<mp canon_last="fpga3Temperature" />
+
+							<attrs_scope alarm_after="150.0">
+								<mp canon_last="DigA.vplus" />
+								<mp canon_last="DigA.vzero" />
+								<mp canon_last="DigA.vminus" />
+								<mp canon_last="DigB.vplus" />
+								<mp canon_last="DigB.vzero" />
+								<mp canon_last="DigB.vminus" />
+							</attrs_scope>
+						</attrs_scope>
+					</range>
+
+					<!-- for each correlator -->
+					<range var="corrNoVar" first="1" last="3">
+						<attrs_scope canon_begin="WbcBand(bandNoVar).Correlator(corrNoVar).">
+							<mp canon_last="fpga1Temperature" />
+							<mp canon_last="fpga7Temperature" />
+						</attrs_scope>
+					</range>
+				</mp>
+			</range>
+
+			<!-- COBRA Wideband Downconverter -->
+
+			<!-- check that the dcon machine is producing data -->
+			<mp canon="Wbdc.online">
+
+				<!--
+					 Check each dcon band + input
+
+					 - the band + input must be connected to any antenna
+					 - the correlator band must be in the same subarray as the antenna
+				-->
+				<range var="bandNoVar" first="1" last="8;">
+					<range var="inputNoVar" first="1" last="&WBCINPUTS;">
+						<varmap_scope var="antNo" canon="SignalPath.Mapping.WbcBand(bandNoVar).Input(inputNoVar).antennaNo">
+						<varmap_scope var="corrSubarrayNo" canon="SignalPath.Mapping.WbcBand(bandNoVar).subarrayNo">
+							<if canon="Control.Antenna(antNo).subarrayNumber" val="(corrSubarrayNo)">
+								<!-- ignore for a while to avoid transient effects due to tuning -->
+									<mp canon="Wbdc.Band(bandNoVar).Input(inputNoVar).ifOutPower" alarm_after="300.0" />
+							</if>
+						</varmap_scope>
+						</varmap_scope>
+					</range>
+				</range>
+				<range var="bandNoVar" first="10" last="&WBCBANDS;">
+					<range var="inputNoVar" first="1" last="&WBCINPUTS;">
+						<varmap_scope var="antNo" canon="SignalPath.Mapping.WbcBand(bandNoVar).Input(inputNoVar).antennaNo">
+						<varmap_scope var="corrSubarrayNo" canon="SignalPath.Mapping.WbcBand(bandNoVar).subarrayNo">
+							<if canon="Control.Antenna(antNo).subarrayNumber" val="(corrSubarrayNo)">
+								<!-- ignore for a while to avoid transient effects due to tuning -->
+									<mp canon="Wbdc.Band(bandNoVar).Input(inputNoVar).ifOutPower" alarm_after="300.0" />
+							</if>
+						</varmap_scope>
+						</varmap_scope>
+					</range>
+				</range>
+								<!-- Silence band9 for this node-->
+				<range var="inputNoVar" first="1" last="&WBCINPUTS;">
+					<varmap_scope var="antNo" canon="SignalPath.Mapping.WbcBand9.Input(inputNoVar).antennaNo">
+					<varmap_scope var="corrSubarrayNo" canon="SignalPath.Mapping.WbcBand9.subarrayNo">
+						<if canon="Control.Antenna(antNo).subarrayNumber" val="(corrSubarrayNo)">
+							<!-- ignore for a while to avoid transient effects due to tuning -->
+								<mp canon="Wbdc.Band9.Input(inputNoVar).ifOutPower" silent="true" />
+						</if>
+					</varmap_scope>
+					</varmap_scope>
+				</range>
+			</mp>
+
+
+			<!-- LoReference -->
+			<mp canon="LoRef.LoRefDistributionBox2.synthFreqErr" alarm_after="120.0" />
+		</transient>
+	</attrs_scope>
+
+	<!-- Alarms specific to Subarray 3 (AKA Eng1) -->
+	<transient cond="alarmEnableSubarray" subarray="3">
+		<mp canon="Control.Subarray3.alarm" />
+	</transient>
+
+	<!-- Alarms specific to Subarray 4 (AKA Eng2) -->
+	<transient cond="alarmEnableSubarray" subarray="4">
+		<mp canon="Control.Subarray4.alarm" />
+	</transient>
+
+	<!-- weather station -->
+	<mp canon="Weather.online" alarm_after="100.0">
+		<mp canon="Weather.averageWindSpeed" alarm_after="100.0" />
+	</mp>
+
+	<mp canon="MasterClock.Clock.ntpPpsOffset" />
+	<mp canon="MasterClock.Clock.prs10ErrorCode" />
+	<mp canon="Dataflow.MonitorDataDeleter.LastRun.peak" />
+	<mp canon="Dataflow.AstroheaderWriter.SpectralLineCorrelator.Processing.lagTime" />
+	<mp canon="Dataflow.AstroheaderWriter.WidebandCorrelator.Processing.lagTime" />
+
+	<!-- LineLength Subsystem -->
+	<mp canon="LineLength.online" alarm_after="60.0">
+
+		<!-- all antennas -->
+		<range var="carmaAntNo" first="1" last="23">
+			<if canon="Control.Antenna(carmaAntNo).subarrayNumber" val="[12]">
+				<mp canon="LineLength.initialized(carmaAntNo)" alarm_after="60.0" />
+			</if>
+			<mp canon="Control.Antenna(carmaAntNo).ifAttenAmb1" silent="true" alarm_after="60.0" />
+		</range>
+	</mp>
+
+	<!-- each ovro antenna C2-C6-->
+	<range var="ovroAntNo" first="2" last="6">
+		<if canon="Control.Antenna(ovroAntNo).subarrayNumber" val="[12]">
+			<attrs_scope canon_begin="Ovro(ovroAntNo).">
+				<mp canon_last="online">
+					<mp canon_last="AntennaCommon.initialized" />
+					<mp canon="Astro.Antenna(ovroAntNo).MaxCoherence" alarm_after="300.0"/>
+					<mp canon_last="Cryo.Compressor.state" alarm_after="60.0">
+						<mp canon_last="Cryo.Compressor.fridgeDriveState">
+							<mp canon_last="Cryo.Dewar.state" alarm_after="60.0">
+								<mp canon_last="Cryo.Dewar.plate4kTemp" />
+							</mp>
+						</mp>
+					</mp>
+
+					<mp canon_last="Drive.System.azOverlapSwitchFail" />
+					<mp canon_last="Drive.System.impossibleRate" />
+					<mp canon_last="Drive.System.forbiddenAz" />
+
+					<mp canon_last="Drive.DriveModule.ps24vTeepee">
+						<mp canon_last="Drive.DriveModule.state" alarm_after="60.0" />
+						<mp canon_last="Drive.DriveModule.westAzOverTemp" />
+						<mp canon_last="Drive.DriveModule.eastAzOverTemp" />
+						<mp canon_last="Drive.DriveModule.elOverTemp" />
+					</mp>
+
+					<mp canon_last="Secondary.state" alarm_after="60.0">
+						<mp canon_last="Secondary.xLimitPlus" />
+						<mp canon_last="Secondary.xLimitMinus" />
+						<mp canon_last="Secondary.yLimitPlus" />
+						<mp canon_last="Secondary.yLimitMinus" />
+						<mp canon_last="Secondary.zLimitPlus" />
+						<mp canon_last="Secondary.zLimitMinus" />
+					</mp>
+
+					<mp canon_last="EnvironmentalMonitor.state" alarm_after="60.0">
+						<mp canon_last="EnvironmentalMonitor.sidecabTemp" alarm_after="60.0" />
+						<mp canon_last="EnvironmentalMonitor.sidecabDoorOpen" alarm_after="600.0" />
+						<mp canon_last="EnvironmentalMonitor.teepeeDoorOpen" alarm_after="600.0" />
+					</mp>
+
+					<mp canon_last="LoReferenceContainer.state" alarm_after="60.0">
+						<mp canon_last="LoReferenceContainer.LoReference.lockStatus10Mhz" />
+						<mp canon_last="LoReferenceContainer.LoReference.photoStatus10Mhz" />
+					</mp>
+
+					<mp canon_last="Drive.AzEncoder.state" alarm_after="60.0" />
+					<mp canon_last="Drive.ElEncoder.state" alarm_after="60.0" />
+					<mp canon_last="Tiltmeter.state" alarm_after="60.0" />
+					<mp canon_last="Optics.state" alarm_after="60.0" />
+					<mp canon_last="Yig.state" alarm_after="60.0" />
+					<mp canon_last="AntennaIfContainer1.state" alarm_after="60.0" />
+					<mp canon_last="AntennaIfContainer2.state" alarm_after="60.0" />
+					<mp canon_last="RxThermalControl.state" alarm_after="60.0" />
+					<mp canon_last="Gunn1mm.state" alarm_after="60.0" />
+					<mp canon_last="Gunn3mm.state" alarm_after="60.0" />
+					<mp canon_last="Gunn1cm.state" alarm_after="60.0" />
+					<mp canon_last="Rx1mm1.state" alarm_after="60.0" />
+					<mp canon_last="Rx1mm2.state" alarm_after="60.0" />
+					<mp canon_last="Rx3mm.state" alarm_after="60.0" />
+					<mp canon_last="RxBias.state" alarm_after="60.0" />
+				</mp>
+			</attrs_scope>
+		</if>
+	</range>
+
+	<!-- ovro antenna 1 (remove alarms due to new MMIC receiver) -->
+	<range var="ovroAntNo" first="1" last="1">
+		<if canon="Control.Antenna(ovroAntNo).subarrayNumber" val="[12]">
+			<attrs_scope canon_begin="Ovro(ovroAntNo).">
+				<mp canon_last="online">
+					<mp canon_last="AntennaCommon.initialized" />
+					<mp canon="Astro.Antenna(ovroAntNo).MaxCoherence" alarm_after="300.0"/>
+					<mp canon_last="Cryo.Compressor.state" alarm_after="60.0">
+						<mp canon_last="Cryo.Compressor.fridgeDriveState">
+							<mp canon_last="Cryo.Dewar.state" alarm_after="60.0">
+								<mp canon_last="Cryo.Dewar.plate4kTemp" />
+							</mp>
+						</mp>
+					</mp>
+
+					<mp canon_last="Drive.System.azOverlapSwitchFail" />
+					<mp canon_last="Drive.System.impossibleRate" />
+					<mp canon_last="Drive.System.forbiddenAz" />
+
+					<mp canon_last="Drive.DriveModule.ps24vTeepee">
+						<mp canon_last="Drive.DriveModule.state" alarm_after="60.0" />
+						<mp canon_last="Drive.DriveModule.westAzOverTemp" />
+						<mp canon_last="Drive.DriveModule.eastAzOverTemp" />
+						<mp canon_last="Drive.DriveModule.elOverTemp" />
+					</mp>
+
+					<mp canon_last="Secondary.state" alarm_after="60.0">
+						<mp canon_last="Secondary.xLimitPlus" />
+						<mp canon_last="Secondary.xLimitMinus" />
+						<mp canon_last="Secondary.yLimitPlus" />
+						<mp canon_last="Secondary.yLimitMinus" />
+						<mp canon_last="Secondary.zLimitPlus" />
+						<mp canon_last="Secondary.zLimitMinus" />
+					</mp>
+
+					<mp canon_last="EnvironmentalMonitor.state" alarm_after="60.0">
+						<mp canon_last="EnvironmentalMonitor.sidecabTemp" alarm_after="60.0" />
+						<mp canon_last="EnvironmentalMonitor.sidecabDoorOpen" alarm_after="600.0" />
+						<mp canon_last="EnvironmentalMonitor.teepeeDoorOpen" alarm_after="600.0" />
+					</mp>
+
+					<mp canon_last="LoReferenceContainer.state" alarm_after="60.0">
+						<mp canon_last="LoReferenceContainer.LoReference.lockStatus10Mhz" />
+						<mp canon_last="LoReferenceContainer.LoReference.photoStatus10Mhz" />
+					</mp>
+
+					<mp canon_last="Drive.AzEncoder.state" alarm_after="60.0" />
+					<mp canon_last="Drive.ElEncoder.state" alarm_after="60.0" />
+					<mp canon_last="Tiltmeter.state" alarm_after="60.0" />
+					<mp canon_last="Optics.state" alarm_after="60.0" />
+					<mp canon_last="Yig.state" alarm_after="60.0" />
+					<mp canon_last="AntennaIfContainer1.state" alarm_after="60.0" />
+					<mp canon_last="AntennaIfContainer2.state" alarm_after="60.0" />
+					<mp canon_last="RxThermalControl.state" alarm_after="60.0" />
+					<mp canon_last="Gunn3mm.state" alarm_after="60.0" />
+					<mp canon_last="Gunn1cm.state" alarm_after="60.0" />
+					<mp canon_last="Rx1mm1.state" alarm_after="60.0" />
+					<mp canon_last="Rx1mm2.state" alarm_after="60.0" />
+					<mp canon_last="RxBias.state" alarm_after="60.0" />
+				</mp>
+			</attrs_scope>
+		</if>
+	</range>
+	<!-- each bima antenna -->
+	<range var="bimaAntNo" first="1" last="9">
+		<if canon="Control.Antenna(add:bimaAntNo,6).subarrayNumber" val="[12]">
+			<mp canon="Bima(bimaAntNo).online">
+				<mp canon="Astro.Antenna(add:bimaAntNo,6).MaxCoherence" alarm_after="300.0"  />
+				<mp canon="Bima(bimaAntNo).AntennaCommon.initialized" />
+				<mp canon="Bima(bimaAntNo).BimaSpecific.Dewar.psupply" />
+				<mp canon="Bima(bimaAntNo).BimaSpecific.Dewar.stage3" />
+				<mp canon="Bima(bimaAntNo).BimaSpecific.StatusBits.collision" />
+				<mp canon="Bima(bimaAntNo).BimaSpecific.Telemetry.frames" />
+				<mp canon="Bima(bimaAntNo).AntennaCommon.Calibrator.calState" alarm_after="600.0" />
+				<mp canon="Bima(bimaAntNo).AntennaCommon.Secondary.focusState" alarm_after="40.0" />
+
+				<mp canon="Bima(bimaAntNo).AntennaIfContainer1.state" alarm_after="60.0" />
+				<mp canon="Bima(bimaAntNo).AntennaIfContainer2.state" alarm_after="60.0" />
+				<mp canon="Bima(bimaAntNo).Rx.state" alarm_after="60.0" />
+				<mp canon="Bima(bimaAntNo).Rx1mm.state" alarm_after="60.0" />
+				<mp canon="Bima(bimaAntNo).Gunn1cm.state" alarm_after="60.0" />
+			</mp>
+		</if>
+	</range>
+
+	<!-- each sza antenna -->
+	<range var="szaAntNo" first="1" last="8">
+		<if canon="Control.Antenna(add:szaAntNo,15).subarrayNumber" val="[12]">
+			<mp canon="Sza(szaAntNo).online">
+				<mp canon="Sza(szaAntNo).AntennaCommon.initialized" />
+				<mp canon="Astro.Antenna(add:szaAntNo,15).MaxCoherence" alarm_after="300.0" />
+				<mp canon="Sza(szaAntNo).Caltert.received"   alarm_after="60.0">
+					<mp canon="Sza(szaAntNo).Caltert.tertPosError"     alarm_after="600.0" />
+					<mp canon="Sza(szaAntNo).Caltert.tertState"        alarm_after="600.0" />
+					<mp canon="Sza(szaAntNo).Caltert.calFault"         alarm_after="600.0" />
+					<mp canon="Sza(szaAntNo).Caltert.calibState"       alarm_after="600.0" />
+				</mp>
+				<mp canon="Sza(szaAntNo).Intmod.received"      alarm_after="60.0">
+					<mp canon="Sza(szaAntNo).Intmod.lockStatus10MHz"   alarm_after="600.0" />
+				</mp>
+					
+<!--
+				<mp canon="Sza(szaAntNo).Intmod.loTermPowerState"  alarm_after="600.0" />
+				<mp canon="Sza(szaAntNo).Intmod.photoStatus10MHz"  alarm_after="600.0" />
+				<mp canon="Sza(szaAntNo).Intmod.photoStatus50MHz"  alarm_after="600.0" />
+				<mp canon="Sza(szaAntNo).Yig.lockState"            alarm_after="600.0" />
+-->
+				<mp canon="Sza(szaAntNo).Thermal.received"                  alarm_after="60.0">
+					<mp canon="Sza(szaAntNo).Thermal.eboxTemperature"       alarm_after="600.0" />
+				</mp>
+				<mp canon="Sza(szaAntNo).Varactor.received"                 alarm_after="60.0">
+					<mp canon="Sza(szaAntNo).Varactor.lockStatusError"      alarm_after="600.0" />
+				</mp>
+				<mp canon="Sza(szaAntNo).Bias.received"                     alarm_after="60.0">
+					<mp canon="Sza(szaAntNo).Bias.lockStatusError"          alarm_after="600.0" />
+				</mp>
+				<mp canon="Sza(szaAntNo).AntennaCommon.Receivers.dewarTemp" alarm_after="600.0" />
+				<mp canon="Sza(szaAntNo).AntennaCommon.Receivers.rxState"   alarm_after="600.0" />
+				
+				<mp canon="Sza(szaAntNo).Ifmod.received"       alarm_after="60.0" />
+				<mp canon="Sza(szaAntNo).Yig.received"         alarm_after="60.0" />
+				<mp canon="Sza(szaAntNo).Rx.received"          alarm_after="60.0" />
+				<mp canon="Sza(szaAntNo).Tiltmeter.received"   alarm_after="60.0" />
+			</mp>
+		</if>
+	</range>
+
+    <!-- notify by email when the IERS time table is out of date -->
+	<mp canon="Control.iersAge" alarm_after="600.0" silent="true" />
+    <!-- notify by email when filler encounters an error -->
+    <mp canon="Dataflow.SdpFiller.errorState" silent="true" />
+    <!-- notify by email when the repetitive tasks need attention -->
+    <mp canon="Control.RepTask1.reminderReady" silent="true" />
+    <mp canon="Control.RepTask2.reminderReady" silent="true" />
+
+</dag>
+<!-- vim: set ts=4 sts=4 sw=4 noet: -->

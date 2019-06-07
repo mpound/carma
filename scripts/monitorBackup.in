@@ -1,0 +1,226 @@
+#!/bin/sh
+# Backup mysql configuration tables using mysqldump.
+#
+# The datadir variable from the mysql config file is used to find where
+# the database is stored. Then an ls is done on the carma database and non
+# config files are removed from the list. The remaining files are saved
+# using mysqldump.
+#
+# Notes:
+#
+# Needs to be run as the owner of the mysql files since it does an ls of a
+# protected directory.
+#
+# This script can't currently be used to save the mysql database itself
+# since it will require using the mysql root user and probably a password.
+#
+# The carma.Partitions table is saved separately.
+####
+
+################################################################
+#	 Notes on recreating "static" mysql tables from a backup.
+#				1/07
+
+# This assumes the core mysql database exists (mysql_data/data/* and
+# mysql_data/data/mysql). If not, recreate the database.
+
+# 1) Remove all files under monitor_tables. There may be too many for an
+# 'rm *' so it might be easier to rename the directory, create a new one
+# and do an "rm -r" later.
+
+# 2) Remove the symlinks from mysql_data/data/carma... This backup script
+# makes the assumption that no configuration tables have an "_" in their
+# names and that all data tables do have one. So, an "rm *_*" would work if
+# there weren't too many files. A find may be necessary. There will also be
+# a ".frm" file for each link that will need to be removed.
+
+# Run mysql with the correct config file, user mdl and use the carma
+# database. Then read in the backup, truncate the table index and fix the
+# partitions table (if moving to a different disk).
+
+#<path>/mysql --defaults-file=<file> -u mdl
+#use carma
+#\. <backupname.sql>
+
+#TRUNCATE MonitorDataTableIndex;
+
+#select * from Partitions;
+#UPDATE Partitions set minFreeSpace=118000;
+#UPDATE Partitions set partition="/scr1/spica/carma/dbms/monitor_tables";
+#\q
+
+####
+# Notes:
+#	This script make a separate Partitions table dump so that the
+#	above may not be necessary if the correct values already exist.
+
+#	The above values are examples. Also the value for minFreeSpace
+#	is the number of megabytes to keep free.
+
+# The file, carma/db.opt should exist in the carma database directory. If
+# not, copy it from where the backup came from. It's a two line ASCII file
+# apparently giving the collation:
+#
+#	default-character-set=latin1
+#	default-collation=latin1_swedish_ci
+####
+################################################################
+
+
+# Where mysqldump is.
+TOOLS=@carma_tools@
+DUMP=${TOOLS}/bin/mysqldump
+
+# How to find the config file.
+CARMA=@abs_top_builddir@
+conffile=${CARMA}/conf/dbms/mysql.conf
+
+# database to backup and a user that can access it.
+user="mdl"
+db=carma
+
+GZIP=/bin/gzip
+readonly TODAY=`date +"%g%m%d"`
+
+# Where output goes.
+ODIR=/home/carmadba/dbmsBackups
+
+usage(){
+    echo "$0 [odir=dir] [conffile=<config file>]"
+}
+
+# db		- allows dumping a database other than carma.
+# conffile	- is the name of the mysql config file.
+# odir		- allows overriding in which directory the output file goes.
+
+for x in $*; do
+  case $x in
+      conffile=*) conffile=`echo $x | grep conffile | awk -F = '{print $2}'`
+      ;;
+      db=*) db=`echo $x | grep db | awk -F = '{print $2}'`
+      ;;
+      odir=*)
+            ODIR=`echo $x | grep odir | awk -F = '{print $2}'`
+      ;;
+       -h*) usage ; exit 0
+      ;;
+      --help) usage ; exit 0
+      ;;
+      *) echo "Unknown command line parameter $x";  usage; exit 1
+  esac
+  shift
+done
+
+# Where to save to this week.
+OFILENAME=$db.dbmsbackup.$TODAY.sql.gz
+PFILENAME=$db.dbmsbackup.Partitions.$TODAY.sql.gz
+OFILE=$ODIR/${OFILENAME}
+OPFILE=$ODIR/${PFILENAME}
+
+# Make sure config file is there.
+if [ ! -f $conffile ]; then
+	echo "Could not find $conffile"
+	exit 1
+fi
+
+# Pick up the datadir variable.
+datadir=
+grep datadir $conffile > /tmp/bu.$$
+source /tmp/bu.$$
+rm /tmp/bu.$$
+
+################################################################
+#			Do some checking
+
+if [ "${datadir}" = "" ]; then
+    echo "datadir variable was not found in ${conffile}."
+    exit 1
+fi
+
+if [ ! -d "${datadir}" ]; then
+    echo "datadir (${datadir}) is not a directory."
+    exit 1
+fi
+
+if [ ! -d "${datadir}/mysql" ]; then
+    echo "${datadir}/mysql doesn't exist or is not a directory."
+    exit 1
+fi
+
+# The directory containing the database tables to be saved.
+dbdir=$datadir/$db
+
+if [ ! -d "${dbdir}" ]; then
+    echo "${dbdir} doesn't exist or is not a directory."
+    exit 1
+fi
+
+optfile=${dbdir}/db.opt
+
+if [ "${db}" != "mysql" -a ! -r "${optfile}" ]; then
+    echo "${optfile} doesn't exist or is not readable."
+    echo " ($USER may not have permission to read the database directory.)"
+    exit 1
+fi
+
+## Where to put output.
+if [ ! -d $ODIR ]; then
+    mkdir -p $ODIR
+fi
+
+if [ ! -d $ODIR ]; then
+    echo "Could not create output directory: $ODIR."
+    exit 1
+fi
+
+# ================================================================
+
+# Get a list of all the tables. Remove the ones we're not interested
+# in (eg. anything with a <number>_<number> in its name).
+# Since tables have names ending in different suffixes (eg. .MYI, .MYD
+# and .frm), those need to be removed and like names coalesced into one.
+# The file opt.db is a text file.
+# MonitorDataTableIndex is the list of pointers the monitor_data tables
+# Anything starting with "Log" isn't needed to reinitialize the db.
+# and would need to be truncated if it were saved.
+# This could be used
+# grep -v "[0-9]_[0-9]"
+#
+# (Remove LogMessages?)
+if [ "$db" != "mysql" ]; then
+    tables=`ls $dbdir | grep -v "_" | grep -v db.opt | \
+	grep -v MonitorDataTableIndex | \
+	grep -v "^Log" | \
+	grep -v Partitions | \
+	sed -e "s/[.].*$//" - | sort -u`
+    echo "Saving: $tables"
+else
+    tables=
+fi
+
+# This could be used too.
+#tables=`ls $dbdir | grep -v "_" | sed -e "s/[.]frm*$//" \
+#	-e "s/[.]MYD*$//" sed -e "s/[.]MYI*$//" \
+#	- | sort -u`
+
+
+#exit
+
+LD_LIBRARY_PATH=${TOOLS}/lib
+export LD_LIBRARY_PATH
+
+$DUMP --defaults-file=$conffile --user=$user $db $tables | \
+    $GZIP > $OFILE
+
+if [ "$db" == "carma" ]; then
+  if [ -f $OPFILE ]; then
+      mv $OPFILE $OPFILE.old
+  fi
+  $DUMP --defaults-file=$conffile --user=$user $db Partitions | \
+	$GZIP > $OPFILE
+fi
+
+# This may or may not be there.
+if [ -f $dbdir/db.opt ]; then
+    cp -p $dbdir/db.opt $ODIR/${db}.db.opt
+fi

@@ -1,0 +1,5 @@
+The wideband correlator digitizers are not receiving enough IF output power
+from the downconverters. This can happen when a receiver is not tuned.
+
+See this page for help on resolving the problem:
+http://cedarflat.mmarray.org/wiki/Alarms#Wbdc.BandX.InputN.ifOutPower

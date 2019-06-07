@@ -1,0 +1,74 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+
+<!-- <!DOCTYPE Carma:xml-config> -->
+
+<Carma:xml-config xmlns:Carma = "http://www.mmarray.org"> 
+
+  
+	<!-- Specific Configuration Information for PDBI -->
+	  
+	<Carma:pdbi>    
+		<!-- List of machines which serve as NameServices where
+         CORBA objects are registered -->
+		    
+		<Carma:nameServers>      
+			<Carma:nameServer>        
+				<Carma:identifier>acc3.carma.pvt</Carma:identifier>      
+			</Carma:nameServer>
+		</Carma:nameServers>    
+
+		<Carma:nameServerPorts>      
+			<Carma:nameServerPort>        
+				<Carma:pidentifier>20000</Carma:pidentifier>      
+			</Carma:nameServerPort>    
+			<Carma:nameServerPort>        
+				<Carma:pidentifier>4000</Carma:pidentifier>      
+			</Carma:nameServerPort>    
+		</Carma:nameServerPorts>
+		<!-- Initial Look And Feel for the Application -->
+		    
+		<!--<Carma:LookAndFeel>com.sun.java.swing.plaf.motif.MotifLookAndFeel </Carma:LookAndFeel>    -->
+		<!-- Initial cache size for ObsRecord quantities -->
+		<Carma:CacheSize>64</Carma:CacheSize>    
+		<!-- Initial NameComponent to start -->
+		<Carma:NameComponent start = "1">      
+			<Carma:item id = "carma" kind = ""/>      
+		</Carma:NameComponent>    
+		<!-- Additional Properties for ORB -->
+		    
+		<Carma:properties>      
+			<Carma:prop key = "org.omg.CORBA.ORBClass" value = "org.jacorb.orb.ORB" />
+			<Carma:prop key = "org.omg.CORBA.ORBSingletonClass" value = "org.jacorb.orb.ORBSingleton" />
+			<Carma:prop key = "ORBInitRef.NameService" value = "corbaloc::imrnamsrv.carma.pvt:20000/NameService" />
+			<Carma:prop key = "jacorb.log.default.verbosity" value = "2" />
+			<Carma:prop key = "jacorb.implname" value = "pdbi" />
+			<Carma:prop key = "jacorb.use_imr" value = "on" />
+			<Carma:prop key = "jacorb.use_imr_endpoint" value = "on" />
+			<Carma:prop key = "jacorb.interop.lax_boolean_encoding" value = "on" />
+			<Carma:prop key = "jacorb.orb_initializer.fail_on_error" value = "on" />
+		</Carma:properties>
+		<Carma:scriptDirectorySci1>/misc/array/rt/scripts/currSci1</Carma:scriptDirectorySci1>
+                <Carma:scriptDirectorySci2>/misc/array/rt/scripts/currSci2</Carma:scriptDirectorySci2>
+                <Carma:scriptDirectoryFT>/misc/array/rt/scripts/fastTrack</Carma:scriptDirectoryFT>
+		<Carma:webDirectory>/misc/array/rt/statistics/summary.txt</Carma:webDirectory>
+		    
+	</Carma:pdbi>  
+	<!-- Specific Configuration Information for Event Servers -->
+	  
+	<Carma:server>    
+		<!-- List of machines which serve as EventServers where
+         CORBA Event Channels are running -->
+		    
+		<Carma:eventServers>      
+			<Carma:eventServer>        
+				<!--<Carma:identifier>inyo.ovro.caltech.edu</Carma:identifier>      -->
+				<Carma:identifier>inyo.ovro.caltech.edu</Carma:identifier>
+			</Carma:eventServer>    
+		</Carma:eventServers>    
+		<Carma:eventServerPorts>      
+			<Carma:eventServerPort>        
+				<Carma:pidentifier>4001</Carma:pidentifier>      
+			</Carma:eventServerPort>    
+		</Carma:eventServerPorts>    
+	</Carma:server>
+</Carma:xml-config>

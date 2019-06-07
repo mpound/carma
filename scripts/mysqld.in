@@ -1,0 +1,260 @@
+#!/bin/sh
+#
+# mysqld	This shell script takes care of starting and stopping
+#		the MySQL subsystem (mysqld).
+#
+# Author: Dave Mehringer
+# adopted from /etc/init.d/mysqld
+# In case this is put into init.d
+# chkconfig: 2345 64 36
+# description: start/stop CARMA's mysql server
+#
+#
+
+#  mysqld is meant to be able to be run as any user or as root. If running
+# as a normal user, it just starts the mysql daemon as the user and
+# exits.
+#  If running as root, it tries to run as a specific user. It also has to
+# deal with the possibility that it's being run during boot/shutdown. In
+# particular, it adds & removes /var/lock/subsys/mysqld. This file is
+# unused except by the system startup/shutdown scripts.
+#  When stopping the server while running as root, the script looks for
+# the file /etc/sysconfig/mysql. If it exists and contains a password,
+# that password is passed to the server.
+#
+
+# Name of user to run as when started by root.
+DBA=carmadba
+# Name of config file.
+CONFFILE=mysql.conf
+
+
+usage() {
+    echo "Usage: $0 start|stop|restart|status [-p[=pw]] [options file]"
+    echo "-p  pass the -p (password) flag to mysqladmin when stopping (which"
+    echo "    is included in restarting) the server, ignored by start and status."
+    echo "    If run as root, the server will be started as user $DBA and"
+    echo "    the default password will be used. (-p[=pw] overrides)."
+    echo "    "
+    echo "options file  the mysql conf file to use, if not specified, defaults"
+    echo "    to $INPUT_PATH/../conf/dbms/$CONFFILE"
+}
+
+INPUT_PATH=`/usr/bin/dirname "$0"`
+
+# Source function library.
+[ -f /etc/rc.d/init.d/functions ] && . /etc/rc.d/init.d/functions
+
+prog="mysqld"
+
+MYSQL_BIN=@carma_tools@/bin
+MYSQL_LIB=@carma_tools@/lib
+MYPREFIX=@prefix@
+
+# See if script is running as root.
+if [ `id -u` = 0 ]; then
+ isRoot=1
+else
+ isRoot=0
+fi
+
+OPTIONS_FILE=
+# Places to look for the options file.
+# This should work if the script is run directly.
+OPTIONS_FILE1=$INPUT_PATH/../conf/dbms/$CONFFILE
+# If the script is pointed to by a symbolic link, try this. prefix isn't
+# guaranteed to point to where CARMA is installed, so it's just a good guess.
+OPTIONS_FILE2=$MYPREFIX/conf/dbms/$CONFFILE
+
+# Default location of the password file.
+# If the mysql database has a root password, the password is needed to
+# shutdown the database. This is where CARMA keeps it.
+# Format is "password=<pw>"
+DEFAULT_MYSQL_PASSWORDFILE=/etc/sysconfig/mysqld
+# Where the mysql admin password is stored
+MYSQL_PASSWORDFILE=${MYSQL_PASSWORDFILE:= $DEFAULT_MYSQL_PASSWORDFILE}
+
+pass=""
+
+# mysql programs require this to be set.
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
+if [ "$LD_LIBRARY_PATH" = "" ]; then
+    LD_LIBRARY_PATH=$MYSQL_LIB
+else
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$MYSQL_LIB"
+fi
+export LD_LIBRARY_PATH
+
+# Temporary logging
+#LOGFILE=/tmp/mysqld.startuplog.$$
+#LOGFILE=/dev/null
+
+#echo "Running $0 $*" > $LOGFILE
+#echo >> $LOGFILE
+#env >> $LOGFILE
+#echo >> $LOGFILE
+
+action=$1
+shift
+
+for x in $*; do
+  case $x in 
+      -p*) pass="$x"
+      ;;
+      *) OPTIONS_FILE=$x
+      ;;
+  esac
+done
+
+# If the user didn't supply an options file, look for one.
+if [ "$OPTIONS_FILE" = "" ]; then
+ if [ -f $OPTIONS_FILE1 ]; then
+     OPTIONS_FILE=$OPTIONS_FILE1;
+ elif [ -f $OPTIONS_FILE2 ]; then
+     OPTIONS_FILE=$OPTIONS_FILE2;
+ fi
+fi
+
+################################################################
+# This was copied & modified from mysql/support-files/mysql.server
+
+wait_for_pid () {
+  i=0
+  while test $i -lt 6 ; do
+    sleep 1
+    case "$1" in
+      'created')
+        test -s $pid_file && i='' && break
+        ;;
+      'removed')
+        test ! -s $pid_file && i='' && break
+        ;;
+      *)
+        echo "wait_for_pid () usage: wait_for_pid created|removed"
+        exit 1
+        ;;
+    esac
+    echo $echo_n ".$echo_c"
+    i=`expr $i + 1`
+  done
+
+  if test -z "$i" ; then
+    return 0
+  else
+    return 1
+  fi
+}
+################################################################
+
+start() {
+    echo "Starting $prog using $OPTIONS_FILE"
+#    echo "Starting $prog using $OPTIONS_FILE" >> $LOGFILE
+
+    if [ ! -f $OPTIONS_FILE ] ; then
+        echo "Options file $OPTIONS_FILE does not exist!"
+        return 1
+    fi
+
+    # if the server is started twice in a row (ie without being stopped
+    # in between) with the same config file, it has a nasty habit of deleting
+    # the already present socket file and then no one can connect locally
+    # so we need to try and guard against this, this applies to mysqld_safe
+    # version 4.0.20
+    # (version 5.0.x may not need all these checks).
+
+    # Check to see if the daemon is already running.
+    pid_file=`grep ^pid-file $OPTIONS_FILE | tail -1 | awk -F = '{print $2}'`
+    if [ -z $pid_file ] ; then
+	# Bad/incomplete options file.
+	echo File $OPTIONS_FILE does not contain pid_file definition
+#	echo "File $OPTIONS_FILE does not contain pid_file definition" >> $LOGFILE
+	return 1
+    fi
+
+    if [ -f $pid_file ]; then
+	pid=`cat $pid_file`
+	if checkpid $pid; then
+	    echo "The server appears to be already running (pid=$pid)."
+#	    echo "The server appears to be already running (pid=$pid)." >> $LOGFILE
+	    return 1
+	fi
+    fi
+
+    socket=`grep ^socket $OPTIONS_FILE | tail -1 | awk -F = '{print $2}'`
+    # include this check just in case someone uses the wrong file
+    if [ -z $socket ] ; then
+	echo File $OPTIONS_FILE does not contain socket definition
+#	echo "File $OPTIONS_FILE does not contain socket definition" >> $LOGFILE
+	return 1
+    fi
+
+    if [ $isRoot = 1 ] ; then
+        echo "Running server as user $DBA"
+#        echo "Running server as user $DBA" >> $LOGFILE
+#	Raise the max number of open file descriptors.
+	ulimit -n 4096
+        su -c "$MYSQL_BIN/mysqld_safe --defaults-file=$OPTIONS_FILE" $DBA &
+#	echo "su -c $MYSQL_BIN/mysqld_safe --defaults-file=$OPTIONS_FILE $DBA " >> $LOGFILE
+	touch /var/lock/subsys/$prog
+    else
+        echo "Running server as user $USER"
+#        echo "Running server as user $USER" >> $LOGFILE
+
+        $MYSQL_BIN/mysqld_safe --defaults-file=$OPTIONS_FILE &
+#	echo "$MYSQL_BIN/mysqld_safe --defaults-file=$OPTIONS_FILE" >> $LOGFILE
+    fi
+    pid=$!
+    ret=0
+    wait_for_pid created
+    ret=$?
+    return $ret
+}
+
+stop() {
+    echo "${prog}: Stopping server using config file $OPTIONS_FILE"
+# If running as root user and there's a password file, read the password
+# unless a password was given on the command line.
+    if [ $isRoot = 1 -a "$pass" = "" ]; then
+	if [ -r $MYSQL_PASSWORDFILE ]; then
+	    . $MYSQL_PASSWORDFILE
+	    pass="--password=$password"
+	else
+	    echo "No $MYSQL_PASSWORDFILE found."
+	fi
+    fi
+
+    $MYSQL_BIN/mysqladmin --defaults-file=$OPTIONS_FILE -u root $pass shutdown
+    ret=$?
+
+    if [ $ret -eq 0 -a $isRoot = 1 ]; then
+	    rm -f /var/lock/subsys/$prog
+    fi
+#    echo
+    return $ret
+}
+ 
+restart() {
+    stop
+    start
+}
+
+# See how we were called.
+case "$action" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    status mysqld
+    ;;
+  restart)
+    restart
+    ;;
+  *)
+    usage
+    exit 1
+esac
+
+exit $?

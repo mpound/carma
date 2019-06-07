@@ -1,0 +1,41 @@
+/**
+ * @file Carma CorrDataRemapperControl interface.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Erik Leitch </dl>
+ */
+#ifndef CARMA_CORRELATOR_CORRDATAREMAPPER_IDL
+#define CARMA_CORRELATOR_CORRDATAREMAPPER_IDL
+
+#include "carma/util/UserException.idl"
+
+#include "carma/signalpath/SignalPathMapperControl.idl"
+
+module carma {
+  module correlator {
+
+    // Names under which this interface will be published
+
+    const string CORRDATAREMAPPERCONTROL_NAME = "carma.correlatordataremapper";
+
+    interface CorrDataRemapperControl {
+
+      struct AstroBandInput {
+        unsigned short inputNo;
+        carma::signalpath::SignalPathMapperControl::AntennaIF antennaIF;
+      };
+
+      typedef sequence<AstroBandInput> AstroBandInputSeq;
+
+      void clearAstroBandInputMap(in unsigned short astroBandNo)
+        raises (carma::util::UserException);
+
+      void updateAstroBandInputMap(in unsigned short astroBandNo, in AstroBandInputSeq astroBandInputs)
+        raises (carma::util::UserException);
+
+    }; // interface CorrDataRemapperControl
+
+  }; // module correlator
+
+}; // module carma
+
+#endif

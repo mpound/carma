@@ -1,0 +1,87 @@
+#!/bin/sh
+
+# this script is a wrapper for physicalDeviceIDAuthorityTest
+
+# this script should be run from the top of the build tree
+
+usage() {
+    echo "$0 [-n] [-h] [-v]"
+    echo "   -n do not cleanup at end (won't delete test database)"
+    echo "   -h print this message and exit"
+}
+
+echo "**** PHYSICALDEVICEIDAUTHORITY TEST ****"
+
+clean=1
+
+for x in $* ; do
+    case "$x" in
+        -h)
+        usage
+        exit 0
+        ;;
+        -n)
+        clean=0
+        ;;
+        *)
+        echo "$0: Unknown command line argument $x"
+        usage
+        exit 1
+    esac
+done
+
+. `dirname $0`/../../dbms/Test/lib/functions.sh
+
+createConfFiles
+shutdownMySQL 1
+makeTestDirs
+
+echo "Database and supporting files are in $testarea"
+socket=`grep socket $mysqlconf | tail -1 | awk -F= '{print $2}'`
+echo "Local mysql connections are via unix socket $socket"
+initializeMySQL
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+startMySQL
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+#setDBPrivileges
+#if [ $? -ne 0 ] ; then
+#    fail
+#fi
+
+createDB
+if [ $? -ne 0 ] ; then
+    fail
+fi
+
+#createDBTables
+#if [ $? -ne 0 ] ; then
+#    fail
+#fi
+
+$mysql --defaults-file=$mysqlconf -u $user -e "SHOW TABLES" $db
+
+cmd="carma/monitor/Test/physicalDeviceIDAuthorityTest conffile=$dbmsconf"
+echo $cmd
+$cmd
+if [ $? -ne 0 ] ; then
+    echo "$prog failure"
+    fail
+fi
+
+
+shutdownMySQL
+
+if [ $clean -gt 0 ] ; then
+    cleanup
+fi
+
+pass
+
+exit 0
+

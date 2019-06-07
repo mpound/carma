@@ -1,0 +1,459 @@
+<!-- -*- xml -*-  -->
+<!-- vim: set ts=2 sts=2 sw=2 et: -->
+<!-- $Id: build.xml.in,v 1.92 2014/08/26 17:54:41 iws Exp $ -->
+
+<!--
+     Ant build file for carma java software.
+
+     REMEMBER to run config.status in your build tree after changing
+     this file.
+
+     Version: $Revision: 1.92 $, $Date: 2014/08/26 17:54:41 $
+-->
+
+<project name="CARMA" default="dist" basedir=".">
+  <description>
+    Build java code for CARMA. Currently cdv,jrtd are built.
+  </description>
+  <!-- set global properties for this build -->
+  <property name="buildtree" location="@abs_top_builddir@"/>
+  <property name="javahome" location="@java_home@"/>
+  <property name="carmaTools" location="@carma_tools@"/>
+  <property name="srcdir" location="@abs_top_srcdir@"/>
+  <property name="build" location="@abs_top_builddir@/build"/>
+  <property name="dist"  location="@abs_top_builddir@/dist"/>
+  <property name="install"  location="@prefix@"/>
+  <property name="launch4jdir" location="${carmaTools}/lib/launch4j" />
+
+  <!-- ===================================================================== -->
+  <!-- classpath definitions                                                 -->
+  <!-- ===================================================================== -->
+
+  <path id="cp-tools">
+    <fileset dir="${carmaTools}/lib">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <pathconvert targetos="unix" property="cp-tools" refid="cp-tools" />
+
+  <path id="cp-jplotter">
+    <fileset dir="${carmaTools}/lib">
+      <include name="miglayout-4.0-swing.jar"/>
+      <include name="xz.jar"/>
+      <include name="jfreechart-1.0.15.jar"/>
+      <include name="jcommon-1.0.18.jar"/>
+      <include name="guava-14.0.1.jar"/>
+    </fileset>
+  </path>
+
+  <pathconvert targetos="unix" property="cp-jplotter" refid="cp-jplotter" />
+
+  <!-- ===================================================================== -->
+  <!-- task definitions                                                      -->
+  <!-- ===================================================================== -->
+
+  <!-- create an easy to use task for idldepend -->
+  <taskdef name="idlcheck" classname="net.coderazzi.idldepend.IDLCheckerTask"
+     classpathref="cp-tools"/>
+
+  <taskdef name="launch4j"
+      classname="net.sf.launch4j.ant.Launch4jTask"
+      classpath="${launch4jdir}/launch4j.jar:${launch4jdir}/lib/xstream.jar"
+  />
+
+  <!-- pull in the ant-contrib package -->
+  <taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+
+  <!-- compile a single IDL source file -->
+  <target name="compile-idl" description="compile a single IDL source">
+    <mkdir dir="${dist}/deps"/>
+    <idlcheck compiler="jacorb" force="false" checkAll="false"
+         verbose="basic" compilerPath="${carmaTools}/bin/jaco_idl"
+         targetDir="${buildtree}" dependsdir="${dist}/deps">
+      <fileset file="${file}" />
+      <include>
+        <pathelement path="${srcdir}"/>
+      </include>
+    </idlcheck>
+  </target>
+
+  <!-- ===================================================================== -->
+  <!-- trivial targets                                                       -->
+  <!-- ===================================================================== -->
+
+  <target name="init">
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+    <mkdir dir="${dist}/deps"/>
+  </target>
+
+  <target name="clean" description="clean up" >
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+
+  <!-- ===================================================================== -->
+  <!-- carma/util targets                                                    -->
+  <!-- ===================================================================== -->
+
+  <!-- compile all IDL sources -->
+  <target name="idl-util" depends="init" description="compiles idl needed by util">
+    <foreach param="file" target="compile-idl" parallel="true">
+      <path>
+        <fileset dir="${srcdir}/carma/util">
+          <include name="PhaseSwitching.idl" />
+          <include name="SeqTypedefs.idl" />
+          <include name="UserException.idl" />
+        </fileset>
+      </path>
+    </foreach>
+  </target>
+
+  <!-- compile all Java sources (including tests) -->
+  <target name="java-util" depends="idl-util" description="compile common utilities">
+    <javac destdir="${build}" classpathref="cp-tools" debug="on" includeantruntime="false">
+      <src path="${srcdir}/carma/util"/>
+      <include name="**/*.java" />
+    </javac>
+  </target>
+
+  <!-- ===================================================================== -->
+  <!-- jrtd targets                                                          -->
+  <!-- ===================================================================== -->
+
+  <macrodef name="jrtd-script">
+    <attribute name="todir" />
+    <attribute name="jardir" />
+    <sequential>
+      <echo file="@{todir}/scripts/rtd" append="false">#\!/bin/tcsh -f
+        # do not edit, created by build.xml
+        # to enable local debugging with JConsole, add the following:
+        # -Dcom.sun.java.management.jmxremote
+        ${javahome}/bin/java -Xmx500m -jar @{jardir}/lib/jrtd.jar $$*
+      </echo>
+      <chmod file="@{todir}/scripts/rtd" perm="755" />
+    </sequential>
+  </macrodef>
+
+  <target name="jrtd" depends="init, jplotter" description="build JRTD">
+    <!-- compile protocol buffer sources -->
+    <exec executable="${carmaTools}/bin/protoc">
+      <arg value="--java_out=${build}" />
+      <arg value="--proto_path=${srcdir}/carma/ui/rtd/common" />
+      <arg value="${srcdir}/carma/ui/rtd/common/RTD.proto" />
+    </exec>
+
+    <!-- compile protocol buffer java sources -->
+    <javac destdir="${build}" classpathref="cp-tools" debug="on" includeantruntime="false">
+      <src path="${build}" />
+      <include name="rtdproto/*.java" />
+    </javac>
+
+    <!-- compile all Java sources -->
+    <javac destdir="${build}" classpathref="cp-tools" debug="on" includeantruntime="false">
+      <compilerarg value="-Xlint:unchecked" />
+      <src path="${srcdir}/carma" />
+      <include name="ui/jrtd/**/*.java" />
+    </javac>
+
+    <!-- create distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+
+    <jar destfile="${dist}/lib/jrtd.jar">
+      <manifest>
+        <attribute name="Main-Class" value="carma.ui.jrtd.rtd.RTDManager" />
+        <attribute name="Permissions" value="all-permissions" />
+      </manifest>
+      <zipfileset src="${carmaTools}/lib/protobuf-java-2.5.0.jar" includes="com/google/protobuf/**" />
+      <zipfileset src="${dist}/lib/jplotter.jar" includes="carma/** com/** net/** org/** resources/**" />
+      <fileset dir="${build}">
+        <include name="carma/ui/jrtd/**" />
+        <include name="rtdproto/*.class" />
+      </fileset>
+    </jar>
+
+    <jrtd-script todir="${buildtree}" jardir="${dist}" />
+
+    <!-- Sign the jar file so that it can be deployed with Java Web Start -->
+    <signjar jar="${dist}/lib/jrtd.jar" storepass="RtdR00lz"
+             keypass="Carma4All" alias="CARMAForever"
+             keystore="${buildtree}/conf/rtd/keystore.rtd"
+    />
+
+    <!-- create windows executable -->
+    <launch4j configFile="${buildtree}/conf/launch4j/carmartd.xml"
+              outfile="${dist}/carmartd.exe"
+    />
+  </target>
+
+  <target name="inst-jrtd" depends="jrtd" description="install JRTD">
+    <!-- jar files -->
+    <copy file="${dist}/lib/jrtd.jar" todir="${install}/lib" />
+
+    <!-- user scripts -->
+    <jrtd-script todir="${install}" jardir="${install}" />
+
+    <!-- windows executable -->
+    <copy file="${dist}/carmartd.exe" todir="${install}/scripts" />
+  </target>
+
+  <!-- ===================================================================== -->
+  <!-- jplotter targets                                                      -->
+  <!-- ===================================================================== -->
+
+  <macrodef name="jplotter-script">
+    <attribute name="todir" />
+    <attribute name="jardir" />
+    <sequential>
+      <echo file="@{todir}/scripts/jplotter" append="false">#\!/bin/tcsh -f
+        # do not edit, created by build.xml
+        ${javahome}/bin/java -jar @{jardir}/lib/jplotter.jar $$*
+      </echo>
+      <chmod file="@{todir}/scripts/jplotter" perm="755" />
+    </sequential>
+  </macrodef>
+
+  <target name="jplotter" depends="init, java-util" description="build JPlotter">
+    <javac destdir="${build}" classpathref="cp-jplotter" debug="on" includeantruntime="false">
+      <compilerarg value="-Xlint:unchecked" />
+      <src path="${srcdir}/carma" />
+      <include name="ui/jplotter/**/*.java" />
+    </javac>
+
+    <!-- create distribution directory -->
+    <mkdir dir="${dist}/lib" />
+
+    <jar destfile="${dist}/lib/jplotter.jar">
+      <manifest>
+        <attribute name="Main-Class" value="carma.ui.jplotter.plotter.RTDPlotter" />
+        <attribute name="Permissions" value="all-permissions" />
+      </manifest>
+      <zipfileset src="${carmaTools}/lib/miglayout-4.0-swing.jar" includes="net/**" />
+      <zipfileset src="${carmaTools}/lib/xz.jar" includes="org/**" />
+      <zipfileset src="${carmaTools}/lib/jfreechart-1.0.15.jar" includes="org/jfree/**" />
+      <zipfileset src="${carmaTools}/lib/jcommon-1.0.18.jar" includes="org/jfree/**" />
+      <zipfileset src="${carmaTools}/lib/guava-14.0.1.jar" includes="com/google/common/base/*" />
+      <fileset dir="build">
+        <include name="carma/util/Time.class" />
+        <include name="carma/ui/jplotter/**/*.class" />
+      </fileset>
+      <fileset dir="${srcdir}/carma/ui/jplotter">
+        <include name="resources/**" />
+      </fileset>
+    </jar>
+
+    <jplotter-script todir="${buildtree}" jardir="${dist}" />
+  </target>
+
+  <target name="inst-jplotter" depends="jplotter" description="install JPlotter">
+    <!-- jar files -->
+    <copy file="${dist}/lib/jplotter.jar" todir="${install}/lib" />
+
+    <!-- user scripts -->
+    <jplotter-script todir="${install}" jardir="${install}" />
+  </target>
+
+  <!-- ===================================================================== -->
+  <!-- cdv targets                                                           -->
+  <!-- ===================================================================== -->
+
+  <!-- macro to create a CDV script from a template -->
+  <macrodef name="cdv-script">
+    <attribute name="script" />
+    <attribute name="todir" />
+    <attribute name="jardir" default="@{todir}" />
+    <sequential>
+      <copy file="${srcdir}/scripts/@{script}" todir="@{todir}/scripts" />
+      <replace file="@{todir}/scripts/@{script}" token="@JAVAHOME@" value="${javahome}" />
+      <replace file="@{todir}/scripts/@{script}" token="@INSTALLDIR@" value="@{jardir}" />
+      <replace file="@{todir}/scripts/@{script}" token="@CONFDIR@" value="@{todir}/conf" />
+      <chmod file="@{todir}/scripts/@{script}" perm="755" />
+    </sequential>
+  </macrodef>
+
+  <target name="cdv" depends="init, java-util" description="build CDV">
+    <!-- compile all IDL sources -->
+    <foreach param="file" target="compile-idl" parallel="true">
+      <path>
+        <fileset dir="${srcdir}/carma">
+          <include name="correlator/obsRecord2/*.idl"/>
+        </fileset>
+      </path>
+    </foreach>
+
+    <!-- compile all Java sources -->
+    <javac destdir="${build}" classpathref="cp-tools" debug="on" includeantruntime="false">
+      <compilerarg value="-Xlint:unchecked" />
+      <src path="${srcdir}/carma/ui/cdv"/>
+      <src path="${buildtree}/carma/correlator"/>
+      <src path="${buildtree}/carma/util"/>
+      <include name="**/*.java" />
+    </javac>
+
+    <!-- create distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+
+    <!-- Third party libraries jar -->
+    <jar destfile="${dist}/lib/cdv-libs.jar">
+      <zipfileset src="${carmaTools}/lib/jacorb.jar" includes="org/jacorb/** org/omg/**" />
+      <zipfileset src="${carmaTools}/lib/jacorb-services.jar" includes="org/jacorb/** org/omg/**" />
+      <zipfileset src="${carmaTools}/lib/jdom.jar" includes="org/jdom/**" />
+      <zipfileset src="${carmaTools}/lib/slf4j-api-1.6.4.jar" includes="org/slf4j/**" />
+      <zipfileset src="${carmaTools}/lib/slf4j-jdk14-1.6.4.jar" includes="org/slf4j/**" />
+    </jar>
+
+    <!-- CARMA code jar -->
+    <jar destfile="${dist}/lib/cdv-prof.jar">
+      <manifest>
+        <attribute name="Main-Class" value="carma.ui.cdv.view.CDVManager" />
+        <attribute name="Permissions" value="all-permissions" />
+      </manifest>
+      <fileset dir="${build}">
+        <include name="carma/util/*.class" />
+        <include name="carma/correlator/**/*.class" />
+        <include name="carma/ui/cdv/**" />
+      </fileset>
+      <!-- include default configuration into jar -->
+      <mappedresources>
+        <fileset dir="${srcdir}/conf/cdv">
+          <include name="carma-cdv-config.xml" />
+        </fileset>
+        <globmapper from="*.xml" to="resources/*.xml" />
+      </mappedresources>
+    </jar>
+
+    <!-- combined jar (for normal users) -->
+    <jar destfile="${dist}/lib/cdv.jar">
+      <manifest>
+        <attribute name="Main-Class" value="carma.ui.cdv.view.CDVManager" />
+        <attribute name="Permissions" value="all-permissions" />
+      </manifest>
+      <zipfileset src="${dist}/lib/cdv-libs.jar" />
+      <zipfileset src="${dist}/lib/cdv-prof.jar" />
+    </jar>
+
+    <!-- copy configuration files -->
+    <copy todir="${buildtree}/conf/cdv">
+      <fileset dir="${srcdir}/conf/cdv" includes="*.xml" />
+    </copy>
+
+    <!-- create user-friendly scripts from templates -->
+    <cdv-script script="cdv" todir="${buildtree}" jardir="${dist}" />
+    <cdv-script script="labcdv" todir="${buildtree}" jardir="${dist}" />
+    <cdv-script script="cdv-profile" todir="${buildtree}" jardir="${dist}" />
+
+    <!-- windows executable -->
+    <launch4j configFile="${buildtree}/conf/launch4j/carmacdv.xml"
+              outfile="${dist}/carmacdv.exe"
+    />
+  </target>
+
+  <target name="inst-cdv" depends="cdv" description="install CDV">
+    <!-- jar files -->
+    <copy file="${dist}/lib/cdv.jar" todir="${install}/lib" />
+    <copy file="${dist}/lib/cdv-libs.jar" todir="${install}/lib" />
+    <copy file="${dist}/lib/cdv-prof.jar" todir="${install}/lib" />
+
+    <!-- user scripts -->
+    <cdv-script script="cdv" todir="${install}" />
+    <cdv-script script="labcdv" todir="${install}" />
+    <cdv-script script="cdv-profile" todir="${install}" />
+
+    <!-- configuration files -->
+    <copy todir="${install}/conf/cdv">
+      <fileset dir="${buildtree}/conf/cdv" casesensitive="yes">
+        <include name="*.xml"/>
+      </fileset>
+    </copy>
+
+    <!-- windows executable -->
+    <copy file="${dist}/carmacdv.exe" todir="${install}/scripts" />
+  </target>
+
+  <!-- ===================================================================== -->
+  <!-- pdbi targets                                                          -->
+  <!-- ===================================================================== -->
+
+  <macrodef name="pdbi-script">
+    <attribute name="todir" />
+    <attribute name="jardir" />
+    <sequential>
+      <echo file="@{todir}/scripts/pdbi" append="false">#\!/bin/tcsh -f
+        # do not edit, created by build.xml
+        ${javahome}/bin/java -Xmx512m -jar @{jardir}/lib/pdbi.jar \
+        -XMLFile @{todir}/conf/observertools/pdbi-conf.xml
+      </echo>
+      <chmod file="@{todir}/scripts/pdbi" perm="755" />
+    </sequential>
+  </macrodef>
+
+  <target name="pdbi" depends="init, java-util" description="build PDBI">
+    <!-- compile all IDL sources -->
+    <foreach param="file" target="compile-idl" parallel="true">
+      <path>
+        <fileset dir="${srcdir}/carma">
+          <include name="observertools/*.idl"/>
+        </fileset>
+      </path>
+    </foreach>
+
+    <!-- compile all Java sources -->
+    <javac destdir="${build}" classpathref="cp-tools" debug="on" includeantruntime="false">
+      <src path="${srcdir}/carma/observertools/pdbi"/>
+      <src path="${buildtree}/carma/observertools"/>
+      <src path="${buildtree}/carma/util"/>
+      <include name="**/*.java"/>
+    </javac>
+
+    <!-- create distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+
+    <!-- combined jar (for normal users) -->
+    <jar destfile="${dist}/lib/pdbi.jar">
+      <manifest>
+        <attribute name="Main-Class" value="carma.observertools.pdbi.view.ProjectDatabaseInterface" />
+        <attribute name="Permissions" value="all-permissions" />
+      </manifest>
+      <zipfileset src="${carmaTools}/lib/jacorb.jar" includes="org/jacorb/** org/omg/**" />
+      <zipfileset src="${carmaTools}/lib/jacorb-services.jar" includes="org/jacorb/** org/omg/**" />
+      <zipfileset src="${carmaTools}/lib/jdom.jar" includes="org/jdom/**" />
+      <zipfileset src="${carmaTools}/lib/slf4j-api-1.6.4.jar" includes="org/slf4j/**" />
+      <zipfileset src="${carmaTools}/lib/slf4j-jdk14-1.6.4.jar" includes="org/slf4j/**" />
+      <fileset dir="${build}">
+        <include name="carma/util/*.class" />
+        <include name="carma/observertools/**/*.class" />
+      </fileset>
+    </jar>
+
+    <!-- copy configuration files -->
+    <copy file="${srcdir}/conf/observertools/pdbi-conf.xml"
+          todir="${buildtree}/conf/observertools" />
+
+    <!-- create user-friendly scripts -->
+    <pdbi-script todir="${buildtree}" jardir="${dist}" />
+  </target>
+
+  <target name="inst-pdbi" depends="pdbi" description="install PDBI">
+    <!-- jar files -->
+    <copy file="${dist}/lib/pdbi.jar" todir="${install}/lib" />
+
+    <!-- copy configuration files -->
+    <copy todir="${install}/conf/observertools">
+      <fileset dir="${buildtree}/conf/observertools" casesensitive="yes">
+        <include name="*.xml"/>
+      </fileset>
+    </copy>
+
+    <!-- scripts -->
+    <pdbi-script todir="${install}" jardir="${install}" />
+  </target>
+
+  <!-- ===================================================================== -->
+  <!-- main targets                                                          -->
+  <!-- ===================================================================== -->
+
+  <target name="dist" depends="cdv, pdbi, jrtd" description="build all applications" />
+  <target name="install" depends="inst-cdv, inst-pdbi, inst-jrtd, inst-jplotter" description="install all applications" />
+
+</project>

@@ -1,0 +1,756 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "/minerva1/teuben/rt/scripts/imrSingleton /minerva1/teuben/rt/bin/">
+<!--    <!ENTITY BIN_DIR "/opt/rt/scripts/imrSingleton /opt/rt/bin/">
+-->
+<!--
+    <!ENTITY RUN_DIR "/opt/rt">
+-->
+    <!ENTITY RUN_DIR "/minerva1/teuben/rt">
+    <!ENTITY DBMS "useDBMS=false">
+    <!ENTITY LOG "">
+    <!ENTITY THISFILE "&RUN_DIR;/conf/imr/marcLocal.xml">
+    <!ENTITY CONTROLSTATEDIR "/minerva1/teuben/state">
+    <!ENTITY OBSTOOLSCONF "/minerva/teuben/conf/observertools.conf.pjt">
+    <!ENTITY LABINI   "correlator/labCarma15.ini">
+    <!ENTITY CARMAINI "correlator/carma15-2pol.ini">
+    <!ENTITY COBRAINI "correlator/carma15.ini">
+    <!ENTITY ODD_BAND_INI_FILE "correlator/labCarma23-1.ini">
+    <!ENTITY EVEN_BAND_INI_FILE "correlator/labCarma23-2.ini">
+    <!ENTITY EMULATE  "true">
+    <!ENTITY SIMULATE "true">
+]>
+
+<!-- My config. Exists simply to test various applications I'm developing, -->
+<!-- as well as the required infrastructure which grows more everyday.     -->
+
+<!-- $Id: peterLocal.xml,v 1.6 2014/11/03 19:21:22 iws Exp $ -->
+<domain>
+
+
+    <oad hostname="localhost">
+        
+        <!-- Core Monitor -->
+        <server name="FrameCollator"
+                path="&BIN_DIR;frameCollator"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; delay=600" 
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf" 
+                system="monitor"
+                critical="true"
+                startup-priority="&monitor-core;"/>
+        
+        <server name="FaultSystem" 
+                path="&BIN_DIR;faultSystem"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; alarmFile=fault/test/alarm_good.xml blankFlagFile=fault/test/bf_good.xml outputCMS=intermediate runEmailService=false"
+                system="monitor"
+                startup-priority="&monitor-core;"/>
+<!-- If you run FaultSystem in outputCMS=intermediate, you MUST also
+     run PipelineSync inputCMS=intermediate outputCMS=final or
+     you monitor system will never update!!!
+-->
+        <!-- Data Pipeline Process -->
+        <server name="PipelineSync"
+                path="&BIN_DIR;monitorPipelineSync"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; inputCMS=intermediate outputCMS=final" 
+                critical="true"
+                system="monitor"
+                startup-priority="&monitor-core;"/>
+
+        <!-- Core Control -->
+        <server name="Subarray1" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;" 
+                args="runSAT=true &LOG; &DBMS;"
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                critical="true"
+                system="control" 
+                startup-priority="&control;"/>
+
+        <server name="Subarray2" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=2 runSAT=true &LOG; &DBMS;"
+                critical="true"
+                system="control" 
+                startup-priority="&control;"/>
+
+        <server name="Subarray3" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=3 runSAT=true &LOG; &DBMS;" 
+                critical="true"
+                system="control" 
+                startup-priority="&control;"/>
+        
+        <server name="Subarray4" 
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;" 
+                args="subarrayNo=4 runSAT=true &LOG; &DBMS;" 
+                critical="true"
+                system="control" 
+                startup-priority="&control;"/>
+
+        <server name="ControlState"
+                path="&BIN_DIR;carmaControlState"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; statedir=&CONTROLSTATEDIR;"
+                critical="false" 
+                system="control" 
+                startup-priority="&control;"/>
+
+        <server name="ControlFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=control"
+                system="monitor"
+                startup-priority="&monitor;"/>
+        
+        <server name="DelayEngineFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=delayEngine delay=250"
+                system="interferometry"
+                startup-priority="&monitor;"/>
+        
+        <!-- Pipeline -->
+        <!--
+                -->
+<!--
+ARGS IF USING CORRDATAREMAPPER
+                args="&LOG; &DBMS; sl=true f=correlator/slcorrelator.conf astrobandName=carma.correlator.astroband"
+-->
+        <server name="SlcDataCatcher" 
+                path="&BIN_DIR;catchData"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=sl" 
+                system="misc"
+                startup-priority="&subsystem;"/>
+
+        <server name="SlPipelineFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=slpipeline delay=400"  
+                startup-priority="&monitor;"/>
+
+        <server name="AstroFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=astro delay=400"  
+                startup-priority="&monitor;"/>
+
+        <server name="SlPipeline" 
+                path="&BIN_DIR;pipeline"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=sl vbdir=./ monitorDelay=350 traceLevel=1" 
+                system="correlator" 
+                startup-priority="&subsystem;" />
+
+<!--
+ARGS IF USING CORRDATAREMAPPER
+                args="&LOG; &DBMS; sl=true f=correlator/wbcorrelator.conf astrobandName=carma.correlator.astroband"
+-->
+
+        <server name="WbcDataCatcher" 
+                path="&BIN_DIR;catchData"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=wb" 
+                startup-priority="&subsystem;"/>
+
+        <server name="WbPipelineFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=wbpipeline delay=400" 
+                startup-priority="&monitor;"/>
+
+        <server name="WbPipeline" 
+                path="&BIN_DIR;pipeline"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=wb vbdir=/tmp" 
+                startup-priority="&subsystem;"/>
+
+ <!--
+-->
+
+        <!-- Process Monitor -->
+        <server name="ProcessMonitorFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=Imr delay=150" 
+                system="monitor" 
+                startup-priority="&monitor-core;" />
+
+            <server name="ProcessMonitor" path="&BIN_DIR;processMonitor"
+                directory="&RUN_DIR;" 
+                args="&LOG; file=&THISFILE; writedelay=0.110 poll=5"
+                system="monitor" 
+                startup-priority="&monitor-core;" />
+
+        <!-- Alarm Processes -->
+        <server name="alarmFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=alarm"
+                startup-priority="&subsystem-core;"/>
+        <server name="alarmControl" 
+                path="&BIN_DIR;carmaAlarm"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=control emulate=&EMULATE;" 
+                startup-priority="&subsystem;" />
+
+        <server name="SignalPath" path="&BIN_DIR;carmaSignalPathMapper"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;"
+                startup-priority="&subsystem;"/>
+
+<!-- This causes IMR to crash on 64bit carmatools.
+        <server name="CorrDataRemapper" 
+                path="&BIN_DIR;carmaCorrelatorDataRemapper"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;"
+                startup-priority="&pre-subsystem;"/>
+-->
+
+        <server name="SignalPathFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=signalPath"
+                startup-priority="&subsystem-core;"/>
+
+
+<!-- Don't run this on the hill!!!!
+
+        <server name="MonitorAverage" path="&BIN_DIR;monitorAverageWriter"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; nice=5 dbconffile=dbms/dbms.remote.conf dotiming=true dotransfer=true dosdp=true" 
+                system="monitor" critical="true" />
+
+        <server name="AstroHeaderWriter" path="&BIN_DIR;astroHeaderWriter"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;" 
+                system="monitor"  critical="true"  />
+        
+        <server name="DataFlowFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=dataflow delay=130" />
+                -->
+    
+    <!--
+    </oad>
+
+    <oad hostname="labacc.correlator.pvt">
+    -->
+
+        <!-- Canbus Infrastructure -->
+        <server name="RemoteCan" 
+                path="&BIN_DIR;canOverIpServer"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;" /> 
+
+        <!-- Antenna -->
+        <server name="Ovro1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=ovro1 delay=300 "
+                system="ovro" />
+        
+        <server name="Ovro1CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; ant=1 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+        
+        <server name="Ovro1Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; awdelay=.150 emulate=&EMULATE; antenna=ovro1" 
+                system="ovro" />
+
+        <server name="Ovro2FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=ovro2 delay=300 "
+                system="ovro" />
+        
+        <server name="Ovro2CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; ant=2 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro2Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; emulate=&EMULATE; antenna=ovro2" 
+                system="ovro" />
+
+        <server name="Ovro3FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=ovro3 delay=300 "
+                system="ovro"/>
+        
+        <server name="Ovro3CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; ant=3 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro3Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; emulate=&EMULATE; antenna=ovro3"
+                system="ovro"  />
+
+
+        <server name="Ovro4FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=ovro4 delay=300 "
+                system="ovro"/>
+        
+        <server name="Ovro4CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; ant=4 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro4Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; emulate=&EMULATE; antenna=ovro4"
+                system="ovro"  />
+
+        <server name="Ovro5FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=ovro5 delay=300 "
+                system="ovro"/>
+        
+        <server name="Ovro5CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; ant=5 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro5Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; emulate=&EMULATE; antenna=ovro5"
+                system="ovro"  />
+
+        <server name="Ovro6FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=ovro6 delay=300 "
+                system="ovro"/>
+        
+        <server name="Ovro6CanHost"
+                path="&BIN_DIR;ovroCanHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; ant=6 emulate=&EMULATE; simulate=&SIMULATE;"  
+                system="ovro" />
+
+        <server name="Ovro6Camera" 
+                path="&BIN_DIR;carmaOpticalTel"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; emulate=&EMULATE; antenna=ovro6"
+                system="ovro"  />
+        
+<!-- Move this line up or down to add or remove antennas
+        Move this line up or down to add or remove antennas -->
+
+        <!-- Master clock -->
+        <server name="MasterClock"
+                path="&BIN_DIR;carmaClockHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; emulate=&EMULATE;" 
+                startup-priority="&subsystem;"/>
+        
+        <server name="MasterClockFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=masterclock delay=75 " />
+
+        <server name="Loberotator" 
+                path="&BIN_DIR;carmaLoberotatorHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; emulate=&EMULATE; sim=true"/>
+
+        <server name="LoberotatorFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=loberotator"
+                startup-priority="&monitor;"/>
+
+        <server name="lorefFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;  subsystem=loref delay=150"
+                startup-priority="&monitor;"/>
+    
+        <server name="LOrefHost" path="&BIN_DIR;/carmaLORefHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; emulate=true synth1_8662=false synth1_mux=122 synth2_8662=false synth2_mux=112 synth3_8662=false synth3_mux=124 counter_gpib=14 switch_gpib=9" 
+                critical="true" />
+
+        <server name="weatherFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;  subsystem=weather delay=200"
+                startup-priority="&monitor;"/>
+        <server name="WeatherHost" path="&BIN_DIR;/weatherStation"
+                directory="&RUN_DIR;" 
+                args="&DBMS; emulate=true traceFile=syslog traceLevel=0" />
+
+        <server name="WbcBand1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand1"
+                system="correlator"  />
+
+        <server name="WbcBand1" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=9 p=19009 c=carma.correlator.wbcorBand1 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="WbcBand2FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand2" />
+
+        <server name="WbcBand2" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=10 p=19010 c=carma.correlator.wbcorBand2 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+        
+        <server name="WbcBand3FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand3" />
+
+        <server name="WbcBand3" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=11 p=19011 c=carma.correlator.wbcorBand3 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+
+        <server name="WbcBand4FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand4"
+                system="correlator"  />
+
+        <server name="WbcBand4" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=12 p=19012 c=carma.correlator.wbcorBand4 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="WbcBand5FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand5" />
+
+        <server name="WbcBand5" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=13 p=19013 c=carma.correlator.wbcorBand5 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="WbcBand6FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand6" />
+
+        <server name="WbcBand6" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=14 p=19014 c=carma.correlator.wbcorBand6 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="WbcBand7FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand7" />
+
+        <server name="WbcBand7" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=15 p=19015 c=carma.correlator.wbcorBand7 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="WbcBand8FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand8" />
+
+        <server name="WbcBand8" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=16 p=19016 c=carma.correlator.wbcorBand8 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="WbcBand9FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand9"
+                system="correlator"  />
+
+        <server name="WbcBand9" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=17 p=19017 c=carma.correlator.wbcorBand9 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+        
+
+        <server name="WbcBand10FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand10" />
+
+        <server name="WbcBand10" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=18 p=19018 c=carma.correlator.wbcorBand10 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+        
+        <server name="WbcBand11FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand11" />
+
+        <server name="WbcBand11" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=19 p=19019 c=carma.correlator.wbcorBand11 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+        
+        <server name="WbcBand12FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand12" />
+
+        <server name="WbcBand12" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=20 p=19020 c=carma.correlator.wbcorBand12 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+        
+        <server name="WbcBand13FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand13" />
+
+        <server name="WbcBand13" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=21 p=19021 c=carma.correlator.wbcorBand13 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+        
+        <server name="WbcBand14FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand14" />
+
+        <server name="WbcBand14" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=22 p=19022 c=carma.correlator.wbcorBand14 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+        
+        <server name="WbcBand15FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand15" />
+
+        <server name="WbcBand15" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=23 p=19023 c=carma.correlator.wbcorBand15 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="WbcBand16FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=wbcBand16"
+                system="correlator"  />
+
+        <server name="WbcBand16" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=24 p=19024 c=carma.correlator.wbcorBand16 f=correlator/wbcorrelator.conf sim=correlator/sza16Sim.ini hwtype=cobra sl=false"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+<!-- Move this line up or down to add simulated correlator bands 
+Move this line up or down to add wideband simulated correlator bands --> 
+
+        <server name="SlcBand1FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=carmaslcBand1"
+                system="correlator"  />
+        
+        <server name="SlcBand1CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=1 p=19001 f=correlator/slcorrelator.conf sim=&CARMAINI; hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SlcBand2FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=carmaslcBand2"
+                system="correlator"  />
+
+        <server name="SlcBand2CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=2 p=19002 f=correlator/slcorrelator.conf sim=&CARMAINI; hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SlcBand3FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=carmaslcBand3"
+                system="correlator"  />
+
+        <server name="SlcBand3CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=3 p=19003 f=correlator/slcorrelator.conf sim=&CARMAINI; hwtype=carma"
+                system="correlator" 
+                critical="true" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SlcBand4FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=carmaslcBand4"
+                system="correlator"  />
+
+        <server name="SlcBand4CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=4 p=19004 f=correlator/slcorrelator.conf sim=&CARMAINI; hwtype=carma"
+                system="correlator" 
+                critical="true" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SlcBand5FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=carmaslcBand5"
+                system="correlator"  />
+        
+        <server name="SlcBand5CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=5 p=19005 f=correlator/slcorrelator.conf sim=&CARMAINI; hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SlcBand6FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=carmaslcBand6" />
+        
+        <server name="SlcBand6CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=6 p=19006 f=correlator/slcorrelator.conf sim=&CARMAINI; hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SlcBand7FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=carmaslcBand7" />
+        
+        <server name="SlcBand7CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=7 p=19007 f=correlator/slcorrelator.conf sim=&CARMAINI; hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+        <server name="SlcBand8FSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=carmaslcBand8"
+                system="correlator"  />
+        
+        <server name="SlcBand8CarmaServer" path="&BIN_DIR;CorrelatorCarmaServer"
+                directory="&RUN_DIR;" 
+                args="b=8 p=19008 f=correlator/slcorrelator.conf sim=&CARMAINI; hwtype=carma"
+                critical="true" 
+                system="correlator" 
+                startup-priority="&pre-subsystem;"/>                
+
+    </oad>
+    <oad hostname="localhost">
+        <!-- Downconverter -->
+        <server name="Sldc" 
+                path="&BIN_DIR;carmaSldcHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; emulate=&EMULATE; sim=true"
+                system="correlator"  />
+        
+        <server name="SldcFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=Sldc delay=300 "
+                system="correlator"  />
+        
+    </oad>
+    <oad hostname="localhost">
+        <server name="Wbdc"
+                path="&BIN_DIR;carmaWbdcHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; emulate=&EMULATE;"
+                system="correlator"  />
+            
+        <server name="WbdcFSP" 
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=Wbdc delay=300 "
+                system="correlator"  />
+        
+
+    </oad>
+
+    <oad hostname="localhost">
+        <server name="PdbmFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=projectdatabasemanager"
+                startup-priority="&monitor;"/>
+
+        <server name="PdbmHost" path="&BIN_DIR;/carmaProjectDatabaseManagerHost"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; hostname=localhost database=test rt=false"
+                critical="true" />
+    </oad>
+
+</domain>

@@ -1,0 +1,95 @@
+#ifndef _FOCUSIDL
+#define _FOCUSIDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+
+  module antenna {
+
+    module common {
+
+      /**
+       * FocusControl Distributed Object Name.
+       * This is the name that the FocusControl will be published on the
+       * nameserver with.
+       */
+      const string FOCUS_NAME = "Focus";
+
+      /**
+       * %Antenna focus control
+       */
+      interface FocusControl {
+
+	/**
+	 * Focus (secondary) position in X (horizontal when looking at horizon).
+	 * Implemented only on OVRO antennas.
+     * The sequence number is used to verify the remote
+	 * system has completed the requested operation.
+	 * The sequence number is stored locally on the remote system
+	 * and once complete, the corrisponding monitor point for
+	 * this sequence number is set to the one passed as seqNo.
+	 *
+	 * @param position in millimeters
+	 * @param seqNo Sequence number to return when command completes
+	 *              in monitor point named OpticSeqNum
+	 */
+	void setX( in float position, in unsigned long seqNo )
+	  raises (carma::util::UserException);
+
+	/**
+	 * Focus (secondary) position in Y.
+	 * The Y direction is vertical when looking at the horizon (sag).
+	 * Implemented only on OVRO antennas.
+     * The sequence number is used to verify the remote system has completed
+     * the requested operation. The sequence number is stored locally on
+     * the remote system and once complete, the corresponding monitor point for
+	 * this sequence number is set to the one passed as seqNo.
+	 *
+	 * @param position in millimeters
+	 * @param seqNo Sequence number to return when command completes
+	 *              in monitor point named OpticSeqNum
+	 */
+	void setY( in float position, in unsigned long seqNo )
+	  raises (carma::util::UserException);
+
+	/**
+	 * Focus (secondary) position in Z.
+	 * Z is parallel to the %antenna beam.
+	 * Implemented on OVRO and BIMA antennas (no SZA).
+     * The sequence number is used to verify the remote system has completed
+     * the requested operation.  The sequence number is stored locally on
+     * the remote system and once complete, the corresponding monitor point for
+	 * this sequence number is set to the one passed as seqNo.
+	 *
+	 * @param position in millimeters
+	 * @param seqNo Sequence number to return when command completes
+	 *              in monitor point named OpticSeqNum
+	 */
+	void setZ( in float position, in unsigned long seqNo )
+	  raises (carma::util::UserException);
+
+	/**
+	 * Turn on/off focus Z position tracking as a function of elevation
+	 * Implemented only on OVRO antennas.
+	 * The sequence number is used to verify the remote system has completed
+     * the requested operation. The sequence number is stored locally on the
+     * remote system and once complete, the corresponding monitor point for
+	 * this sequence number is set to the one passed as seqNo.
+	 * @param tracking
+	 * @param seqNo Sequence number to return when command completes
+	 *              in monitor point named OpticSeqNum
+	 */
+	void doZTracking( in boolean tracking, in unsigned long seqNo )
+	  raises (carma::util::UserException);
+
+      }; // End Focus interface
+
+    }; // End module common
+
+  }; // End module antenna
+
+}; // End module carma
+
+#endif  // _FOCUSIDL
+

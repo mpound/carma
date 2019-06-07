@@ -1,0 +1,30 @@
+# Header for uptimes file.  This file is read in by
+# pdbWrappers::uptimes
+# $Id: uptimes_head.dat,v 1.2 2008/05/01 15:40:33 mpound Exp $
+#
+# col 1: source type, C: calibrator, T: tracks scheduled by TAC, S: commissioning tracks
+# col 2: time defin., X: planet, C: coodinate, P: PST, L: LST
+# col 3: rise time or RA
+# col 4: set time or DEC
+# old col 5: color, 200: 500MHz, 120: 64MHz, 100: 32MHz, 20: 8MHz
+# old col 5: color, 200: B, 120: I, 100: M, 20: C (school code)
+# col 5: color, 100: 3mm, 200: 1mm, 300: makeup, 150: commissioning tasks, 400: Not reported (do not run these PIs track)
+# col 6: project code
+# col 7: frequency/molecule name
+# col 8: source name
+# col 9: PI
+# after ";": comments
+
+# Calibrators
+#C X          x           x  120  x x Sun      x
+C X          x           x  120  x x Uranus   x
+C X          x           x  120  x x Mars     x
+C X          x           x  120  x x Neptune  x
+#C X          x           x  120  x x Venus    x
+C C 12:29:06.7 +02:03:08.6    0  x x 3C273    x
+#C C 12:56:11.2 -05:47:21.5    0  x x 3C279    x
+C C 03:19:48.2 +41:30:42.1    0  x x 3C84     x
+#C C 04:18:21.2 +38:01:35.8    0  x x 3C111    x
+C C 16:42:58.8 +39:48:37.0    0  x x 3C345    x
+#C C 22:53:57.7 +16:08:53.6    0  x x 3C454.3  x
+C C 20:32:45.5 +40:39:36.8    0  x x MWC349   x

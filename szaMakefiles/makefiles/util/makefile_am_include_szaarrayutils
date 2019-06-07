@@ -1,0 +1,71 @@
+lib_libcarmaSzaarrayutils_la = lib/libcarmaSzaarrayutils.la
+
+lib_LTLIBRARIES += $(lib_libcarmaSzaarrayutils_la)
+
+lib_libcarmaSzaarrayutils_la_SOURCES = \
+	carma/szaarrayutils/arcfile.cc \
+	carma/szaarrayutils/archiver.cc \
+	carma/szaarrayutils/arraymap.cc \
+	carma/szaarrayutils/arraytemplate.cc \
+	carma/szaarrayutils/astrom.cc \
+	carma/szaarrayutils/cache.cc \
+	carma/szaarrayutils/control.cc \
+	carma/szaarrayutils/datatype.cc \
+	carma/szaarrayutils/date.cc \
+	carma/szaarrayutils/expr.cc \
+	carma/szaarrayutils/file_monitor.cc \
+	carma/szaarrayutils/fitsio.cc \
+	carma/szaarrayutils/freelist.cc \
+	carma/szaarrayutils/grabber.cc \
+	carma/szaarrayutils/hash.cc \
+	carma/szaarrayutils/im_monitor_stream.cc \
+	carma/szaarrayutils/input.cc \
+	carma/szaarrayutils/list.cc \
+	carma/szaarrayutils/logger.cc \
+	carma/szaarrayutils/lprintf.cc \
+	carma/szaarrayutils/monitor_stream.cc \
+	carma/szaarrayutils/navigator.cc \
+	carma/szaarrayutils/netbuf.cc \
+	carma/szaarrayutils/net_im_monitor.cc \
+	carma/szaarrayutils/net_monitor.cc \
+	carma/szaarrayutils/netobj.cc \
+	carma/szaarrayutils/output.cc \
+	carma/szaarrayutils/pathname.cc \
+	carma/szaarrayutils/print.cc \
+	carma/szaarrayutils/procedure.cc \
+	carma/szaarrayutils/quad.cc \
+	carma/szaarrayutils/regcal.cc \
+	carma/szaarrayutils/regdata.cc \
+	carma/szaarrayutils/regmap.cc \
+	carma/szaarrayutils/regset.cc \
+	carma/szaarrayutils/regtemplate.cc \
+	carma/szaarrayutils/rtcnetcoms.cc \
+	carma/szaarrayutils/scancache.cc \
+	carma/szaarrayutils/scan.cc \
+	carma/szaarrayutils/scheduler.cc \
+	carma/szaarrayutils/scope.cc \
+	carma/szaarrayutils/script.cc \
+	carma/szaarrayutils/slprintf.cc \
+	carma/szaarrayutils/source.cc \
+	carma/szaarrayutils/spline.cc \
+	carma/szaarrayutils/statement.cc \
+	carma/szaarrayutils/stringmem.cc \
+	carma/szaarrayutils/stringpool.cc \
+	carma/szaarrayutils/szacontrol.cc \
+	carma/szaarrayutils/szaregsAll.cc \
+	carma/szaarrayutils/szaregsAntenna.cc \
+	carma/szaarrayutils/szaregsArray.cc \
+	carma/szaarrayutils/szaregsCan1.cc \
+	carma/szaarrayutils/szaregsCan2.cc \
+	carma/szaarrayutils/szaregsCan3.cc \
+	carma/szaarrayutils/szaregsCorrelator.cc \
+	carma/szaarrayutils/szascript.cc \
+	carma/szaarrayutils/szatypes.cc \
+	carma/szaarrayutils/tcpip.cc \
+	carma/szaarrayutils/terminal.cc \
+	carma/szaarrayutils/TransactionManager.cc \
+	carma/szaarrayutils/variable.cc
+
+lib_libcarmaSzaarrayutils_la_CXXFLAGS = -fPIC
+
+lib_libcarmaSzaarrayutils_la_CPPFLAGS = $(AM_CPPFLAGS) -DTOP="\"$(TOP)"\" -D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 -DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 -DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0 -DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated

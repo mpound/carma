@@ -1,0 +1,26 @@
+#ifndef CARMA_UTIL_PROGRAMINTERNALCONFIG_H
+#define CARMA_UTIL_PROGRAMINTERNALCONFIG_H
+
+#include "carma/util/Program.h"
+
+
+namespace carma {
+namespace util {
+
+
+class ProgramBase::Config {
+    friend class ProgramBase;
+    
+    private:
+        explicit Config( );
+        Config( const Config & rhs );
+        Config & operator=( const Config & rhs );
+
+        static const bool kUseDbmsDefaultValue = @useDBMS_default_value@;
+};
+
+
+}  // namespace carma::util
+}  // namespace carma
+
+#endif

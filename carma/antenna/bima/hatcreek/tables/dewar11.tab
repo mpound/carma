@@ -1,0 +1,31 @@
+# dewar11.tab
+# notes from 27 oct 97
+
+cyl 6584, motor 6154
+rapid warmup heaters: solder connections, power resistors
+heater on stage 3: 2 Minco buttons in parallel, soldered
+	through a 4-pin Microtech connector
+heater on stage 2: power resistor, teflon wires, no
+	Microtech connector
+
+sensors: 47106, 97640, 7388, 6727, 7393 
+
+band B:
+mixer 31-011-2 with separate bias tee, 100 ohms to gnd
+at room temp, 1 mV = 19.35 uA
+HEMT 20, with Pb sheet mounted under lid and folded over
+	onto the plate
+extra massive .032 thick copper straps from mixer and from
+	bias tee to the spider
+0.1 x 0.25 diam disk magnet on folded pole pieces
+
+band D:
+mixer 31-015A-5 (W20) with built in bias board, 100 ohms to gnd
+at room temp, 1 mv = 20.50 uA
+0.010 copper strap from back of mixer to spider
+HEMT 4 
+simple pole pieces, 0.20 diam magnet
+
+changes since last cooldown: changed copper straps from
+	3rd stage to spider: these are now made from 0.022 thick
+	copper, not 2 thinner strips

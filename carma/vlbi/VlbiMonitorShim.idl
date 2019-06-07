@@ -1,0 +1,43 @@
+// CORBA interface for simple shim to allow remote processes to push
+// VlbiSubsystem monitor points.
+
+#include "carma/correlator/obsRecord2/CorDataBase.idl"
+
+module carma
+{
+  module vlbi
+  {
+    // The CARMA canonical name for this Distributed Object
+    const string MONITOR_SHIM_NAME = "carma.vlbi.monitorShim";
+
+    typedef carma::correlator::obsRecord2::BandWidthType   BandWidthType;
+    typedef carma::correlator::obsRecord2::FpgaModeType    FpgaModeType;
+    typedef carma::correlator::obsRecord2::DelayTriplet    DelayTriplet;
+    typedef carma::correlator::obsRecord2::DelayTripletSeq DelayTripletSeq;
+    typedef carma::correlator::obsRecord2::SidebandType    SidebandType;
+
+    interface MonitorShim
+    {
+      void setOnlineState(in long band,
+                          in boolean isOnline);
+
+      void setBandwidth(in long band,
+                        in BandWidthType bandwidth,
+                        in FpgaModeType  fpgaMode,
+                        in long          seqNo ,
+                        in long          astroBandNo );
+
+      void setNoiseSourceState(in long band,
+                               in boolean isOn);
+
+      void setDelays(in long band,
+                     in DelayTripletSeq delays);
+
+      void setDownconverter(in long band,
+                            in double centerMHz,
+                            in double dconMHz,
+                            in SidebandType sb,
+                            in boolean bdcEnabled );
+    };
+  };
+};

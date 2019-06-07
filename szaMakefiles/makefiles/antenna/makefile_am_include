@@ -1,0 +1,16 @@
+TOP = @abs_top_srcdir@/carma/antenna/sza
+
+include szaMakefiles/makefiles/antenna/makefile_am_include_libs_manual
+include szaMakefiles/makefiles/antenna/makefile_am_include_libs_auto
+include szaMakefiles/makefiles/antenna/makefile_am_include_execs_manual
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,58 @@
+lib_libcarmaSzaAntennaCorba_la = lib/libcarmaSzaAntennaCorba.la
+
+lib_LTLIBRARIES += $(lib_libcarmaSzaAntennaCorba_la)
+
+lib_libcarmaSzaAntennaCorba_la_SOURCES = \
+	carma/antenna/sza/antenna/corba/AntennaCorba.cc \
+	carma/antenna/sza/antenna/corba/AntennaInitializer.cc \
+	carma/antenna/sza/antenna/corba/AntennaProxy.cc \
+	carma/antenna/sza/antenna/corba/Calibrator.cc \
+	carma/antenna/sza/antenna/corba/CalibratorProxy.cc \
+	carma/antenna/sza/antenna/corba/CarmaDataMapper.cc \
+	carma/antenna/sza/antenna/corba/CarmaFileHandler.cc \
+	carma/antenna/sza/antenna/corba/CarmaMonitorMap.cc \
+	carma/antenna/sza/antenna/corba/CarmaMonitorPointHandler.cc \
+	carma/antenna/sza/antenna/corba/CarmaMonitorPointTranslator.cc \
+	carma/antenna/sza/antenna/corba/CarmaSeqNum.cc \
+	carma/antenna/sza/antenna/corba/Cryo.cc \
+	carma/antenna/sza/antenna/corba/Drive.cc \
+	carma/antenna/sza/antenna/corba/DriveProxy.cc \
+	carma/antenna/sza/antenna/corba/Focus.cc \
+	carma/antenna/sza/antenna/corba/FrontEnd1cmProxy.cc \
+	carma/antenna/sza/antenna/corba/FrontEnd1mmProxy.cc \
+	carma/antenna/sza/antenna/corba/FrontEnd3mmProxy.cc \
+	carma/antenna/sza/antenna/corba/FrontEndProxy.cc \
+	carma/antenna/sza/antenna/corba/IF1cmProxy.cc \
+	carma/antenna/sza/antenna/corba/IF1mmProxy.cc \
+	carma/antenna/sza/antenna/corba/IF3mmProxy.cc \
+	carma/antenna/sza/antenna/corba/IFProxy.cc \
+	carma/antenna/sza/antenna/corba/LO1cmProxy.cc \
+	carma/antenna/sza/antenna/corba/LO1mmProxy.cc \
+	carma/antenna/sza/antenna/corba/LO3mmProxy.cc \
+	carma/antenna/sza/antenna/corba/LOProxy.cc \
+	carma/antenna/sza/antenna/corba/LOYig.cc \
+	carma/antenna/sza/antenna/corba/MpFileHandler.cc \
+	carma/antenna/sza/antenna/corba/MpFileReader.cc \
+	carma/antenna/sza/antenna/corba/Nutator.cc \
+	carma/antenna/sza/antenna/corba/Optics1cmProxy.cc \
+	carma/antenna/sza/antenna/corba/Optics1mmProxy.cc \
+	carma/antenna/sza/antenna/corba/Optics3mmProxy.cc \
+	carma/antenna/sza/antenna/corba/OpticsProxy.cc \
+	carma/antenna/sza/antenna/corba/PointingModel.cc \
+	carma/antenna/sza/antenna/corba/PointingModelProxy.cc \
+	carma/antenna/sza/antenna/corba/PolarizationProxy.cc \
+	carma/antenna/sza/antenna/corba/Proxy.cc \
+	carma/antenna/sza/antenna/corba/Rx1cmProxy.cc \
+	carma/antenna/sza/antenna/corba/Rx1mmProxy.cc \
+	carma/antenna/sza/antenna/corba/Rx3mmProxy.cc \
+	carma/antenna/sza/antenna/corba/RxProxy.cc \
+	carma/antenna/sza/antenna/corba/RxSelector.cc \
+	carma/antenna/sza/antenna/corba/SzaShareCorba.cc \
+	carma/antenna/sza/antenna/corba/VisBrickReader.cc \
+	carma/antenna/sza/antenna/corba/VisFileHandler.cc
+
+lib_libcarmaSzaAntennaCorba_la_CXXFLAGS = -fPIC
+
+lib_libcarmaSzaAntennaCorba_la_CPPFLAGS = $(AM_CPPFLAGS) -DTOP="\"$(TOP)"\" -D_REENTRANT -D_GPP -DHAVE_CARMA=1 -DHAVE_CORBA=1 -DHAVE_CORR=0 -DHAVE_DC=0 -DHAVE_DELAY=0 -DANT_CORBA=1 -DCOMPILE_WITH_DEBUG=0 -DHAVE_SZA=0 -DHAVE_WX=0 -DIS_STABLE=0 -DCOMPILE_FOR_64BIT=0 -DMAC_OSX=0 -DHAVE_RT=1 -DHAVE_MATLAB=1 -DHAVE_VIDEO=1 -fPIC -Wno-deprecated
+
+lib_libcarmaSzaAntennaCorba_la_LIBADD = $(lib_libcarmaSzaAntennaControl_la)

@@ -1,0 +1,276 @@
+#!/bin/bash
+#
+# Collects coverage information on carma work packages.
+#
+# Author: Andrew Beard
+#
+
+SRC_HOME=@abs_top_srcdir@
+BUILD_HOME=@abs_top_builddir@
+OUTPUT_DIR=$BUILD_HOME/coverage
+
+INDEX=carma-coverage.html
+
+# Carma work packages 
+wps="alarm antbima antcomm antovro archive canbus clock control correlator \
+    dbms downconverter environment fault interferometry linelength loberotator \
+    loref monitor observertools phasemonitor pipeline sdp services ui util"
+
+# Hash wps into array indices and generate output filenames for gcov results.
+i=0
+for wp in $wps; do
+    (($wp = $i))
+    (( i++ ))
+    wpofiles[wp]=gcov-results-$wp
+done
+
+carmaofile=gcov-results-carma
+
+# Associate pretty print names with work packages 
+wpnames[alarm]="Alarm"
+wpnames[antbima]="Bima Antenna "
+wpnames[antovro]="Ovro Antenna"
+wpnames[antcomm]="Common Antenna"
+wpnames[archive]="Archive"
+wpnames[canbus]="Canbus"
+wpnames[clock]="Clock"
+wpnames[control]="Control"
+wpnames[correlator]="Correlator"
+wpnames[dbms]="DBMS"
+wpnames[downconverter]="Downconverter"
+wpnames[environment]="Environment"
+wpnames[fault]="Fault System"
+wpnames[interferometry]="Interferometry"
+wpnames[linelength]="Linelength"
+wpnames[loberotator]="Loberotator"
+wpnames[loref]="LO Reference"
+wpnames[monitor]="Monitor System"
+wpnames[observertools]="Observer Tools"
+wpnames[phasemonitor]="Phase Monitor"
+wpnames[pipeline]="Pipeline"
+wpnames[sdp]="Science Data Products"
+wpnames[services]="Services"
+wpnames[ui]="User Interface"
+wpnames[util]="Utilities"
+
+# Associate directories to work packages - modify as needed.
+wpdirs[alarm]="carma/alarm"
+wpdirs[antbima]="carma/antenna/bima"
+wpdirs[antcomm]="carma/antenna/common"
+wpdirs[antovro]="carma/antenna/ovro/control carma/antenna/ovro/canbus"
+wpdirs[archive]="carma/archive"
+wpdirs[canbus]="carma/canbus"
+wpdirs[clock]="carma/clock"
+wpdirs[control]="carma/control"
+wpdirs[correlator]="carma/correlator/lib carma/correlator/transport \
+    carma/correlator/obsRecord2"
+wpdirs[dbms]="carma/dbms"
+wpdirs[downconverter]="carma/downconverter/common carma/downconverter/spectral \
+    carma/downconverter/wideband"
+wpdirs[environment]="carma/environment"
+wpdirs[fault]="carma/fault"
+wpdirs[interferometry]="carma/interferometry"
+wpdirs[linelength]="carma/linelength"
+wpdirs[loberotator]="carma/loberotator"
+wpdirs[loref]="carma/loref"
+wpdirs[monitor]="carma/monitor"
+wpdirs[observertools]="carma/observertools"
+wpdirs[phasemonitor]="carma/phasemonitor"
+wpdirs[pipeline]="carma/pipeline/util carma/pipeline/control \
+    carma/pipeline/bandMerge"
+wpdirs[sdp]="carma/sdp"
+wpdirs[services]="carma/services"
+wpdirs[ui]="carma/ui/rtd/common"
+wpdirs[util]="carma/util"
+
+# Define files which we wish to not check for coverage. 
+#  Typically this will include Program::main applications which are not ran 
+#  during testing.
+#  P.S. If you actually use this, tell Andy so he can implement it ;-)
+#  E.G. wpignore[alarm]=""
+
+
+# Function to guess the format of the source code filename embedded in
+#   gcov note files (.gcno).  This is an educated guess but nonetheless may
+#   be wrong in certain atypical configurations.  I need to guess this because 
+#   gcov does not allow one to specify an output file - rather it creates
+#   output files with path information embedded into the filename based on it's
+#   own rules (see the -p option under 'man gcov').  Furthermore, it doesn't
+#   form these names based on the source filename input to gcov! Instead it uses
+#   source names as embedded in .gcno files.  This in turn, AFAICT, is based on 
+#   how configure was called. Note gcno files are binary files and thus can't
+#   be easily parsed for this name.
+#   Input #1: wpdir
+#   Input #2: source filename
+function guess_gcov_filename ( ) {
+    local REL_SRC=@top_srcdir@
+    local REL_OBJ=@top_builddir@
+    local GCNO_SRC=""
+
+    # If the relative source directory is an absolute path, use it,
+    # otherwise use the relative path from the build directory.
+    if  echo $REL_SRC | egrep '^/\//'; then 
+        GCNO_SRC="${REL_SRC}$1"
+    else
+        GCNO_SRC=${REL_SRC#$REL_OBJ}
+    fi 
+
+    # Now create names in the same way gcov says it would
+    # Replace '..' with ^, remove '.' and rename '/' to #.
+    GCNO_SRC="${GCNO_SRC}/$1/"
+    GCOV_OUT=${GCNO_SRC//../^}
+    GCOV_OUT=${GCOV_OUT//./}
+    GCOV_OUT=${GCOV_OUT//\//#}
+
+    echo "${GCOV_OUT}$2.gcov"
+}
+
+# Function to get gcoverage for all cc files in an input directory
+#   Input #1: WP relative directory
+#   Output: String containing 'Filename coverage% of total-lines' for each file.
+#   E.G. get_directory_coverage ~src/carma/carma/canbus ~build/carma/canbus
+function get_directory_coverage ( ) {
+    local dir=$1
+    SRC_DIR="$SRC_HOME/$dir"
+    OBJ_DIR=$BUILD_HOME/$dir
+    for f in `ls $SRC_DIR/ | egrep '\.cc'`; do
+        local SRC_FILE=`basename $f`
+        local COVERAGE=`gcov -p -o $OBJ_DIR $f 2> /dev/null | \
+                        grep -A1 "${f}'" | \
+                        awk -F":" '/executed/ { print $2 }'`
+        if [[ -z $COVERAGE ]]; then
+            echo "$dir/$SRC_FILE 0% of ? lines."
+        else
+            local GCOV_OUTPUT=`guess_gcov_filename $dir $SRC_FILE`
+            local ENSCRIPTED="${dir//\//#}#${SRC_FILE}.gcov.html"
+            echo "$dir/$SRC_FILE $COVERAGE lines."
+
+            # Enscript output using the C++ pretty print option.  In the 
+            # process, get rid of the ugly header via awk. 
+            enscript -q -W html -Ecpp --title="${SRC_FILE}.gcov" --color\
+                ${GCOV_OUTPUT} -o - | 
+            awk '/<H1>.+\.gcov<\/H1>/ { print "<H1>" umn "</H1>" }
+                 $0 !~ /<H1>.+\.gcov<\/H1>/ { print }' \
+                 umn="$SRC_FILE.gcov" > ${ENSCRIPTED}
+        fi
+    done
+}
+    
+# Function to tally gcov results from a formatted file
+#   Input: filename where the file is in the format:
+#       Filename coverage% of total-lines
+#       ( E.G. canbus/CanIo.cc 48.8% of 173 )
+function tally_results ( ) {
+    awk '    { if ($4 != "?" ) tloc += $4;
+               subs = gsub("%","",$2);
+               tcov += ( $2 * 0.0100 * $4 ) };
+         END { if ( tloc > 0 ) pcov = ( tcov / tloc ) * 100;
+               else pcov = 0; 
+               printf ("%.2f%s of %d\n", pcov, "%", tloc) }' $1
+}
+
+# Function to create coverage output files for both individual work packages 
+# and all of carma. 
+#   This function organizes gcov output on a per wp basis.
+function create_coverage_ofiles ( ) {
+
+    if [[ -e $carmaofile ]]; then
+        rm -f $carmaofile 
+    fi
+
+    for wp in $wps; do
+
+        if [[ -e ${wpofiles[$wp]} ]]; then
+            rm -f ${wpofiles[$wp]}
+        fi
+
+        for dir in ${wpdirs[$wp]}; do
+            get_directory_coverage $dir >> ${wpofiles[$wp]}
+        done
+        
+        echo "$wp `tally_results ${wpofiles[$wp]}`" >> $carmaofile 
+    done
+}
+
+# Functions for creating html pages from our formatted gcov output files.
+
+# Function to create an html page containing coverage results for a single 
+# work package.
+#   Input: work package name from wps.
+function create_wp_web_summary ( ) {
+    echo "<html>"
+    echo "<head>"
+    echo "<title>Test Coverage Summary for ${wpnames[$1]}</title>"
+    echo "</head>"
+    echo "<body>"
+    echo "<h2>${wpnames[$1]} coverage summary</h2>"
+    echo "<table border=\"1\" cellpadding=\"5\">"
+    awk '$4  ~ /\?/ { print "<tr> <td>"$1"</td> <td>" $2, $3, $4, $5
+                      print "</td></tr>" }
+         $4 !~ /\?/ { linkfile = $1 ".gcov.html"
+                      gsub( /\//, "%23", linkfile)
+                      print "<tr> <td> <A href=\"" linkfile "\">"
+                      print $1 "</A></td> <td>" $2, $3, $4, $5"</td></tr>" }' \
+        ${wpofiles[$1]}
+    echo "</table>"
+    echo "</p>"
+    echo "<hr>"
+    echo "<i>Last updated `date`</i>"
+    echo "</body>"
+    echo "</html>"
+}
+
+function create_carma_web_summary ( ) {
+    echo "<html>"
+    echo "<head>"
+    echo "<title>Test Coverage Summary for Carma</title>"
+    echo "</head>"
+    echo "<body>"
+    echo "<h2>Total Carma test coverage is "
+    echo "`tally_results $carmaofile` lines.</h2>"
+    echo "<table border=\"1\" cellpadding=\"5\">"
+    for wp in $wps; do
+
+        local wphtml=${wpofiles[$wp]}.html
+
+        # First create a work package summary for each wp.
+        create_wp_web_summary $wp > $wphtml
+
+        if (( $wp % 2 == 0 )); then
+            echo "<tr>"
+        fi
+
+        echo "<td>"
+        echo "<A href=\"$wphtml\">${wpnames[$wp]}</A>"
+        echo " - `awk '{ if (cwp == $1) print $2, $3, $4, "lines." }' cwp=$wp $carmaofile`"
+        echo "</td>"
+
+        if (( $wp % 2 == 1 )); then
+            echo "</tr>"
+        fi
+    done
+    echo "</table>"
+    echo "<hr>"
+    echo "<i>Last updated `date`</i>"
+    echo "</body>"
+    echo "</html>"
+    
+}
+
+if [[ ! -d $OUTPUT_DIR ]]; then
+    mkdir $OUTPUT_DIR
+fi
+
+create_coverage_ofiles
+
+create_carma_web_summary > $INDEX
+
+# This is crap but I don't think there is any other way.  When configured with
+# a relative source directory, relative source filenames get embedded in .gcno
+# files making it impossible for gcov to find source files unless it's cwd is
+# the build directory itself.  This doesn't apply to trees configured with
+# an absolute path to configure. 
+mv *.html $OUTPUT_DIR/
+mv gcov-results* $OUTPUT_DIR/
+rm *.gcov 
+

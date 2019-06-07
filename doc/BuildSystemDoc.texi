@@ -1,0 +1,663 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename BuildSystemDoc.info
+@settitle The CARMA Autotools Build System
+@setcontentsaftertitlepage
+@paragraphindent none
+@c %**end of header
+
+@set BASE_URL http://www.mmarray.org/project/system/API/
+
+@titlepage
+@title The CARMA Autotools Build System
+@subtitle $Revision: 1.8 $
+@subtitle $Date: 2014/03/10 16:33:39 $
+@author David MacMahon and Tom Costa
+@end titlepage
+
+@ifnottex
+
+@node Top
+@top The CARMA Autotools Build System
+
+This document describes the CARMA autotools build system and how to use it.
+
+$Revision: 1.8 $@*
+$Date: 2014/03/10 16:33:39 $
+
+@contents
+
+@menu
+* Preliminaries::
+* Building::
+* Features And Caveats::
+* Makefile.am Contents::
+* Target Maintenance Recipes::
+* Test Writing Tips::
+* configure --help::
+@end menu
+
+@end ifnottex
+
+@node Preliminaries
+@chapter Preliminaries
+
+@menu
+* Where to Get This Document::
+* Conventions Used In This Document::
+* Requirements::
+* Bootstrapping The Build System::
+* Configuring Your Build Tree (Or Trees)::
+@end menu
+
+@node Where to Get This Document
+@section Where to Get This Document
+
+An automatically up-to-date copy of this file is available in both
+@uref{@value{BASE_URL}BuildSystemDoc.html, HTML} and
+@uref{@value{BASE_URL}BuildSystemDoc.pdf, PDF} formats.
+
+The source file for this document is available in the CARMA CVS repository as
+@file{carma/doc/BuildSystemDoc.texi}.
+
+@node Conventions Used In This Document
+@section Conventions Used In This Document
+
+@var{<CARMA>} is used as a placeholder for the root directory of a carma source
+tree.
+
+@var{<BUILD>} is used as a placeholder for the root directory of a build output
+of a carma source tree. Please note that this can be the same directory as
+<CARMA> if a developer wishes it to be on his/her system.
+
+@var{<wp>} is used as a placeholder for the name of a work package.
+
+@var{<TARGET>} is used as a placeholder for the name of target (in the same
+sense of target in traditional make) in the build system. Note that there
+target naming rules for binaries and libraries (both static and dynamic) based
+off of the actual file name of the binary or library. These rules are spelled
+out in the recipes section at the end of this document.
+
+@var{<BUILT_FILE>} is used as a placeholder for the relative path qualified
+filename of a file built by the build system. The path is relative to the root
+directory of the build tree.
+
+@node Requirements
+@section Requirements
+
+@itemize
+@item autoconf 2.59 (or later)
+@item automake 1.8.2 (or later)
+@end itemize
+
+Both of these have already been installed in @file{/usr/local/bin} at OVRO.
+They are also now part of CARMA_TOOLS.
+
+@node Bootstrapping The Build System
+@section Bootstrapping The Build System
+
+The build system does not store a @command{configure} script or a
+@file{Makefile.in} file (used by configure to generate @file{Makefile}) in the
+repository. Instead, it stores the precursors to those files:
+@file{configure.ac} and @file{Makfile.am}, respectively.  You have to
+"bootstrap" your working copy in order to generate the @command{configure}
+script and the @file{Makefile.in} file. To bootstrap your working copy, use
+these commands:
+
+@example
+cd @var{<CARMA>}
+autoreconf -i -s
+@end example
+
+@command{autoreconf} is one of the GNU autotools. It calls other GNU autotools
+in the proper order to generate all the files that need to be generated from
+@file{configure.ac} and @file{Makefile.am}. The @option{-i} option will copy a
+few of the autotool utility scripts into your working copy. The @option{-s}
+option will install them as symbolic links instead of copying them as plain
+files. The generated files that we are most interested in are
+@command{configure} and @file{Makefile.in}.
+
+@command{autoreconf} should be run anytime @file{configure.ac} or
+@file{Makefile.am} changes, but the generated @file{Makefile} knows about these
+two files and will re-run the necessary autotools if it notices that these
+files have changed. For the most part, developers won't have to care about
+re-running @command{autoreconf} unless serious changes are made to these files;
+then they will probably want to re-run it just to be safe (and do a @code{make
+distclean} in their build dirs). Note that @command{autoreconf} can be run any
+time. If the two input files haven't changed since the last time
+@command{autoreconf} was run, it will be a no-op.
+
+@node Configuring Your Build Tree (Or Trees)
+@section Configuring Your Build Tree (Or Trees)
+
+@menu
+* Multiple Build Directories::
+* Configuring A Build Directory::
+@end menu
+
+@node Multiple Build Directories
+@subsection Introduction To Multiple Build Directories
+
+Once you have bootstrapped your working copy, you can now configure your build
+directory (or directories). One of the nice things about the build system is
+that you can have multiple build directories (each with different configuration
+options) in which you build the source from the one shared working copy of the
+source tree. You may also build directly in the working copy itself, but that
+is quite a bit less flexible. For example, if you have optimized and
+non-optimized versions of CARMA_TOOLS, then you can have one build directory
+that uses the optimized verion and another build directory that uses the
+non-optimized version. Both of these build directories can build the source
+from one common working copy. This means that if you want to switch back and
+forth between different configuration options, you can do so by changing
+directories rather than having to do a @code{make clean} and then rebuilding
+everything using the other configuration. This will greatly facilitate
+experimentation of different build options.
+
+A build tree is structured as a recursive set of directories that somewhat
+parallels the source tree but it only builds directories for files that are
+actually generated. Hence, if the source tree has a file with a relative path
+of @file{@var{<CARMA>}/carma/monitor/Test/foo.cc} then the build tree will have
+a file with a relative path of @file{@var{<BUILD>}/carma/monitor/Test/foo.o} if
+@file{foo.o} is needed as part of the requested build.
+
+@node Configuring A Build Directory
+@subsection Configuring A Build Directory
+
+To configure your build directory, do these steps:
+
+@example
+mkdir @var{<BUILD>}
+cd @var{<BUILD>}
+@var{<CARMA>}/configure --with-carma-tools=@var{DIR_OF_CARMA_TOOLS} \
+             --with-java-home=@var{DIR_OF_JDK_1_4_2_OR_LATER}
+@end example
+
+where @var{DIR_OF_CARMA_TOOLS} is replaced with the actual name of the
+directory containing CARMA_TOOLS (e.g. on dana, use
+@file{/opt/carmaTools}) and @var{DIR_OF_JDK_1_4_2_OR_LATER} is replaced
+with the actual name of the directory containing a JDK version equal to or
+later than 1.4.2. If you have an environment variable @env{CARMA_TOOLS}, you
+can omit the @option{--with-carma-tools} option altogether and configure will
+use @env{$CARMA_TOOLS}.  If you neither use @option{--with-carma-tools} on the
+configure command line nor have @env{CARMA_TOOLS} in the environment,
+@command{configure} will look for @file{../carma_tools} (and in this case it
+will fail if that's not found). If you have an environment variable
+@env{JAVA_HOME} set at configure time, you can omit the
+@option{--with-java-home} option altogether and configure will use
+@env{$JAVA_HOME}.
+
+Another @command{configure} option is @option{--disable-dynamic-linking}.  This
+option will cause all executables to be statically linked instead of
+dynamically linked (the default).
+
+If you prefer to do your build directly in the source tree (i.e. in your
+working copy), then just skip the @code{mkdir} step, @code{cd} into the top of
+your working copy instead of @var{<BUILD>}, and use @command{./configure}
+instead of @command{@var{<CARMA>}/configure}.
+
+You should now have several files in your build directory. The most important
+of these files is @file{Makefile}. That's it!  Your build directory is now
+configured.
+
+@node Building
+@chapter Building
+
+The build system has only one top-level @file{Makefile} in a given build tree
+that describes the entire carma project. To build anything, you must run
+@command{make} from the top of your build directory. The target(s) you specify,
+if any, determine what @command{make} will do. The generated @file{Makefile}
+contains many useful targets. This section describes the more commonly used
+targets.
+
+You can also use any standard @command{make} option to alter its behavior.  For
+example, if you would like @command{make} to build as much as possible,
+regardless of any errors it may encounter along the way, you can use the
+@option{-i} option (e.g. @code{make -i}).  The @option{-i} option causes make
+to ignore errors instead of stopping the build on the first detected error.
+See @code{make --help} for more @command{make} options.
+
+@menu
+* make all::
+* make check::
+* make html::
+* make pdf|ps|dvi::
+* make BUILT_FILE::
+* make install::
+* make install-strip::
+* make sza::
+@end menu
+
+@node make all
+@section make all
+
+@code{make all} (or just @code{make})
+
+The @file{Makefile} has the default target @code{all} which will build all of
+the @strong{NON-test} products.
+
+@node make check
+@section make check
+
+@code{make check}
+
+To build and run the test products, you will make the @code{check} target using
+the command @code{make check}. This target depends on the @code{all} target so
+you will be sure that the tests will run using up-to-date binaries.
+
+@node make html
+@section make html
+
+@code{make html}
+
+This target makes HTML files for each Texinfo file specified in
+@file{Makefile.am}. Currently, there is only one Texinfo file in
+@file{Makefile.am} (the source for this document).
+
+This is also a backwards compatible target that will eventually be updated.
+Right now it just changes into the @file{doc} directory of your working copy
+and makes the @code{html} and @code{doxy} targets using the existing
+@file{Makefile}.  This will be changed to be more like the rest of the build
+system (i.e. it won't rely on an external @file{Makefile} and it will build
+into the build directory instead of the source directory).
+
+@node make pdf|ps|dvi
+@section make pdf|ps|dvi
+
+@code{make pdf}@*
+@code{make ps}@*
+@code{make dvi}
+
+These targets produce PDF, PostScript, and DVI files, respectively, for each
+Texinfo file specified in @file{Makefile.am}.
+
+@node make BUILT_FILE
+@section make @var{<BUILT_FILE>}
+
+@code{make @var{<BUILT_FILE>}}
+
+To make an individual target (e.g. @file{carma/util/libutil.so}), you can say
+@code{make carma/util/libutil.so}. Any out-of-date prerequisites will be
+brought up-to-date first. Note that you have to run this from the top level
+directory and you have to specify the full relative path to the target. You can
+@strong{NOT} @code{cd} into @file{carma/util} and then run @code{make
+libutil.so}.
+
+@node make install
+@section make install
+
+@code{make install}
+
+The binaries are built in your build tree in the various work package
+subdirectories. To get them all into one place so that they are more accessible
+to people and processes outside your build tree, you must install them using
+the @code{make install} command. This copies all the non-test programs to
+@file{$(prefix)/bin} and all of the libraries to @file{$(prefix)/lib}, where
+@env{$(prefix)} is the value of the @option{--prefix} option given to
+@command{configure}.  See the output of @code{configure --help} for more
+details.  @code{make install} also creates a basic @file{makedefs} file in
+@file{$(prefix)/lib}.  This is primarily intended to be used with the
+@code{make sza} target (see below).
+
+@node make install-strip
+@section make install-strip
+
+@code{make install-strip}
+
+This is a variation on @code{make install} that does the same thing, but this
+also removes and debugging information from the binaries as they are copied
+over. Be careful, though; once the debugging info is gone, it is impossible to
+put it back and much harder to debug problems. I'm not sure whether we will
+ever want to run stripped binaries, but maybe we will.
+
+@node make sza
+@section make sza
+
+@code{make sza}
+
+This is intended to facilitate building the combined CARMA and SZA code.  It
+does a @code{make install}, but forces @env{$(prefix)} to be the source
+directory.  It then changes to the @file{@var{<CARMA>}/sza} directory and runs
+@command{make}.  I imagine that this target will only be useful to the SZA
+people.
+
+@node Features And Caveats
+@chapter Features And Caveats
+
+@menu
+* What Gets Built::
+* RPATH::
+* Representing Library Dependencies::
+@end menu
+
+@node What Gets Built
+@section What Gets Built
+
+It should be noted that the build system will only build products in
+directories that exist at configure time (i.e. when @command{configure} is
+run); it will not build (or even try to build) directories that do not exist at
+configure time. This is to support the future building of CVS modules that are
+subsets of the entire CARMA tree.
+
+@node RPATH
+@section RPATH
+
+When linking executables, it is possible to link in a list of directories that
+should be used to search for shared libraries when the executable is run.
+Currently there are two (for test programs) or three (for NON-test programs)
+paths added to this @dfn{rpath} list: a relative path to the libraries from the
+top of the build tree, this is needed for the tests to run; an absolute path to
+@env{$CARMA_TOOLS}; and, for NON-test programs, an absolute path to the
+installed library location.
+
+@node Representing Library Dependencies
+@section Representing Library Dependencies
+
+When linking a library or executable, the depended-upon libraries must be
+specified. We can setup variables to facilitate this, but there are two (not
+necessarily mutually exclusive) ways to do this: as a hierarchy of variables or
+a collection of @dfn{flat} variables. This is something that probably deserves
+its own thread. I only mention it here as a placeholder.
+
+@node Makefile.am Contents
+@chapter Makefile.am Contents
+
+@menu
+* Subsystem Sections::
+* Automatic Makefile Regeneration::
+@end menu
+
+@file{Makefile.am} is a fairly large and looks complex, but most of what it
+contains is fairly straightforward and easy to work with. There is a little bit
+of a learning curve, but it's not that steep.
+
+@node Subsystem Sections
+@section Subsystem Sections
+
+The bulk of @file{Makefile.am} consists of subsection specifications. For our
+own sanity, I recommend that we format these subsystems specifications in a
+consistent manner. Near the top of @file{Makefile.am} is a subsystem template
+that shows the general format of a subsystem section.  This convention is not
+carved in stone, but it is what I have found useful in my eforts to produce the
+current @file{Makefile.am}.
+
+@node Automatic Makefile Regeneration
+@section Automatic Makefile Regeneration
+
+One nice thing is that if you have already configured a build directory (i.e.
+you have generated a @file{Makefile}) and you then change @file{Makefile.am},
+the original @file{Makefile} knows that it should first regenerate itself from
+@file{Makefile.am}. This means that once your build directory is configured,
+you can change the @file{Makefile.am} file (in the source directory) and then
+just run @command{make} in your build directory and the @file{Makefile} will be
+automatically regenerated and @command{make} will be automatically re-invoked
+using the new @file{Makefile}.  The same thing is true for changes made to
+@file{configure.ac}.
+
+@node Target Maintenance Recipes
+@chapter Target Maintenance Recipes
+
+@menu
+* Adding a .cc/.h File Pair::
+* Adding a .idl or .mpml File::
+* Adding a Library Target::
+* Adding a NON-Test Binary Target::
+* Adding a Test Binary Target::
+@end menu
+
+@node Adding a .cc/.h File Pair
+@section Adding a New .cc/.h File Pair to an Existing Target
+
+@enumerate
+
+@item Adding a @code{.cc} file to an existing target is done by finding the
+@code{@var{<TARGET>}_SOURCES} primary for the target and adding the @code{.cc}
+file to it.  Some work packages have a bunch of targets that use the same set
+of @code{.cc} files so they might have a @code{@var{<wp>}_common} variable that
+the @code{.cc} file can be added to so that any target whose
+@code{@var{<TARGET>}_SOURCES} primary includes @code{$(@var{<wp>}_common)} will
+get it.
+
+@end enumerate
+
+@node Adding a .idl or .mpml File
+@section Adding a New .idl Or .mpml File to an Existing Target
+
+@enumerate
+
+@item These files do not get explcitily added to @file{Makefile.am}. Instead,
+the set of @code{.cc} and @code{.h} files generated from them must be added
+either to @code{@var{<wp>}_built} for non-test targets or
+@code{@var{<wp>}_check_built} for test targets.
+
+@item If @code{@var{<wp>}_built} or @code{@var{<wp>}_check_built} is not
+already included in the target's @code{@var{<TARGET>}_SOURCES} primary, then
+the @code{.cc} files must be added as for normal @code{.cc} source files as
+shown in the previous recipe.
+
+@end enumerate
+
+@node Adding a Library Target
+@section Adding a New Library Target to a Work Package
+
+@enumerate
+
+@item Add the library to @code{@var{<wp>}_a} (for static @code{.a} libraries)
+and/or @code{@var{<wp>}_so} (for static @code{.so} libraries), where @var{<wp>}
+is one of the work package section names (e.g. @samp{canbus}, @samp{util},
+@samp{dbms}, etc.).  Whatever you specify here will be the relative (to the
+build directory) path in which the library will be built. Look at existing
+@code{@var{<wp>}_a} and @code{@var{<wp>}_so} variables for examples.
+
+@item Create new @code{@var{<TARGET>}_ldadd} and @code{@var{<TARGET>}_ldflags}
+variables that clients of the library can use to make sure that their link line
+will include everything needed to link with the new library. @var{<TARGET>}
+should be the name of the libaray minus the @code{libcarma} prefix and the
+@code{.a} or @code{.so} extension (e.g. @samp{canbus}, @samp{util},
+@samp{dbms}, etc.). Look at existing @code{@var{<TARGET>}_ldadd} and
+@code{@var{<TARGET>}_ldflags} variables for examples.
+
+@item If you added a @code{.a} library to @code{@var{<wp>}_a}, create a
+corresponding @code{@var{<TARGET>}_SOURCES} primary. Add the necessary sources
+to this primary following the guidelines in the previous recipes. The
+@code{@var{<TARGET>}_SOURCES} primary is the name of the library as specified
+in the @code{_a} variable but with all non-alphanumeric characters converted to
+underscores followed by @code{_SOURCES}. Look at existing
+@code{@var{<TARGET>}_SOURCES} primaries for examples.
+
+@item If you added a @code{.so} library to @code{@var{<wp>}_so}, create a
+corresponding @code{@var{<TARGET>}_LDFLAGS} primary for it (libname with
+non-alphanumeric characters converted to underscores followed by
+@code{_SOURCES}) and set the primary equal to @code{--shared} (and any other
+flags your library needs to be built).
+
+@item If you added a @code{.so} library to @code{@var{<wp>}_so}, create a
+corresponding @code{@var{<TARGET>}_SOURCES} primary for it. You can either add
+all the source files to this primary, or if you also have a @code{.a} library
+that has the same source file set, you can set this equal to
+@code{$(..._a_SOURCES)} to use the same file set.
+
+@end enumerate
+
+@node Adding a NON-Test Binary Target
+@section Adding a New NON-Test Binary Target to a Work Package
+
+@enumerate
+
+@item Add the name of the NON-test executable to the @code{@var{<wp>}_bins}
+variable, where @var{<wp>} is one of the work package section names (e.g.
+@samp{canbus}, @samp{util}, @samp{dbms}, etc.). Whatever you specify here will
+be the relative (to the build directory) path in which the executable will be
+built. Look at existing @code{_bins} variables for examples.
+
+@item Create a corresponding @code{@var{<TARGET>}_SOURCES} primary. Add the
+necessary sources to this primary following the guidelines in the previous
+recipes. The @code{@var{<TARGET>}_SOURCES} primary is the name of the
+executable as specified in the @code{_bins} variable but with all
+non-alphanumeric characters converted to underscores followed by
+@code{_SOURCES}. Look at existing @code{_SOURCES} primaries for examples.
+
+@item Create a corresponding @code{_LDADD} primary. For each carma library that
+the executable depends on, add the correspinding @code{$(@var{<lib>}_ldadd)}
+variable. For CARMA_TOOL libraries, use @code{-l@var{<libname>}} (the
+@code{-L$CARMA_TOOLS} part is already included as part of the link command, so
+it is not needed).
+
+@item Create a corresponding @code{_LDFLAGS} primary. For each carma library
+that the executable depends on, add the correspinding
+@code{$(@var{<lib>}_ldflags)} variable. Since this is a NON-test executable, it
+will eventually be installed into a @file{bin} directory and will likely use
+CARMA libraries installed in a corresponding @file{lib} directory.  To ensure
+that the installed binary can find the installed CARMA libraries, you need to
+add an entry to the end of rpath that points to the absolute location of the
+installed CARMA libraries.  This is done by adding @code{$(abs_rpath_ldflags)}
+to the end of the @code{_LDFLAGS} primary of the NON-test executable.  See
+existing uses of @code{$(abs_rpath_ldflags)} for examples.  If needed, you can
+also add other linker options here, just be sure to use the g++ pass-through
+syntax (e.g.  @code{-Wl,-rpath,foo/bar} instead of @code{-rpath foo/bar}).
+
+@item If the executable uses CARMA @command{keys} for its command line
+interface (and it should), be sure to add the name of the generated
+@file{_keys.cc} file to the @code{@var{<wp>}_keys} variable and the
+executable's @code{_SOURCES} primary.
+
+@end enumerate
+
+@node Adding a Test Binary Target
+@section Adding a New Test Binary Target to a Work Package
+
+@enumerate
+
+@item Follow the steps for adding a non-test binary in the previous recipe, but
+use @code{@var{<wp>}_check} instead of @code{@var{<wp>}_bins}.
+
+@item If the test program should be executed at @code{make check} time (instead
+of just being built), also add it to the @code{@var{<wp>}_tests} variable,
+unless the @code{@var{<wp>}_tests} variable already includes
+@code{$(@var{<wp>}_check)}.
+
+@end enumerate
+
+@node Test Writing Tips
+@chapter Test Writing Tips
+
+@itemize
+
+@item When your tests get executed, their current working directory will be the
+top of the build tree.  If your test needs data files from the source tree, you
+will have to reference them using the @env{srcdir} variable (which points to
+the top of the source directory) and any relative path down into the source
+tree.  For example, if your test's source lives in @file{carma/carma/util/Test}
+and it needs to refer to a data file named @file{foo} in the same directory, it
+would now have to refer to that file as @code{$@{srcdir@}/carma/util/Test/foo}.
+Note that @env{srcdir} can be relative or absolute depending on how
+@command{configure} was started; be careful to avoid assumptions about that in
+your code.
+
+@item Your test should exit with a zero exit status if it succeeds and a
+non-zero exit status if it fails.  The exit status of 77 is special; it causes
+that test to be ignored in the tally of successes and failures.
+
+@item Your tests will get executed without any commnd line parameters.  If they
+need command line parameters, you should create a wrapper script to call your
+@emph{real} test and specify the wrapper script in @file{Makefile.am} as your
+test (or one of your tests).
+
+@item It is possible to handle tests that are expected to fail (i.e. exit with
+a non-zero exit status).  Since we don't have any such tests as of this
+writing, there are no examples of how to set this up.  Please let me know if
+you want to make such a test and I will show you how to set it up.
+
+@end itemize
+
+@node configure --help
+@appendix configure -@w{}-help
+@comment Use "-@w{}-" to prevent "--" from being treated as a single dash
+
+This appendix contains the output of @code{configure --help} as of
+@file{configure.ac} revision 1.9.
+
+@verbatim
+`configure' configures carma 0.0 to adapt to many kinds of systems.
+
+Usage: ./configure [OPTION]... [VAR=VALUE]...
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Defaults for the options are specified in brackets.
+
+Configuration:
+  -h, --help              display this help and exit
+      --help=short        display options specific to this package
+      --help=recursive    display the short help of all the included packages
+  -V, --version           display version information and exit
+  -q, --quiet, --silent   do not print `checking...' messages
+      --cache-file=FILE   cache test results in FILE [disabled]
+  -C, --config-cache      alias for `--cache-file=config.cache'
+  -n, --no-create         do not create output files
+      --srcdir=DIR        find the sources in DIR [configure dir or `..']
+
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+			  [/usr/local]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+			  [PREFIX]
+
+By default, `make install' will install all the files in
+`/usr/local/bin', `/usr/local/lib' etc.  You can specify
+an installation prefix other than `/usr/local' using `--prefix',
+for instance `--prefix=$HOME'.
+
+For better control, use the options below.
+
+Fine tuning of the installation directories:
+  --bindir=DIR           user executables [EPREFIX/bin]
+  --sbindir=DIR          system admin executables [EPREFIX/sbin]
+  --libexecdir=DIR       program executables [EPREFIX/libexec]
+  --datadir=DIR          read-only architecture-independent data [PREFIX/share]
+  --sysconfdir=DIR       read-only single-machine data [PREFIX/etc]
+  --sharedstatedir=DIR   modifiable architecture-independent data [PREFIX/com]
+  --localstatedir=DIR    modifiable single-machine data [PREFIX/var]
+  --libdir=DIR           object code libraries [EPREFIX/lib]
+  --includedir=DIR       C header files [PREFIX/include]
+  --oldincludedir=DIR    C header files for non-gcc [/usr/include]
+  --infodir=DIR          info documentation [PREFIX/info]
+  --mandir=DIR           man documentation [PREFIX/man]
+
+Program names:
+  --program-prefix=PREFIX            prepend PREFIX to installed program names
+  --program-suffix=SUFFIX            append SUFFIX to installed program names
+  --program-transform-name=PROGRAM   run sed PROGRAM on installed program names
+
+Optional Features:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --disable-dynamic-linking
+                          link with static CARMA libraries
+  --disable-dependency-tracking  speeds up one-time build
+  --enable-dependency-tracking   do not reject slow dependency extractors
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-java-home=DIR    directory containing JDK 1.4.2 (or greater)
+  --with-carma-tools=DIR  directory containing CARMA_TOOLS tree
+
+Some influential environment variables:
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+  CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
+              headers in a nonstandard directory <include dir>
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  CPP         C preprocessor
+
+Use these variables to override the choices made by `configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+Report bugs to <carmabugs@cvs.mmarray.org>.
+@end verbatim
+
+@bye

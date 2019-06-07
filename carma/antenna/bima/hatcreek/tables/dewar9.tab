@@ -1,0 +1,36 @@
+# dewar9.tab
+# notes from 03-nov-97 
+
+cyl 6154, motor 6418; this refrig has stage 3 e-beam welded
+rapid warmup heaters: solder connections, power resistors
+heater on stage 3: 2 600-ohm Dale resistors in parallel; 
+	resistor on band B has 1 tab sheared off to fit block
+heater on stage 2: power resistor, 300 ohms, connected thru
+	Microtech connector
+
+sensors: 47104, 97644, 7698, 7701, 22578
+sensors 1 and 2 are mounted on foot of flexible
+	heat straps to stages 1 and 2 respectively
+
+band B:
+mixer 31-011-5 with separate bias tee, 100 ohms to gnd
+HEMT 17
+mixer and bias tee connected to spider with 0.010"
+	thick copper straps
+0.24" diam magnet
+18.9 uA at 1 mV bias, room temp
+
+band D:
+mixer 31-015A-7 (W20) with built in bias board, not a matching
+	network but just straight 50 ohms; 100 ohms to gnd
+at room temp, 1 mv = 20.80 uA
+0.010 copper strap from back of mixer to spider
+HEMT #25
+simple pole pieces, 0.20 diam magnet
+
+changes made 02/03 nov 97: changed 2 small magnets on mixer B
+	for 1 big magnet; heat strap to mixer B used to be broad
+	copper strap connecting to the spider, with heater mounted
+	midway along it - now it is the standard arrangement;
+	also, I replaced straps from stage 3 to spider with
+	0.022" thick copper straps

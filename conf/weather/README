@@ -1,0 +1,36 @@
+
+minirc.*      minicom setup file (copy the files to /etc)
+		This will allow you to talk to the WS or DPS.
+
+Sample session 
+	- for WS you need to issue the commands following the *,
+	  hit return if the * doesn't seem to appear)
+	- for DPS responses will automatically appear on screen
+
+% minicom ws
+
+*A
+ R+273706. F+573441. V3 A1 L+273706. E99 79 99 M1280   B+3.2246 C3356  
+*B
+ A1 L+273694 C0804  
+*C
+ Y05 D0085  T20:49:46 C1293  
+*D
+01+0222.  02+2005.  03+0085.  04+2045.  05+20.52  06+18.32  07+0885.  08+3.262 
+09+0.963  10+166.9  11+36.55  12+0.000 
+
+ A1 L+273706 C6301  
+*
+ALT-X		(to exit back to shell prompt)
+
+
+% minicom dps
+
+.T+ 63.0/D+ 23.9 P60.
+.T+ 63.1/D+ 23.9 P61.
+.T+ 63.1/D+ 23.9 P61.
+.T+ 63.1/D+ 23.9 P61.
+.T+ 63.1/D+ 24.0 P59.
+
+ALT-X		(to exit back to shell prompt)
+

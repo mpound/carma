@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd"[
+    <!ENTITY BIN_DIR "./bin/">
+    <!ENTITY RUN_DIR "/home/iws/devel/carma-git/build">
+    <!ENTITY DBMS "useDBMS=false">
+    <!ENTITY LOG "">
+]>
+
+<!-- $Id: alarmLocal.xml,v 1.21 2014/11/03 19:21:22 iws Exp $ -->
+<domain>
+
+    <oad hostname="build2.ovro.pvt">
+
+        <!-- Core Monitor -->
+        <server name="FrameCollator"
+                path="&BIN_DIR;frameCollator"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; delay=600"
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                system="monitor"
+                critical="true"
+                startup-priority="&monitor-core;"/>
+
+        <server name="FaultSystem"
+                path="&BIN_DIR;faultSystem"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; alarmFile=fault/test/alarm_good.xml blankFlagFile=fault/test/bf_good.xml runEmailService=false"
+                startup-priority="&monitor-core;"/>
+
+        <server name="ControlFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=control"
+                critical="false"
+                startup-priority="&monitor;" />
+
+        <server name="Subarray1"
+                path="&BIN_DIR;subarrayControl"
+                directory="&RUN_DIR;"
+                args="runSAT=true &LOG; &DBMS;"
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                critical="true"
+                startup-priority="&control;" />
+
+        <server name="ControlState"
+                path="&BIN_DIR;/carmaControlState"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; statedir=/tmp"
+                critical="false"
+                startup-priority="&control;" />
+
+        <server name="DelayEngineFSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=delayEngine delay=250"
+                critical="false"
+                startup-priority="&monitor;" />
+
+        <!-- Process Monitor -->
+        <server name="ProcessMonitorFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=Imr delay=150"
+                startup-priority="&monitor;" />
+
+        <server name="ProcessMonitor" path="&BIN_DIR;/processMonitor"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; file=&RUN_DIR;/conf/imr/alarmLocal.xml writedelay=0.110 poll=5"
+                system="monitor" critical="true"
+                startup-priority="&monitor;" />
+
+        <server name="alarmFSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=alarm"
+                startup-priority="&monitor;" />
+
+        <server name="alarmControl"
+                path="&BIN_DIR;/carmaAlarm"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; mode=control"
+                startup-priority="&subsystem;"/>
+
+        <!-- signal path mapper -->
+        <server name="SignalPath" path="&BIN_DIR;/carmaSignalPathMapper"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;"
+                startup-priority="&subsystem;"/>
+
+        <server name="SignalPathFSP"
+                path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS; subsystem=signalPath"
+                startup-priority="&monitor;" />
+
+        <!-- weather station -->
+        <server name="weatherFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;" 
+                args="&LOG; &DBMS;  subsystem=weather delay=250"
+                startup-priority="&monitor;"/>
+
+        <server name="WeatherHost" path="&BIN_DIR;/weatherStation"
+                directory="&RUN_DIR;" 
+                args="&DBMS; emulate=true traceFile=syslog traceLevel=0 dps=true ws=true WSdev=/dev/keyspan/port1 DPSdev=/dev/keyspan/port2"
+                startup-priority="&subsystem;"/>
+
+        <!-- spectral pipeline (to trigger the PipelineSync application) -->
+        <server name="SlPipelineFSP" path="&BIN_DIR;/frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG;  &DBMS; subsystem=slpipeline delay=400"
+                system="data"
+                startup-priority="&monitor;"/>
+
+        <server name="SlDataCatcher" path="&BIN_DIR;/catchData"
+                directory="&RUN_DIR;"
+                args="&LOG;  &DBMS;  mode=sl"
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                system="data" critical="true"
+                startup-priority="&subsystem;"/>
+
+        <server name="SlPipeline" path="&BIN_DIR;/pipeline"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; mode=sl vbdir=/tmp monitorDelay=375"
+                system="data" critical="true"
+                startup-priority="&subsystem;"/>
+
+        <!-- RTD plotter server and requirements -->
+        <server name="PipelineSync" path="&BIN_DIR;/monitorPipelineSync"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS;"
+                system="monitor" critical="true"
+                startup-priority="&pre-subsystem;"/>
+        <server name="carmaMonitorSystemServer"
+                path="&BIN_DIR;/tCmss"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS;"
+                startup-priority="&monitor;"/>
+        <server name="carmaMonitorSystemRtdServer"
+                path="&BIN_DIR;/tRtdServerTask"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; host=build2.ovro.pvt clientPort=5665"
+                startup-priority="&monitor;"/>
+
+        <!-- CARMA Project Database -->
+        <server name="PDB"
+                path="&BIN_DIR;/carmaProjectDatabaseManagerHost"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; hostname=rena.ovro.pvt database=test rt=false"
+                optargs="-ORBSvcConf &RUN_DIR;/conf/tao/fc.conf"
+                critical="true" />
+
+        <server name="PDBFSP"
+                path="&BIN_DIR;frameScriberPublisher"
+                directory="&RUN_DIR;"
+                args="&LOG; &DBMS; subsystem=projectdatabasemanager"
+                critical="false"
+                startup-priority="&monitor;" />
+    </oad>
+
+</domain>

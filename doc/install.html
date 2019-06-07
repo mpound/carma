@@ -1,0 +1,233 @@
+<HTML>
+<TITLE> CST install </TITLE>
+<BODY>
+<!--  This file lives (under CVS control) as $CARMA/doc/install.html  -->
+<!--  $Id: install.html,v 1.18 2007/11/27 23:50:29 colby Exp $ -->
+<H1> CARMA installation</H1>
+
+The CST (CARMA Software Toolkit) consists of a the <B>CARMA</B> source code (developed
+under our CVS) and a number of <I>alien</I> packages that are needed 
+(typically libraries, but not always) to compile and complete linking the CARMA code.
+In tar ball form these are referred to as <B>carma_pkg</B>, and once installed,
+they are referred to as <B>carma_tools</B>.
+
+
+<H1> Pre-conditions </H1>
+
+Baselines for installation (some variations on this <I>may</I> also work, but
+normallly we mean the version listed or above):
+
+<UL>
+<LI> A redhat 9 linux box with various development tools installed)
+<pre>
+  - autoconf            * 2.59  (notice you need to upgrade)  [autoconf-2.57-3]
+  - automake            * 1.8.2 (notice you need to upgrade)  [automake-1.6.3-5]
+  - gnu make		* 3.80 (notice you need to upgrade) (Stallman's 1998 book is on version 3.77) [make-3.79.1-17]
+  - C/C++ compiler	* 3.2.2 (gnu)[gcc-3.2.2-5]
+  - fortran compiler	* 3.2.2 (gnu) [gcc-g77-3.2.2-5]
+  - java		* 1.4   (needs a sdk, not jre, see e.g. www.blackdown.org)
+  - doxygen		  1.2.14 [doxygen-1.2.18-3]
+  - kernel                2.4.20 (note a kernel.org kernel is needed, the redhat kernel has flaws)
+                          2.4.23 also works
+</pre>
+<LI> A $CARMA_PKG directory where all the tarballs for alien packages
+are located. carma itself is
+also allowed to reside here in case you don't have a network/CVS connection
+(think your classic CD install at 35,000ft), 
+</UL>
+
+Installation is based on a build tree that points to a CVS source tree
+(you can thus have multiple build trees with different configurations)
+
+
+which should install the carma_tools (all external packages) if you
+don't have them yet, followed by a carma installation. Although *both*
+can be installed in a single directory, say /opt/carma, it is
+recommended to install them under separate directories. 
+
+<H1> Installation </H1>
+
+<pre>
+CVS usage:      you will always need a developers account, either use the -d flag to cvs, 
+                or set the environment variable CVSROOT.  The 'root' shell variable is set here 
+                for convenience, to denote from where we install CARMA and friends.
+
+	1% setenv CVSROOT :ext:$USER@cvs.ovro.caltech.edu:/sw/cvscarma
+        1% setenv CVS_RSH ssh
+	2% set root=`pwd`
+
+??	 % setenv CARMA_PKG    $root/carma_pkg        
+??	 % setenv CARMA_TOOLS  $root/carma_tools
+??	 % setenv CARMA        $root/carma_cvs
+??       % setenv CARMA_BUILD  $root/carma_build
+??       % setenv CARMA_RT     $root/carma_rt
+
+scenario 1:	got absolutely nothing, starting from scratch....
+
+        3% cvs -Q co -d $CARMA carma
+	4% cd $CARMA/conf/
+	5% ./carma-package-sync slave=$root/carma_pkg
+
+	  IFF you do not have the correct versions of make/gcc/autoconf/automake, you
+	  should now use the following commands to install them in the proper 
+	  place (the order is important for the auto-tools, but probably not
+	  if you between the three make/c++/auto-tools
+
+	6% cd $CARMA/conf/opt
+	6% (cd make; make all PREFIX=$CARMA_TOOLS) 
+	6% (cd c++; make all PREFIX=$CARMA_TOOLS) 
+	7% (cd autoconf; make all PREFIX=$CARMA_TOOLS)
+
+	   Modify search path so that the new tools are picked up:
+
+	 % set path=(. $CARMA_TOOLS/bin $path); rehash        # csh/tcsh
+	 $ PATH=".:$CARMA_TOOLS/bin:$PATH" ; export PATH      # sh/bash
+
+	8% (cd automake; make all PREFIX=$CARMA_TOOLS)
+        9% (cd java; make all PREFIX=$root/java)              # TBA 
+	   javac -
+	   ## install_aliens should do a which on javac !!!!
+
+	9% rehash
+
+
+	  NOW continue on to install the normal carma tools we need:
+
+       10% ./install_tools carma_pkg=$CARMA_PKG carma_tools=$CARMA_TOOLS >& ../install_tools.log
+
+          (this normally very verbose step takes several hours on P4 class machine)
+
+	  CONTINUE to step 15, or discard the current $CARMA
+
+scenario 2:    install carma and carma_tools, assuming carma_pkg is available
+
+       11% cvs -Q co -d $CARMA carma
+       12% cd $CARMA/conf/
+       13% ./install_tools carma_pkg=$CARMA_PKG carma_tools=$CARMA_TOOLS
+
+	  NOW continue to step 15, or discard the current $CARMA
+
+scenario 3:    install only carma, assuming carma_tools had been done before or is
+               available on site.
+               This is what most developers will be using most of the time.
+
+       14% cvs -Q co -d $CARMA carma              # can take 2-20 minutes
+       15% cd $CARMA
+       16% autoreconf -i -s
+       17% mkdir $CARMA_BUILD
+       18% cd $CARMA_BUILD
+       19% $CARMA/configure --with-carma-tools=$CARMA_TOOLS --with-java-home=$JAVA_HOME --with-prefix=$CARMA_RT
+       20% make all                               # takes about 30 minutes on a P1.6/768M)
+       21% make check                             # takes about 25 minutes on a P1.6/768M)
+       22% make html pdf ps
+       23% make install
+	
+</pre>
+
+<H1> Runtime </H1>
+
+You probably want root access on the machine(s) carma is running on. For example, efficient logging
+requires a directory {\tt /var/carma}, which is controlled by {\tt /etc/syslog.conf}. See
+the directory {\tt CARMA/conf/etc/} for pointers which files to update:
+<pre>
+   /etc/syslog.conf                  logging, also need /var/carma tree
+   /etc/services                     3100/tcp for rtdmaster
+</pre>
+
+To properly setup syslog to handle log messages that will be passed into rtdlog and saved as flat files to disk, you must add the following lines to /etc/syslog.conf:
+<pre>
+# Log local[2-6] with level>=crit
+local1.crit;\
+local2.crit;\
+local3.crit;\
+local4.crit;\
+local5.crit;\
+local6.crit				/var/carma/log/alert.log
+local6.crit				|/var/carma/log/alert.pipe
+
+# local1 Receivers
+local1.info;local1.!crit		/var/carma/log/receivers.log
+local1.info;local1.!crit		|/var/carma/log/receivers.pipe
+local1.debug;local1.!info		/var/carma/log/receivers.debug
+
+# local2 catch-all for carma
+local2.info;local2.!crit		/var/carma/log/carma.log
+local2.info;local2.!crit		|/var/carma/log/carma.pipe
+local2.debug;local2.!info		/var/carma/log/carma.debug
+
+# local3 monitor and fault system
+local3.info;local3.!crit		/var/carma/log/monitor.log
+local3.info;local3.!crit		|/var/carma/log/monitor.pipe
+local3.debug;local3.!info		/var/carma/log/monitor.debug
+
+# local4 control
+local4.info;local4.!crit		/var/carma/log/control.log
+local4.info;local4.!crit		|/var/carma/log/control.pipe
+local4.debug;local4.!info		/var/carma/log/control.debug
+
+# local5 correlator, delay engine, lobe rotator
+local5.info;local5.!crit		/var/carma/log/interferometry.log
+local5.info;local5.!crit		|/var/carma/log/interferometry.pipe
+local5.debug;local5.!info		/var/carma/log/interferometry.debug
+
+# local6 Phase monitor, WVR, Weather station, Linelength, LO Reference
+local6.info;local6.!crit		/var/carma/log/environment.log
+local6.info;local6.!crit		|/var/carma/log/environment.pipe
+local6.debug;local6.!info		/var/carma/log/environment.debug
+</pre>
+
+After making these modifications to /etc/syslog.conf, you should copy the CARMA/conf/etc/syslog2carmalog script into /etc/init.d, then run the following commands as root:
+<pre>
+  /sbin/chkconfig --add syslog2carmalog
+  /etc/init.d/syslog2carmalog initialize
+</pre>
+
+The output of the intialize step should look like:
+<pre>
+  Checking /etc/syslog.conf file:                          [  OK  ]
+  Initializing FIFO's for syslog2carmalog: 
+   Created FIFO: /var/carma/log/carma.pipe                 [  OK  ]
+   Created FIFO: /var/carma/log/control.pipe               [  OK  ]
+   Created FIFO: /var/carma/log/environment.pipe           [  OK  ]
+   Created FIFO: /var/carma/log/receivers.pipe             [  OK  ]
+   Created FIFO: /var/carma/log/alert.pipe                 [  OK  ]
+   Created FIFO: /var/carma/log/monitor.pipe               [  OK  ]
+   Created FIFO: /var/carma/log/interferometry.pipe        [  OK  ]
+</pre>
+
+Now you should restart the syslog daemon and start the syslog2carmalog daemon with the following commands:
+<pre>
+  /etc/init.d/syslog restart
+  /etc/init.d/syslog2carmalog start
+</pre>
+
+If any FAILED messages come up during this process, the syslog2carmalog provides diagnostic information to help fix the problem.
+
+<H1> Updates </H1>
+
+Assuming you have a CARMA and CARMA_BUILD tree, the following commands will be needed
+
+<pre>
+         1% cd $CARMA
+	 2% cvs update                      # update the tree
+
+
+	 3% cd $CARMA_BUILD
+	 4% make all check >& LOG           # no need for 'autoreconf', due to proper dependancies 
+
+
+	10% make distclean                  # if many things have changes
+</pre>
+
+<hr>
+See also <A HREF=SEDesign.ps>Software Engineering Design</A> document for more details,
+and the <A HREF=BuildSystemDoc.pdf>CARMA Autotools Build  System</A>.
+
+<hr>
+<PRE>
+File: $Id: install.html,v 1.18 2007/11/27 23:50:29 colby Exp $
+should live in CARMA/doc, else some relative crossreferences in this document will not work.
+</PRE>
+
+</BODY>
+</HTML>

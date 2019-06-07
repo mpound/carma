@@ -1,0 +1,163 @@
+<HTML>
+<TITLE>Notes on the Monitor Configuration Database</TITLE>
+<BODY>
+<CENTER><H1>Notes on the Monitor Configuration Database</H1></CENTER>
+<CENTER><H2>Dave Mehringer</H2></CENTER>
+
+<CENTER><H2>Version $Id: monitorConfigurationDB.html,v 1.2 2004/12/03 00:58:18 dmehring Exp $</H2></CENTER>
+<H2>Monitor Configuration Parameters Stored in the Database</H2><P>
+The tables which make up the monitor configuration database are
+defined in <code>conf/dbms/permanentTablesSchema.sql</code>.
+The monitor configuration parameters which are stored in the database
+originate solely in subystem mpml files. Parameters are ingested into
+the database from mpml files using
+<code>scripts/monitorConfigurationLoader</code> which wraps
+<code>bin/monitorConfigurationLoader.</code> 
+The following monitor configuration parameters which are stored in the
+database are not permitted to change once they have been ingested
+(that is, the associated mpml values may not be changed):
+<UL>
+<LI>tagID - the tagID of the monitor point (has no mpml counterpart,
+tagIDs are assigned by the dbms C++ code)
+<LI>subsysID - the subsystem ID of the monitor point (equal to the
+upper 15 bits of the tagID). This maps to the subsystem of the monitor
+point, which is not permitted to change.
+<LI>name - the canonical name of the monitor point (e.g., Bima1.AntennaCommon.Drives.elEncoderZero).
+<LI>units - the units of the monitor point's values
+<LI>dataTypeID - the data type ID of the monitor point, this maps to
+the dataType of the monitor point, which is not permitted to change.
+<LI>mpTypeID - the monitor point type ID. This maps to the monitor
+point type (SOFT, SENSE, CONTROL) which is not permitted to change.
+<LI>isPersistent - the persistence (0 or 1) of the monitor point.
+<LI>isSpectrum - indicates whether or not a monitor point represents
+a spectrum (1) or a time series (0).
+<LI>locationID - the location ID which maps to the location of the
+monitor point which is not permitted to change.
+<LI>deviceID - the ID of the device which maps to the device with
+which the monitor point is associated which is not permitted to change.
+</UL>
+<P>
+The following monitor configuration parameters which are stored in the
+database are permitted to change:
+<UL>
+<LI>frameCount - the frameCount at which the configuration becaame
+valid (this has no mpml counterpart, but is the time when the
+configuration is loaded into the database)
+<LI>shortName - the short name of the monitor point 
+<LI>longName - the long name of the monitor point
+<LI>updateInterval - the interval (in frames) that the monitor point's
+value is updated
+<LI>description - the monitor point description
+<LI>width - the display width of the value (does not yet have an mpml
+counterpart 
+<LI>precis - the display precision of the monitor point value (does
+not yet have an mpml counterpart)
+<LI>warnLo - the low warning threshold, used only to initialize this
+value in the monitor system
+<LI>warnHi - the high warning threshold, used only to initialize this
+value in the monitor system
+<LI>errLo - the low error threshold, used only to initialize this
+value in the monitor system
+<LI>errHi - the high error threshold, used only to initialize this
+value in the monitor system
+</UL>
+
+In addition, for monitor points of type enumeration, the string values
+of the enumerators in mpml files are stored in the database.  The monitor
+system writes the values of these type of points as integers, the
+values being based on the enumerators' position in the enumeration.
+What this means for subsystem developers is that, once an enumerator
+has been added, it cannot be removed from the enumeration nor moved to
+another place in the enumeration. It is permitted to add new
+enumerators <B>only</B> at the end of the enumeration.  So, for example, an
+mpml modification such as changing
+
+<PRE>
+&lt;SensePoint name="state" type="enum"&gt;
+  &lt;enum name="TRACKING" /&gt;
+  &lt;enum name="SLEWING" /&gt;
+  &lt;enum name="STOW" /&gt;
+  &lt;enum name="OFF" /&gt;
+&lt;/SensePoint&gt;
+</PRE>
+
+to
+
+<PRE>
+&lt;SensePoint name="state" type="enum"&gt;
+  &lt;enum name="SLEWING" /&gt;   &lt;!-- swapping elements is not permitted --&gt;
+  &lt;enum name="TRACKING" /&gt;
+  &lt;enum name="STOW" /&gt;
+  &lt;enum name="OFF" /&gt;
+&lt;/SensePoint&gt;
+</PRE>
+
+is not permitted.  Nor is changing
+<PRE>
+&lt;SensePoint name="state" type="enum"&gt;
+  &lt;enum name="TRACKING" /&gt;
+  &lt;enum name="SLEWING" /&gt;
+  &lt;enum name="STOW" /&gt;
+  &lt;enum name="OFF" /&gt;
+&lt;/SensePoint&gt;
+</PRE>
+
+to
+
+<PRE>
+&lt;SensePoint name="state" type="enum"&gt;
+  &lt;enum name="TRACKING" /&gt;
+                                   &lt;!-- deleting enumerators is not permitted --&gt;
+  &lt;enum name="STOW" /&gt; 
+  &lt;enum name="OFF" /&gt;
+&lt;/SensePoint&gt;
+</PRE>
+
+Nor is modifying
+<PRE>
+&lt;SensePoint name="state" type="enum"&gt;
+  &lt;enum name="TRACKING" /&gt;
+  &lt;enum name="SLEWING" /&gt;
+  &lt;enum name="STOW" /&gt;
+  &lt;enum name="OFF" /&gt;
+&lt;/SensePoint&gt;
+</PRE>
+
+to
+
+<PRE>
+&lt;SensePoint name="state" type="enum"&gt;
+  &lt;enum name="TRACKING" /&gt;
+  &lt;enum name="SLEWING" /&gt;
+  &lt;enum name="STOW" /&gt;
+  &lt;enum name="OUTTOLUNCH" /&gt;  &lt;!-- new elements can only be added at the end! --&gt;
+  &lt;enum name="OFF" /&gt;
+&lt;/SensePoint&gt;
+</PRE>
+
+However, modifying
+<PRE>
+&lt;SensePoint name="state" type="enum"&gt;
+  &lt;enum name="TRACKING" /&gt;
+  &lt;enum name="SLEWING" /&gt;
+  &lt;enum name="STOW" /&gt;
+  &lt;enum name="OFF" /&gt;
+&lt;/SensePoint&gt;
+</PRE>
+
+to
+<PRE>
+&lt;SensePoint name="state" type="enum"&gt;
+  &lt;enum name="TRACKING" /&gt;
+  &lt;enum name="SLEWING" /&gt;
+  &lt;enum name="STOW" /&gt;
+  &lt;enum name="OFF" /&gt;
+  &lt;enum name="OUTTOLUNCH" /&gt;  &lt;!-- the end is the correct place to add new elements --&gt;
+&lt;/SensePoint&gt;
+</PRE>
+
+is fine.
+
+</BODY>
+</HTML>
+

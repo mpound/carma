@@ -1,0 +1,81 @@
+/** @file
+ * Carma Spectral Downconverter control interface definition.
+ *
+ * <dl><dt><b>Author </b></dt><dd>Andy Beard </dl>
+ * $Revision: 1.9 $
+ * $Date: 2012/01/25 22:26:10 $
+ * $Id: SpectralDownconverterControl.idl,v 1.9 2012/01/25 22:26:10 abeard Exp $
+ */
+#ifndef CARMA_DOWNCONVERTER_SPECTRALDOWNCONVERTERCONTROL_IDL
+#define CARMA_DOWNCONVERTER_SPECTRALDOWNCONVERTERCONTROL_IDL
+
+#include "carma/downconverter/common/DownconverterControl.idl"
+
+module carma {
+module downconverter {
+
+    /**
+     * Carma Spectral Line Downconverter CAN module control interface.
+     */
+    interface SpectralDownconverterControl :
+        carma::downconverter::DownconverterControl {
+
+            /**
+             * Select which of the available output bandwidth defining filters
+             * to use.
+             * @param filter Requested output filter.
+             */
+            void selectOutputFilter(in FilterType filter)
+                raises (carma::util::UserException);
+
+            /**
+             * Select which sideband the single sideband downconverter is
+             * to use.
+             * @param sideband Requested sideband.
+             */
+            void selectSideband(in SidebandType sideband)
+                raises (carma::util::UserException);
+
+            /**
+             * Sends the frequency of the 2nd LO being used for this
+             * downconverter module.  The module uses the frequency and
+             * sideband to determine the required I and Q modulator settings.
+             * @param lofreq Requested frequency in GHz.
+             */
+            void setLOFrequency( in double lofreq )
+                raises (carma::util::UserException);
+
+            /**
+             * Manually set the differential voltage on the I channel for
+             * the 90 degree I/Q modulator.
+             * @param I Differential voltage on the I channel in mV.
+             */
+            void setIModulatorVoltage(in short I)
+                raises (carma::util::UserException);
+
+            /**
+             * Manually set the differential voltage on the Q channel for
+             * the 90 degree I/Q modulator.
+             * @param Q Differential voltage on the Q channel in mV.
+             */
+            void setQModulatorVoltage(in short Q)
+                raises (carma::util::UserException);
+
+            /**
+             * Disable command logging.
+             * Useful for temporarily disabling logging for commands which 
+             * will knowingly talk to many downconverters (and hence produce
+             * lots of command logs).
+             */
+            void disableCommandLogging() raises (carma::util::UserException);
+            
+            /**
+             * Enable command logging.
+             * Command logging is enabled by default, you should only need to
+             * enable it if it has been disabled for some reason.
+             */
+            void enableCommandLogging() raises (carma::util::UserException);
+
+        }; // End interface SpectralDownconverterControl
+};}; // End module carma::downconverter
+#endif

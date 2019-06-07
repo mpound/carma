@@ -1,0 +1,400 @@
+<?xml version="1.0"?>
+
+<!-- $Id: telemetry.xml,v 1.30 2008/08/27 19:12:37 colby Exp $ -->
+
+<!-- Include the telemetry DTD definition. -->
+<!DOCTYPE telemetry SYSTEM "telemetry.dtd">
+
+<telemetry version="1.4.9">
+  <!-- Azimuth drive related -->
+  <packet name="FAST PACKET 01" type="0x100">
+    <variable name="AZRSOLV" size="2" seq="0" addr="0x20" comment="Azim Resolver"/>
+    <variable name="AZDVELF" size="2" seq="1" addr="0x2C" comment="Azim digital velocity filter"/>
+    <variable name="AZCOSEN" size="2" seq="2" addr="0x30" comment="Azim cosine encoder"/>
+    <variable name="AZSINEN" size="2" seq="3" addr="0x32" comment="Azim sine encoder"/>
+  </packet>
+
+  <!-- Elevation drive related -->
+  <packet name="FAST PACKET 02" type="0x101">
+    <variable name="ELRSOLV" size="2" seq="0" addr="0x22" comment="Elev Resolver"/>
+    <variable name="ELDVELF" size="2" seq="1" addr="0x2E" comment="Elev digital velocity filter"/>
+    <variable name="ELCOSEN" size="2" seq="2" addr="0x34" comment="Elev cosine encoder"/>
+    <variable name="ELSINEN" size="2" seq="3" addr="0x36" comment="Elev sine encoder"/>
+  </packet>
+
+  <!-- Modulator B/YIG/Heater/Vmixer -->
+  <packet name="FAST PACKET 03" type="0x102">
+    <variable name="PHNOISE"  size="2" seq="0" addr="0x7C" comment="Phase Noise Read out"/>
+    <variable name="LORFOUT"  size="2" seq="1" addr="0x11C" comment="LOterm RF out"/>
+    <variable name="FASTPKT03A"  size="2" seq="2" addr="0x900" comment="Not used..."/>
+    <variable name="FOCUSPOS"  size="2" seq="3" addr="0x24" comment="Focus Position"/>
+  </packet>
+
+  <!-- Card Status 1 -->
+  <packet name="FAST PACKET 04" type="0x103">
+    <variable name="STATUS50"  size="1" seq="0" addr="0x58" comment="Card Status A"/>
+    <variable name="TOGGLEBYTE50" size="1" seq="1" addr="0x59" comment="Toggle Byte A"/>
+    <variable name="DIRBYTE50"  size="1" seq="2" addr="0x5A" comment="Direction Byte A"/>
+    <variable name="BITSTO50"  size="1" seq="3" addr="0x5C" comment="Bits to Antenna 0x5C"/>
+    <variable name="BITSIN50" size="1" seq="4" addr="0x5E" comment="Bits from 0x5E"/>
+    <variable name="BITSIN5F" size="1" seq="5" addr="0x5F" comment="Bits from 0x5F"/>
+    <variable name="BREFLOPLT" size="2" seq="6" addr="0x134" comment="B Band motor V Ref"/>
+  </packet>
+
+  <!-- Modulator A/Heater/MMOsc/MMLoop -->
+  <packet name="FAST PACKET 05" type="0x104">
+    <variable name="MODLTRA"     size="2" seq="0" addr="0x60" comment="Modulator A (12 bit DAC0)"/>
+    <variable name="WBA13D"  size="2" seq="1" addr="0x62" comment="WBA13 for bands A and D command"/>
+    <variable name="MMOSCVOP" size="2" seq="2" addr="0x64" comment="MM Osc (12 bit DAC2)"/>
+    <variable name="MMLOOPGN" size="2" seq="3" addr="0x66" comment="MM Loop Gain (12 bit DAC3)"/>
+  </packet>
+
+  <!-- Modulator A/Heater/MMOsc/MMLoop -->
+  <packet name="FAST PACKET 06" type="0x105">
+    <variable name="STATUS60"  size="1" seq="0" addr="0x68"  comment="Card Status B"/>
+    <variable name="TOGGLEBYTE60" size="1" seq="1" addr="0x69"  comment="Toggle Byte B"/>
+    <variable name="DIRBYTE60"  size="1" seq="2" addr="0x6A"  comment="Direction Byte B"/>
+    <variable name="BITSTO60"  size="1" seq="3" addr="0x6C"  comment="Bits to Antenna B"/>
+    <variable name="BITSIN60" size="1" seq="4" addr="0x6E"  comment="Bits from Antenna B"/>
+    <variable name="STATUSA"  size="1" seq="5" addr="0x13A" comment="Control box Status bits, first byte"/>
+    <variable name="FRAMECNT" size="2" seq="6" addr="0x900"  comment="Telemetry to CAN Frames/sec"/>
+  </packet>
+
+  <!-- MM Osc A Moto/SIS Mixer u/MM Osc A Vop/X Band IF Level -->
+  <packet name="FAST PACKET 07" type="0x106">
+    <variable name="MMOSCADPS" size="2" seq="0" addr="0x70" comment="MM Osc AD motor position"/>
+    <variable name="SISMXI" size="2" seq="1" addr="0x72" comment="SIS Mixer Current"/>
+    <variable name="MMOSCVOPAD"  size="2" seq="2" addr="0x74" comment="MM Osc AD Vop"/>
+    <variable name="XBDIFLVL" size="2" seq="3" addr="0x84" comment="X Band IF Level"/>
+  </packet>
+
+  <!-- Tiltmeter 1/MM Back A/SIS Mixer V/MM Phaselock Error Volts -->
+  <packet name="FAST PACKET 08" type="0x107">
+    <variable name="TILTMTR1" size="2" seq="0" addr="0x8E" comment="Tiltmeter 1"/>
+    <variable name="MMBCKADPS" size="2" seq="1" addr="0x90" comment="MM Back AD Position"/>
+    <variable name="SISMXV"   size="2" seq="2" addr="0x92" comment="SIS Mixer Volts"/>
+    <variable name="MMLKERRV" size="2" seq="3" addr="0xA4" comment="MM Phaselock Error Volts"/>
+  </packet>
+
+  <!-- Tiltmeter 2/Atten A Motor Pos/Heater 3/MM Osc B Motor Pos -->
+  <packet name="FAST PACKET 09" type="0x108">
+    <variable name="TILTMTR2" size="2" seq="0" addr="0xAE" comment="Tiltmeter 2"/>
+    <variable name="ATTNAPS"  size="2" seq="1" addr="0xB0" comment="Attenuator A Motor Position"/>
+    <variable name="HEATER3READ"  size="2" seq="2" addr="0xB2" comment="Heater 3 in Dewar"/>
+    <variable name="MMOSCBPS" size="2" seq="3" addr="0xB4" comment="MM Osc B Motor Position"/>
+  </packet>
+
+  <!-- Sensor 2/X Band YIG Motor Position/He Supply Pressure -->
+  <packet name="FAST PACKET 10" type="0x109">
+    <variable name="SENSOR2"  size="2" seq="0" addr="0xB6" comment="Sensor 2 in Dewar"/>
+    <variable name="XBDYIGTN" size="2" seq="1" addr="0xBC" comment="X Band YIG Tune Monitor"/>
+    <variable name="MMIFLVL"  size="2" seq="2" addr="0xC4" comment="MM IF Level"/>
+    <variable name="HESUPPRS" size="2" seq="3" addr="0xC8" comment="He Supply Pressure"/>
+  </packet>
+
+  <!-- Sensor 5/MM Back B Motor Position/Sensor 3 in Dewar/He Return Pressure -->
+  <packet name="FAST PACKET 11" type="0x10A">
+    <variable name="SENSOR5"  size="2" seq="0" addr="0xD2" comment="Sensor 5 in Dewar"/>
+    <variable name="MMBCKBPS" size="2" seq="1" addr="0xD4" comment="MM Back B Motor Position"/>
+    <variable name="SENSOR3"  size="2" seq="2" addr="0xD6" comment="Sensor 3 in Dewar"/>
+    <variable name="HERETPRS" size="2" seq="3" addr="0xE8" comment="He Return Pressure"/>
+  </packet>
+
+  <!-- Atten B Motor Position/Sensor 4/Atten D Motor Position/X Band Error Volts -->
+  <packet name="FAST PACKET 12" type="0x10B">
+    <variable name="ATTNBPS" size="2" seq="0" addr="0xF4"  comment="Attenuator B Motor Position"/>
+    <variable name="SENSOR4" size="2" seq="1" addr="0xF6"  comment="Sensor 4 in Dewar"/>
+    <variable name="ATTNDPS" size="2" seq="2" addr="0x110" comment="Attenuator D Motor Position"/>
+    <variable name="XBDERRV" size="2" seq="3" addr="0x120" comment="X Band Error Volts"/>
+  </packet>
+
+  <!-- Polarization Frame Position/Flowrate (inp in rcvr)/T2 Therm Fanout 1/Base Ctrl Box Stat -->
+  <packet name="FAST PACKET 13" type="0x10C">
+    <variable name="POLFRMPS" size="2" seq="0" addr="0x126" comment="Polarization Frame Position"/>
+    <variable name="FLOWRATE" size="2" seq="1" addr="0x128" comment="Flowrate (inp in rcvr)"/>
+    <variable name="T2FNOUT"  size="2" seq="2" addr="0x136" comment="T2 Therm Fanout 1, Water chiller IN"/>
+    <variable name="STATUSC" size="1" seq="3" addr="0x13C" comment="Base control box status bits last byte"/>
+    <variable name="STATUSB" size="1" seq="4" addr="0x13B" comment="Base control box status bits 2nd byte"/>
+  </packet>
+
+  <!-- Cal Wheel Position/open/open/open -->
+  <packet name="FAST PACKET 14" type="0x10D">
+    <variable name="CALWHEELPS" size="2" seq="0" addr="0x106" comment="Cal Wheel Position"/>
+    <variable name="TOTIFPOW" size="2" seq="1" addr="0x10A" comment="Total IF Power..."/>
+    <variable name="OPEN2"  size="2" seq="2" addr="0x10C" comment="Open for more info..."/>
+    <variable name="OPEN3" size="2" seq="3" addr="0x10E" comment="Open for more info..."/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 1" type="0x120">
+    <variable name="SP1DCTL" size="2" seq="0" addr="0x76" comment="Spare 1 Dewar Control"/>
+    <variable name="ATTNCPS" size="2" seq="1" addr="0x78" comment="Attenuator C Motor Position"/>
+    <variable name="T3FNOUT" size="2" seq="2" addr="0x7A" comment="T3 Therm Fanout 1, Water chiller OUT"/>
+    <variable name="T9FNOUT" size="2" seq="3" addr="0x7E" comment="T9 Therm Fanout 1"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 2" type="0x121">
+    <variable name="LOPHOTOCUR" size="2" seq="0" addr="0x80" comment="LOterm Photo Current"/>
+    <variable name="T15FNOUT" size="2" seq="1" addr="0x82" comment="T15 Therm fanout 2"/>
+    <variable name="T21FNOUT" size="2" seq="2" addr="0x86" comment="T21 Therm Fanout 2"/>
+    <variable name="TEXCHHEC" size="2" seq="3" addr="0x88" comment="Texch Helium Compressor"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 3" type="0x122">
+    <variable name="TAMBCLPL" size="2" seq="0" addr="0x8A" comment="Tamb cal/pol wheel"/>
+    <variable name="UNUSED1"   size="2" seq="1" addr="0x8C" comment="Twater in"/>
+    <variable name="SENSOR1"  size="2" seq="2" addr="0x96" comment="Sensor 1 in Dewar"/>
+    <variable name="T4FNOUT"  size="2" seq="3" addr="0x9A" comment="T4 Therm Fanout 1, Cabin Fan"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 4" type="0x123">
+    <variable name="T10FNOUT" size="2" seq="0" addr="0x9E" comment="T10 Therm Fanout 10"/>
+    <variable name="LOTEMP" size="2" seq="1" addr="0xA0" comment="LOterm temperature"/>
+    <variable name="T16FNOUT" size="2" seq="2" addr="0xA2" comment="T16 Therm Fanout 2"/>
+    <variable name="T22FNOUT" size="2" seq="3" addr="0xA6" comment="T22 Therm Fanout 2"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 5" type="0x124">
+    <variable name="TSUMPHEC" size="2" seq="0" addr="0xA8" comment="Tsump He Compressor"/>
+    <variable name="UNUSED2"  size="2" seq="1" addr="0xAC" comment="Twater out"/>
+    <variable name="MMOSCVOPB"  size="2" seq="2" addr="0xB8" comment="MM Osc B Vop"/>
+    <variable name="T5FNOUT"  size="2" seq="3" addr="0xBA" comment="T5 Therm Fanout 1"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 6" type="0x125">
+    <variable name="T11FNOUT" size="2" seq="0" addr="0xBE" comment="T11 Therm Fanout"/>
+    <variable name="LORFIN"  size="2" seq="1" addr="0xC0" comment="LOterm RF in"/>
+    <variable name="T17FNOUT" size="2" seq="2" addr="0xC2" comment="T17 Therm Fanout 1"/>
+    <variable name="T23FNOUT" size="2" seq="3" addr="0xC6" comment="T23 Therm Fanout 2"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 7" type="0x126">
+    <variable name="MODAIMON" size="2" seq="0" addr="0xCA" comment="Modulator A Imon"/>
+    <variable name="EXTRA1"   size="2" seq="1" addr="0xCC" comment="Extra 1"/>
+    <variable name="EXTRA2A"  size="2" seq="2" addr="0xCE" comment="Extra 2 A"/>
+    <variable name="ADREFLOPLT" size="2" seq="3" addr="0xD0" comment="LO Plate AD Ref"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 8" type="0x127">
+    <variable name="T6FNOUT"  size="2" seq="0" addr="0xDA" comment="T6 Therm Fanout 1"/>
+    <variable name="IFHPLTMN" size="2" seq="1" addr="0xDC" comment="IF Plate Heater Monitor"/>
+    <variable name="T12FNOUT" size="2" seq="2" addr="0xDE" comment="T12 Therm Fanout 1"/>
+    <variable name="T18FNOUT" size="2" seq="3" addr="0xE2" comment="T18 Therm Fanout 2"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 9" type="0x128">
+    <variable name="T24FNOUT" size="2" seq="0" addr="0xE6" comment="T24 Therm Fanout 2"/>
+    <variable name="MODBIMON" size="2" seq="1" addr="0xEA" comment="Modulator B Imon"/>
+    <variable name="EXTRA2B"  size="2" seq="2" addr="0xEC" comment="Extra 2 B"/>
+    <variable name="EXTRA6"   size="2" seq="3" addr="0xEE" comment="Extra 6"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 10" type="0x129">
+    <variable name="SP2"     size="2" seq="0" addr="0xF0" comment="Spare 2"/>
+    <variable name="TPLTIF"  size="2" seq="1" addr="0xF8" comment="Tplate on IF Plate"/>
+    <variable name="T7FNOUT" size="2" seq="2" addr="0xFA" comment="T7 Therm Fanout"/>
+    <variable name="50MHZOPTI"  size="2" seq="3" addr="0xFC" comment="50MHz Optical I"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 11" type="0x12A">
+    <variable name="T13FNOUT" size="2" seq="0" addr="0xFE"  comment="T13 Therm Fanout 2, Subreflector"/>
+    <variable name="T19FNOUT"   size="2" seq="1" addr="0x102" comment="T19 Therm Fanout 2"/>
+    <variable name="TINHECP"  size="2" seq="2" addr="0x104" comment="Tinlet He Compressor"/>
+    <variable name="T1FNOUT"  size="2" seq="3" addr="0x116" comment="T1 Therm Fanout 1, Cabin Top"/>
+  </packet>
+
+  <!--  -->
+  <packet name="SLOW PACKET 12" type="0x12B">
+    <variable name="T8FNOUT"  size="2" seq="0" addr="0x11A" comment="T8 Therm Fanout 2"/>
+    <variable name="T14FNOUT" size="2" seq="1" addr="0x11E" comment="T14 Therm Fanout 2"/>
+    <variable name="T20FNOUT" size="2" seq="2" addr="0x122" comment="T14 Therm Fanout 2"/>
+    <variable name="TDISHECP" size="2" seq="3" addr="0x124" comment="Tdischarge He Compressor"/>
+  </packet>
+
+  <packet name="SLOW PACKET 12" type="0x12C">
+    <variable name="LO10MHZ" size="2" seq="0" addr="0x9C" comment="LO 10MHz photo current"/>
+    <variable name="TPLATE2" size="2" seq="1" addr="0x118" comment="Tplate2 (future)"/>
+    <variable name="WBA13DVD"  size="2" seq="2" addr="0xF2" comment="Drain voltage monitor, WBA13 A and D"/>
+    <variable name="WBA13DID"  size="2" seq="3" addr="0x112" comment="Drain current monitor"/>
+  </packet>
+
+  <packet name="SLOW PACKET 13" type="0x12D">
+    <variable name="WBA13DVG"  size="2" seq="0" addr="0x76" comment="Gate voltage monitor, WBA13 A and D"/>
+    <variable name="MAJOR"  size="1" seq="1" addr="0x76" comment="Major Version"/>
+    <variable name="MINOR" size="1" seq="2" addr="0x76" comment="Minor Version"/>
+    <variable name="SUBMINOR" size="1" seq="3" addr="0x76" comment="Sub-Minor Version"/>
+  </packet>
+
+  <!-- The following are values stored in shared memory for convience (allowing emulation) -->
+  <packet name="UNIT DATA 1" type="0x500">
+    <variable name="AZIREQ" size="2" seq="0" addr="0x901" comment="Azimuth Requested"/>
+    <variable name="AZIACT" size="2" seq="1" addr="0x902" comment="Azimuth Actual"/>
+    <variable name="AZIERR" size="2" seq="2" addr="0x903" comment="Azimuth Error"/>
+    <variable name="AZIERRSKY" size="2" seq="3" addr="0x904" comment="Azimuth Error Sky"/>
+  </packet>
+
+  <packet name="UNIT DATA 2" type="0x501">
+    <variable name="AZIRATE" size="2" seq="0" addr="0x905" comment="Azimuth Rate"/>
+    <variable name="ELREQ" size="2" seq="1" addr="0x906" comment="Elevation Requested"/>
+    <variable name="ELACT" size="2" seq="2" addr="0x907" comment="Elevation Actual"/>
+    <variable name="ELERR" size="2" seq="3" addr="0x908" comment="Elevation Error"/>
+  </packet>
+
+  <packet name="UNIT DATA 3" type="0x502">
+    <variable name="ELRATE" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="ERRSKY" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="RA" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="DEC" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 4" type="0x503">
+    <variable name="TILTMAG" size="2" seq="0" addr="0x900" comment="Unused tiltmagnitude"/>
+    <variable name="TILTDIR" size="2" seq="1" addr="0x900" comment="Unused tilt direction"/>
+    <variable name="DRVSTATE" size="2" seq="2" addr="0x900" comment="Drive states"/>
+    <variable name="DRVMODE" size="2" seq="3" addr="0x900" comment="Drive modes"/>
+  </packet>
+
+  <packet name="UNIT DATA 5" type="0x504">
+    <variable name="DRVWRAP" size="2" seq="0" addr="0x900" comment="Drive wrap mode"/>
+    <variable name="DRVOFFAZ" size="2" seq="1" addr="0x900" comment="User offset azim"/>
+    <variable name="DRVOFFEL" size="2" seq="2" addr="0x900" comment="User offset elev"/>
+  </packet>
+
+  <packet name="UNIT DATA 6" type="0x505">
+    <variable name="PNTMODEL" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="YIGSWEEP" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="LOFREQ" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 7" type="0x506">
+    <variable name="LOSWEEP" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="LOSTATE" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="YIGSWEEP" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="LOFREQ" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 8" type="0x507">
+    <variable name="RXOFFAZ" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="RXOFFEL" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="COMPRSSTATE" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="RXSISVJ" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 9" type="0x508">
+    <variable name="RXSISIJ" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="RXVG" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="RXVD" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="RXID" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 10" type="0x509">
+    <variable name="RXIVCURVE" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="ALT" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="LAT" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="LONG" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 11" type="0x50a">
+    <variable name="DRVSEQNUM" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="OPTICALX" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="OPTICALY" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="OPTICALZ" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 12" type="0x50b">
+    <variable name="OPTICALOFFAZ" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="OPTICALOFFEL" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="OPTICALFRAMEINT" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="OPTICALFLAP" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 13" type="0x50c">
+    <variable name="IFSTATE" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="TOTPOWER" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="LINKSTATE" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="ATTENREQ" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 14" type="0x50d">
+    <variable name="ATTENACT" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="POWERREQ" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="POWERACT" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="IFSTATUS" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 15" type="0x50e">
+    <variable name="IFPRESETPOW" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="POL" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="CALSTATE" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="FOCUSSTATE" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+  <packet name="UNIT DATA 16" type="0x50f">
+    <variable name="FOCUSZ" size="2" seq="0" addr="0x900" comment="Elevation Rate"/>
+    <variable name="TIMESTAMP" size="2" seq="1" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="dummyb" size="2" seq="2" addr="0x900" comment="Azimuth Requested"/>
+    <variable name="dummyc" size="2" seq="3" addr="0x900" comment="Azimuth Requested"/>
+  </packet>
+
+
+  <packet name="COMMAND ADDRESSES CHANGE TO commands xml tag" type="0x510">
+    <variable name="BANDBITS"  size="1" seq="0" addr="0x5B" comment="Band selection"/>
+    <variable name="MMLOCKOP"  size="2" seq="1" addr="0x900"
+              comment="MM Lock Operation status, LOCK/SEARCH/etc..."/>
+    <variable name="IFINATTEN"  size="2" seq="2" addr="0x900" comment="dB bits for ifdb"/>
+    <variable name="IFOUTATTEN"  size="2" seq="3" addr="0x900" comment="dB bits for ifdb"/>
+    <variable name="BITS56"  size="2" seq="4" addr="0x56" comment="SIS Vmixer (12 bit DAC3) out"/>
+  </packet>
+
+  <packet name="COMMAND ADDRESSES CHANGE TO commands xml tag" type="0x511">
+    <variable name="LOIN60"  size="2" seq="0" addr="0x6F" comment="Low byte for bit field 6e,6f"/>
+    <variable name="YIGTUNE"  size="2" seq="1" addr="0x52" comment="Low byte for bit field 6e,6f"/>
+    <variable name="MODLTRB"    size="2" seq="2" addr="0x50" comment="Modulator B (12 bit DAC0) out"/>
+    <variable name="LOTERMBITS"  size="2" seq="4" addr="0x6B" comment="LOTerm control bits"/>
+  </packet>
+  <packet name="COMMAND ADDRESSES CHANGE TO commands xml tag" type="0x512">
+    <variable name="LOTERMSET"  size="2" seq="0" addr="0x900" comment="LOTerm atten setting"/>
+    <variable name="dummydd" size="2" seq="1" addr="0x900" comment="Intentionally blank"/>
+    <variable name="dummyed" size="2" seq="2" addr="0x900" comment="Intentionally blank"/>
+    <variable name="dummyfd" size="2" seq="3" addr="0x900" comment="Intentionally blank"/>
+    <variable name="HEATER3SET" size="2" seq="4" addr="0x54" comment="Heater (12 bit DAC2) out"/>
+  </packet>
+
+  <packet name="COMMAND ADDRESSES CHANGE TO commands xml tag" type="0x513">
+    <variable name="RELOCK" size="2" seq="0" addr="0x900" comment="RxManager auto-relock status"/>
+    <variable name="dummyd" size="2" seq="1" addr="0x900" comment="Intentionally blank"/>
+    <variable name="dummye" size="2" seq="2" addr="0x900" comment="Intentionally blank"/>
+    <variable name="dummyf" size="2" seq="3" addr="0x900" comment="Intentionally blank"/>
+  </packet>
+
+  <packet name="COMMAND ADDRESSES CHANGE TO commands xml tag" type="0x514">
+    <variable name="IF1CANPOW" size="4" seq="0" addr="0x900" comment=".5s IF Power read off of PAM1"/>
+    <variable name="IF2CANPOW" size="4" seq="1" addr="0x900" comment=".5s IF Power read off of PAM2"/>
+  </packet>
+
+  <packet name="COMMAND ADDRESSES CHANGE TO commands xml tag" type="0x515">
+    <variable name="IF1CANFASTLSRPOW" size="4" seq="0" addr="0x900" comment="IF laser optical power read off of CAN, fast packets"/>
+    <variable name="IF1CANFASTPOW" size="4" seq="1" addr="0x900" comment="Intentionally blank"/>
+  </packet>
+
+  <packet name="COMMAND ADDRESSES CHANGE TO commands xml tag" type="0x516">
+    <variable name="IF2CANFASTLSRPOW" size="4" seq="0" addr="0x900" comment="IF laser optical power read off of CAN, fast packets"/>
+    <variable name="IF2CANFASTPOW" size="4" seq="1" addr="0x900" comment="Intentionally blank"/>
+  </packet>
+
+  <packet name="COMMAND ADDRESSES CHANGE TO commands xml tag" type="0x517">
+    <variable name="TOTIF1POW" size="4" seq="0" addr="0x900" comment="IF laser optical power read off of CAN, fast packets"/>
+    <variable name="TOTIF2POW" size="4" seq="1" addr="0x900" comment="Intentionally blank"/>
+  </packet>
+</telemetry>
+

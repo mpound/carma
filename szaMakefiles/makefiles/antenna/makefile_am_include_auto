@@ -1,0 +1,6 @@
+include carma/szaMakefiles/makefiles/makefile_am_include_szaarrayutils
+include carma/szaMakefiles/makefiles/makefile_am_include_szautil
+include carma/szaMakefiles/makefiles/makefile_am_include_antenna_canbus
+include carma/szaMakefiles/makefiles/makefile_am_include_antenna_control
+include carma/szaMakefiles/makefiles/makefile_am_include_antenna_corba
+

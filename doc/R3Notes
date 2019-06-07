@@ -1,0 +1,128 @@
+$Id: R3Notes,v 1.2 2005/05/05 22:46:02 mpound Exp $
+This file is for notes about non-DO testing during R3.  
+Just add a section with notes about your testing methods
+and results.
+
+#################################################################
+ Optical Pointing on OVRO Antennas  - Marc
+
+Tue May  3 11:47:38 EDT 2005
+
+I am unable to command the camera once I get a reference to it.
+A corba transient error results on selectAperture().
+
+>>> c=Camera(Ovro(3),s)
+>>> c.on()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+  File "/home/control/carma/install/optimized/scripts/python/camera.py", line 92, in on
+    self.ant_.drive().selectAperture(carma.antenna.common.DriveControl.OPTICAL)
+  File "/opt/rt/lib/python/DriveControl_idl.py", line 220, in selectAperture
+    return _omnipy.invoke(self, "selectA
+
+Wed May  4 14:04:05 EDT 2005
+
+Problem above fixed.  Optical pointing now passes tests.
+Note to run CARMA's camera.py, imported by subarrayControl,
+your system must have several tk*.h and X11/*.h files on
+/usr/include.  Thus you must have tk-devel and X11-devel
+packages installed.  If you do not have these, then
+CARMA_TOOLS/lib/python2.3/lib-dynload/_tkinter.so does not
+get built, and subarrayControl will fail to import camera.py.
+
+#################################################################
+ Weather - Rick
+
+Tue May  3 13:13:33 PDT 2005
+
+Ran ./scripts/rtd and opened Weather window. Timestamp usually displays
+a ? and sometimes displays ******* The other quantities don't change.
+Ambient Temp = -17.778
+Dewpoint Temp = -17.778
+Pressure = 880.000
+Humidity = 100.000
+Wind Direction = 225.5
+Wind Speed = 2.128
+
+#################################################################
+ Spectral Correlator - Rick
+
+Tue May  3 13:38:51 PDT 2005
+ 
+ Methods succesfully called:
+
+   DO METHOD                       Message Logged in carma.log
+   ---------                       ---------------------------
+
+  setBandwidth()              setting correlator spectral bandwidth
+  setSim()                    setting correlator DSP simulation mode
+  setNoiseSourceState()       setting assumed noise source isOn
+  doDiagnostics()             performing correlator diagnostics
+  flattenPhase()              performing correlator phase flattening
+  setMode()                   setting correlator mode
+  setInputDelay()             setting input 1 input delay 
+  setWalshTable()             setting new Walsh sequence
+  setDownconverterSideband()  setting assumed downconverter sideband to ...
+  setDownconverterFrequency() setting assumed downconverter frequency to ...
+
+ Methods not called:
+  None
+
+#################################################################
+getMpFromDb command line testing - Rick Hobbs
+
+Wed May  4 14:47:52 PDT 2005
+
+Tried running program as follows:
+
+
+% time bin/getMpFromDb mp="WbcBand1*" start="2005-May-04 21:35:00" end="2005-May-04 21:35:01" singletable=false
+
+First time took a bit over 25minutes. Thereafter only a little over 1min.
+Descriptions printed out when using --keywords could be a bit more
+explanatory(ie. saying quotes are needed for the time keywords and pattern
+matching.
+
+Very nice example shown when using the --usage keyword so maybe it's no
+big deal being that verbose in the --keywords.
+
+When date/time is printed out, the half-seconds are not printed. It might
+be nice to print out times in half-seconds to allow for easy cut-paste into
+plotting programs(ie. unix time)
+
+WbcBand1.Dig1.timestamp does not show enough digits. This value is a double.
+WbcBand1.Dig1.sequenceNumber is a long and is displayed as a real.
+
+
+NOTE; this program must be run on the database machine.
+
+ 
+#################################################################
+ CDV
+
+ It is necessary to have the hostname of your machine match the name
+ that the outside world sees (I believe mine is not set because I do
+ not have eth0 activated at boot time).  If these do not line up, then
+ the notserv will become confused when talking with your machine (this
+ only affects passive concurrency models -- that is, pull suppliers or
+ push consumers).
+
+ Tests done:
+ - started CDV (calling scripts/cdv from the build area)
+ - connected to different channels
+   * go to "Data Sources" and select "Find"
+   * press "Connect" (should be defaulted to corba.carma.pvt:20000)
+   * under "Corba Data Sources", open the "carma" menu, 
+     then the "correlator" menu
+   * select any Band (default is Band6)
+   * leaving "Corba Data Sources" window open, go to "CARMA Cw Plot"
+      - go to menu matching selected Band
+        + go to "Antenna" menu
+      	  o select "(3)USB+LSB+AUTO"
+        + go to "Baseline" menu
+          o select "(3) Combined Plot"
+ - switched Look and Feel (L&F menu item)
+ - verified that data was being received
+
+#################################################################
+

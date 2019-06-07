@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ARRAY COMPOSITE WINDOW HELP </title>
+</head>
+<body>
+<center>
+<h1>Array Composite Window Help</h1>
+</center>
+
+<p>
+This display gives the observers an overview of an entire subarray at a
+glance.  The window is composed of 5 tabbed folders, one for each subarray,
+with the contents of each window tuned for that subarrays capabilities.
+</p>
+<hr>    
+<p>
+In the top panel are information about the state of the
+program controlling the subarray, the current project, 
+source, tuning, weather, integration, and CARMA processes.
+</p>
+   
+<h2>Subarray and Project Data:</h2>
+
+<ul>
+<li><b>Subarray</b> &#045; The name of this subarray</li>
+<li><b>Running</b> &#045; True or false; if the CARMA program controlling this 
+subarray is running (<tt>/opt/rt/bin/subarrayControl</tt>). This cell should be green under normal circumstances.
+</li>
+<li><b>Initialized</b> &#045; True or false; if this subarray has been fully
+initialized by <tt>subarrayInit.py</tt>. This cell should be green under normal circumstances.
+</li>
+<li><b>Track Mode</b> &#045; Mode of antenna tracking, on of RA/DEC, AZ/EL, MIXED, or NONE.
+</li>
+<li><b>Project</b> &#045; The project name </li>
+<li><b>ObsblockID</b> &#045; The fully-qualified observing block 
+identification, <tt>project.obsblock[.subobsblock].trial</tt>
+</li>
+</ul>
+
+<h2>Source Data:</h2>
+<ul>
+<li><b>Source</b> &#045; The antenna tracking source name. </li>
+<li><b>RA</b> &#045; J2000 Right Ascension of the source. </li>
+<li><b>dRA(p.c.)</b> &#045; RA offset of the phase center. </li>
+<li><b>DEC</b> &#045; J2000 Declination of the source. </li>
+<li><b>dDEC(p.c.)</b> &#045; DEC offset of the phase center. </li>
+<li><b>Src Vel.</b> &#045; The catalog velocity of the source (e.g. VLSR)
+</li>
+<li><b>Doppler Src</b> &#045; The source used for Doppler tracking of the local
+oscillators. <i>This may be different than the antenna tracking source.</i>
+</li>
+</ul>
+
+<h2>Weather Data:</h2>
+<ul>
+<li><b>T(amb)</b> &#045; The outside ambient temperature in Celsius. 
+</li>
+<li><b>RH</b> &#045; The outside relative humidity in percent.
+</li>
+<li><b>rho(H2O)</b> &#045; The current atmospheric water density in gram per 
+     cubic meter;  under normal conditions, this is a number close to 1. 
+</li>
+<li><b>pwv(mH2O)</b> &#045; The derived precipitable water vapor 
+column, in mm. In good weather this should be less than 10.
+</li>
+</ul>
+
+<h2>Azimuth/Elevation Plot</h2>
+<p>
+The circular plot on the right is a polar Az-El plot showing 
+the source azimuth and elevation (yellow dot); the average 
+direction the antennas are pointing (green triangle) 
+the wind speed in mph and the direction <i>from</i> which the wind 
+is blowing (white arrow). 
+</p>
+
+<h2>Miscellaneous Data:</h2>
+<ul>
+<li><b>Integrating</b>&#045; Whether or not the correlator pipeline is integrating.</li>
+<li><b>Int #</b>&#045; The integration number. This has the value 
+of the framecount at the start of the integration.
+( number of half-seconds since Jan 1, 2000 ).
+</li>
+<li><b>Int Time</b>&#045; The requested integration time in seconds. </li>
+<li><b>Record</b>&#045; The current integration record since
+the start of the integration.  This number should count up as the integration
+proceeds.
+</li>
+<li><b>of</b>&#045; The total number of integration records that will
+make up this integration; equal to the number of repeats requested in
+the <i>integrate</i> command.
+</li>
+<li><b>Noise Source Enabled</b>&#045; Is the noise source on (true) or off (false)? </li>
+<li><b>CARMA System Processes NOT Running</b>&#045; The number of array
+processes that have stopped or failed to start.  If this number is not zero, 
+check the RTD processes page and take appropriate action to restart 
+the stopped process (e.g imrConsole restart). This cell should be green under normal circumstances.
+</li>
+<li><b>Alarm Enable</b>&#045; Is the alarm system enabled? This cell
+has a value of ENABLED, TRIGGERED, or DISABLED.  The last two are
+error conditions. 
+This cell should be green under normal circumstances.
+</li>
+<li><b>Alarm On</b>&#045; Is the alarm on? If so, you should hear it
+in the control room!
+This cell should be green under normal circumstances.
+</li>
+
+<hr>    
+<h2>Antenna Table</h2>
+<p>
+In the middle panel is some basic data about the antennas.
+</p>
+<ul>
+<li><b>Drive State</b> &#045; Individual tracking state for this antenna.
+</li>
+<li><b>ActAz</b> &#045; Actual azimuth in degrees
+</li>
+<li><b>ActEl</b> &#045; Actual elevation in degrees.
+</li>
+<li><b>AzSkyErr</b> &#045; Azimuth error on the sky in arcseconds.
+</li>
+<li><b>ElErr</b> &#045; Elevation error in arcseconds.
+</li>
+<li><b>dra</b> &#045; Right Ascension pointing offset in arcminutes
+</li>
+<li><b>ddec</b> &#045; Declination pointing offset in arcminutes
+</li>
+<li><b>RxState</b> &#045; Receiver state (e.g. GOOD, BAD).
+</li>
+<li><b>Dsb</b> &#045; Double sideband receiver temperature for Band 1 
+in Kelvin.
+</li>
+<li><b>Pad</b> &#045; Pad number to which this antenna is assigned.
+</li>
+</ul>
+<hr>
+<h2>Subarray Membership Changes</h2>
+<p>
+When membership in any subarray changes do to someone issuing
+<tt>addAntenna()</tt> or <tt>removeAntenna()</tt>, a highlighted message
+will appear asking you to Morph the display.  Do this by selecting
+<tt>Array Composite</tt> off the Morph menu.
+</p>
+
+<p>
+Send questions or bug reports to Marc Pound (mpound@umd.edu).
+</p>
+
+</body>
+</html>

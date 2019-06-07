@@ -1,0 +1,117 @@
+/**
+ *
+ * $Id: pipelineControl.idl,v 1.7 2014/05/14 21:20:05 scott Exp $
+ *
+ * $Revision: 1.7 $
+ * $Date: 2014/05/14 21:20:05 $
+ *
+ * $CarmaCopyright$
+ */
+#ifndef CARMA_PIPELINE_PIPELINECONTROL_IDL
+#define CARMA_PIPELINE_PIPELINECONTROL_IDL
+
+#include "carma/util/UserException.idl"
+#include "carma/util/SeqTypedefs.idl"
+
+module carma {
+module pipeline {
+
+  const string SPECTRAL_PIPELINE_NAME = "carma.pipeline.Spectral";
+  const string WIDEBAND_PIPELINE_NAME = "carma.pipeline.Wideband";
+  const string C3GMAX23_PIPELINE_NAME = "carma.pipeline.C3gMax23";
+  const string C3GMAX8_PIPELINE_NAME  = "carma.pipeline.C3gMax8";
+
+
+  interface PipelineControl {
+
+      /**
+       * Reset tsys to 10000 until the next ambient/sky cycle comes along.
+       * @param antNoSeq Sequence of carma antenna numbers (zero not accepted).
+       */
+      void resetTsys( in carma::util::SeqShort carmaAntNoSeq ) 
+          raises ( carma::util::UserException );
+
+      void applyTsysCalibration( in boolean apply )
+          raises ( carma::util::UserException );
+      void applyFluxCalibration( in boolean apply )
+          raises (carma::util::UserException );
+
+      void activateCoherenceMonitor() raises (carma::util::UserException);
+      void deactivateCoherenceMonitor() raises (carma::util::UserException);
+      void activateDecimator() raises (carma::util::UserException);
+      void deactivateDecimator() raises (carma::util::UserException);
+      void activateTsys() raises (carma::util::UserException);
+      void deactivateTsys() raises (carma::util::UserException);
+      void activateBlankFlag() raises (carma::util::UserException);
+      void deactivateBlankFlag() raises (carma::util::UserException);
+      void activateSelfCal() raises (carma::util::UserException);
+      void deactivateSelfCal() raises (carma::util::UserException);
+      void activatePublisher() raises (carma::util::UserException);
+      void deactivatePublisher() raises (carma::util::UserException);
+
+      // Decimator API
+      /**
+       * Control of deleting or retaining end channels in spectrum
+       * @param astroBandNo band number, one is first band, zero is all
+       */
+      void keepEndChannels( in boolean keep, in unsigned short astroBandNo )
+          raises (carma::util::UserException);
+
+      /**
+       *  Turn on/off decimation
+       * @param astroBandNo band number, one is first band, zero is all
+       */
+      void decimate( in boolean dec, in unsigned short astroBandNo )
+          raises (carma::util::UserException);
+
+      /**
+       * Start an integration.
+       * @param integTime Number of seconds to integrate for each record.
+       * @param numRecords Total number of records - if < 0, integrate forever.
+       * @param gap The size of the gap between records (seconds).
+       * Used for OTF mosaicking.
+       * A value of zero (or < 0.001) gives contiguous integrations.
+       * @param science When true the data are recorded in the visbrick.
+       * When false data are not recorded in the visbrick,
+       * but self-cal solutions are produced; use this for
+       * control system functions such as pointing, focus, etc.             
+       * @param seqNo Sequence number to be placed in monitor stream.
+       */
+      void startIntegration(in double integTime,
+              in long numRecords,
+              in double gap,
+              in boolean science,
+              in long seqNo )
+          raises (carma::util::UserException);
+
+      /**
+       *  Stop current integration
+       */
+      void stopIntegration() raises (carma::util::UserException);
+
+      /**
+       * Clear time since last integration.
+       * This method is used to clear the time since last integration.  It is
+       * useful for 'normal' observing situations which may not be utilizing the
+       * correlator (e.g. optical pointing), but which we don't want to trigger
+       * the time since last integration alarm.
+       */
+      void resetTimeSinceLastIntegration( ) raises (carma::util::UserException);
+
+      /**
+       * Log details of calibration step one astroband at a time for one cycle.
+       */
+      void logCalibrationOnce( in short astroband )
+          raises ( carma::util::UserException );
+
+      /**
+       * Force Self Cal to use a single reference antenna for all solutions.
+       * @param Reference antenna numbe - 0 floats.
+       */
+      void setReferenceAnt( in short antNo )
+          raises ( carma::util::UserException );
+
+  }; // inteface PipelineControl
+
+};}; // module carma::pipeline
+#endif

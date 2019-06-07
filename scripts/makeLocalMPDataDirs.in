@@ -1,0 +1,123 @@
+#!/bin/sh
+
+# this script creates the monitor data areas.
+# If run by itself, it creates the data areas as per
+# doc/mysql_development_server.html.
+#
+# It can also be included in another file in which case it just supplies
+# the functions to create directories.
+#
+# If included by another file, the variable, "ISINCLUDED" needs to be set.
+# eg.
+# ISINCLUDED=1
+# . makeMPLocalDataDirs
+
+# Other variables that can be set:
+# topdir	Default top directory to use if one is not supplied on the
+#		command line.
+################################################################
+
+TOPDIRDEFAULT_="."
+
+# Pick up the top level directory to use if none is supplied on the
+# command line.
+topdir=${topdir:-"$TOPDIRDEFAULT_"}
+
+# Print usage info. Uses topdir variable.
+# Arg: Default directory to use.
+usage() {
+    if [ "${topdir}" == "." ]; then
+      TDSTR="the current directory"
+    else
+      TDSTR="${topdir}"
+    fi
+    echo "$0 [-h] [topdir]"
+    echo "   -h print this message and exit"
+    echo "	topdir is the toplevel directory under which to create all subdirs"
+    echo "	if not specified, use $TDSTR"
+}
+
+# Create the directores.
+# Arg: the top directory. (The directories are created under this).
+makeMPDirs() {
+    TopDir=$1
+    for i in monitorData dbload transfer sdp ; do
+	for j in frame minute wbcorrel slcorrel ; do
+	    for k in numeric complex short string ; do
+		cmd="mkdir -p $TopDir/$i/$j/$k"
+		echo $cmd
+		$cmd
+		if [ $? -ne 0 ] ; then
+		    echo "Error running $cmd"
+		    return 1
+		fi
+	    done
+	done
+    done
+    return 0;
+}
+
+# Create the log directores.
+# Arg: the top directory. (The directories are created under this).
+makeLogDirs() {
+    TopDir=$1
+    if [ ! -d $TopDir/logData ]; then
+	cmd="mkdir $TopDir/logData"
+	$cmd
+	if [ $? -ne 0 ] ; then
+	    echo "Error running $cmd"
+	    return 1
+	fi
+    fi
+
+    if [ ! -d $TopDir/dbload/logData ]; then
+	cmd="mkdir -p $TopDir/dbload/logData"
+	$cmd
+	if [ $? -ne 0 ] ; then
+	    echo "Error running $cmd"
+	    return 1
+	fi
+    fi
+    return 0
+}
+
+# Parse command line args.
+# This is normally called as "parseArgs $*".
+# 
+# It can set the global variable "topdir".
+parseArgs() {
+for x in $* ; do
+    case "$x" in
+    -h*) usage ; exit 0
+    ;;
+    --help) usage ; exit 0
+    ;;
+    -*)
+    echo "$0: Unknown command line argument $x"
+    usage
+    exit 1
+    ;;
+    *) 
+    topdir=$x
+    esac
+done
+}
+
+# This is called only if makeLocalMPDataDirs is running by itself.
+main() {
+    # Get topdir if set or handle help request.
+    parseArgs $*
+    makeMPDirs $topdir
+    ret=$?
+    if [ $ret -ne 0 ]; then
+	exit $ret
+    fi
+#    Log dirs aren't needed at most sites.
+#    makeLogDirs $topdir
+}
+
+
+# If ISINCLUDED is non 0, don't execute. Otherwise, run as normal.
+if [ ${ISINCLUDED:-0} -eq 0 ]; then
+    main $*
+fi

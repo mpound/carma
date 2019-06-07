@@ -1,0 +1,62 @@
+#ifndef _POLARIZATIONIDL
+#define _POLARIZATIONIDL
+
+#include "carma/util/UserException.idl"
+
+module carma {
+
+  module antenna {
+
+    module common {
+      /**
+       * Antenna polarization control.
+       */
+      interface PolarizationControl {
+
+	/**
+	 * Enumerate valid polarization states
+	 */
+	enum State {
+	  POLH,       /**< Linear horizontal */
+	  POLV,       /**< Linear vertical */
+	  POLRCP,     /**< Right circularly polarized */
+	  POLLCP      /**< Left circularly polarized */
+	};
+
+	/**
+	 * Set the requested polarization.
+	 * The hardware response to this is quite different on the
+	 * different antenna types.
+	 * The SZA is fixed with x circular.
+	 * OVRO can do LCP, RCP, and H at 3mm and
+	 * LCP, RCP, and V at 1mm.
+	 * BIMA is V at both 3mm and 1mm and can do LCP and RCP in
+	 * three different wavelength bands
+	 * (but only one at a time depending on what is mounted).
+	 *
+	 * Requests for impossible states will be logged.
+	 * The monitor and fault system will be used to determine if
+	 * the requested state is achieved.
+     *
+     * The sequence number is used to verify the remote system has completed
+     * the requested operation. The sequence number is stored locally on
+     * the remote system and once complete, the corrisponding monitor point for
+	 * this sequence number is set to the one passed as seqNo.
+	 *
+	 * @param pol The requested polarization mode
+	 * @param seqNo Sequence number to return when command completes
+	 *              in monitor point named OpticSeqNum
+	 * @see PolarizationStateControl
+	 */
+	void setState(in State poltype, in unsigned long seqNo )
+	  raises (carma::util::UserException);
+
+      }; // End Polarization interface
+
+    }; // End common module
+
+  }; // End antenna module
+
+}; // End carma module
+
+#endif  // _POLARIZATIONIDL

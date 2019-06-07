@@ -1,0 +1,149 @@
+#!/bin/bash
+#
+# Copyright (c) 2010, Ira W. Snyder <iws@ovro.caltech.edu>
+#
+# This file is licensed under the terms of the GNU General Public License
+# version 2. This program is licensed "as is" without any warranty of any
+# kind, whether express or implied.
+#
+#
+# NOTE: the code snipped for the usage of the flock(1) command came from:
+# NOTE: http://stackoverflow.com/questions/169964/how-to-prevent-a-script-from-running-simultaneously
+
+# For testing only
+#export INTERFACE="eth2"
+#export DEVPATH="$INTERFACE"
+#export SYSFS="$HOME/sysfs/$DEVPATH"
+#export CONFIG="map.conf"
+#export HOSTSFILE="hosts.conf"
+#export ACTION="add"
+
+# NOTE: the variables DEVPATH and ACTION come from the udev env
+
+SYSFS="/sys/$DEVPATH"
+CONFIG="/etc/cobra/carma15-new.udev.conf"
+HOSTSFILE="/etc/hosts"
+
+# Both modes need a marker, so we use the easiest possible:
+# a comment at the end of the host line with the interface name
+MARKER="# interface $INTERFACE"
+
+# Both modes of operation need a temporary file
+TMPFILE="$(mktemp)"
+
+stderr() {
+	echo -e "$@" >&2
+	logger -t "udev" "$0: $@"
+}
+
+cleanup() {
+	rm "$TMPFILE"
+}
+
+# Handle an add event
+do_add() {
+
+	# Check that the board's metadata files exist
+	if [[ ! -f "$SYSFS/carma_peer_ser" ]]; then
+		stderr "no CARMA sysfs nodes found in $SYSFS"
+		exit 1
+	fi
+
+	# Figure out the band number and set it on the board
+	hostname -s | sed 's/^.*[^0-9]//' > "$SYSFS/carma_peer_bno"
+
+	# Read the metadata
+	SERNO="$(cat "$SYSFS/carma_peer_ser")"
+	GEOADDR="$(cat "$SYSFS/carma_peer_geo")"
+	MACADDR="$(cat "$SYSFS/carma_peer_mac")"
+
+	# Check that the serial number is reasonable
+	if [[ $SERNO -eq 0 ]]; then
+		stderr "Serial number is bogus: $SERNO"
+		exit 1
+	fi
+
+	if [[ $SERNO -gt 200 ]]; then
+		stderr "Serial number is bogus: $SERNO"
+		exit 1
+	fi
+
+	FOUNDMAPPING=0
+
+	# Ok, now try and find the mapping from the configuration file
+	if ! grep -q -E "^\s*$MACADDR" "$CONFIG"; then
+		stderr "No mapping found for MAC $MACADDR (slot $GEOADDR) in file $CONFIG"
+	else
+		IPADDR="$(grep -E "^\s*$MACADDR" "$CONFIG" | awk '{ print $2; }')"
+		FOUNDMAPPING=1
+	fi
+
+	# Make sure we exit if flock fails
+	set -e
+
+	(
+		# wait for lock on /etc/hosts (fd 200) for 10 seconds
+		flock -x -w 10 200
+
+		# Calculate the board's hostname
+		BOARDHOST="$(hostname -s)-$GEOADDR"
+		BOARDHOST_LONG="${BOARDHOST}.$(hostname -d)"
+
+		# Remove any old lines from the /etc/hosts file
+		grep -v -E "${MARKER}$" "$HOSTSFILE" > "$TMPFILE"
+
+		# If we found a mapping, add it
+		if [[ $FOUNDMAPPING -eq 1 ]]; then
+			echo "$IPADDR $BOARDHOST_LONG $BOARDHOST $MARKER" >> "$TMPFILE"
+		else
+			BADMSG="No mapping found for MAC $MACADDR (slot $GEOADDR)"
+			echo "# $BADMSG $MARKER" >> "$TMPFILE"
+		fi
+
+		# Ok, we're done making modifications, copy the contents back
+		cat "$TMPFILE" > "$HOSTSFILE"
+
+	) 200<"$HOSTSFILE"
+
+	set +e
+
+}
+
+# Handle a remove event
+#
+# We need to remove any lines that have the marker for this interface
+do_rem() {
+
+	# Make sure we exit if flock fails
+	set -e
+
+	(
+		# wait for lock on /etc/hosts (fd 200) for 10 seconds
+		flock -x -w 10 200
+
+		grep -v -E "${MARKER}$" "$HOSTSFILE" > "$TMPFILE"
+		cat "$TMPFILE" > "$HOSTSFILE"
+
+	) 200<"$HOSTSFILE"
+
+	set +e
+
+}
+
+# Call cleanup() on interrupt
+trap cleanup SIGHUP SIGINT SIGTERM SIGKILL
+
+# Check for the configuration file
+if [[ ! -f "$CONFIG" ]]; then
+	stderr "No configuration file found: $CONFIG"
+	exit 1
+fi
+
+# Call the correct function based on the udev action
+if [[ "$ACTION" = "add" ]]; then
+	do_add
+else
+	do_rem
+fi
+
+cleanup

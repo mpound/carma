@@ -1,0 +1,18 @@
+#ifndef CARMA_CONTROL_SEQUENCETYPEDEFS_IDL
+#define CARMA_CONTROL_SEQUENCETYPEDEFS_IDL
+
+#include "carma/util/SeqTypedefs.idl"
+
+module carma {
+module control {
+
+typedef carma::util::SeqDouble SeqDouble;  ///< Sequence of CORBA::Double
+typedef carma::util::SeqFloat  SeqFloat;   ///< Sequence of CORBA::Float
+typedef carma::util::SeqLong   SeqLong;    ///< Sequence of CORBA::Long
+typedef carma::util::SeqShort  SeqShort;   ///< Sequence of CORBA::Short
+typedef carma::util::SeqByte   SeqByte;    ///< Sequence of CORBA::Octet
+typedef carma::util::SeqString SeqString;  ///< Sequence of CORBA::String
+
+}; // module control
+}; // module carma
+#endif

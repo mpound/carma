@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ts=4 sts=4 sw=4 noet nosi noai nocindent: -->
+
+<!-- Misc Elements -->
+<!ELEMENT description (#PCDATA)>
+<!ELEMENT shortName (#PCDATA)>
+<!ELEMENT longName (#PCDATA)>
+<!ELEMENT errHi (#PCDATA)>
+<!ELEMENT errLo (#PCDATA)>
+<!ELEMENT warnHi (#PCDATA)>
+<!ELEMENT warnLo (#PCDATA)>
+<!ELEMENT units (#PCDATA)>
+<!ELEMENT width (#PCDATA)>
+<!ELEMENT integrate (#PCDATA)>
+<!ELEMENT precision (#PCDATA)>
+
+<!-- The enum Element -->
+<!ELEMENT enum (description?)>
+<!ATTLIST enum name CDATA #REQUIRED>
+
+<!-- The CommonMonitorPoint Element -->
+<!ELEMENT CommonMonitorPoint EMPTY>
+<!ATTLIST CommonMonitorPoint ref CDATA #REQUIRED>
+<!ATTLIST CommonMonitorPoint name CDATA #IMPLIED>
+<!ATTLIST CommonMonitorPoint count CDATA "1">
+
+<!-- The CommonContainer Element -->
+<!ELEMENT CommonContainer EMPTY>
+<!ATTLIST CommonContainer ref CDATA #REQUIRED>
+<!ATTLIST CommonContainer name CDATA #IMPLIED>
+<!ATTLIST CommonContainer count CDATA "1">
+
+<!-- The MonitorPoint Element -->
+<!ELEMENT MonitorPoint (description|shortName|longName|units|width|errHi|errLo|warnHi|warnLo|precision|integrate|enum)*>
+<!ATTLIST MonitorPoint name CDATA #REQUIRED>
+<!ATTLIST MonitorPoint type (char|byte|short|int|bool|float|double|complex|string|absTime|serialNo|enum) #REQUIRED>
+<!ATTLIST MonitorPoint priority (vital|useful|normal|debug|verbose|default|dontarchive) "default">
+<!ATTLIST MonitorPoint author CDATA "not specified">
+<!ATTLIST MonitorPoint count CDATA "1">
+<!ATTLIST MonitorPoint sampling CDATA #IMPLIED>
+<!ATTLIST MonitorPoint persistent (true|false) #IMPLIED>
+<!ATTLIST MonitorPoint update CDATA #IMPLIED>
+<!ATTLIST MonitorPoint spectrum CDATA #IMPLIED>
+<!ATTLIST MonitorPoint bitmask (true|false) #IMPLIED>
+
+<!-- The Container Element -->
+<!ELEMENT Container (description|shortName|longName|Container|CommonContainer|MonitorPoint|CommonMonitorPoint)*>
+<!ATTLIST Container name CDATA #REQUIRED>
+<!ATTLIST Container priority (vital|useful|normal|debug|verbose|default|dontarchive) "default">
+<!ATTLIST Container count CDATA "1">
+<!ATTLIST Container persistent (true|false) #IMPLIED>
+<!ATTLIST Container indexName CDATA #IMPLIED>
+<!ATTLIST Container extendFrom (Base) #IMPLIED>
+
+<!-- The Subsystem Element -->
+<!ELEMENT Subsystem (MonitorPoint|Container|CommonContainer|CommonMonitorPoint|Common|description|shortName|longName)*>
+<!ATTLIST Subsystem name CDATA #REQUIRED>
+<!ATTLIST Subsystem priority (vital|useful|normal|debug|verbose|default|dontarchive) "default">
+<!ATTLIST Subsystem author CDATA "not specified">
+<!ATTLIST Subsystem count CDATA "1">
+<!ATTLIST Subsystem persistent (true|false) #IMPLIED>
+<!ATTLIST Subsystem indexName CDATA #IMPLIED>
+<!ATTLIST Subsystem extendFrom (Base) #IMPLIED>
+
+<!-- The Common Element -->
+<!ELEMENT Common (MonitorPoint|Container|CommonContainer|CommonMonitorPoint)*>
+<!ATTLIST Common author CDATA "not specified">
+<!ATTLIST Common scope (global|local) "global">
+
+<!-- Convenience constants describing the system -->
+<!ENTITY NUM_SUBARRAYS "5">
+<!ENTITY NUM_BIMA_ANTENNAS "9">
+<!ENTITY NUM_OVRO_ANTENNAS "6">
+<!ENTITY NUM_SZA_ANTENNAS "8">
+<!-- NUM_ANTENNAS is sum of NUM_BIMA_ANTENNAS, NUM_OVRO_ANTENNAS, NUM_SZA_ANTENNAS -->
+<!ENTITY NUM_ANTENNAS "23">
+<!ENTITY NUM_WBDC_BANDS "16">
+<!ENTITY NUM_WBDC_INPUTS "8">
+<!ENTITY NUM_QUAD_MODS "8">
+<!ENTITY NUM_SLDC_BANDS "8">
+<!ENTITY NUM_SLDC_INPUTS "15">
+
+<!-- Number of correlator bands in each of the C3G correlators -->
+<!ENTITY NUM_C3G_BANDS "8">
+<!-- Total number of possible C3G astrobands -->
+<!ENTITY NUM_C3G_ASTROBANDS "16">
+
+<!ENTITY NUM_WBC_BANDS "16">
+<!-- Number of digitizers making up a COBRA band -->
+<!ENTITY NUM_SLC_DIGS "8">
+<!-- Number of correlators making up a COBRA band -->
+<!ENTITY NUM_SLC_CORS "11">
+<!ENTITY NUM_WBC_DIGS "4">
+<!ENTITY NUM_WBC_CORS "3">
+<!-- wideband baseline for 8 antennas (includes autos) -->
+<!ENTITY NUM_WBC_BASELINES "36">
+<!-- wideband baseline for 8 antennas (excludes autos) -->
+<!ENTITY NUM_WBC_XBASELINES "28">
+<!ENTITY NUM_SLC_BANDS "8">
+<!-- spectral baselines for 15 antennas (includes autos) -->
+<!ENTITY NUM_SLC_BASELINES "120">
+<!-- spectral baselines for 15 antennas (excludes autos) -->
+<!ENTITY NUM_SLC_XBASELINES "105">
+<!-- Maximum number of sources in an obsblock -->
+<!ENTITY NUM_OBSBLOCK_OBJECTS "32">
+<!-- Number of FPGA sample points in the new CARMA correlator board -->
+<!ENTITY NUM_CORR_FPGA "4">
+<!-- Number of Digitizer sample points in the new CARMA correlator board -->
+<!ENTITY NUM_CORR_DIG  "3">
+<!-- Number of Compact PCI sample points in the new CARMA correlator board -->
+<!ENTITY NUM_CORR_CPCI "3">
+<!-- Number of SYS sample points in the new CARMA correlator board -->
+<!ENTITY NUM_CORR_SYS  "2">
+<!-- Number of board temperature sensors on a CARMA correlator board -->
+<!ENTITY NUM_CORR_SENSOR "3">
+<!-- Number of correlators making up a CARMA band -->
+<!ENTITY NUM_CARMA_CORS "7">
+<!-- Number of digitizers making up a CARMA band -->
+<!ENTITY NUM_CARMA_DIGS "8">
+
+<!-- ============================================================ -->
+<!-- Added by EML for switchyard configuration                    -->
+<!-- ============================================================ -->
+
+<!-- Number of possible IFs per antenna -->
+<!ENTITY NUM_ANTENNA_IF "5">
+
+<!-- Number of IF switches in the switchyard -->
+<!ENTITY NUM_IF_SWITCHES "38">
+
+<!-- Number of astro bands is the sum of NUM_WBC_BANDS and NUM_SLC_BANDS and the 16 bands of the C3G correlator -->
+<!ENTITY NUM_ASTRO_BANDS "40">
+
+<!-- Maximum possible number of astro band inputs -->
+<!ENTITY NUM_ASTRO_BAND_INPUTS "32">
+
+<!-- ============================================================ -->
+<!-- Number of repeat tasks -->
+<!ENTITY NUM_REP_TASKS "10">

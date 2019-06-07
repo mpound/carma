@@ -1,0 +1,574 @@
+/**
+ * $Id: Master.cc.cgwon,v 1.1 2003/07/09 18:18:36 cgwon Exp $
+ *
+ * CAN Bus Master class.  
+ * 
+ * Author: Andy Beard
+ * 
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/09 18:18:36 $
+ */
+
+// Carma includes
+#include "carma/canbus/Master.h"
+/**** REVIEW
+ Reviewer: csg
+ Comments: Device.h already included in Master.h
+ */
+#include "carma/canbus/Device.h"
+#include "carma/canbus/Error.h"
+#include "carma/canbus/Utilities.h"
+
+using namespace carma::canbus;
+
+const int SECONDS_PER_DAY = 86400;
+
+// -----------------------------------------------------------------------------
+Master::Master()
+{
+    try {
+        pthread_mutex_t tmp1 = PTHREAD_MUTEX_INITIALIZER;
+        deviceMutex_ = tmp1;
+        onlineNodes_ = 0;
+        offlineNodes_ = 0;
+    } catch (...) {
+        carma::canbus::Error err("Master::Master() - Unknown exception caught "
+                "- exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// -----------------------------------------------------------------------------
+Master::Master(int modBusNo) : CanDio(modBusNo) 
+{ 
+    try {
+        pthread_mutex_t tmp1 = PTHREAD_MUTEX_INITIALIZER;
+        deviceMutex_ = tmp1;
+        onlineNodes_ = 0;
+        offlineNodes_ = 0;
+    } catch (...) {
+        carma::canbus::Error err("Master::Master() - Unknown exception caught "
+                "- exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// -----------------------------------------------------------------------------
+Master::Master(int modBusNo, int modBusSlot) : CanDio(modBusNo, modBusSlot) 
+{ 
+    try {
+        pthread_mutex_t tmp1 = PTHREAD_MUTEX_INITIALIZER;
+        deviceMutex_ = tmp1;
+        onlineNodes_ = 0;
+        offlineNodes_ = 0;
+    } catch (...) {
+        carma::canbus::Error err("Master::Master() - Unknown exception caught "
+                "- exiting.");
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// -----------------------------------------------------------------------------
+Master::~Master() 
+{    
+    void *result;
+    int status;
+    try {
+        // Cancel any Master threads.
+        status = pthread_cancel(readThreadId_);
+        if (status != 0) {
+            throw carma::canbus::Error("Master::~Master() - Error destroying "
+                    "read thread. " + (string)strerror(status));
+        }
+        // Wait on read thread to quit.
+        status = pthread_join(readThreadId_, &result);
+        if (status != 0) {
+            throw carma::canbus::Error("Master::~Master() - Error joining "
+                    "on read thread. " + (string)strerror(status));
+        }
+        if (result != PTHREAD_CANCELED) {
+            throw carma::canbus::Error("Master::~Master() - Read thread "
+                    "returned with invalid value.");
+        }
+
+        status = pthread_cancel(timerThreadId_);
+        if (status != 0) {
+            throw carma::canbus::Error("Master::~Master() - Error destroying "
+                    "timer thread. " + (string)strerror(status));
+        }
+        // Wait on read thread to quit.
+        status = pthread_join(timerThreadId_, &result);
+        if (status != 0) {
+            throw carma::canbus::Error("Master::~Master() - Error joining "
+                    "on timer thread. " + (string)strerror(status));
+        }
+        if (result != PTHREAD_CANCELED) {
+            throw carma::canbus::Error("Master::~Master() - Timer thread "
+                    "returned with invalid value.");
+        }
+
+        map<keyType, Device*>::iterator i = devices_.begin();
+        // Delete all devices.
+        while (i != devices_.end()) {
+/**** REVIEW
+ Reviewer: csg
+ Comments: deletion line commented out?
+ */
+            // delete i->second;
+            ++i;
+        }
+    } catch (...) {
+        carma::canbus::Error err("Master::~Master() - Unkown exception caught."
+                "  Make destructor more stable.");
+        err.report();
+        err.log(Priority::DEBUG);
+    }
+}
+
+// -----------------------------------------------------------------------------
+void Master::run() 
+{
+    // The order of constructor initialization guarantees that
+    // at this stage, no communication is occurring on the CAN 
+    // bus(ses) and that they are in a reset state (resetHi has
+    // been issued but not released with a resetLo.  
+    // At this stage we want to start the Master timer and read
+    // threads, then release the resetLo pulse to start everything
+    // off.
+    int status;
+    
+    // Start the read thread.
+    status = pthread_create(&readThreadId_, NULL, 
+		    readThreadEntry, (void *) this);
+    if (status != 0) {    
+        throw carma::canbus::Error("Master::run() - Unable to create Master "
+                "read thread. " + (string) strerror(status));
+    }
+	
+    // Start the timer thread.
+    status = pthread_create(&timerThreadId_, NULL,
+		    timerThreadEntry, (void *) this);
+    if (status != 0) {
+        throw carma::canbus::Error("Master::run() - Unable to create "
+                "Master read thread. " + (string) strerror(status));
+    }
+
+    // Release the reset state.
+    resetLo();
+    
+    // Block on read thread until done.
+    status = pthread_join(timerThreadId_, NULL);
+    if (status != 0) {
+        throw carma::canbus::Error("Master::run() - Error joining on Master "
+                "timer thread." + (string) strerror(status));
+    }
+}
+
+// -----------------------------------------------------------------------------
+void Master::addDevice(Device *dev) 
+{
+    keyType key = dev->getKey();
+    
+    // Check that a device doesn't already exist for this node
+    pthread_mutex_lock(&deviceMutex_);	
+
+    if (devices_.find(key) != devices_.end()) {
+        throw carma::canbus::Error("Master::addDevice() - Adding a device "
+                "with a node and api which already exists.  Check keys.");
+    }	
+
+    dev->setState(OFFLINE);
+
+    // Device checks out, add it to the map.
+    devices_[key] = dev; 
+    pthread_mutex_unlock(&deviceMutex_);	
+}
+
+// -----------------------------------------------------------------------------
+void Master::removeDevice(keyType key) 
+{
+    map<keyType, Device*>::iterator i = devices_.find(key);
+
+    if (i == devices_.end()) {
+        throw carma::canbus::Error("Master::removeDevice() - Tried removing "
+                "a node which doesn't exist. Check keys.");
+    } else {
+        devices_.erase(i);
+    }
+}
+
+// -----------------------------------------------------------------------------
+Device* Master::getDevice(keyType key)
+{
+   map<keyType, Device*>::iterator i = devices_.find(key);
+
+  if (i == devices_.end()) {
+     throw carma::canbus::Error("Master:;getDevice() - Device doesn't exist. "
+             "Check keys.");
+  } else {
+     return i->second;
+  }
+}
+
+// -----------------------------------------------------------------------------
+int Master::getOnlineNodeCount()
+{
+    return onlineNodes_;
+}
+
+// -----------------------------------------------------------------------------
+int Master::getOfflineNodeCount()
+{
+    return offlineNodes_;
+}
+
+// -----------------------------------------------------------------------------
+void Master::softwareReset()
+{
+    idType address = createId(false, 0x00, 0x00, RESET);		
+    vector<byteType> data;
+/**** REVIEW
+ Reviewer: csg
+ Comments: push_back currently causes problems with the -fno-implicit-templates compliation flag.
+ */
+    data.push_back(0xE1);
+    data.push_back(0x1E);
+    data.push_back(0xA5);
+    data.push_back(0x5A);
+    data.push_back(0xC3);
+    data.push_back(0x3C);
+    data.push_back(0x96);
+    data.push_back(0x69);
+    Message msg(address, data, ALL_BUSSES);
+    postMessage(msg);
+}
+
+// -----------------------------------------------------------------------------
+void Master::setTime() 
+{
+    idType address = createId(false, 0x0, 0x0, SET_TIME); 
+		
+    double fullMjd;           // Full MJD.
+    int mjd;                  // Mean Julian Day
+    unsigned int fracMjd;     // Billionths of a day
+   
+    fullMjd = time_.MJD();
+    mjd = (int)fullMjd;
+    fracMjd = (int) ((fullMjd - mjd) * 1000000000);
+		
+	vector<byteType> data;
+
+	uShortToData(data, mjd);
+	uLongToData(data, fracMjd);
+	padWithZeros(data);
+    Message msg(address, data, ALL_BUSSES);
+
+	postMessage(msg);
+}
+
+// -----------------------------------------------------------------------------
+void Master::updateDevicesStates() 
+{
+	// Period to wait (in seconds) before taking a device offline.	
+	const double ONLINE_TIMEOUT = 1.0;
+	const double INITIALIZED_TIMEOUT = 15.00;
+    double mjd = time_.MJD();
+    double diff;
+    int onlineNodes = 0;
+    int offlineNodes = 0;
+
+	// Iterate through all devices.
+	map<keyType, Device*>::iterator i = devices_.begin();
+	
+	while (i != devices_.end()) {
+		
+		Device* dev = i->second;           // Retrieve the device	
+        diff = mjd - dev->getLastRxTime(); // Calculate diff since last rx
+        diff = diff * SECONDS_PER_DAY;     // Convert to seconds
+
+        // If device is online but not responding    
+		if ((dev->getState() == ONLINE) &&  (diff > ONLINE_TIMEOUT)) {
+			dev->setState(OFFLINE);
+		} else if ((dev->getState() == INITIALIZED) && 
+			       (diff > INITIALIZED_TIMEOUT)) {
+			dev->setState(OFFLINE);
+		} else {
+            // Nothing
+		}
+        switch (dev->getState()) {
+            case ONLINE :
+            case INITIALIZED :    
+                onlineNodes++;
+                break;
+            case OFFLINE :
+                offlineNodes++;
+                break;
+        }
+                
+		++i;
+	} // End loop over devices.  	
+    onlineNodes_ = onlineNodes;
+    offlineNodes_ = offlineNodes;
+}
+
+// -----------------------------------------------------------------------------
+void * Master::timerThreadEntry(void *arg)
+{
+    int status;
+    Master *This = (Master *)arg;
+    This->runTimerThread();
+}
+    
+// -----------------------------------------------------------------------------
+void Master::runTimerThread() 
+{
+    int halfSecCount = 10;              // Half second counter. 
+    bool fiveSecondBoundary;            // True time is five sec boundary
+    timespec sleep, rem;                // Current time and sleep value
+    map<keyType, Device*>::iterator i;  // Device iterator
+
+    // Start on next five second boundary by sleeping until then  
+    sleep = calculateTimeToNextSlowBoundary();
+
+    if (nanosleep(&sleep, &rem) == -1) {
+        // Returned early, keep sleeping
+        while (nanosleep(&rem, &rem) == -1);
+    }
+
+    try {
+        while (true) {	
+            // Lock the device mutex... 
+            pthread_mutex_lock(&deviceMutex_);
+
+            // Check to see if it's time to send time sync.
+            if (halfSecCount%20 == 0) {
+                setTime();            // Send time sync
+            }	
+
+            // Is this a five second boundary...
+            fiveSecondBoundary = (halfSecCount%10 == 0 ? true : false);
+
+            // Check active and sim status as well as bus status. 
+            updateDevicesStates();
+
+            // Call updateStatus to allow users to process Master
+            // and Bus specific monitor points.
+            updateStatus();
+
+            // Loop through all devices and simulate OFFLINE nodes.
+            i = devices_.begin();
+            while (i != devices_.end()) {
+                
+                // If an exception is thrown while simulating a message,
+                // the device is considered to be unstable...  Log it,
+                // remove the device and continue....
+                try {
+                    if (i->second->getState() == OFFLINE && 
+                        i->second->getNode() != 0) {
+
+                        // Get a map of the monitor points for this device.
+                        map<msgType, string> monitors = 
+                            i->second->getHalfSecMonitors();
+
+                        if (fiveSecondBoundary) { 
+                            map<msgType, string> slowMonitors = 
+                                i->second->getSlowMonitors();
+                            // Add them to the monitors.
+                            monitors.insert(slowMonitors.begin(), 
+                                    slowMonitors.end());
+                        }
+
+                        // Loop through monitors and call devs simulateMsg 
+                        // method and queue it. 
+                        map<msgType, string>::iterator m;
+                        for (m = monitors.begin(); m != monitors.end(); m++) {
+                            queueMessage(i->second->simulateMsg(m->first));
+                        }
+                    }  // End if device is OFFLINE
+                } catch (carma::canbus::Error &err) {
+                    // Form, notify and log the exception.
+                    ostringstream os;
+                    os << "Master::runTimerThread() - Exception caught while "
+                       << "simulating msg for api " << dec 
+                       << i->second->getApi() << " node " 
+                       << i->second->getNode() << ": " << endl 
+                       << (string)err.what() 
+                       << "Removing device and proceeding." << endl << ends;
+                    carma::canbus::Error newErr(os);
+                    newErr.report();
+                    newErr.log(Priority::ERROR);
+                    
+                    // Retrieve the key, decrement the device iterator 
+                    // (to avoid fragmenting map), and remove the device.
+                    keyType key = i->second->getKey();
+                    i--;
+                    removeDevice(key);
+                } catch (...) {
+                    // Form, notify and log the exception.
+                    ostringstream os;
+                    os << "Master::runTimerThread() - Unknown exception caught "
+                        << "while simulating msg" 
+                        << " from api " << dec << i->second->getApi() 
+                        << " node " << i->second->getNode() 
+                        << " - Removing device and proceeding." << endl << ends;
+                    carma::canbus::Error newErr(os);
+                    newErr.report();
+                    newErr.log(Priority::ERROR);
+                    
+                    // Retrieve the key, decrement the device iterator 
+                    // (to avoid fragmenting map), and remove the device.
+                    keyType key = i->second->getKey();
+                    i--;
+                    removeDevice(key);
+                }
+                i++;
+            }  // End loop over devices.
+
+            halfSecCount++;
+
+            pthread_mutex_unlock(&deviceMutex_);	
+
+            // Sleep until next half second boundary.
+            sleep = calculateTimeToNextHalfSec();
+
+            if (nanosleep(&sleep, &rem) == -1) {
+                // nanosleep returned early
+                while (nanosleep(&rem, &rem) == -1);
+            }
+        } // End loop forever
+
+    // Generic exception handler.
+    } catch (carma::canbus::Error &err) {
+        ostringstream os;
+        os << "Master::runTimerThread() - carma::canbus::Error exception "
+           << "caught: " << endl;
+        os << (string)err.what() << endl << "Exiting." << ends;
+        carma::canbus::Error newErr(os);
+        newErr.report();
+        newErr.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    } catch(...) { 
+        carma::canbus::Error err("Master::runTimerThread() - Unknown exception "
+            "caught. Exiting."); 
+        err.report();
+        err.log(Priority::CRIT);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// -----------------------------------------------------------------------------
+void * Master::readThreadEntry(void *arg)
+{
+    int status;
+    Master *This = (Master *)arg;
+    This->runReadThread();
+}
+// -----------------------------------------------------------------------------
+void Master::runReadThread() 
+{
+    Message msg;
+    idType id;
+    vector<byteType> data;
+    busIdType busId;
+    bool host;
+    bool mode;    // Address mode 0 api/node, 1 bt/sn
+    apiType api;
+    nodeType node;
+    keyType key;  // Key derived from CAN id.
+    msgType mid;
+    map<keyType, Device*>::iterator i;
+    double rxTime; 		  // Receive time for a message.
+
+    while (true) { // Run forever. 
+		
+        // Block while waiting for message.
+        msg = getMessage();
+        
+        // If we got here, we have a message - lock the device mutex 
+        // while we process it.
+        pthread_mutex_lock(&deviceMutex_);	
+        
+        // Extract the canId, data, and busId from message.
+        id = msg.getId();
+        data = msg.getData();
+        busId = msg.getBusId();
+        rxTime = msg.getRxMjd(); 
+        
+		// Extract carma message id parameters from canId
+        host = isToHost(id);
+        mode = getMode(id);
+        fromId(api, node, mid, id);
+        key = createKey(api, node); 
+
+        // If the message is addressed to the host and the addressing
+        // mode is application (non-engineering), process this message.
+        if (host && (mode == APPLICATION)) {
+           
+           // Find the device in the device map.
+           i = devices_.find(key);
+           
+           // Did we find it?
+           if (i != devices_.end()) {
+               
+               // Ok, process the message.
+               Device* dev = i->second;
+               // Set the last Rx Time of device to msg RxMjd.
+               dev->setLastRxTime(rxTime);
+
+               // Set the busId if it has changed
+               if (dev->getBusId() != busId) {
+                   dev->setBusId(busId);
+               }
+               
+               // Try to process the message.
+               // If an exception is thrown while processing the message
+               // the device is unstable and can't be trusted.  Remove
+               // the device from the devices_ map and continue.
+               try {
+                   dev->processMsg(mid, data);
+               } catch (carma::canbus::Error &err) {
+                   // First log the error.
+                   ostringstream os;
+                   os << "Master::runReadThread() - Exception caught while"
+                       << " processing msg 0x" << hex << mid << dec 
+                       << " from api " << dev->getApi() << " node " 
+                       << dev->getNode() << ": " << endl << err.what() 
+                       << "Removing device and proceeding." << endl << ends;
+                   carma::canbus::Error newErr(os);
+                   newErr.report();
+                   newErr.log(Priority::ERROR);
+
+                   // Remove the device.
+                   removeDevice(dev->getKey());
+               } catch (...) {
+                   // First log the error.
+                   ostringstream os;
+                   os << "Master::runReadThread() - Unknown exception caught"
+                       << " while processing msg 0x" << hex << mid << dec 
+                       << " from api " << dev->getApi() << " node " 
+                       << dev->getNode() << ": " << endl 
+                       << "Removing device and proceeding." << endl << ends;
+                   carma::canbus::Error err(os);
+                   err.report();
+                   err.log(Priority::ERROR);
+
+                   // Remove the device.
+                   removeDevice(dev->getKey());
+               }
+                   
+           } else {
+               // Device not found.
+           } // If device exists.
+        } else {
+            // Message was not addressed to the host or is an
+            // engineering message.
+        }
+        pthread_mutex_unlock(&deviceMutex_);
+    }  // End loop forever
+}

@@ -1,0 +1,546 @@
+###################################################################
+# Correlator System Configuration
+###################################################################
+# $Id: sza14.ini.in,v 1.4 2010/06/16 13:38:49 mpound Exp $
+###################################################################
+# SZA 8-antenna 8GHz correlator
+###################################################################
+
+[SZA]
+[SZA\Time]
+"timeReferenceRate"="1"
+"phaseSwitchRate"="1024"
+"phaseSwitchIntegrationTime"="950e-6"
+"phaseSwitchSettlingTime"="21e-6"
+"referenceFrequency"="15.625e6"
+"numberOfPhaseSwitchesIntegrated"="512"
+
+[SZA\Bands]
+# Bands server control port number
+"server"="acc 19000"
+
+[SZA\Band]
+"numberOfBands"="14"
+"numberOfBoards"="7"
+
+[SZA\Band\Number]
+"0"="3"
+"1"="4"
+"2"="5"
+"3"="6"
+"4"="7"
+"5"="8"
+"6"="9"
+"7"="10"
+"8"="11"
+"9"="12"
+"10"="13"
+"11"="14"
+"12"="15"
+"13"="16"
+
+[SZA\Band\Server]
+# Bands servers
+"0"="wbcor2.carma.pvt 19003"
+"1"="wbcor2.carma.pvt 19004"
+"2"="wbcor3.carma.pvt 19005"
+"3"="wbcor3.carma.pvt 19006"
+"4"="wbcor4.carma.pvt 19007"
+"5"="wbcor4.carma.pvt 19008"
+"6"="wbcor5.carma.pvt 19009"
+"7"="wbcor5.carma.pvt 19010"
+"8"="wbcor6.carma.pvt 19011"
+"9"="wbcor6.carma.pvt 19012"
+"10"="wbcor7.carma.pvt 19013"
+"11"="wbcor7.carma.pvt 19014"
+"12"="wbcor8.carma.pvt 19015"
+"13"="wbcor8.carma.pvt 19016"
+
+# Sum-of-frequencies (for lobe rotation correction)
+[SZA\Band\DownconverterFrequency]
+#"0"="2.0e9"
+#"1"="2.5e9"
+"0"="3.0e9"
+"1"="2.0e9"
+"2"="2.5e9"
+"3"="3.0e9"
+"4"="3.5e9"
+"5"="4.0e9"
+"6"="6.0e9"
+"7"="6.5e9"
+"8"="7.0e9"
+"9"="7.5e9"
+"10"="8.0e9"
+"11"="7.0e9"
+"12"="7.5e9"
+"13"="8.0e9"
+
+[SZA\Band\BlockDownconverterEnabled]
+"default"="false"
+
+[SZA\Band\DownconverterSideband]
+"0"="lsb"
+"1"="usb"
+"2"="usb"
+"3"="usb"
+"4"="usb"
+"5"="usb"
+"6"="lsb"
+"7"="lsb"
+"8"="lsb"
+"9"="lsb"
+"10"="lsb"
+"11"="usb"
+"12"="usb"
+"13"="usb"
+
+# Board hardware type.
+[SZA\Band\Hardware]
+"0"="COBRA"
+"1"="COBRA"
+"2"="COBRA"
+"3"="COBRA"
+"4"="COBRA"
+"5"="COBRA"
+"6"="COBRA"
+"7"="COBRA"
+"8"="COBRA"
+"9"="COBRA"
+"10"="COBRA"
+"11"="COBRA"
+"12"="COBRA"
+"13"="COBRA"
+
+# Physical slot numbers of the boards in a band
+[SZA\Band\Slot\0]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+[SZA\Band\Slot\1]
+"0"="9"
+"1"="10"
+"2"="11"
+"3"="12"
+"4"="13"
+"5"="14"
+"6"="15"
+[SZA\Band\Slot\2]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+[SZA\Band\Slot\3]
+"0"="9"
+"1"="10"
+"2"="11"
+"3"="12"
+"4"="13"
+"5"="14"
+"6"="15"
+[SZA\Band\Slot\4]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+[SZA\Band\Slot\5]
+"0"="9"
+"1"="10"
+"2"="11"
+"3"="12"
+"4"="13"
+"5"="14"
+"6"="15"
+
+# Even/odd bands flip for 8-15
+[SZA\Band\Slot\13]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+[SZA\Band\Slot\12]
+"0"="9"
+"1"="10"
+"2"="11"
+"3"="12"
+"4"="13"
+"5"="14"
+"6"="15"
+[SZA\Band\Slot\11]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+[SZA\Band\Slot\10]
+"0"="9"
+"1"="10"
+"2"="11"
+"3"="12"
+"4"="13"
+"5"="14"
+"6"="15"
+[SZA\Band\Slot\9]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+[SZA\Band\Slot\8]
+"0"="9"
+"1"="10"
+"2"="11"
+"3"="12"
+"4"="13"
+"5"="14"
+"6"="15"
+[SZA\Band\Slot\7]
+"0"="2"
+"1"="3"
+"2"="4"
+"3"="5"
+"4"="6"
+"5"="7"
+"6"="8"
+[SZA\Band\Slot\6]
+"0"="9"
+"1"="10"
+"2"="11"
+"3"="12"
+"4"="13"
+"5"="14"
+"6"="15"
+
+[SZA\Board]
+"0"="digitizer"
+"1"="digitizer"
+"2"="digitizer"
+"3"="digitizer"
+"4"="correlator"
+"5"="correlator"
+"6"="correlator"
+
+[SZA\Antenna]
+"numberOfAntennas"="8"
+"lobeResidualFrequency"="0.0"
+"lobeTrackUSB"="false"
+"walshFilename"="carma_phase_states.txt"
+
+#
+# Walsh hardware demodulation (180-degree states) and 
+# Walsh nesting can be used in three different combinations:
+#
+# - No nesting, no hardware demodulation (eg. 160pps system)
+# - No nesting, hardware demodulation (eg. 160pps system)
+# - Nesting, and hardware demodulation (eg. 1024pps system)
+#
+"walshNestingEnabled"="1"
+"walshHardwareDemodulationEnabled"="1"
+
+[SZA\Antenna\Number]
+"0"="1"
+"1"="2"
+"2"="3"
+"3"="4"
+"4"="5"
+"5"="6"
+"6"="7"
+"7"="8"
+[SZA\Antenna\Walsh]
+"0"="0"
+"1"="1"
+"2"="2"
+"3"="3"
+"4"="4"
+"5"="5"
+"6"="6"
+"7"="7"
+
+
+#------------------------------------------------------------------
+# SZA 500MHz configuration
+#------------------------------------------------------------------
+
+[SZA\500MHz]
+[SZA\500MHz\DSP]
+"version"="0208"
+"path"="@carma_tools@/cobra-bitfiles"
+"0"="cobra_server_v208.asc"
+"1"="cobra_server_v208.asc"
+"2"="cobra_server_v208.asc"
+"3"="cobra_server_v208.asc"
+"4"="cobra_server_v208.asc"
+"5"="cobra_server_v208.asc"
+"6"="cobra_server_v208.asc"
+
+[SZA\500MHz\FPGA]
+"numberOfFpgaConfigurations"="2"
+"bandwidth"="500e6"
+"path"="@carma_tools@/cobra-bitfiles"
+
+# FPGA configuration used on each board
+[SZA\500MHz\FPGA\Board]
+"0"="0"
+"1"="0"
+"2"="0"
+"3"="0"
+"4"="1"
+"5"="1"
+"6"="1"
+
+# FPGA Configuration #0
+# ---------------------
+[SZA\500MHz\FPGA\0]
+"version"="1104"
+"filename"="carma_v01104"
+"board"="digitizer"
+"numberOfCorrelations"="3"
+
+# Correlations (in terms of RF inputs)
+[SZA\500MHz\FPGA\0\CorrelationMap\Type]
+"0"="auto"
+"1"="auto"
+"2"="cross"
+[SZA\500MHz\FPGA\0\CorrelationMap\Inputs]
+"0"="0"
+"1"="1"
+"2"="0 1"
+
+# Lags parameters
+[SZA\500MHz\FPGA\0\LagsParameters\Number]
+"0"="17"
+"1"="17"
+"2"="32"
+[SZA\500MHz\FPGA\0\LagsParameters\Plus\Source]
+"0"="0x480400"
+"1"="0x48C400"
+"2"="0x484400"
+[SZA\500MHz\FPGA\0\LagsParameters\Plus\Direction]
+"0"="incr"
+"1"="incr"
+"2"="incr"
+[SZA\500MHz\FPGA\0\LagsParameters\Minus\Source]
+"2"="0x48840F"
+[SZA\500MHz\FPGA\0\LagsParameters\Minus\Direction]
+"2"="decr"
+[SZA\500MHz\FPGA\0\LagsParameters\Monitor]
+"0"="0x480411"
+"1"="0x48C411"
+"2"="0x484411"
+[SZA\500MHz\FPGA\0\LagsParameters\Delay]
+"0"="0x480003"
+"1"="0x48C003"
+
+# FPGA Configuration #1
+# ---------------------
+#
+# Note: 6/13/2009 DWH
+#  Use the version 1102 files in the SZA. The
+#  1103 files cause lots of bad baselines in the
+#  correlator.
+#
+[SZA\500MHz\FPGA\1]
+#"version"="1103"
+"version"="1102"
+"filename"="carma_v01102"
+"board"="correlator"
+"numberOfCorrelations"="9"
+
+# Correlations (in terms of LVDS inputs)
+[SZA\500MHz\FPGA\1\CorrelationMap\Type]
+"0"="cross"
+"1"="cross"
+"2"="cross"
+"3"="cross"
+"4"="cross"
+"5"="cross"
+"6"="cross"
+"7"="cross"
+"8"="cross"
+"9"="cross"
+[SZA\500MHz\FPGA\1\CorrelationMap\Inputs]
+"0"="4 5"
+"1"="4 0"
+"2"="4 1"
+"3"="4 6"
+"4"="4 7"
+"5"="5 0"
+"6"="5 1"
+"7"="5 6"
+"8"="5 7"
+"9"="0 1"
+
+# Lags parameters
+[SZA\500MHz\FPGA\1\LagsParameters\Number]
+"0"="32"
+"1"="32"
+"2"="32"
+"3"="32"
+"4"="32"
+"5"="32"
+"6"="32"
+"7"="32"
+"8"="32"
+"9"="32"
+[SZA\500MHz\FPGA\1\LagsParameters\Plus\Source]
+"0"="0x484410"
+"1"="0x490410"
+"2"="0x4A0410"
+"3"="0x488410"
+"4"="0x498410"
+"5"="0x494410"
+"6"="0x4A4410"
+"7"="0x48C410"
+"8"="0x49C410"
+"9"="0x480410"
+[SZA\500MHz\FPGA\1\LagsParameters\Plus\Direction]
+"0"="incr"
+"1"="incr"
+"2"="incr"
+"3"="incr"
+"4"="incr"
+"5"="incr"
+"6"="incr"
+"7"="incr"
+"8"="incr"
+"9"="incr"
+[SZA\500MHz\FPGA\1\LagsParameters\Minus\Source]
+"0"="0x484400"
+"1"="0x490400"
+"2"="0x4A0400"
+"3"="0x488400"
+"4"="0x498400"
+"5"="0x494400"
+"6"="0x4A4400"
+"7"="0x48C400"
+"8"="0x49C400"
+"9"="0x480400"
+[SZA\500MHz\FPGA\1\LagsParameters\Minus\Direction]
+"0"="incr"
+"1"="incr"
+"2"="incr"
+"3"="incr"
+"4"="incr"
+"5"="incr"
+"6"="incr"
+"7"="incr"
+"8"="incr"
+"9"="incr"
+[SZA\500MHz\FPGA\1\LagsParameters\Monitor]
+"0"="0x484420"
+"1"="0x490420"
+"2"="0x4A0420"
+"3"="0x488420"
+"4"="0x498420"
+"5"="0x494420"
+"6"="0x4A4420"
+"7"="0x48C420"
+"8"="0x49C420"
+"9"="0x480420"
+[SZA\500MHz\FPGA\1\LagsParameters\Delay]
+
+[SZA\500MHz\Bus]
+"numberOfBuses"="18"
+"numberOfBusesPerBoard"="8"
+[SZA\500MHz\Bus\Source]
+"0"="0"
+"1"="1"
+"2"="2"
+"3"="3"
+"4"="8"
+"5"="9"
+"6"="10"
+"7"="11"
+"8"="16"
+"9"="17"
+"10"="18"
+"11"="19"
+"12"="20"
+"13"="21"
+"14"="24"
+"15"="25"
+"16"="26"
+"17"="27"
+[SZA\500MHz\Bus\Destination]
+"0"="36"
+"1"="37"
+"2"="54"
+"3"="55"
+"4"="32"
+"5"="33"
+"6"="44"
+"7"="45"
+"8"="38"
+"9"="39"
+"10"="40"
+"11"="41"
+"12"="48"
+"13"="49"
+"14"="46"
+"15"="47"
+"16"="52"
+"17"="53"
+[SZA\500MHz\Bus\Antenna]
+"0"="0"
+"1"="1"
+"2"="0"
+"3"="1"
+"4"="2"
+"5"="3"
+"6"="2"
+"7"="3"
+"8"="4"
+"9"="5"
+"10"="4"
+"11"="5"
+"12"="4"
+"13"="5"
+"14"="6"
+"15"="7"
+"16"="6"
+"17"="7"
+
+# Clock alignment parameters
+[SZA\500MHz\Clock]
+# Spectral line phasor reference antenna
+"referenceAntenna"="0"
+
+# Clock alignment phase detector voltage tolerance
+"tolerance"="0.1"
+
+# Board-to-board clock alignment
+#
+# Phase detector channel
+[SZA\500MHz\Clock\Channel]
+"0"="0"
+"1"="0"
+"2"="0"
+"3"="0"
+"4"="0"
+"5"="0"
+"6"="0"
+
+[SZA\500MHz\Clock\Voltage]
+"0"="2.0"
+"1"="2.0"
+"2"="2.0"
+"3"="2.0"
+"4"="2.0"
+"5"="2.0"
+"6"="2.0"

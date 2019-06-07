@@ -1,0 +1,57 @@
+# dewar4.tab
+
+cyl 7533, refrig 7533
+
+rapid warmup heaters: power resistors, crimp connectors
+2nd stage heater: yes; 300 ohm pwr resistor
+3rd stage heater: 2 Minco heater buttons in parallel
+
+sensor 1: 47108
+sensor 2: 97645
+sensor 3: 07697
+sensor 4: 07699
+sensor 5: 06725
+
+# mixer 31-011-6 was removed on 11 sep 98
+# mxrname_B = 31-011-6
+# at room temp 1 mV, 19.5 uA
+# fancy pole pieces, 0.24" diam magnet
+# bias tee has 100 ohms to gnd
+# 0.010" thick copper straps from mixer and bias tee to spider
+
+# mixer 31-016-2 was installed on 11 sep 98, tested 14 sep 98, 
+	removed 14sep98 (poor I-V curve, lots of leakage)
+# mixer 31-016-4 installed 14 sep 98, tested 15 sep 98,
+	removed 15sep98 (leakage OK, 2D rise too high, soft)
+# mixer 31-016-2 reinstalled with new junction, tested 16 sep 98
+	then removed (best trcvr is 70 K)
+# mixer 31-011-8 installed with external bias tee (the one
+	used previously in dewar 4)
+mxrname_B = 31-011-8
+# at room temp 1 mV, 18.4 uA
+at room temp 1 mv, 19.3 uA  10sep01
+simple pole pieces, 0.2" diam magnet
+built-in bias tee with matching network and 100 ohms to gnd
+HEMT 3
+
+# mixer 31-015-3 was used at Hat Creek 97-98; retested 14 sep 98;
+	I-V curve has degraded since 19sep97 (series resistance),
+	noise temps inferior to 31-015-1 so swapped 14 sep 98
+# no sign of SIS I-V curve in Oct 2000 when dewar reinstalled
+	on ant 1; removed from ant Dec 2000; Greg examined mixer in
+	Sep 2001 - wire to junction broken? circuit board trace from
+    100 ohm resistor to GND broken?  not clear what all was wrong,
+    but we ended up installing new junction
+# 31-015-3: at room temp 1 mV, 20.4 uA
+mxrname_D = 31-015-1
+# at room temp 1 mV, 18.05 mA
+at room temp 1 mV, 18.2 mA
+simple pole pieces, 0.20" diam magnet
+built-in 150 ohm matching network with 100 ohms to gnd
+copper cold strap soldered to midpoint of semiflex cable
+HEMT 21
+
+31-may-03
+use mixer 31-011-6, with separate bias tee, for band B
+use mxier 31-016-3, with integral bias tee, for band D; note
+	that this is just a filler - it is a 3mm mixer!

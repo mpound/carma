@@ -1,0 +1,247 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- Common monitor points for Correlator and Digitizer cards -->
+
+<Common scope="global" author="Doug Friedel">
+<!-- ============================================================= -->
+<!-- Project Information -->
+    <MonitorPoint name="obsBlockId" type="string" persistent="true"
+           priority="vital">
+      <shortName>ObsBlockID</shortName>
+      <description>
+                Observing block ID, in the form
+                projectName.obsblock.subObsblock.trialNumber
+         </description>
+    </MonitorPoint>
+
+    <MonitorPoint name="project" type="string" persistent="true"
+      priority="vital">
+      <shortName>Project</shortName>
+      <description>Project name</description>
+    </MonitorPoint>
+
+<!-- END Project Information -->
+<!-- ============================================================= -->
+<!-- BEGIN obsblock monitor points. These are within the Subarray container -->
+
+<!-- begin obsblock container -->
+    <Container name="Obsblock" priority="vital" persistent="true" >
+      <description>The observing block, which represents a trial.</description>
+
+      <MonitorPoint name="currentObsObject" type="int" priority="vital"
+                  persistent="true">
+	<shortName>Current Object</shortName>
+	<longName>Currently Observed Object</longName>
+	<errLo>-2</errLo>
+	<warnLo>-1</warnLo>
+	<errHi>&NUM_OBSBLOCK_OBJECTS;</errHi>
+	<description>
+        The current object being observed, represented as in index
+        into the object container (0 to 31 inclusive).
+        If default intents are set, then this value will be set to -1.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="defaultName" type="string" persistent="true"
+	priority="vital">
+        <shortName>Default Purpose</shortName>
+        <description>
+        This monitor point will contain the current source name
+        if default observing intents are allowed for the current
+        project (project names such as 'flux', 'base', 'fringe').
+        This monitor point should NOT be used for regular projects,
+        which should use ObsObject.name instead.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="defaultPurpose" type="string" persistent="true"
+	priority="vital">
+	<shortName>Default Purpose</shortName>
+        <description>
+        A default purpose of this observation, which is set for special
+        project names such as 'flux', 'base', 'fringe'.   This monitor
+        point should NOT be used for regular projects, which should use
+        ObsObject.purpose instead.
+
+        Possible values are flux calibration (F), gain calibration (G),
+        bandpass calibration (B), polarization calibration (P), science
+        target (S), other (O).  For multi-purpose objects, the value is
+        a string of concatenated unique characters, e.g.  FPB.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="defaultSelfcal" type="bool" persistent="true"
+	priority="vital">
+        <shortName>Default Selfcal</shortName>
+        <description>
+        Is it expected that one can self-calibrate the data for this object?
+        A default value for this observation, which is set for special
+        project names such as 'flux', 'base', 'fringe'.   This monitor
+        point should NOT be used for regular projects, which should use
+        ObsObject.selfCalibratable instead.
+        </description>
+      </MonitorPoint>
+
+      <MonitorPoint name="defaultFastswitch" type="bool" persistent="true"
+                  priority="vital">
+        <shortName>Default Fastswitch</shortName>
+        <description>
+        Is this object part of a fast switch tracking cycle?
+        A default value for this observation, which is set for special
+        project names such as 'flux', 'base', 'fringe'.   This monitor
+        point should NOT be used for regular projects, which should use
+        ObsObject.fastSwitch instead.
+        </description>
+      </MonitorPoint>
+
+      <Container name="ObsObject"
+	count="&NUM_OBSBLOCK_OBJECTS;"
+	indexName="obsObjIndex"
+	priority="vital"
+	persistent="true">
+	<description>
+    This container holds all the possible objects
+    to observe in this obsblock.
+    </description>
+
+	<MonitorPoint name="name" type="string" persistent="true">
+          <description>
+            The name of the object at this index.
+          </description>
+	</MonitorPoint>
+
+	<MonitorPoint name="purpose" type="string" persistent="true">
+          <description>
+              What is the purpose of this observation? Possible values are
+              flux calibration (F), gain calibration (G), bandpass calibration
+              (B), polarization calibration (P), science target (S), other (O).
+              For multi-purpose objects, the value is a string of concatenated
+              unique characters, e.g.  FPB.
+          </description>
+	</MonitorPoint>
+
+	<MonitorPoint name="selfCalibratable" type="bool" persistent="true">
+	  <shortName>selfcal</shortName>
+	  <description>
+          Is it expected that one can self-calibrate the data for this object?
+        </description>
+	</MonitorPoint>
+	
+	<MonitorPoint name="fastSwitch" type="bool" persistent="true">
+	  <description>
+          Is this object part of a fast switch tracking cycle?
+        </description>
+	</MonitorPoint>
+
+      </Container>
+    <!-- end obsobject container -->
+
+    <!-- begin constraints container -->
+      <Container name="Constraints" priority="vital"
+	persistent="true">
+	<description>The observing constraints, which will control
+    when and how this obsblock gets observed.
+    </description>
+
+	<MonitorPoint name="imgVsSnr" type="enum" persistent="true">
+	  <description>
+          Should image fidelity (IMG) or signal-to-noise (SNR) ratio be maximized?
+        </description>
+	  <enum name="IMG"/>
+          <description>
+            Maximize image fidelity.
+          </description>
+	  <enum name="SNR"/>
+          <description>
+            Maximize signal-to-noise ratio.
+          </description>
+	</MonitorPoint>
+
+	<MonitorPoint name="minAnts" type="int" persistent="true">
+	  <description>
+      Minimum number of antennas required for this observation.
+      </description>
+	</MonitorPoint>
+
+	<!-- I got rid of the extra container gainCal here for simplicity -->
+	<!-- i.e, gainCalMaxTime instead of gainCal.maxTime               -->
+	<MonitorPoint name="gainCalMaxTime" type="float" persistent="true">
+	  <shortName>CalMaxTime</shortName>
+	  <units>min</units>
+	  <description>
+          Maximum time to spend integrating on the gain calibrator, per cycle.
+        </description>
+	</MonitorPoint>
+
+	<MonitorPoint name="gainCalMaxRms" type="float" persistent="true">
+	  <shortName>Cal Max RMS</shortName>
+	  <units>Jy</units>
+	  <description>
+          Maximum desired RMS noise on the gain calibrator, per cycle.
+          This will correspond to a minimum integration time, based on the
+          system temperature at the time of the observation.
+        </description>
+	</MonitorPoint>
+
+	<MonitorPoint name="maxTsys" type="float" persistent="true">
+	  <description>
+          Maximum desired system temperature. Requesting too low a value may
+          greatly reduce the likelihood of the obsblock being observed.
+        </description>
+	  <units>K</units>
+	</MonitorPoint>
+
+	<MonitorPoint name="maxRmsPathLength" type="float" persistent="true">
+	  <shortName>Max RMS Path</shortName>
+	  <units>um</units>
+	  <description>
+          Maximum desired rms path length, as measured by the phase monitor.
+          Too small a value may
+          greatly reduce the likelihood of the obsblock being observed.
+        </description>
+	</MonitorPoint>
+
+	<MonitorPoint name="maxTau230" type="float" persistent="true">
+	  <units>Np</units>
+	  <description>
+          Maximum 230 GHz opacity desired for this observation.
+          Too small a value may
+          greatly reduce the likelihood of the obsblock being observed.
+        </description>
+	</MonitorPoint>
+
+	<MonitorPoint name="maxDecorrelationRatio" type="float" persistent="true">
+	  <shortName>maxDecor</shortName>
+	  <warnLo>0.01</warnLo>
+	  <warnHi>0.99</warnHi>
+	  <errLo>0.0</errLo>
+	  <errHi>1.0</errHi>
+	  <description>
+          Maximum signal decorrelation desired for this observation.
+          This is measured by taking the ratio of the scalar average
+          to the vector average of the gain calibrator visibilities.
+          A value of 0 means no decorrelation, a value of 1 means complete
+          decorrelation.
+          Too small a value may
+          greatly reduce the likelihood of the obsblock being observed.
+        </description>
+	</MonitorPoint>
+
+	<MonitorPoint name="requiredSourceRms" type="float" persistent="true">
+	  <shortName>SourceRms</shortName>
+	  <units>Jy</units>
+	  <description>
+          Desired RMS noise on science target.
+        </description>
+	</MonitorPoint>
+
+      </Container>
+      <!-- end constraints container -->
+
+    </Container>
+    <!-- end obsblock container -->
+    <!-- END obsblock monitor points -->
+
+
+</Common>

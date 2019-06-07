@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+
+<!-- Include the domain DTD definition. -->
+<!DOCTYPE domain SYSTEM "domain.dtd">
+
+<!-- Test configuration file to characterize the IMRs ability to 
+     coexist with processes using notifications.  This config file 
+     purposely does not include any servers which simultaneously publish
+     notifications.  
+     
+     OAD names **must** be native host names, not DNS aliases.
+  -->
+
+
+<!-- @version -->
+<domain>
+
+    <oad hostname="canlab.ovro.pvt">
+        <server name="SimpleCanHostBus0-1" path="/opt/rt/bin/simpleCanHost"
+                args="board=0"
+                directory="/home/control" />
+        <server name="SimpleCanHostBus2-3" path="/opt/rt/bin/simpleCanHost"
+                args="board=1"
+                directory="/home/control" />
+        <server name="CanOverIpServer" path="/opt/rt/bin/canOverIpServer"
+                args="" 
+                directory="/home/control" />
+    </oad>
+
+</domain>
+    

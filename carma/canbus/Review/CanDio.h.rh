@@ -1,0 +1,105 @@
+/** @file 
+ * $Id: CanDio.h.rh,v 1.1 2003/07/16 20:02:23 rick Exp $
+ *
+ * Class to perform Input and Output to CARMA custom CAN DIO Janz board.
+ *
+ * Author: Andy Beard
+ * Version: $Revision: 1.1 $
+ * $Date: 2003/07/16 20:02:23 $
+ *
+ */
+
+/*** REVIEW
+ * Reviewer: rh
+ * Comments: doen't get much cleaner than this
+ */
+
+#ifndef CARMA_CANBUS_CANDIO_H
+#define CARMA_CANBUS_CANDIO_H
+
+// Carma includes
+#include "carma/canbus/CanIo.h"
+#include "carma/canbus/Dio.h"
+
+namespace carma {
+namespace canbus {
+
+    /**
+     * Class to control the CARMA Janz CAN/DIO card.
+     * This class combines the functionality of the CanIo class
+     * and Dio class for use with the composite Janz CARMA compact
+     * PCI carrier board.  The cPCI board contains 2 Janz CAN cards
+     * (modulbus slots 0 and 1), 1 Janz TTL Dio card (modulbus slot 3)
+     * and a customized RJ45 breakout board (modulbus slot 2) which is
+     * responsible for combining the signals from CAN, Dio and reserved
+     * input sources onto two CAT 5 cables (1 per CAN bus).
+     * This class is meant to mimic the functionality of the entire board
+     * by consolidating the CanIo class and Dio class.  In addition, it 
+     * controls the appropriate device mappings through construction.  This
+     * is evident in the constructor 'modulbus' input parameter.  Janz 
+     * identifies it's cPCI carrier boards by this unique 'modulbus' number.  
+     * Since the cards themselves are fixed in known slots on the carrier 
+     * board, the modulbus number completely specifies the hardware and device
+     * configuration.  The modulbus number resides on the board itself via
+     * a hex switch or a rom chip clearly labeled 'Modbus x'.
+     */
+    class CanDio : public Dio, public CanIo {
+        public:
+
+            /**
+             * Default constructor.
+             * This constructor is for use when emulating the underlying 
+             * Janz hardware.  If no Janz hardware exists, use this constructor.
+             * All Can or Dio write routines will write to /dev/null.
+             */
+            CanDio::CanDio();
+
+            /**
+             * CanDio constructor.
+             * Constructor for use with dual busses (use both CAN ports 
+             * from within a single object - for use when splitting 
+             * bandwidth, not functionality).  CanDio initializes 
+             * with the reset set to hi (i.e. reset stays active
+             * after initialization).  This enables the user to
+             * begin communication with devices when desired
+             * by releasing reset with the Dio::resetLo command.
+             * @param modboard Number of modulbus (0 - 0xf).
+             */
+            CanDio::CanDio(int modboard);
+
+            /** 
+             * CanDio constructor.
+             * For use with a single CAN port.
+             * CanDio initializes with reset set to hi (i.e. the reset
+             * stays active after initialization).  This enables the user
+             * to begin communication with the device when he or she 
+             * desires by issuing a Dio::resetLo command.
+             * @param modboard Number of modulbus (0 - 0xf).
+             * @param modbusSlot slot 0 or 1.
+             */
+            CanDio::CanDio(int modboard, int modbusSlot);
+
+            /**
+             * Reset.
+             * Resets the CANbus using Dio and clears the CAN message read 
+             * queue. This assures that users will retrieve only messages 
+             * that were sent after this method was called (i.e. no old 
+             * messages will remain in CAN read queue).
+             */
+            void CanDio::reset();
+
+        protected:
+
+            /**
+             * Reset pulsewidth.
+             * In most cases the reset dio lines must be written hi
+             * for a minimal amount of time in order for modules to 
+             * detect it.  This variable defines that minimal pulsewidth
+             * time in ms.  The default is 250ms. 
+             */ 
+            long pulseWidth_;
+
+    };  // End class CanDio
+};  // End of namespace canbus
+};  // End of namespace carma
+#endif // CARMA_CANBUS_CANDIO_H

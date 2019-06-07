@@ -1,0 +1,15 @@
+# csh startup to run point locally where it was built
+
+dir=`pwd`/lib
+
+if [ -z LD_LIBRARY_PATH ]; then
+	LD_LIBRARY_PATH=$dir
+else
+	LD_LIBRARY_PATH=${dir}:$LD_LIBRARY_PATH
+fi
+export LD_LIBRARY_PATH
+
+if [ -z PGPLOT_DIR ]; then
+   PGPLOT_DIR=$dir
+   export PGPLOT_DIR
+fi

@@ -1,0 +1,398 @@
+
+#ifndef CARMA_UTIL_IPQBUFFERBASE_H
+#define CARMA_UTIL_IPQBUFFERBASE_H
+
+/**
+ * @file 
+ * IPQ (InterProcessQueue) provides a generic way for information to be
+ * shared between processes or threads. 
+ * This class holds the basic buffer and all of the access methods.
+ *
+ * Original author: Steve Scott
+ *                  08 Oct, 2002
+ *                  Based on MemoryMappedFile and CrossProcessBuffer
+ *                  by Scott Brumbaugh, circa 1999
+ *
+ * $Id: IPQbufferBase.h.amar,v 1.1 2003/07/30 17:58:53 amar Exp $
+ *
+ */
+
+#include <exception>
+/**** REVIEW
+ * Reviewer: amar
+ * Comments: No ftsream structures used explictly in this file.
+ */
+ 
+#include <fstream>
+#include <string>
+
+#include "carma/util/Error.h"
+
+using namespace std;
+using namespace carma::services;
+using namespace carma::util;
+using namespace log4cpp;
+
+namespace carma {
+    namespace util {
+
+
+/**** REVIEW
+ * Reviewer: amar
+ * Comments: Not used explicitly in this file
+ */
+const int MEMORYMAPPEDFILE_MAGIC = 0x00000100;
+ 
+/**
+ * 
+ * IPQ (InterProcessQueue) provides a generic way for information to be
+ * shared between processes or threads. The queues are fixed in length
+ * (number of elements) and width (element size). The queues may be 
+ * transient in shared memory or persistent in memory mapped files with
+ * these implementations provides by classes that implement the abstract
+ * methods of this class.
+ * This buffer class provides the actual storage mechanism.
+ * It also provides read and write methods to be inherited
+ * by the derived classes.
+ * This class throws exceptions, in particular on the constructor and the
+ * write methods, so make sure you catch them!
+ * Because this is a circular queue, if the reader falls more than the
+ * queue depth behind the writer then elements will be overwritten that
+ * can never be read and are lost forever. The read methods returns the 
+ * number of lost elements.
+ *
+ * @see IPQreader, IPQwriter
+ */
+class IPQbufferBase {
+protected:
+
+    /**
+    **  Constructor for a read/write queue.
+    **  The read pointer is placed at the bottom of the queue.
+    **  @param localElement address of the data buffer for reads/writes
+    **  @param elementSize of an individual queue element in bytes
+    **  @param filename Memory mapped or shared memory filename.
+    **         Note that if a persistent file is used, it must be on a
+    **         a native file system and not on an NFS mounted filesystem.
+    **         On Linux the open will work, but information is not shared
+    **         between processes, so you will just hang at some point.
+    **  @param isCreator If true, create a new file if one doesn't exist, 
+    **              and make its size match nElementsuse shared memory.         
+    **  @param nElements Number of elements to allocate (queue length);
+    **             ignored if not a creator.
+    */
+    IPQbufferBase(
+              char*         localElement, 
+              int           elementSize, 
+              const string& filename, 
+              bool          isCreator = false,
+              int           nElements = 0)  
+            throw(exception) ;
+public:
+
+/**** REVIEW
+ * Reviewer: amar
+ * Comments: What does the destructor clean up ?
+ */
+    /**
+     * Destructor
+     */
+    virtual ~IPQbufferBase();
+    
+    /**
+    ** Get the filename
+    */
+    const string   getFileName() const;
+
+    /**
+    ** Check if using shared memory or an mmap file
+    ** @return true if using shared memory
+    */
+    bool isShmem() const;
+
+    /**
+    ** Returns the size of the queue.
+    ** The queue may not be full (@see getNumAvailable()).
+    ** @return the size of the queue (but it may not be full!)
+    ** @see getNumAvailable()
+    **/
+    int getQueueSize() const ;
+    
+    /**
+    ** Gets the number of elements available in the queue
+    ** @return the number of elements in the queue
+    ** @see getQueueSize()
+    **/
+    int getNumAvailable() const ;
+    
+    /**
+    ** Checks to see if the queue is empty
+    ** @return true if the queue is empty
+    **/
+    bool isEmpty() const ;
+    
+    /**
+    ** Checks to see if there are any unread elements
+    ** (would a read block?).
+    ** @return true if a read would not block
+    **/
+    bool isDataAvailable() const;
+    
+    /**
+    ** Sets the number of available elements to zero (catches up)
+    **/
+    void setNoneAvailable();
+
+    /** 
+    ** Get the oldest unread element from the queue.
+    ** This is a blocking read that will wait for new data if there is
+    ** no unread data available. 
+    ** This method does a lock/copy/unlock on the queue.
+    ** @return number of elements lost in the queue that can 
+    ** never be retrieved.
+    **/
+    unsigned int read();
+
+    /** 
+    ** Get the oldest unread element from the queue without locking
+    ** out other access. This is a blocking operation.
+    ** No locking is done to prevent this routine from blocking a higher
+    ** priority writer if this gets swapped out mid-transfer.
+    ** It should be used when there is no chance of entanglement with
+    ** the write pointer; e.g. when the reading is caught up and the queue
+    ** is sufficiently large that there is no chance of wrap around before
+    ** this read would be completed. This is not an uncommon circumstance.
+    ** @return number of elements lost in the queue that can 
+    ** never be retrieved.
+    ** @see read()
+    **/
+    unsigned int readNoLock();
+	
+    /** 
+    ** Get the newest element from the queue (withlocking). 
+    ** This is not a blocking operation. 
+    ** If the queue is empty false is returned, otherwise true.      
+    ** At the completion of this method, no elements will be unread.
+    ** @return true if the queue is not empty
+    **/
+    bool readTop();
+
+    /** 
+    ** Get the newest element from the queue without locking.  
+    ** This is not a blocking operation. 
+    ** If the queue is empty false is returned, otherwise true.      
+    ** At the completion of this method, no elements will be unread.
+    ** Very useful for getting the current state of the element.
+    ** @return true if the queue is not empty
+    **/
+    bool readTopNoLock();
+              
+    /** 
+    ** Get the number of elements lost on the last read.
+    ** If the writer gets too far ahead of the reader it can overwrite
+    ** unread elements making them lost forever.
+    ** @return Number of elements lost on last read
+    **/
+    unsigned int getLostElementCount() const;
+
+    /// Useful only for debugging
+    unsigned int getPutOffset() const ; 
+    /// Useful only for debugging
+/**** REVIEW
+ * Reviewer: amar
+ * Comments: Potentially confusing and ambiguous. Consider changing
+ * name of attribute.
+ */
+    unsigned int getGetOffset() const ; 
+
+protected:
+
+/**** REVIEW
+ * Reviewer: amar
+ * Comments: Can the exception types for all these methods be made more 
+ * explicit ?
+ */
+    /**
+     * This does all the real constructor work. 
+     * Need to call it in the child class.
+     */
+    void init() throw(exception);
+
+    /**
+     * Put an element into the queue. 
+     * This method does a lock/insert/unlock on the queue.
+     */
+    void write() throw(exception);
+
+    /**
+     * Open an existing file or shared memory...
+     */
+    virtual bool openBuffer() = 0;
+
+    /**
+     * Create a new file or shared memory...
+     */
+    virtual bool createBuffer() = 0;
+
+    /**
+    * Shared memory filenames must contain only one '/' and 
+    * it must be the first character; this routine fixes up the filename.
+    */
+    void trimShmemFilename();
+
+/**** REVIEW
+ * Reviewer: amar
+ * Comments: What is a trimmed file name ?
+ */
+    /**
+     * Get the trimmed filename
+     */
+    string getTrimmedFilename();
+
+    bool           debug_;
+    int            fileDescriptor_;
+    const int      openMask_;
+    const int      protectionMask_;
+    
+private:
+
+    char*          elementQueue_; // The queue
+
+    Category&      log_;
+
+    // The local copy of the data in an element.
+    // It has been read from the queue and placed here - or it is
+    // the copy that will be transferred into the queue on writes.
+    char*          localElement_; 
+
+    size_t         elementSize_;
+    int            nElements_;
+    int            clientSize_;
+    bool           isCreator_;
+    bool           isNewFile_;
+
+    // Offset where next data will be read
+    unsigned int   getOffset_;  
+    unsigned int   nLostElements_;
+    int            controlBlockSize_;
+
+    // Control structure at the start of the mapped region
+    struct ControlBlock { 
+        // Offset where next data will be written     
+        unsigned int putOffset;
+    } *control;
+/**** REVIEW
+ * Reviewer: amar
+ * Comments: Consider changing control top control_.
+ */
+
+/**** REVIEW
+ * Reviewer: amar
+ * Comments: Consider documenting the following methods in more detail,
+ * especially the intent. When, for example, does one use openExistingIPQ
+ * as opposed to openExistingPersistentFile() or openExistingShmem() ?
+ * Useful information when a user is deriving from IPQbufferBase
+ */
+    /**
+    * Lock the file for read access
+    */
+    bool        lockRead();
+
+    /**
+    * Lock the file for write access
+    */
+    bool        lockWrite();
+
+    /**
+    * Unlock the file
+    */
+    bool        unlock();
+
+    /**
+    * Get the file descriptor
+    */
+    const int      getFileDescriptor() const;
+
+    const       
+    string         filename_;         // As input
+    string         trimmedFilename_; 
+    string         displayFilename_; 
+
+
+    struct MapfileHeader {
+        int          magic;
+        unsigned int pageSize;
+        unsigned int clientSize;
+        unsigned int elementSize;
+        unsigned int nElements;
+    } header_;
+
+    void*          clientArea_;
+    
+    unsigned int   read(bool lock)    throw(exception);
+    bool           readTop(bool lock) throw(exception);
+
+    /**
+    * Get a pointer to the start of the data area
+    */
+    void*          getClientArea() const;
+
+
+    /**
+    * Open an existing file (shmem or persistent)
+    */
+    bool openExistingIPQ();
+
+    /**
+    * Open an existing persistent file 
+    */
+    bool openExistingPersistentFile();
+
+    /**
+    * Open an existing shmem 
+    */
+    bool openExistingShmem();
+
+    /**
+    * Read in the header and put it in our local buffer
+    */
+    bool readHeader() throw(exception);
+
+    /**
+    * Check that element size of existing IPQ matches requested size
+    */
+    bool doesElementSizeMatch() throw(exception);
+
+    /**
+    * Compare existing IPQ sizes with requested
+    */
+    bool hasQueueChanged() ;
+
+    /**
+    * Write local header buffer into the file
+    */
+    bool writeHeader() throw(exception);
+
+};
+
+
+
+} }  // End namespace carma::util  
+
+#endif  // CARMA_UTIL_IPQBUFFERBASE_H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

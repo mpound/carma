@@ -1,0 +1,130 @@
+# Plots the sample average rms, phases, amplitudes against time
+# Shows the last N_days of data
+
+# changed to read the file sample.dat.temp, which is made every ten minutes
+# from the last 1097 samples of sample.dat by make_plots.csh (called by 
+# phasemon.c).
+#
+# dcjb 01jan16
+
+set xbox BCNSTH
+set ybox BCNSTD
+set maxarray 90000
+
+new N_days last ax1 ax2
+set N_days 5
+
+expand 0.75
+
+ticksize 1 6 0 0 
+
+# Get the time
+new "time_string"
+data last_sample_time
+string time_string
+
+# Plot the rms fluctuations for sky and ground paths
+panel 1 1 1
+vstand 
+viewport vx1 vx2 0.7 0.9
+#data ../data/sample.dat.temp
+data sample.dat.temp
+xcol 1
+ycol 4
+color 1
+limits
+set last npts(x)
+set ax2 x[last]
+set ax1 ax2 - N_days
+#limits ax1 ax2 0 600
+limits ax1 ax2 0 1000
+box bcstm1 bcstvn
+color 2
+bar 2
+color 4
+ycol 5
+bar 2
+color 1
+box bcst bcst
+mtext L 3.2 0.5 0.5 RMS path / \gmm
+mtext t -2.0 .5 3.62  Sky RMS (RED)
+mtext t -3.0 .5 2.8  Ground RMS (BLUE)
+
+# add the UT time of the last sample
+color 1
+expand 1.0
+mtext T 2.0 0.5 0.5 \[time_string]
+expand 0.75
+
+# Plot the sky and ground path
+panel 1 1 1
+vstand 
+viewport vx1 vx2 0.5 0.7
+color 1
+symbol 1
+ycol 2
+limits
+limits ax1 ax2 y1 y2
+box bcst bcstvn
+color 2
+points
+connect
+color 4
+ycol 3
+points
+connect
+color 1
+mtext L 3.2 0.5 0.5 path / \gmm
+mtext t -2.0 .5 3.53  Sky Path (RED)
+mtext t -3.0 .5 2.743  Ground Path (BLUE)
+
+# Plot signal strength for each interferometer
+panel 1 1 1
+vstand 
+viewport vx1 vx2 0.3 0.5
+color 1
+ycol 6
+limits
+#limits ax1 ax2 0 3.5
+#limits ax1 ax2 0 1.0
+limits ax1 ax2 0 0.3
+box bcst bcstvn
+color 1
+points
+connect
+color 3
+ycol 7
+points 
+connect
+color 1
+mtext L 3.2 0.5 0.5 Signal strength / V
+mtext t -2.0 .5 3.42  SW Arm (WHITE)
+mtext t -3.0 .5 3.295  NE Arm (GREEN)
+
+# Plot number of errors
+panel 1 1 1
+vstand 
+viewport vx1 vx2 0.1 0.3
+color 1
+ycol 8
+limits
+limits ax1 ax2 0 9.9
+box bcstn1 bcstvn
+color 5
+points
+connect
+color 1
+mtext L 3.2 0.5 0.5 N errors
+mtext t -2.0 .5 3.3  Serial I/O Errors
+xlabel Modified Julian Date (MJD)
+
+# Add a title
+panel 1 1 1
+viewport 0 1 0 1
+limits 0 1 0 1
+move 0.04 0.98
+expand 0.5
+putlabel 0.0 CARMA Atmospheric Phase Monitor
+expand 1
+
+end

@@ -1,0 +1,244 @@
+# Script to test locking
+#
+# @author Steve Scott
+# $Id: lockTest.obs,v 1.10 2014/05/15 21:12:47 scott Exp $
+#
+# $CarmaCopyright$
+
+#-------------------------- Help --------------------------
+"""Script to measure lock capabilities over a range of frequencies.
+By default it will use all the antennas in the subarray, but can be run on
+a selected set of antennas if desired.""" 
+#------------------------ End of Help ------------------------
+
+import device
+import runCommand as rc
+import os
+
+
+# ------------ Parameters -------------
+p = rc.Params()
+p.add("b", type=float, default=90.0,
+       description="Beginning frequency of scan (GHz)")
+p.add("e", type=float, default=94.0, 
+       description="End frequency of scan (GHz)")
+p.add("d", type=float, default=1.0, 
+       description="Delta frequency (GHz)")
+p.add("tmo", type=float, default=55, 
+       description="Timeout value waiting for lock (secs)")
+p.add("ants", type=rc.antlist, default=[0], 
+       description="Antenna numbers; 0 is all ants in subarray")
+p.add("refreq", type=bool, default=False, 
+       description="Try one refreq on antennas that did not lock")
+p.add("lockIF", type=bool, default=True, 
+       description="Add lock loop IF level to report")
+
+p.processInputParameters()
+if (p.b < 50) and p.lockIF:
+    print "lockIF parameter ignored at centimeter frequencies!"
+    p.lockIF = False
+
+# ------------ End parameters -------------
+
+antlist = makeAntList(p.ants)
+if len(antlist) < 1:
+    raise rc.ScriptError, "No antennas available; aborting"
+
+def legend(refreq=False, tmoVal=-1, lockIF=True):
+    st = "Legend: t=timeout, Y=Yig unlocked, G=Gunn unlocked"
+    if refreq: st += ", r=refreq worked"
+    if lockIF: st += ", numerical value of lock IF"
+    st += "; timeout=%.0fsecs" %(tmoVal)
+    st += '\n'
+    st += "        Time column is time for all to lock or timeout (seconds)"
+    return st
+
+def header(antlist, freq, lockIF):
+    def getLockIFlen(a) :
+        lockIFlen = 0
+        if lockIF:
+            if a < 7:    lockIFlen = 4 
+            elif a < 16: lockIFlen = 4 
+            else:        lockIFlen = 4
+        return lockIFlen
+    isMillimeter = (freq > 50)
+    st = "Time     LO   YIG"
+    for a in antlist:
+        colWidth = 3+getLockIFlen(a)
+        x = "C%d" %a
+        st += " %*s" %(colWidth, x.center(colWidth))
+    st += "\n"
+    st += "==== ====== ====="
+    for a in antlist: 
+        colWidth = 3+getLockIFlen(a)
+        st += " "
+        for i in range(colWidth): st += "="
+    return st
+
+
+def report(dt, comp, antlist, antretrylist, lockIF) :
+    """
+    Parameters:
+     dt: delta time (secs) for locks to complete or timeout
+     comp: Lock completion status list to determine timeouts
+     antlist: list of antenna numbers
+     antretrylist: list of antennas where lock was retried
+     lockIF: boolean controlling output of lock IF level
+    Return: One line string with results for printing/writing, 
+     and a list of antenna numbers for unlocked antennas"""
+    
+    def getLockIFlen(a) :
+        lockIFlen = 0
+        if lockIF:
+            if a < 7:    lockIFlen = 4 
+            elif a < 16: lockIFlen = 4 
+            else:        lockIFlen = 4
+        return lockIFlen
+    def status_(comp, antlist, antretrylist) :
+        """
+        Parameters:
+         comp: completion status list
+         antlist: list of antenna numbers
+         antretrylist: list of antennas where a lock was retried
+        Return: a list of antenna#'s of unlocked ants and a list of 
+         lock status strings for each antenns. The lock status strings
+         can be zero to three characters long (no lock IF info)."""
+        mplist = []
+        for a in antlist:
+            if a < 7:     mpr = "Ovro%d" %a
+            elif a <  16: mpr = "Bima%d" %(a-6)
+            else:         mpr = "Sza%d" %(a-15)
+            mplist.append(mpr+".AntennaCommon.LO.yigState")
+            mplist.append(mpr+".AntennaCommon.LO.loState")
+        rlist = queryMonitorPoint(mplist)
+        # List of raw lock status boolean pairs, yig/LO,for each ant
+        # E.G. [Y1,LO1,Y4,LO4,Y11,LO11,...]
+        slist = []
+        for r in rlist:
+            locked = r.valid_ and (r.stringValue_ == "LOCK") 
+            #print (r.name_, r.valid_, r.stringValue_, locked)
+            slist.append(locked)
+        # List of antenna numbers of antennas that are not locked
+        unlocklist = []
+        statlist = []
+        i = 0
+        for a in antlist:
+            locked = slist[i] and slist[i+1] # Both yig & LO show locked
+            if not locked: unlocklist.append(a)
+            statst = ""
+            # The statst can be an empty string (clean lock) or
+            # have any combo of ['t','Y','G'] or a non-combo 'r'.
+            if not locked:
+                if comp.notready.count(a) > 0 : statst += "t"
+                if not slist[i]:   statst += "Y"   
+                if not slist[i+1]: statst += "G"
+            elif antretrylist.count(a) > 0: statst = "r"
+            statlist.append(statst)  
+            i += 2
+        return unlocklist, statlist
+        # End status_
+
+    f = queryDouble("Control.Subarray%d.loFreq" %subarrayNo)
+    y = queryDouble("Control.Subarray%d.yigFreq" %subarrayNo)
+    st = " %3.0f %6.2f %5.2f" %(dt, f, y)
+    unlocklist,statlist = status_(comp, antlist, antretrylist)
+    #print "Unlocked:", unlocklist
+    for ai in range(len(antlist)) :
+        a    = antlist[ai]
+        stat = statlist[ai]
+        lockIFlen = getLockIFlen(a)
+        lockIFlevelString = ""
+        if lockIF :
+            if a < 7:
+                if f > 200: mm = 1
+                else:       mm = 3
+                mp = "Ovro%d.Gunn%dmm.GunnPll.ifLevel" %(a, mm)
+                try :
+                    lockIFlevelString = "%*d" %(lockIFlen, queryInt(mp))
+                except:
+                    lockIFlevelString = "????"
+            elif a < 16:
+                mp = "Bima%d.BimaSpecific.MMlock.IFLevel" %(a-6)
+                try:
+                    lockIFlevelString = "%4.2f" %(queryDouble(mp))            
+                except:
+                    lockIFlevelString = "????"
+            else:
+                mp = "Sza%d.Bias.ifLevel" %(a-15)
+                try :
+                    lockIFlevelString = "%*d" %(lockIFlen, queryInt(mp))
+                except:
+                    lockIFlevelString = "????"
+        st += " %3s%s" %(stat, lockIFlevelString)
+    return st, unlocklist  
+         
+def ts_():
+    "Timestamp to use in filenames"
+    v = time.asctime(time.gmtime()).lower().split()
+    if int(v[2]) < 10 : 
+        v[2] = str('0'+str(v[2]))
+    t = '%s%s%s' %(v[4], v[1], v[2])
+    t += "." + v[3][:2]+v[3][3:5]+v[3][6:]
+    return t
+def datadir_(dirs=['/array/rt/lockTest', '.', '/tmp'],ts="TS", 
+        verbose=False) :
+    import stat as statmod
+    for d in dirs:
+        try : 
+            if verbose: print "Trying", d
+            ss = os.stat(d)
+            if statmod.S_ISDIR(ss.st_mode):
+                try :
+                    fname = d + "/" + "testfile." + ts
+                    fd = open(fname,'a')
+                    fd.close()
+                    os.remove(fname)
+                    return d
+                except Exception, ex :
+                    st = "Unable to write test file:%s" %fname
+                    if verbose: print st, str(ex)                        
+            elif verbose:
+                print d, "is not a directory"
+        except Exception, ex :
+            if verbose:
+                st = "Unable to stat %s" %d
+                print st, str(ex)                        
+    m = "Could not open data directory and write test file for "
+    m += "any of the the following directories:\n" + str(dirs)
+    raise Exception, m
+
+fname = datadir_(ts=ts_()) + "/" + "data." + ts_()
+print"Data will be written to file: " + fname
+l = legend(p.refreq, p.tmo, p.lockIF)
+h = header(antlist, p.b, p.lockIF)
+print l
+print h
+fd = open(fname,'a')
+fd.write(l + '\n')
+fd.write(h + '\n')
+fd.close()
+
+f = p.b        
+while p.e-f > -0.0001 :
+    t0=time.time()
+    qfreq(f,USB,0,None)
+    comp=wait(TUNED, antlist, tmo=p.tmo, waiton=ALL)
+    wait(TIME,tmo=3.0)
+    comp=wait(TUNED, antlist, tmo=1.0, waiton=ALL)
+    dt = time.time()-t0
+    st,unlocklist = report(dt, comp, antlist, [], p.lockIF)
+    if p.refreq and (len(unlocklist) > 0):
+        #print("Refreq issued on:", unlocklist)
+        refreq(unlocklist)
+        comp=wait(TUNED, unlocklist, tmo=p.tmo, waiton=ALL)
+        wait(TIME,tmo=3.0)
+        comp=wait(TUNED, antlist, tmo=1.0, waiton=ALL)
+        dt = time.time()-t0
+        st, unlocklist = report(dt, comp, antlist, unlocklist, p.lockIF)
+    print st
+    fd = open(fname,'a')
+    fd.write(st + '\n')
+    fd.close()
+    f += p.d
+
+

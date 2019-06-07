@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<Common scope="global" author="Andy Beard">
+
+        <Container name="EquatOffset" >
+            <description>Equatorial Offset (ra/dec) command
+            </description>
+
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+               <precision> 0 </precision>
+              <description>Time that command was executed </description>
+            </MonitorPoint>
+
+            <MonitorPoint name="ra" type="float" persistent="true">
+                <shortName>dra</shortName>
+                <longName>RaOffset</longName>
+                <description>
+                    Right ascension offset from nominal position, as an arc
+                    on the sky, not a coordinate difference.  In a mosaic,
+                    this offset had better match PhaseCenterOffset.ra.
+                </description>
+                <units>arcmin</units>
+                <precision>2</precision>
+            </MonitorPoint>
+
+            <MonitorPoint name="dec" type="float" persistent="true">
+                <shortName>ddec</shortName>
+                <longName>DecOffset</longName>
+                <description>
+                    Declination offset from nominal position. 
+                    In a mosaic, this offset had better match 
+                    PhaseCenterOffset.dec.
+                </description>
+                <units>arcmin</units>
+                <precision>2</precision>
+            </MonitorPoint>
+
+        </Container> <!-- End equatOffset command -->
+
+        <Container name="Move" >
+            <description> Move the antenna</description>
+
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>Time that command was executed</description>
+            </MonitorPoint>
+
+            <MonitorPoint name="azimuth" type="float" persistent="true">
+                <shortName>azimuth</shortName>
+                <longName>Azimuth</longName>
+                <description>Azimuth, from north toward east</description>
+                <units>deg</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="elevation" type="float" persistent="true">
+                <shortName>elevation</shortName>
+                <longName>Elevation</longName>
+                <description>Elevation angle</description>
+                <units>deg</units>
+            </MonitorPoint>
+        </Container> <!-- End Move Container -->
+
+         <Container name="Stop">
+            <description> Stop the antenna </description>
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>Time that command was executed</description>
+            </MonitorPoint>
+         </Container> <!-- stop container -->
+
+         <Container name="Stow">
+            <description> Stow the antenna to ZENITH, SERVICE, or SAFE position 
+            </description>
+            <MonitorPoint name="timestamp" type="absTime" persistent="true">
+              <shortName>Timestamp</shortName>
+              <units>UTC</units>
+              <precision> 0 </precision>
+              <description>Time that command was executed</description>
+            </MonitorPoint>
+            <MonitorPoint name="position" persistent="true" type="enum">
+              <shortName>Stow position</shortName>
+              <description>The commanded stow position of the antenna. One of ZENITH, SERVICE or SAFE</description>
+	      <enum name="ZENITH" />
+	      <enum name="SERVICE" />
+	      <enum name="SAFE" />
+            </MonitorPoint>
+         </Container> <!-- stow container -->
+
+        <Container name="PointingConstants">
+            <MonitorPoint name="azOffset" type="float" persistent="true">
+                <shortName>Az Offset</shortName>
+                <longName>Azimuth Offset</longName>
+                <description>Azimuth Offset</description>
+                <units>arcmin</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="elOffset" type="float" persistent="true">
+                <shortName>El Offset</shortName>
+                <longName>Elevation Offset</longName>
+                <description>Elevation Offset</description>
+                <units>arcmin</units>
+            </MonitorPoint>
+
+            <MonitorPoint name="sag" type="float" persistent="true">
+                <shortName>Sag</shortName>
+                <longName>Sag Elevation</longName>
+                <description>Sag elevation offset (*cos(el))</description>
+                <units>arcmin</units>
+            </MonitorPoint>
+        </Container>
+
+</Common>

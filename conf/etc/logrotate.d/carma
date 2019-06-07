@@ -1,0 +1,34 @@
+# $Id: carma,v 1.2 2010/10/13 17:21:33 iws Exp $
+#
+# Logrotate configuration file for carma.
+# This configuration handles rotation of both carma logs AND
+# carma visbrick data.  Make sure that both directories are
+# mounted and visible.
+#
+# Place this file in /etc/logrotate.d on your logging host only.
+# Logrotate is typically executed as one of root's daily cron
+# jobs but you might want to verify that this is the case on your system by
+# checking for the existence of /etc/cron.daily/logrotate.
+#
+# For each execution, logrotate will read /etc/logrotate.conf
+# which in turn tells logrotate to pick up package-specific
+# configurations in /etc/logrotate.d/.  Do a 'man logrotate' for details.
+#
+# The 'size' parameter is only meangingful when logrotate is executed.
+# The program writing the visibility bricks knows nothing about the
+# size limit.  The file will grow past the size limit until logrotate
+# is executed.
+
+/var/log/carma/*.log /var/log/carma/*.debug  /var/log/carma/*/messages /var/log/carma-ppc/*.log /var/log/carma-ppc/*.debug /var/log/carma-ppc/*/messages {
+    daily
+    ifempty
+    missingok
+    size 5M
+    copytruncate
+    rotate 10
+    maxage 10
+    postrotate
+      /bin/chown -R control:prgrmrs /var/log/carma/*.log /var/log/carma/*.debug
+      /bin/chmod 0664 /var/log/carma/*.log /var/log/carma/*.debug
+    endscript
+}

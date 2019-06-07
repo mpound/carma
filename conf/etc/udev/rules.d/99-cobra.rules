@@ -1,0 +1,31 @@
+# /etc/udev/rules.d/20-cobra.rules
+#
+# udev rule to create cobra /dev nodes based on the
+# kernel driver node names, eg. the kernel produces
+# a name of the format:
+#
+# cobra_<bus>:<dev>.<fn>_<type>
+#
+# which cobra_slots parses and returns a name of the format:
+#
+# cobra_<type><slot>
+#
+# eg. cobra_01:0c.0_1 becomes cobra_control3
+#
+#KERNEL=="cobra*", PROGRAM="/usr/bin/cobra_slots -k %k -f /etc/cobra/carma15.slots", NAME="%c", OWNER="control", GROUP="prgrmrs", MODE="0666"
+KERNEL=="cobra*", PROGRAM="/usr/bin/cobra_slots -k %k -f /persistent/etc/cobra/thismachine.slots", NAME="%c", OWNER="control", GROUP="prgrmrs", MODE="0666"
+
+# CARMA Board PCINet Rules
+# FIXME: the kernel doesn't produce events for loaded modules!!! (pcinet-net-setup is never called)
+#ACTION=="add", SUBSYSTEM=="module", DEVPATH=="/module/pcinet_host", RUN+="/etc/udev/scripts/pcinet-net-setup"
+
+# CARMA Board PCINet + SYSFS Rules
+#
+# Both rules handle adding and removing CARMA boards (hotplug)
+# 1) pcinet-dev-setup handles add/remove of the interface to the ethernet bridge
+# 2) carma-addboard handles add/remove of the carma board to /etc/hosts
+# 3) carma-sysfs handles add/remove of the /dev/carma/$SLOTNO symlink
+#
+SUBSYSTEM=="net", KERNEL=="eth*", SYSFS{carma_peer_mac}=="*", RUN+="/etc/udev/scripts/pcinet-dev-setup"
+SUBSYSTEM=="net", KERNEL=="eth*", SYSFS{carma_peer_mac}=="*", RUN+="/etc/udev/scripts/carma-addboard"
+SUBSYSTEM=="pci", ENV{PCI_ID}=="1957:0080", RUN+="/etc/udev/scripts/carma-sysfs"

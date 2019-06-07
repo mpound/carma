@@ -1,0 +1,231 @@
+/** @file
+ * $Id: Message.h.eml,v 1.1 2003/07/11 16:55:04 eleitch Exp $
+ * 
+ * Wrapper class for CAN messages.  Based on JANZ CAN-PCI2 drivers.  
+ * 
+ * Author: Andy Beard
+ * 
+ * Version: $Revision: 1.1 $
+ * 
+ * $Data: $
+ *
+ */
+
+#if !defined(CARMA_CANBUS_MESSAGE_H)
+#define CARMA_CANBUS_MESSAGE_H
+
+#include "janz/dpm.h"
+#include "carma/canbus/Types.h"
+
+#include <stdio.h>
+#include <vector>
+
+namespace carma {
+namespace canbus {
+
+  /**** REVIEW
+   * Reviewer: eml
+   * Comments: Re: recent email exchanges, do we want to have using
+   * directives in header files?
+   */
+   using namespace std;
+
+    /** 
+     * The class Message is used to encapsulate a CAN message
+     * in the carma canbus environment.
+     * A CAN message consists of a 29 bit message Id and up to 8
+     * bytes of raw data.  This class wraps the CAN message structure
+     * defined for the Janz drivers which contains the actual bytes.
+     * Since this class may be used to post/send messages to multiple
+     * CANbusses controlled by multiple processes on a single linux host,
+     * it was necessary to define the concept of a busId which
+     * uniquely identifies which bus a message was read from or will be 
+     * posted to.  BusIds are generally assigned by the master class and 
+     * are assured to be unique by deriving the busId number from the 
+     * CAN device filename (e.g. /dev/dpm_00 = busId 0 whereas 
+     * /dev/dpm_f0 = busId 31).  Any user of this class must be careful 
+     * to use the proper logic to assure that the BusId of a message exists 
+     * and is being controlled by a CAN Master.  This is generally handled 
+     * by making sure you set the BusId of a tx msg to the same as a message 
+     * received from the node you wish to communicate with 
+     * (i.e. txMsg.setBusId(rxMsg.getBusId)).  If this is not possible, 
+     * but the device name is accessible, one can use the 
+     * carma::canbus::extractBusId() routine, or the busId
+     * canbus::ALL_BUSSES. If a Message is addressed to a bus that doesn't exist
+     * an exception will be thrown when trying to post that message.
+     * The 29 bit CAN id itself is represented via a typedef 
+     * carma::canbus::idType (a 4 byte unsigned integer), and the data is 
+     * represented as a vector<carma::canbus::byteType>, where byteType 
+     * is an unsigned one-byte character. 
+     */
+    class Message {
+    public:
+      /**** REVIEW
+       * Reviewer: eml
+       * Comments: capitalize types?  Ie, MessageTypeType?
+       */
+
+        /**
+         * Message type definition.
+         */
+        typedef enum {
+            STANDARD = 0,
+            EXTENDED = 1
+        } messageTypeType;
+
+        /** 
+         * Default constructor.
+         * Creates a Message with an id of 0 (all bits 0), busId 0,
+         * and no data. 
+         */
+        Message(carma::canbus::Message::messageTypeType msgType = EXTENDED);
+
+        /**  
+         * Create an extended message with specified id and busId.
+         * @exception CAN::Error if the id is illegal (more than 29 bits). 
+         */
+        Message(carma::canbus::idType id, 
+                carma::canbus::busIdType busId);
+
+        /** 
+         * Create an extended message with the specified ids and data.
+         * @exception CAN::Error if the id is illegal or the data contains 
+         * more than 8 bytes. 
+         */
+        Message(carma::canbus::idType id, 
+                const vector<carma::canbus::byteType> &data,
+                carma::canbus::busIdType busId);
+
+        /**
+         * Create a message from a Janz FastMessage.
+         */
+        Message(::FastMessage fmsg, 
+                carma::canbus::busIdType busId);
+
+        /**
+         * Copy constructor.
+         */
+        Message(const Message &other);
+
+        /**
+         * Get message type. 
+         * CAN messages exist in two flavors: STANDARD (11 bit Id) and
+         * EXTENDED (29 bit Id).  CARMA will use EXTENDED Ids by default 
+         * but STANDARD functionality is included for completeness. Note 
+         * the type must be established at object creation (no set 
+         * type methods).
+         */
+        carma::canbus::Message::messageTypeType getMessageType() const;
+
+        /**
+         * Get CAN message id.
+         * @return CAN message id.
+         */
+        carma::canbus::idType getId() const;
+
+        /**
+         * Get CAN bus Id.  
+         */
+        carma::canbus::busIdType getBusId() const;
+
+        /** 
+         * Get the data as a vector of bytes (raw).
+         */
+        vector<carma::canbus::byteType> getData() const;
+
+        /** 
+         * Get port number.
+         * Only valid on multi-bus modules (E.G. CAN-PCI2),
+         * returns 0 on all others.
+         */
+        carma::canbus::portType getPort() const;
+
+        /**
+         * Return the underlying drivers raw message.
+         * Needed so that BusIo can post a message.
+         */
+        ::FastMessage getRawMessage() const;
+
+        /**
+         * Return the Rx MJD time.
+         */
+        double getRxMjd() const;
+
+        /** 
+         * Set CAN message id. 
+         * @exception CAN::Error raised id is illegal (more than 29 bits). 
+         */
+        void setId(carma::canbus::idType id);
+
+        /**
+         * Set bus Id.
+         */
+        void setBusId(carma::canbus::busIdType busId);
+
+        /** 
+         * Set the data.
+         * @exception CAN::Error if the data contains more than 8 bytes. 
+         */
+        void setData(const vector<carma::canbus::byteType> &data);
+
+        /** 
+         * Set port number.
+         * Also only for use on multi-bus modules like CAN-PCI2.
+         */
+        void setPort(carma::canbus::portType port);	
+
+        /**
+         * Set the rxMjd time.
+         */
+        void setRxMjd(double mjd);
+
+        /**
+         * Assignment operator.
+         */
+        Message &operator=(const Message &other);
+
+        /** 
+         * Returns true if the id's, data and busId's are identical 
+         * (including data length).
+         */ 
+        bool operator==(const Message &other);
+
+        /** 
+         * Returns false if the id's, busId's or data differs 
+         * (including length). 
+         */
+        bool operator!=(const Message &other);
+
+    private:
+
+        /** 
+         * Useful helper values. CAN has 11 and 29 bit addresses. 
+         */
+        enum {
+            MAX_STANDARD_ID    = 0x7FF,
+            MAX_EXTENDED_ID    = 0x1FFFFFFF
+        };
+
+        /**
+         * Get current data length in bytes.
+         */
+        int getDataLength() const;
+
+        /**
+         * Set the message type.
+         */
+        void setMessageType(messageTypeType messageType);
+
+        /**
+         * Validate CAN message id.
+         */
+        bool validateId(carma::canbus::idType id) const;
+
+        // Private variables.
+        carma::canbus::busIdType busId_;  // Bus id.
+        FastMessage rawMsg_;              // Janz raw message
+        double rxMjd_;        // Rx time in Mean Julian Day format.
+    };
+} // namespace canbus
+} // namespace carma
+#endif

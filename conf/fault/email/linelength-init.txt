@@ -1,0 +1,8 @@
+The LineLength system has not been initialized correctly for one or more
+antennas. To correct this, you must follow the procedure shown at:
+
+http://cedarflat.mmarray.org/wiki/Alarms#LineLength.initializedN
+
+NOTE: The uninitialized antenna numbers are available on the LineLength RTD
+page (look for red initialized boxes). They are also available below (the N in
+LineLength.initializedN is the antenna number).

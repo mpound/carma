@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type"
+ content="text/html; charset=ISO-8859-1">
+  <title>OVRO Build Structure</title>
+</head>
+<body>
+<h1>Overview of OVRO Build Systems</h1>
+Author: Andrew Beard<br>
+Date: 9/23/2004<br>
+Version: $Revision: 1.2 $<br>
+<h3>Introduction<br>
+</h3>
+What follows is a brief overview of the OVRO network and build systems.
+&nbsp;The purpose of this is to provide a roadmap to those of you who
+are offsite so that you may more easily troubleshoot build related
+issues and CarmaTools related problems. &nbsp;This may come in handy at
+say 8am EST when most of us at OVRO are still in bed :-)<br>
+<h3> Carma Tools<br>
+</h3>
+Ovro uses a sitewide NFS mounted directory to distribute a common
+carmaTools. &nbsp;The directory is mounted as /usr/local on any OVRO
+linux box. &nbsp;We have two versions of CarmaTools residing at
+/opt/carmaTools and /opt/carmaTools.optimized. &nbsp;The
+vast majority of carmaTools.optimized symlinks back to carmaTools with
+the exception of an optimized ORBacus build. &nbsp;In theory upgrading
+carmaTools is as simple as configuring your build tree to use
+/opt/carmaTools and then running the install script for the
+package from $YOURSANDBOX/carma/conf/opt/newPackage/install.<br>
+<br>
+<h3> Tinderbox Builds and the<span style="font-style: italic;"> build</span>
+User</h3>
+All tinderbox builds occur under the special <b>build</b> user and
+occur on local disks. &nbsp;Bodie builds occur in
+bodie://var/tmp/tinderbox/, dana builds occur in
+dana://var/tmp/tinderbox_buildfull and labacc builds occur in
+labacc://tinderbox/tindermount. &nbsp;For the most part, the full build
+directories should never be touched. &nbsp;The incremental builds on the
+other hand need to be maintened occasionally in the form of a make
+clean. &nbsp;This cleaning should mainly be done when a new carmaTools
+shared library is added to the system. &nbsp;This is due to an
+unresolved build system problem in which binaries do not get rebuilt
+simply because their link line has changed and it can result in the
+runtime linker failing to resolve dependencies on test applications.
+&nbsp;Note that you can only login to bodie as <b>build </b>(passwd
+same as carmaweb).<br style="font-style: italic;">
+<br style="font-style: italic;">
+<h3> Runtime system and the<span style="font-style: italic;"><span
+ style="font-style: italic;"> </span>control</span> User</h3>
+We have created a special <b>control </b>user for the purpose of
+running all CARMA programs from the IMR. &nbsp;The build tree for <b>control</b>
+resides in /home/control/carma/build/optimized and installations go into
+/home/control/carma/install/optimized. &nbsp;The /opt/rt directory on
+each machine is then symlinked to point to this directory so that we
+can quickly change between different install trees without changing the
+lab.xml file. &nbsp;Speaking of which, lab.xml is currently the main
+runtime configuration file for the OVRO test system and consists of
+over 54 servers running on 14 machines. &nbsp;This will likely be our
+main R1 integration system so it might help to familiarize yourself
+with it. &nbsp;Please see <a
+ href="http://www.mmarray.org/workinggroups/computing/carmaRuntimeConfiguration.pdf">Carma
+Runtime Configuration</a> and <a href="./ImrUsageDoc.html">Using the IMR</a>
+for more information.<br>
+<br>
+For the most part, no development should occur in the <b>control</b>
+sandbox and it should only be built when bringing the lab system up to
+date. &nbsp;This should definitely be automated soon and I'd recommend a
+cronned nightly build and install on the LAST_GOOD tag.<br>
+<br>
+The passwords for the build and control users are the same as the
+password for carmaweb.
+</body>
+</html>

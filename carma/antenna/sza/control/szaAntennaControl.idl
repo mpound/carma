@@ -1,0 +1,29 @@
+/**
+ * @author Erik Leitch
+ */
+#ifndef CARMA_ANTENNA_SZA_CONTROL_SZAANTENNACONTROL_IDL
+#define CARMA_ANTENNA_SZA_CONTROL_SZAANTENNACONTROL_IDL
+
+#include "carma/antenna/common/AntennaControl.idl"
+#include "carma/util/UserException.idl"
+
+module carma {
+  module antenna {
+    module sza {
+      module control {
+
+	/**
+	 * SZA antenna-specific control interface.
+	 */
+	interface AntennaControl : carma::antenna::common::AntennaControl {
+
+	  void reloadBiasTables()
+	    raises (carma::util::UserException);
+
+	}; // End AntennaControl interface
+      };
+    };
+  };
+}; // End carma::antenna::sza::control module
+
+#endif

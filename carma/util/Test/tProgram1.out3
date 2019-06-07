@@ -1,0 +1,14 @@
+extra arg[ 1 ] = "--foo"
+extra arg[ 2 ] = "baz=34"
+COMMENT:       random number generator seed = 1
+nbody = 17
+mfrac = 1.234
+i/o flag = 0 0
+comment = "a b c"
+intP1 = 2720
+intP2 = 304
+intP3 = 57005
+intP4 = 0
+intP5 = 0
+intP6 = 27
+Finishing off computing:   n=17

@@ -1,0 +1,4 @@
+A problem has occurred with the Master Clock. Please see the following wiki
+page for details.
+
+http://cedarflat.mmarray.org/wiki/Alarms#MasterClock_Alarms

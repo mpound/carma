@@ -1,0 +1,21 @@
+#ifndef CARMA_CONTROL_AZWRAPMODE_IDL
+#define CARMA_CONTROL_AZWRAPMODE_IDL
+module carma {
+module control {
+
+/**
+ * Possible Azimuth Wrap modes.  These
+ * get converted to DriveControl::AzWrapMode directives
+ * by DriveHandle class.
+ */
+enum AzWrapMode {
+   TIME,    ///< Automatically choose wrap to give a certain amount of track time
+   ADD,     ///< Add a turn
+   SUB,     ///< Subtract a turn
+   ZERO     ///< Don't add or subtract
+};
+
+}; // end control
+}; // end carma
+
+#endif  // end of conditional include

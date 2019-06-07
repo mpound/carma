@@ -1,0 +1,23 @@
+#!/bin/sh
+
+#carma/dbms/Test/testParser xml=${srcdir}/carma/dbms/Test/MonitorPointDefinition.xml > testParser.log
+
+mpmlFilesDir=${srcdir}/carma/monitor
+
+fileList="BimaSubsystem.mpml CentralIfSubsystem.mpml ControlSubsystem.mpml DelayEngineSubsystem.mpml LineLengthSubsystem.mpml LoberotatorSubsystem.mpml LoRefSubsystem.mpml MasterClockSubsystem.mpml OpacityMonitorSubsystem.mpml OvroSubsystem.mpml PhaseMonitorSubsystem.mpml CarmaSlcBandSubsystem.mpml SldcSubsystem.mpml SzaSubsystem.mpml TestSubsystem.mpml WbcBandSubsystem.mpml WbdcSubsystem.mpml WeatherSubsystem.mpml"
+
+
+for  mpmlFile in $fileList 
+do
+    cmd="carma/dbms/Test/testParser xml=$mpmlFilesDir/$mpmlFile"
+    $cmd
+    if [ $? -ne 0 ] ; then
+       echo "$cmd failed"
+       echo "CARMA dbms: FAIL"
+       exit 1
+    fi
+done
+
+echo "CARMA dbms: PASS"
+exit 0
+

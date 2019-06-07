@@ -1,0 +1,54 @@
+From f3547ed8e1676b8ab6489bc2243d894d9209b5f6 Mon Sep 17 00:00:00 2001
+From: "Ira W. Snyder" <iws@ovro.caltech.edu>
+Date: Tue, 23 Sep 2014 13:40:28 -0700
+Subject: [PATCH] mongo-cxx-driver: fixes for CARMA
+
+This patch adds two fixes:
+
+1) force the rpath inside the libmongoclient.so library
+2) ensure that our version of boost is used, not the system version
+
+We want to force the rpath inside of the library so that it will
+automatically have the full path to the boost libraries hardcoded into
+it. This prevents needing to set special compiler options for all users
+of this library.
+
+The CentOS 6 version of boost is very old. We therefore need to make
+sure that we pick up the boost from our tools build directory. The scons
+command line parameter "--cpppath" is not sufficient for this. To be on
+the safe side, we do the same trickery for "--libpath" to ensure the
+libraries from our tools build are used.
+
+In addition to the above path hackery, we also need to avoid the '-mt'
+versions of the boost libraries. We don't want those.
+---
+ SConstruct | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/SConstruct b/SConstruct
+index a81259b1932f..db0fc889468f 100644
+--- a/SConstruct
++++ b/SConstruct
+@@ -947,6 +947,10 @@ env.Prepend(CPPPATH=['$BUILD_DIR/third_party/gtest-1.7.0/include'])
+ env.Append( CPPPATH=['$EXTRACPPPATH'],
+             LIBPATH=['$EXTRALIBPATH'] )
+ 
++env.Prepend( CPPPATH=[ installDir + '/include' ] )
++env.Prepend( LIBPATH=[ installDir + '/lib' ] )
++env.Append( LINKFLAGS=" -Wl,-rpath=" + installDir + '/lib' )
++
+ # discover modules, and load the (python) module for each module's build.py
+ mongo_modules = moduleconfig.discover_modules('src/mongo/db/modules')
+ env['MONGO_MODULES'] = [m.name for m in mongo_modules]
+@@ -1393,7 +1397,7 @@ def doConfigure(myenv):
+         # FindSysLibDep calls do nothing useful (but nothing problematic either)
+         for b in boostLibs:
+             boostlib = "boost_" + b
+-            conf.FindSysLibDep( boostlib, [ boostlib + "-mt", boostlib ], language='C++' )
++            conf.FindSysLibDep( boostlib, [ boostlib ], language='C++' )
+ 
+     if conf.CheckHeader('unistd.h'):
+         conf.env.Append(CPPDEFINES=['MONGO_HAVE_HEADER_UNISTD_H'])
+-- 
+1.8.5.5
+

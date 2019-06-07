@@ -1,0 +1,17 @@
+by:	 		Paul Daniel, Andrew Beard
+last edit: 5/6/2005 
+
+This directory presents files specific to a build of the carma code base
+using the tinderbox build system.  This directory does not contain a 
+tinderbox installation; just those files specific to a carma build on a
+specific host. 
+
+crontab: crontab entry for a given user to execute tinderbox builds.
+
+build_shellscript:  the primary tinderbox script
+
+carma.buildcf:  specify the environment and commands to obtain carma 
+code sources and build the code.
+
+Update 5/6/2005
+carma.buildcf now contains all builds including the incrmental, full and tools builds.

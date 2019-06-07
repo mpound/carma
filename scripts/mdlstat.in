@@ -1,0 +1,287 @@
+#!/bin/sh
+# Scans carma.log[.[1-10]] file(s) for monitorDataLoader timing information and
+# creates plots showing the change in the number of files/directory over time.
+#
+# Log files are expected to contain entries like:
+#Apr 13 14:33:28 spica monitorDataLoader: {2006} {INFO}
+# {carma.dbms.monitorDataLoader} {} {Times: datadir="slcorrel/complex"
+# nfiles="50" elapsedtime="1.1e+02" filesloaded="50" fileloadtime="1e+02"
+# binaryfilesconverted="0" binaryconverttime="0" newtabletime="50.0" numdonefilesseen="0"}
+
+# An intermediate file will be made that looks similar to:
+#Apr 13 13:57:45 spica datadir=frame/numeric nfiles=7 elapsedtime=1.2e+02
+#filesloaded=7 fileloadtime=61 binaryfilesconverted=7 binaryconverttime=63
+#newtabletime=50.0
+#numdonefilesseen=0
+
+# A gnuplot command file will be made (and gnuplot run) that displays
+# nfiles-filesloaded-numdonefilesseen for each datadir (16 plots).
+#
+# The intermediate and gnuplot command files are usually removed, but
+# can be saved.
+#
+# It is possible to use a prexisting intermediate file rather than grepping
+# all the carma logs.
+#
+# 7/28/06 Added ability to plot average sleep time.
+# 10/2/06 Deal with addition of 'newtable' times.
+# 10/6/06 Add more info to titles, limit timedata to entries with newtable
+
+#		Some variables
+VERSION="1.4 061006"
+cleantimedata=1			# Remove intermediate file.
+cleanplot=1			# Remove the gnuplot command file.
+doplot=1			# Do the plot.
+readlogfile=1			# Read the log file.
+# Default log file to look at.
+DEFAULTLOGFILENAME=carma.log
+#  Log file to look at.
+logfile=
+# Also look at logfile.<these suffixes>
+loglist="1 2 3 4 5 6 7 8 9 10"
+#
+# Intermediate file
+timedata=/tmp/timedata.$$
+
+# Command file
+plotfile=/tmp/plotfile.$$
+# Which axis to plot vs which.
+PLOTCMD='1:($4-$6-$11)'
+# Plots newtabletime/elapsedtime
+#PLOTCMD='1:($10/$5)'
+PLOTCMDT='1:($4/$5)'
+plotcmd="$PLOTCMD"
+plotcmdt="$PLOTCMDT"
+
+# Default place to look for logs.
+if [ -d /var/carma/accLog ]; then
+	logdir=/var/carma/accLog;
+elif [ -d /var/carma/log ]; then
+	logdir=/var/carma/log;
+else
+	logdir=".";
+fi
+
+# Default log file.
+DEFAULTLOGFILE=$logdir/$DEFAULTLOGFILENAME
+
+usage() {
+    echo "usage: $0 [-n] [-ncleanplot] [-ncleantimedata] [-nolog] [-noplot] [-h]"
+    echo "	 [logfile=<file>, default carma log file]"
+    echo "  -n		Do not remove temporary files."
+    echo "  -ncleantimedata Don't remove intermediate timedata file."
+    echo "  -ncleanplot Don't remove plot command file."
+    echo "  -nolog	Don't read logfile[s]. Allows reading an existing timedata file."
+    echo "  -noplot	Don't run gnuplot. Sets ncleanplot."
+    echo "  -h		Display this message."
+    echo "  plotfile=<file> Use <file> for the plot command file. Sets ncleanplot."
+    echo "		Default is '$plotfile'."
+    echo "  timedata=<file> Use <file> for the intermediate data file."
+    echo "		Sets ncleantimedata."
+    echo "		Default is '$timedata'."
+    echo "  logfile=<file> File name containing log information."
+    echo "		Default is '$DEFAULTLOGFILE'."
+    echo "  loglist=\"list\" List of suffixes for additional log files to search."
+    echo "		Files are <logdir>/<logfile>.<suffix>."
+    echo "		Default is \"$loglist\"."
+}
+
+for x in $*
+do
+  case $x in
+      -nc*t*) cleantimedata=0
+      ;;
+      -nc*p*) cleanplot=0
+      ;;
+      -noplot) doplot=0; cleanplot=0;
+      ;;
+      -nolog) readlogfile=0
+      ;;
+      -n) cleantimedata=0;cleanplot=0
+      ;;
+      -h) usage ; exit 0
+      ;;
+      --help) usage ; exit 0
+      ;;
+      -help) usage ; exit 0
+      ;;
+      plotfile=*) plotfile=`echo $x | grep plotfile | awk -F = '{print $2}'`;
+	cleanplot=0
+      ;;
+      timedata=*) timedata=`echo $x | grep timedata | awk -F = '{print $2}'`;
+	cleantimedata=0
+      ;;
+      logfile=*) logfile=`echo $x | grep logfile | awk -F = '{print $2}'`
+      ;;
+      loglist=*) loglist=`echo $x | grep loglist | awk -F = '{print $2}'`
+      ;;
+      plotcmd=*) plotcmd=`echo $x | grep plotcmd | awk -F = '{print $2}'`;
+      ;;
+      *) echo "Unknown command line parameter $x";  usage; exit 1
+  esac
+done
+
+if [ -z $logfile ]; then
+	logfile=$DEFAULTLOGFILE
+fi
+
+################################################################
+if [ $readlogfile -ne 0 ]; then
+ if [ ! -f $logfile ]; then
+	echo "Could not find $logfile."
+	usage; exit 1;
+ fi
+
+ # Build list of files to search.
+ LOGLIST=$logfile
+ for suf in $loglist ; do
+ 	F=$logfile.$suf
+ 	if [ -f $F ]; then
+ 		LOGLIST="$F $LOGLIST"
+	fi
+ done
+
+ echo "Searching: $LOGLIST"
+
+ # Regex strings
+ STRING1='monitorDataLoader:.*Times: '
+ STRING2=' [a-zA-Z/]*monitorDataLoader.*\..*Times:'
+ # Remove scandir times in case MDL still prints them.
+ STRING3='s/scandirtime=.* //'
+ 
+ # If timedata aready exists, save it in case user forgot to add a -nolog.
+ if [ -f $timedata ]; then
+	mv $timedata $timedata.bak
+ fi
+
+ # Search for monitorDataLoader log entries then strip out intra-line text
+ # that we don't want.
+ # Generate an intermediate file containing the mdl data.
+ # (The newtable search is only needed until all logs have the new format).
+ grep -h $STRING1 $LOGLIST | \
+     grep newtable | \
+     sed -e "s/${STRING2}//" -e 's/}.*$//' -e "${STRING3}" \
+		-e 's/"//g' - > $timedata
+fi # readlogfile
+################################################################
+
+# Yes, it's possible to change what gets plotted, but minimally.
+# The date is treated as being column 1, but the number of files is column 4
+# since the date really spans three columns.
+if [ -z plotcmd ]; then
+  plotcmd = "$PLOTCMD"
+fi
+
+# timedata file format
+#  Col	variable		Example
+# 1-3	<Date/Time>		Sep 28 00:09:55
+# 4	<host>			database.carma.pvt
+# 5	datadir			datadir=slcorrel/complex
+# 6	nfiles			nfiles=840
+# 7	elapsed time		elapsedtime=64.2
+# 8	filesloaded		filesloaded=35
+# 9	fileloadtime		fileloadtime=2.54
+# 10	binaryfilesconverted	binaryfilesconverted=0
+# 11	binaryconverttime	binaryconverttime=0
+# 12	newtabletime		newtabletime=59.2
+# 13	numdonefilesseen	numdonefilesseen=805
+# 14	numpasses		numpasses=1
+
+# plot file format
+#  Col	variable		Example
+# 1-3	<Date/Time>		Sep 28 00:09:55
+# 4	nfiles			nfiles=840
+# 5	elapsed time		elapsedtime=64.2
+# 6	filesloaded		filesloaded=35
+# 7	fileloadtime		fileloadtime=2.54
+# 8	binaryfilesconverted	binaryfilesconverted=0
+# 9	binaryconverttime	binaryconverttime=0
+# 10	newtabletime		newtabletime=59.2
+# 11	numdonefilesseen	numdonefilesseen=805
+# future# 12	numpasses		numpasses=1
+
+# Process the intermediate file into a gnuplot command file.
+# The file will plot <# files seen> - <#files loaded> - <# files marked done>
+# for each directory.
+ sed -e 's/"//g' $timedata | awk 'BEGIN {i=0; begindate=""; enddate=""}\
+    { date = $1 " " $2 " " $3; host=$4;\
+	Ddir=$5; Nf=$6; Et=$7; Fl=$8; Flt=$9; Bfc=$10; Bct=$11; Ntt=$12;\
+	Df=$13;\
+	split(Ddir, v, "="); ddir = v[2];\
+	split(Nf, v, "="); nf = v[2];\
+	split(Et, v, "="); et = v[2]; \
+	split(Fl, v, "="); fl = v[2];\
+	split(Flt, v, "="); flt = v[2];\
+	split(Bfc, v, "="); bfc = v[2];\
+	split(Bct, v, "="); bct = v[2];\
+	split(Ntt, v, "="); ntt = v[2];\
+	split(Df, v, "="); ndf = v[2];\
+	dirs[ddir] = 1; \
+	k = indexes[ddir] + 1;\
+	dates[ddir,k] = date;\
+	filesseen[ddir,k] = nf;\
+	elapsedtime[ddir,k] = et;\
+	filesloaded[ddir,k] = fl;\
+	fileloadtime[ddir,k] = flt;\
+	binaryconverts[ddir,k] = bfc;\
+	binarytime[ddir,k] = bct;\
+	newtablet[ddir,k] = ntt;\
+	donefiles[ddir,k] = ndf;\
+	indexes[ddir] += 1;\
+	if(begindate == "") begindate = date;\
+	enddate = date;\
+    }\
+    END { print "# ", DATE;\
+	  print "# ", PLOTCMD;\
+     	  print "#set terminal postscript landscape color";\
+          printf "#set output \"%s.ps\"\n", PLOTFILE;\
+	  print "set xdata time";\
+	  printf "set timefmt \"%%b %%d %%H:%%M:%%S\"\n";\
+	  printf "set xrange [\"%s\":\"%s\"]\n", begindate, enddate;\
+	  printf "set yrange [0:*]\n";\
+	  printf "# Date  #files et #loaded loadtime bfc bct ntt #doneseen\n";\
+	  n = 0;\
+	  for( d in dirs) \
+	  { if( d == "timing/sleep") \
+	    {\
+	    	print "print \"Plotting <total sleep time>/npasses\"";\
+		printf "plot \"-\" using %s t \"%s\"\n", PLOTCMDT, "Average Sleep Time (secs)";\
+	    }\
+	    else\
+	    { fmt = "print \"<# files in %s> %s";\
+	      msg1= " - <# files loaded> - <# files marked done>\"\n";\
+	      printf fmt, d, msg1;\
+	      printf "plot \"-\" using %s t \"%s:[%s-%s] %s\"\n", PLOTCMD, host, begindate, enddate, d;\
+	    }\
+		nentries = indexes[d];\
+		for( j=0; j < nentries; j++) \
+		{	k = j + 1;\
+			numf = filesseen[d, k];\
+			et = elapsedtime[d, k];\
+			numl = filesloaded[d, k];\
+			lt = fileloadtime[d, k];\
+			bfc = binaryconverts[d, k];\
+			bct = binarytime[d, k];\
+			ntt = newtablet[d, k];\
+			numd = donefiles[d, k];\
+			printf "%s\t%s %s %s %s %s %s %s %s\n", dates[d, k],\
+				numf, et, numl, lt, bfc, bct, ntt, numd;\
+		}\
+		print "e";\
+		print "pause -1 \"Press <enter> to continue: \"";\
+	  }\
+	}' DATE="`date`" PLOTCMD=$plotcmd PLOTCMDT=$PLOTCMDT PLOTFILE=$plotfile > $plotfile
+
+if [ $doplot -eq 1 ]; then
+	gnuplot $plotfile
+fi
+
+if [ $cleantimedata -eq 1 ]; then
+	rm $timedata
+fi
+
+if [ $cleanplot -eq 1 ]; then
+	rm $plotfile
+fi
+
+exit 0

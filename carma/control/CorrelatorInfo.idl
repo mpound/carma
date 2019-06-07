@@ -1,0 +1,75 @@
+#ifndef CARMA_CONTROL_CORRELATORINFO_IDL
+#define CARMA_CONTROL_CORRELATORINFO_IDL
+ 
+/**
+ * @file
+ *
+ * Correlator-related enumerations and constants.
+ * $Id: CorrelatorInfo.idl,v 1.6 2014/06/04 17:09:16 mpound Exp $
+ *
+ *
+ */
+
+#include "carma/util/CorrelatorType.idl"
+
+module carma {
+module control {
+const string CORR_DESIGNATION_STRING = "correlatorDesignation";
+
+/**
+ *  Correlator operational modes.
+ */
+enum CorrModeType {
+    CORR_MODE_IDLE,     ///< Power saving mode
+    CORR_MODE_NORMAL    ///< Normal operation.
+};
+
+         
+/**
+ *  Downconverter sideband choice.
+ */
+enum SidebandType { 
+    SB_UPPER,    ///< Upper side band.
+    SB_LOWER,    ///< Lower side band.
+    SB_AUTO      ///< Request that system choose the sideband
+};
+
+/**
+ *  Block Downconverter polarization input selector choice.
+ */
+enum BlockDCPolarizationType {
+    BLOCK_DC_POL1,
+    BLOCK_DC_POL2
+};
+
+
+enum DecimationMode {
+    DECIMATION_OFF_KEEP_END_CHANNELS,
+    DECIMATION_OFF_DROP_END_CHANNELS,
+    DECIMATION_ON
+};
+
+//! @brief  Correlator FPGA configuration/polarization mode
+enum CorrFpgaModeType {
+    SINGLEPOL,  ///< default, single polarization mode, e.g. LL or RR
+    DUALPOL,    ///< dual-polarization, LL and RR
+    FULLPOL,    ///< Full-stokes mode
+    CARMA23     ///< 23-station mode
+};
+
+/*
+enum AstroBandModeType {
+    NONE, 
+    UNKNOWN,
+    LL,
+    RR,
+    CARMA23,
+    FULLSTOKES
+};
+*/
+
+}; // end control
+}; // end carma
+
+#endif  // end of conditional include
+

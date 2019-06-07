@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<!DOCTYPE Common SYSTEM "mpml.dtd">
+
+<!-- LO Control module monitor point definitions.                -->
+<!-- $Id: LoControl.mpml,v 1.12 2011/09/26 17:51:06 iws Exp $  -->
+
+<Common scope="global" author="Andrew Beard">
+
+    <Container name="LoControl">
+
+        <!-- Blanking Frame Packets 1 - 8 -->
+        <Container name="Lo" count="8">
+            <MonitorPoint name="loFrequency" type="double" >
+                <shortName>Frequency</shortName>
+                <longName>LO Frequency</longName>
+                <description>LO output frequency.</description>
+                <units>Hz</units>
+                <width>12</width>
+            </MonitorPoint>
+            <MonitorPoint name="lockFlag" type="bool" >
+                <shortName>Lock</shortName>
+                <longName>LO Lock Flag</longName>
+                <description>LO Lock Flag</description>
+            </MonitorPoint>
+            <MonitorPoint name="vco" type="enum" >
+                <shortName>VCO</shortName>
+                <description>
+                    Indicates which VCO is being used in the LO assembly.
+                </description>
+                <enum name="VCO1">
+                    <description>
+                        1750.000-2500.000 MHz
+                    </description>
+                </enum>
+                <enum name="VCO2">
+                    <description>
+                        2500.001-4250.000 MHz
+                    </description>
+                </enum>
+            </MonitorPoint>
+        </Container>
+
+        <!-- Blanking frame monitor packet 9 -->
+        <MonitorPoint name="ps24v" type="float" >
+            <shortName>+24V</shortName>
+            <longName>24V Power Supply Voltage</longName>
+            <description>24V Power Supply Voltage</description>
+            <units>V</units>
+            <warnLo>20.0</warnLo>
+            <warnHi>28.0</warnHi>
+            <errLo>18.0</errLo>
+            <errHi>30.0</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps5vDigital" type="float" >
+            <shortName>+5V Digital</shortName>
+            <longName>5V Digital Power Supply Voltage</longName>
+            <description>5V Power Supply Voltage</description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps5_2vLinear" type="float" >
+            <shortName>+5.2V Linear</shortName>
+            <longName>5.2V Linear Power Supply Voltage</longName>
+            <description>
+                5.2V Linear Power Supply for the LO system power supply voltage.
+            </description>
+            <units>V</units>
+            <warnLo>4.85</warnLo>
+            <warnHi>5.15</warnHi>
+            <errLo>4.75</errLo>
+            <errHi>5.25</errHi>
+        </MonitorPoint>
+        <MonitorPoint name="ps3_3v" type="float" >
+            <shortName>+3.3V</shortName>
+            <longName>3.3V Power Supply Voltage</longName>
+            <description>3.3V Power Supply Voltage</description>
+            <units>V</units>
+            <warnLo>3.0</warnLo>
+            <warnHi>3.6</warnHi>
+            <errLo>2.7</errLo>
+            <errHi>3.9</errHi>
+        </MonitorPoint>
+
+        <!-- Blanking frame monitor packet 10 -->
+        <MonitorPoint name="temp" type="float" >
+          <shortName>Temperature</shortName>
+          <longName>Module Temperature</longName>
+          <description>Module temperature</description>
+          <units>C</units>
+        </MonitorPoint>
+
+    </Container>
+</Common>

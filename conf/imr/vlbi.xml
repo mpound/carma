@@ -1,0 +1,55 @@
+<!-- VLBI --> 
+<oad hostname="vlbictrl.carma.pvt">
+    
+    <server name="vlbiMonitor" path="&BIN_DIR;/carmaVlbiMonitorShim"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB;"
+            startup-priority="&pre-subsystem;" />
+
+    <server name="vlbiFSP" path="&BIN_DIR;/frameScriberPublisher"
+            directory="&DEFAULT_DIR;" 
+            args="&LOG; &USE_DB; subsystem=vlbi"
+            startup-priority="&monitor;" />
+
+<!--
+    <server name="vlbiBand1" path="/usr/local/bin/carmaVlbiHost"
+            directory="&DEFAULT_DIR;" 
+            args="band=1 pa=p1a pb=p1b dbe=p1dbe cc=cclo/1 input_map=[13,2,5,4,8,14,9,6] &LOG;"
+            startup-priority="&subsystem;" />
+
+    <server name="vlbiBand2" path="/usr/local/bin/carmaVlbiHost"
+            directory="&DEFAULT_DIR;" 
+            args="band=2 pa=p2a pb=p2b dbe=p2dbe cc=cclo/2 input_map=[13,2,5,4,8,14,9,6] &LOG;"
+            startup-priority="&subsystem;" />
+
+    <server name="vlbiBand3" path="/usr/local/bin/carmaVlbiHost"
+            directory="&DEFAULT_DIR;" 
+            args="band=3 pa=p3a pb=p3b dbe=p3dbe cc=cclo/3 input_map=[13,2,5,4,8,14,9,6] &LOG;"
+            startup-priority="&subsystem;" />
+
+    <server name="vlbiBand4" path="/usr/local/bin/carmaVlbiHost"
+            directory="&DEFAULT_DIR;" 
+            args="band=4 pa=p4a pb=p4b dbe=p4dbe cc=cclo/4 input_map=[13,2,5,4,8,14,9,6] &LOG;"
+            startup-priority="&subsystem;" />
+-->
+
+    <server name="vlbiBand5" path="/usr/local/bin/carmaVlbiHost"
+            directory="&DEFAULT_DIR;" 
+            args="band=5 pa=p5a pb=p5b dbe=p5dbe cc=cchi/1 input_map=[13,2,5,4,8,14,9,6] &LOG;"
+            startup-priority="&subsystem;" />
+
+    <server name="vlbiBand6" path="/usr/local/bin/carmaVlbiHost"
+            directory="&DEFAULT_DIR;" 
+            args="band=6 pa=p6a pb=p6b dbe=p6dbe cc=cchi/2 input_map=[13,2,5,4,8,14,9,6] &LOG;"
+            startup-priority="&subsystem;" />
+
+    <server name="vlbiBand7" path="/usr/local/bin/carmaVlbiHost"
+            directory="&DEFAULT_DIR;" 
+            args="band=7 pa=p7a pb=p7b dbe=p7dbe cc=cchi/3 input_map=[13,2,5,4,8,14,9,6] &LOG;"
+            startup-priority="&subsystem;" />
+
+    <server name="vlbiBand8" path="/usr/local/bin/carmaVlbiHost"
+            directory="&DEFAULT_DIR;" 
+            args="band=8 pa=p8a pb=p8b dbe=p8dbe cc=cchi/4 input_map=[13,2,5,4,8,14,9,6] &LOG;"
+            startup-priority="&subsystem;" />
+</oad>
